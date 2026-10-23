@@ -120,6 +120,8 @@ inputs:
   ca/t657_inclusion_rate_2000: "0.6"
   ca/t657_gains_2002_to_2024: "100000"
   ca/capital_gains_deduction_claimed: "155000"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca-on/return:
     - ca/capital_gain: "350000.00"
@@ -195,8 +197,6 @@ expected:
       ca/amt_resource_property_and_flow_through_shares: "0"
       ca/amt_security_options_d1_total: "0"
       ca/amt_security_options_net: "0"
-      ca/cpp_required_base_and_first_additional_contributions: "0.00"
-      ca/cpp_contributions_difference: "0.00"
       ca/amt_adjusted_income_with_gains: "185000.00"
       ca/amt_minimum_amount: "0"
       ca/amt_basic_federal_tax: "-866.97"
@@ -205,3 +205,6 @@ expected:
       ca/amt_alternative_minimum_tax_payable: "0"
       ca/amt_federal_tax_payable_under_minimum_tax: "0"
       ca/amt_carryover_available_for_2026: "866.97"
+  ca/schedule_8:
+    - ca/cpp_required_base_and_first_additional_contributions: "0.00"
+      ca/cpp_contributions_difference: "0.00"

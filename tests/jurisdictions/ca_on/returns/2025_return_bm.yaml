@@ -82,6 +82,8 @@ inputs:
   ca/itc_apprenticeship_t3_box_40: "5000"
   ca/itc_sred_repayment_2014_and_prior: "1000"
   ca/itc_sred_repayment_2015_and_after: "2000"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca-on/return:
     - ca/itc_sred_credit: "6000.00"

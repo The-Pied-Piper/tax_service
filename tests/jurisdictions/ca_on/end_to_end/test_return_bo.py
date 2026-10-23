@@ -38,8 +38,10 @@ from app.jurisdictions.ca.capabilities.ratio_truncated import (
 from app.jurisdictions.ca.catalog import (
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASIC_EXEMPTION,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
     NET_INCOME,
@@ -238,7 +240,7 @@ from app.jurisdictions.ca.catalog import (
     SELF_EMPLOYED_CPP_DEDUCTION,
     TOTAL_PAYABLE,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import D, compute, compute_with_schedule_8
 
 
 def return_bo(
@@ -2552,12 +2554,17 @@ def test_return_bo_part_4_steps_are_the_form_capabilities() -> None:
 def test_return_bo_the_cpt20_election_does_not_reach_the_t1_lines_yet() -> None:
     # Part 4 line 4 is read by lines 62, 68, 74 and 80, which no T1 line reads yet, and Schedule 8
     # Part 4's line 42100 is multiplied by "Part 4 completed" (0 here): the same return with and
-    # without lines 2 and 3 (50373 and 50399) gives the same Schedule 8 contributions, net income
-    # and total payable.
+    # without lines 2 and 3 (50373 and 50399) gives the same Schedule 8 contributions on the
+    # return, net income and total payable.
     with_election = return_bo()
     without_election = return_bo(cpt20_earnings="0", cpt20_t4_earnings="0")
 
-    for kind in (CPP_BASE_CONTRIBUTIONS, CPP_ENHANCED_CONTRIBUTIONS, NET_INCOME, TOTAL_PAYABLE):
+    for kind in (
+        CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        NET_INCOME,
+        TOTAL_PAYABLE,
+    ):
         assert with_election.get(kind).value == without_election.get(kind).value, kind.identifier
     # Part 4 lines 5 to 56 do not read line 4, so they are the same too; lines 62 and onward do:
     # line 4 of 12,500 against 0 changes line 62 (1,300.00 against 0), line 74 and the lines after
@@ -7581,10 +7588,11 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
     # lines 49, 53, 56, 60, 61 and 69 carry those actual figures (the required figures being 0, as
     # no pensionable earnings are entered), as does line 44800's overpayment; every other Part 3
     # line is 0.
-    worksheet = compute("60000", (), "0", "0", "0", "0", "0")
+    both = compute_with_schedule_8("60000", (), "0", "0", "0", "0", "0")
+    worksheet = both.ret
 
-    assert worksheet.get(CPP_BASE_CONTRIBUTIONS).value == D("2796.75")
-    assert worksheet.get(CPP_ENHANCED_CONTRIBUTIONS).value == D("565.00")
+    assert both.get(CPP_BASE_CONTRIBUTIONS).value == D("2796.75")
+    assert both.get(CPP_ENHANCED_CONTRIBUTIONS).value == D("565.00")
     assert worksheet.get(NET_INCOME).value == D("59435.00")
     kinds: tuple[ArtifactKind[Any], ...] = (
         RC381_PART_3_LINE_3,
@@ -7806,9 +7814,15 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
 def test_the_rc381_figures_do_not_change_the_t1_lines_yet() -> None:
     # This part of Form RC381 reaches no line of the return: the same employment income and T4 box
     # 16 total (which Schedule 8 reads too) with and without the pensionable earnings totals and the
-    # T4 box 17 total gives the same Schedule 8 contributions, net income and total payable.
+    # T4 box 17 total gives the same Schedule 8 contributions on the return, net income and total
+    # payable.
     with_totals = return_bo()
     without_totals = return_bo(line_1="0", line_2="0", line_39="0")
 
-    for kind in (CPP_BASE_CONTRIBUTIONS, CPP_ENHANCED_CONTRIBUTIONS, NET_INCOME, TOTAL_PAYABLE):
+    for kind in (
+        CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        NET_INCOME,
+        TOTAL_PAYABLE,
+    ):
         assert with_totals.get(kind).value == without_totals.get(kind).value, kind.identifier

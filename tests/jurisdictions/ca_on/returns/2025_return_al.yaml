@@ -297,6 +297,8 @@ inputs:
   ca/split_income_dividends: "11500"
   ca/split_income_dividends_other_than_eligible: "11500"
   ca/unapplied_net_capital_losses_2000: "0"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca-on/return:
     - ca/cpp_second_additional_earnings_maximum: "9900.00"
@@ -411,8 +413,6 @@ expected:
       ca/amt_security_options_d1_total: "0"
       ca/amt_security_options_net: "0"
       ca/net_capital_loss_balance_2000: "0.00"
-      ca/cpp_required_base_and_first_additional_contributions: "0.00"
-      ca/cpp_contributions_difference: "0.00"
       ca/amt_adjusted_income_with_gains: "0.00"
       ca/amt_minimum_amount: "0"
       ca/amt_basic_federal_tax: "417.83"
@@ -421,3 +421,6 @@ expected:
       ca/amt_alternative_minimum_tax_payable: "0"
       ca/amt_federal_tax_payable_under_minimum_tax: "2756.54"
       ca/amt_carryover_available_for_2026: "0"
+  ca/schedule_8:
+    - ca/cpp_required_base_and_first_additional_contributions: "0.00"
+      ca/cpp_contributions_difference: "0.00"

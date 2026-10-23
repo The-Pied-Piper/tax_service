@@ -10,10 +10,12 @@ from typing import Any
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact, ArtifactKind
+from app.domain.errors import MissingArtifactError
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER
 from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.record_list import RecordList, RecordListKind
+from app.domain.trace import TraceLine
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
@@ -556,6 +558,7 @@ from app.jurisdictions.ca.catalog import (
     RRSP_CONTRIBUTIONS,
     RRSP_DEDUCTION_LIMIT,
     RRSP_INCOME,
+    SCHEDULE_8_INSTANCES,
     SECURITY_OPTIONS_DEDUCTIONS,
     SHARE_DISPOSITIONS,
     SHORT_TERM_RENTAL_CCA_UNITS,
@@ -1716,6 +1719,7 @@ def starting(
     business_statements: tuple[Mapping[str, Any], ...] | None = None,
     farm_statements: tuple[Mapping[str, Any], ...] | None = None,
     fish_statements: tuple[Mapping[str, Any], ...] | None = None,
+    schedule_8_copies: int = 1,
     taxable_support_payments: str = "0",
     rrsp_income: str = "0",
     fhsa_income: str = "0",
@@ -2210,6 +2214,10 @@ def starting(
         t2125_statements(business_statement_list),
         t2042_statements(farm_statement_list),
         t2121_statements(fish_statement_list),
+        Artifact(
+            SCHEDULE_8_INSTANCES,
+            RecordList(SCHEDULE_8_INSTANCES.fields, [{} for _ in range(schedule_8_copies)]),
+        ),
         Artifact(TAXABLE_SUPPORT_PAYMENTS, D(taxable_support_payments)),
         Artifact(RRSP_INCOME, D(rrsp_income)),
         Artifact(FHSA_INCOME, D(fhsa_income)),
@@ -2843,6 +2851,36 @@ def starting(
 
 compute = _worksheet_of(starting)
 run = _run_of(starting)
+
+
+class ReturnAndSchedule8:
+    """The worksheets of the return and of its one Schedule 8, read as one set of lines.
+
+    A line the return computes (the CPP lines it reads through the totals of the form, Part 4 and
+    everything after them) is read from the worksheet of `ca-on/return`; a line only the form
+    computes (Parts 3, 3a, 3b and 5 of Schedule 8) from the worksheet of `ca/schedule_8`.
+    """
+
+    def __init__(self, result: Mapping[str, tuple[Worksheet, ...]]) -> None:
+        (self.schedule_8,) = result["ca/schedule_8"]
+        (self.ret,) = result["ca-on/return"]
+
+    @property
+    def trace(self) -> tuple[TraceLine, ...]:
+        """The trace lines of Schedule 8, then those of the return."""
+        return self.schedule_8.trace + self.ret.trace
+
+    def get[V](self, kind: ArtifactKind[V]) -> Artifact[V]:
+        """The artifact of `kind`: the return's, else Schedule 8's."""
+        try:
+            return self.ret.get(kind)
+        except MissingArtifactError:
+            return self.schedule_8.get(kind)
+
+
+def compute_with_schedule_8(*args: Any, **kwargs: Any) -> ReturnAndSchedule8:
+    """The return and its one Schedule 8 of `starting(...)`, read together."""
+    return ReturnAndSchedule8(run(*args, **kwargs))
 
 
 def rental_return(

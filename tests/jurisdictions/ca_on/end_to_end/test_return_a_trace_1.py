@@ -18,12 +18,13 @@ from app.jurisdictions.ca.catalog import (
     OTHER_DEPENDANTS_MEDICAL,
 )
 from app.jurisdictions.ca_on import catalog as ontario
-from tests.jurisdictions.ca_on.end_to_end.support import D, return_a
+from tests.jurisdictions.ca_on.end_to_end.support import D, run_a
 
 
 def test_the_trace_explains_the_computation() -> None:
-    worksheet = return_a()
-    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    result = run_a()
+    trace = (*result["ca/schedule_8"][0].trace, *result["ca-on/return"][0].trace)
+    rendered = EnglishTraceRenderer().render_all(trace)
 
     def position(
         expected: str,
@@ -40,7 +41,7 @@ def test_the_trace_explains_the_computation() -> None:
         """
         (found,) = [
             i
-            for i, (text, line) in enumerate(zip(rendered, worksheet.trace, strict=True))
+            for i, (text, line) in enumerate(zip(rendered, trace, strict=True))
             if text == expected
             and line.amount == D(amount)
             and (

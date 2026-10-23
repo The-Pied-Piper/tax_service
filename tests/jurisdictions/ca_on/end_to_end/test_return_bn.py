@@ -23,7 +23,6 @@ from app.domain.trace import (
     SumLine,
     TimesCountLine,
 )
-from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     AMT_DEDUCTIONS_TOTAL,
     CPP_ACTUAL_BASE_CONTRIBUTIONS,
@@ -176,7 +175,11 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_PAYABLE,
 )
 from app.jurisdictions.ca_on import catalog as ontario
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import (
+    D,
+    ReturnAndSchedule8,
+    compute_with_schedule_8,
+)
 
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
@@ -191,7 +194,7 @@ CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 def test_t4_contributions_above_the_required_ones_give_a_positive_line_24() -> None:
     # Return BN as filed: box 16 of $3,500.00 is 138.25 more than line 13.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -227,7 +230,7 @@ def test_t4_contributions_above_the_required_ones_give_a_positive_line_24() -> N
 def test_t4_contributions_below_the_required_ones_give_a_negative_line_24_in_brackets() -> None:
     # Box 16 of $3,300.00: line 9 is 2,745.38, line 16 is -51.37, line 10 is 554.62, line 19 is
     # -10.38, line 20 is -61.75 and line 24 is -61.75 (shown in brackets on the form).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -251,7 +254,7 @@ def test_t4_contributions_below_the_required_ones_give_a_negative_line_24_in_bra
 
 def test_t4_contributions_equal_to_the_required_ones_give_line_24_zero() -> None:
     # Box 16 of $3,361.75 is line 13: line 9 is 2,796.75 (equal to line 11) and line 24 is 0.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -273,7 +276,7 @@ def test_t4_contributions_equal_to_the_required_ones_give_line_24_zero() -> None
 def test_without_t4_inputs_the_required_contributions_are_the_default_so_line_24_is_zero() -> None:
     # The helper's default is the required amount for the employment income: box 16 of
     # $3,361.75 and box 16A of $0 at $60,000, so line 24 is 0 with no T4 input given.
-    worksheet = compute("60000", (), "0", "0", "0", "0", "0")
+    worksheet = compute_with_schedule_8("60000", (), "0", "0", "0", "0", "0")
 
     assert worksheet.get(CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS).value == D("3361.75")
     assert worksheet.get(CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS).value == D("0")
@@ -283,7 +286,7 @@ def test_without_t4_inputs_the_required_contributions_are_the_default_so_line_24
 def test_a_second_additional_contribution_above_the_required_one_is_a_positive_line_23() -> None:
     # Employment income of $90,000: line 22 is 4% of 9,900 = 396.00. Box 16A of $500.00 is 104.00
     # more, so line 23 and line 24 are 104.00 (the base and first parts are the required ones).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "90000",
         (),
         "0",
@@ -306,7 +309,7 @@ def test_form_rounding_moves_lines_16_and_19_a_cent_each_way_but_line_24_stays_z
     # line 13 is 202.33. Line 9 of 202.33 is 168.33, a cent above line 11, so line 16 is 0.01;
     # line 10 is 34.00, a cent below line 12, so line 19 is -0.01. Line 20 is 0.00 and line 24
     # is 0.00: line 20 is line 8 less line 13, whatever line 9 rounds to.
-    worksheet = compute("6900.50", (), "0", "0", "0", "0", "0")
+    worksheet = compute_with_schedule_8("6900.50", (), "0", "0", "0", "0", "0")
 
     assert worksheet.get(CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS).value == D("202.33")
     assert worksheet.get(CPP_ACTUAL_BASE_CONTRIBUTIONS).value == D("168.33")
@@ -317,7 +320,7 @@ def test_form_rounding_moves_lines_16_and_19_a_cent_each_way_but_line_24_stays_z
 
 
 def assert_values(
-    worksheet: Worksheet, expected: Mapping[ArtifactKind[Any], Decimal | int]
+    worksheet: ReturnAndSchedule8, expected: Mapping[ArtifactKind[Any], Decimal | int]
 ) -> None:
     for kind, value in expected.items():
         assert worksheet.get(kind).value == value, kind.identifier
@@ -336,7 +339,7 @@ def assert_values(
 def test_part_3a_routes_lines_25_28_and_29_to_lines_30800_22215_and_44800() -> None:
     # Return BN as filed (box 16 of $3,500.00, 138.25 more than line 13): line 24 is positive,
     # so Part 3a applies.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -372,7 +375,7 @@ def test_part_3a_with_a_positive_line_23_adds_line_22_to_the_enhanced_deduction(
     # Employment income of $90,000 and box 16A of $500.00, 104.00 more than line 22: box 16 is
     # the required $4,034.10, so line 24 is line 23, 104.00, and Part 3a applies with line 27
     # (line 22) of 396.00.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "90000",
         (),
         "0",
@@ -407,7 +410,7 @@ def test_part_3a_with_a_positive_line_23_adds_line_22_to_the_enhanced_deduction(
 def test_part_3a_applies_when_a_larger_line_20_outweighs_a_negative_line_23() -> None:
     # Box 16 of $4,300.00 is 265.90 over line 13 and box 16A of $300.00 is 96.00 under line 22,
     # so line 24 is positive (169.90) and Part 3a applies.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "90000",
         (),
         "0",
@@ -442,7 +445,7 @@ def test_part_3a_applies_when_a_larger_line_20_outweighs_a_negative_line_23() ->
 def test_part_3b_with_line_24_zero_takes_the_required_lines_11_12_and_22() -> None:
     # Box 16 equal to line 13 (the helper's default): lines 16, 19, 23 and 24 are 0, so Part 3b
     # applies and every count that asks for a positive amount is 0.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -500,7 +503,7 @@ def test_part_3b_a_cent_split_between_lines_16_and_19_is_added_back_on_line_39()
     # over line 11 and line 10 a cent under line 12, so line 16 is positive (0.01) and line 19
     # negative (-0.01); line 39 takes the lesser of line 16 and line 38, 0.01, and line 41 adds
     # it to line 37.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "6900.50",
         (),
         "0",
@@ -558,7 +561,7 @@ def test_part_3b_with_a_cent_over_on_line_16_and_a_cent_under_on_line_23() -> No
     # line 24 is 0.00, so Part 3b applies; line 16 is positive but line 19 is 0, so line 39 is
     # the lesser of 0.01 and 0 (line 38); line 20 is positive and line 23 negative, so line 46
     # is the lesser of 0.01 (line 20) and 0.01 (line 45).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "90000",
         (),
         "0",
@@ -617,7 +620,7 @@ def test_part_3b_with_both_differences_negative_adds_back_lines_31_and_38() -> N
     # Box 16 of $3,300.00 is 61.75 under line 13: line 16 and line 19 are both negative, line 23
     # is 0, so lines 32, 35, 39, 42 and 46 are all 0 and lines 31 and 38 are the shortfalls as
     # positive amounts.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -677,7 +680,7 @@ def test_part_3b_line_35_takes_line_23_when_it_is_less_than_line_33() -> None:
     # line 24 is -595.00, line 23 and line 33 are both positive and line 23 is the lesser, so
     # line 35 is 5.00; line 42 is then the lesser of line 40 and line 23 minus line 35, which is
     # 0.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "90000",
         (),
         "0",
@@ -736,7 +739,7 @@ def test_part_3b_line_35_takes_line_33_and_line_42_the_rest_of_line_23() -> None
     # Box 16 of $3,564.10 (470.00 under line 13) and box 16A of $791.00 (395.00 over line 22):
     # line 24 is -75.00. Line 33 (391.01) is less than line 23, so line 35 is 391.01 and line 42
     # is the lesser of line 40 (78.99) and line 23 minus line 35 (3.99), 3.99.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "90000",
         (),
         "0",
@@ -798,7 +801,7 @@ def test_part_3b_line_46_takes_line_20_when_line_23_is_negative_and_line_24_is_n
     # line 24 is -30.10, so Part 3b applies; line 20 is positive and line 23 negative, so line
     # 46 is the lesser of line 20 (65.90) and line 45 (96.00), 65.90, and line 44 is line 21
     # (300.00).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "90000",
         (),
         "0",
@@ -857,8 +860,8 @@ def test_part_3a_adds_the_overpayment_to_total_credits_and_changes_nothing_else(
     # Return BN as filed against the same return with box 16 equal to line 13: lines 30800 and
     # 22215 are the required 2,796.75 and 565.00 in both, so the only difference is line 44800,
     # 138.25, which joins total credits (T1 line 166) and lowers the balance owing by as much.
-    base = compute("60000", (), "0", "0", "0", "0", "0", income_tax_deducted="5000")
-    over = compute(
+    base = compute_with_schedule_8("60000", (), "0", "0", "0", "0", "0", income_tax_deducted="5000")
+    over = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -891,8 +894,8 @@ def test_part_3b_lines_36_and_48_feed_the_credit_and_the_deductions() -> None:
     # 51.37 less than line 11, and line 22215 is line 48, 554.62, that is 10.38 less than line 12.
     # Each reader of line 30800 (the federal and Ontario credit amounts, ON428 line 58240) and of
     # line 22215 (the deductions and the minimum tax deductions) moves by exactly those amounts.
-    base = compute("60000", (), "0", "0", "0", "0", "0")
-    short = compute(
+    base = compute_with_schedule_8("60000", (), "0", "0", "0", "0", "0")
+    short = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -925,7 +928,7 @@ def test_part_3b_lines_36_and_48_feed_the_credit_and_the_deductions() -> None:
     assert short.get(CPP_ENHANCED_CONTRIBUTIONS).value == base.get(CPP_ENHANCED_CONTRIBUTIONS).value
 
 
-def chosen_lines(worksheet: Worksheet) -> dict[ArtifactKind[Any], ChosenByCountLine]:
+def chosen_lines(worksheet: ReturnAndSchedule8) -> dict[ArtifactKind[Any], ChosenByCountLine]:
     return {line.output: line for line in worksheet.trace if isinstance(line, ChosenByCountLine)}
 
 
@@ -933,7 +936,7 @@ def test_the_trace_names_the_part_the_three_return_lines_were_taken_from() -> No
     # Line 24 positive: Part 3a line 25 (line 15, the amount from line 11), line 28 and line 29,
     # the Part 3 route that Part 5 replaces when it is completed.
     positive = chosen_lines(
-        compute(
+        compute_with_schedule_8(
             "60000",
             (),
             "0",
@@ -967,7 +970,7 @@ def test_the_trace_names_the_part_the_three_return_lines_were_taken_from() -> No
         chosen_value=D("138.25"),
     )
     # Line 24 "0" or negative: Part 3b line 36 and line 48, and "0" for the overpayment.
-    zero = chosen_lines(compute("60000", (), "0", "0", "0", "0", "0"))
+    zero = chosen_lines(compute_with_schedule_8("60000", (), "0", "0", "0", "0", "0"))
     assert zero[CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN] == ChosenByCountLine(
         output=CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
         count_kind=CPP_LINE_24_POSITIVE,
@@ -991,7 +994,7 @@ def test_the_trace_names_the_part_the_three_return_lines_were_taken_from() -> No
     )
     # Line 30 of Part 3b chooses between line 9 ("amount from line 14") and line 11, by line 16.
     short = chosen_lines(
-        compute(
+        compute_with_schedule_8(
             "60000",
             (),
             "0",
@@ -1047,7 +1050,7 @@ def test_part_5_with_employment_income_of_60000_and_line_27_of_20000_prints_the_
     # 34 to 42 are computed: line 34 is 9,900, line 35 is 0 / 4% = 0, line 36 is 9,900, line 37
     # is 20,000, line 38 is 0, line 39 is 20,000, line 40 is 11,300.01, line 41 is 8,699.99 and
     # line 42, the lesser of lines 36 and 41, is 8,699.99.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -1105,7 +1108,7 @@ def test_part_5_lines_34_to_42_use_line_16_when_employment_income_is_above_71300
     # than 71,300: line 34 is 9,900, line 35 is 348.00 / 4% = 8,700.00, line 36 is 1,200.00,
     # line 37 is 15,000, line 38 is 0, line 39 is 15,000, line 40 is 0.01, line 41 is 14,999.99
     # and line 42, the lesser of 1,200.00 and 14,999.99, is 1,200.00.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -1159,7 +1162,7 @@ def test_part_5_line_6_takes_the_overpaid_line_20_of_part_3_off_line_5() -> None
     # (line 20 of Part 3, positive) and line 7 is 3,500.00 - 138.25 = 3,361.75, so line 10 is
     # 3,361.75 as in case (a) (line 20 of Part 3 is not negative, so lines 8 and 9 are 0) and
     # lines 19 to 42 are the same as in case (a).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -1216,7 +1219,7 @@ def test_part_5_line_15_is_the_lesser_of_line_20_of_part_3_and_line_14() -> None
     # 4,034.10. Line 11 is 300.00, line 12 is 0 (line 23 is negative) and line 13 is 300.00;
     # line 14 is 48.00 and line 15, the lesser of line 20 of Part 3 (65.90) and line 14 (48.00),
     # is 48.00; line 16 is 300.00 + 48.00 = 348.00. Lines 17 to 42 are those of case (b).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -1274,7 +1277,7 @@ def test_part_5_line_9_is_the_lesser_of_line_23_of_part_3_and_line_8() -> None:
     # line 10 is 4,034.10. Line 11 is 400.00, line 12 is 52.00 and line 13 is 348.00; line 14
     # and line 15 are 0 (line 20 is not positive) and line 16 is 348.00. Lines 17 to 42 are
     # those of case (b).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -1329,7 +1332,7 @@ def test_part_5_line_3_adds_the_cpt20_earnings_shown_on_a_t4_slip() -> None:
     # so line 22 is the lesser of 28,000 and 11,300.01, 11,300.01, and line 30 is 11,300.01.
     # Line 33 is 28,000 + 60,000 = 88,000: line 36 is 9,900, line 39 is 28,000, line 41 is
     # 28,000 - 11,300.01 = 16,699.99 and line 42, the lesser of 9,900 and 16,699.99, is 9,900.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -1386,7 +1389,7 @@ def test_part_5_lines_25_and_29_when_employment_income_is_below_the_exemption() 
     # 1,500 - 0 = 1,500; line 30 is 40,000 - 1,500 = 38,500. Line 32 is 2,000 and line 33 is
     # 42,000, not more than 71,300, so line 42 is 0 (lines 34 to 41 are still computed: line 36
     # is 9,900, line 39 is 40,000 - 1,500 = 38,500 and line 41 is 38,500 - 38,500 = 0).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "2000",
         (),
         "0",
@@ -1438,7 +1441,7 @@ def test_part_5_line_28_takes_what_line_4_has_over_line_19_off_line_29() -> None
     # 68,800 - 67,800 = 1,000, so line 29 is 1,500 - 1,000 = 500 and line 30 is 67,800 - 500 =
     # 67,300. Line 33 is 68,800 + 2,000 = 70,800, not more than 71,300, so line 42 is 0 (line 39
     # is 68,800 - 1,500 = 67,300 and line 41 is 67,300 - 67,300 = 0).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "2000",
         (),
         "0",
@@ -1490,7 +1493,7 @@ def test_part_5_without_self_employment_income_only_the_part_3_lines_are_not_zer
     # T4 box 16 total, 3,361.75 (lines 5 and 20 of Part 3 are not positive, so lines 6 and 8 are
     # 0), lines 19, 20 and 21 are 67,800, 56,499.99 and 11,300.01 as in case (a), and line 36 is
     # 9,900; line 33 is the 60,000 of Part 3 line 2, not more than 71,300.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -1540,7 +1543,7 @@ def test_part_5_without_self_employment_income_lines_13_16_and_35_come_from_box_
     # 348.00, so line 13 and line 16 are 348.00 and line 35 is 348.00 / 4% = 8,700.00, line 36
     # is 1,200.00. Line 33 is 80,000, more than 71,300, so line 42 is the lesser of 1,200.00 and
     # line 41 (0 - 0 = 0), 0. Line 20 is 4,034.10 x 16.80672 = 67,799.99 and line 21 is 0.01.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -1593,7 +1596,7 @@ def test_part_5_line_42_is_negative_when_line_4_is_a_loss_and_line_33_is_above_7
     # -5,000, line 40 is 0, line 41 is -5,000 and line 42, the lesser of 1,200.00 and -5,000, is
     # -5,000: the form prints no floor on lines 36 to 42, so line 42 is signed (a later change
     # decides what lines 45 and 46 do with it).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -1643,8 +1646,10 @@ def test_part_5_changes_no_other_line_of_the_return() -> None:
     # Part 5 is not completed, so none of its lines is routed to the return: the CPT20 earnings
     # shown on a T4 slip (line 3) feed Part 5 alone, so the deductions, the credits and the balance
     # owing do not move.
-    without = compute("60000", (), "0", "0", "0", "0", "0", professional_income="20000")
-    with_cpt20 = compute(
+    without = compute_with_schedule_8(
+        "60000", (), "0", "0", "0", "0", "0", professional_income="20000"
+    )
+    with_cpt20 = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -1662,7 +1667,7 @@ def test_part_5_changes_no_other_line_of_the_return() -> None:
         assert with_cpt20.get(kind).value == without.get(kind).value, kind.identifier
 
 
-def part_5_trace(worksheet: Worksheet, line_type: type) -> dict[ArtifactKind[Any], Any]:
+def part_5_trace(worksheet: ReturnAndSchedule8, line_type: type) -> dict[ArtifactKind[Any], Any]:
     lines: list[Any] = [line for line in worksheet.trace if isinstance(line, line_type)]
     return {line.output: line for line in lines}
 
@@ -1670,7 +1675,9 @@ def part_5_trace(worksheet: Worksheet, line_type: type) -> dict[ArtifactKind[Any
 def test_the_trace_records_line_20_as_a_fraction_and_line_35_as_a_division() -> None:
     # Case (a): line 20 is line 10 of 3,361.75 times 16.80672 (a fraction, 1,680,672 / 100,000, to
     # the cent: 56,499.99096 is 56,499.99).
-    case_a = compute("60000", (), "0", "0", "0", "0", "0", professional_income="20000")
+    case_a = compute_with_schedule_8(
+        "60000", (), "0", "0", "0", "0", "0", professional_income="20000"
+    )
     assert part_5_trace(case_a, FractionAppliedLine)[CPP_PART_5_LINE_20] == FractionAppliedLine(
         output=CPP_PART_5_LINE_20,
         base=CPP_PART_5_LINE_10,
@@ -1680,7 +1687,9 @@ def test_the_trace_records_line_20_as_a_fraction_and_line_35_as_a_division() -> 
         result=D("56499.99"),
     )
     # Case (b): line 35 is line 16 of 348.00 divided by 4%, 8,700.00.
-    case_b = compute("80000", (), "0", "0", "0", "0", "0", professional_income="15000")
+    case_b = compute_with_schedule_8(
+        "80000", (), "0", "0", "0", "0", "0", professional_income="15000"
+    )
     assert part_5_trace(case_b, DividedByRateLine)[CPP_PART_5_LINE_35] == DividedByRateLine(
         output=CPP_PART_5_LINE_35,
         dividend=CPP_PART_5_LINE_16,
@@ -1693,7 +1702,7 @@ def test_the_trace_records_line_20_as_a_fraction_and_line_35_as_a_division() -> 
 
 def test_the_trace_names_the_candidate_lines_9_15_and_42_took_or_the_zero() -> None:
     # Line 9 takes its lesser (34.10) when line 20 of Part 3 is negative and line 23 positive.
-    case_c3 = compute(
+    case_c3 = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -1721,7 +1730,7 @@ def test_the_trace_names_the_candidate_lines_9_15_and_42_took_or_the_zero() -> N
         chosen_value=D("0"),
     )
     # Line 15 takes its lesser (48.00) when line 20 of Part 3 is positive and line 23 negative.
-    case_c2 = compute(
+    case_c2 = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -1742,7 +1751,9 @@ def test_the_trace_names_the_candidate_lines_9_15_and_42_took_or_the_zero() -> N
         chosen_value=D("48.00"),
     )
     # Line 42 takes its lesser (8,699.99) when line 33 is more than line 17, else "0".
-    case_a = compute("60000", (), "0", "0", "0", "0", "0", professional_income="20000")
+    case_a = compute_with_schedule_8(
+        "60000", (), "0", "0", "0", "0", "0", professional_income="20000"
+    )
     assert part_5_trace(case_a, ChosenByCountLine)[CPP_PART_5_LINE_42] == ChosenByCountLine(
         output=CPP_PART_5_LINE_42,
         count_kind=CPP_PART_5_LINE_33_MORE_THAN_LINE_17,
@@ -1750,7 +1761,9 @@ def test_the_trace_names_the_candidate_lines_9_15_and_42_took_or_the_zero() -> N
         chosen_kind=CPP_PART_5_LINE_42_LESSER,
         chosen_value=D("8699.99"),
     )
-    below = compute("2000", (), "0", "0", "0", "0", "0", professional_income="40000")
+    below = compute_with_schedule_8(
+        "2000", (), "0", "0", "0", "0", "0", professional_income="40000"
+    )
     assert part_5_trace(below, ChosenByCountLine)[CPP_PART_5_LINE_42] == ChosenByCountLine(
         output=CPP_PART_5_LINE_42,
         count_kind=CPP_PART_5_LINE_33_MORE_THAN_LINE_17,
@@ -1797,7 +1810,7 @@ def test_part_5_lines_43_to_69_for_employment_income_of_60000_and_line_27_of_200
     # 59 to 61 are 0 (line 16 is not positive, so line 60 is 0), line 62 is 565.00, line 63 is 0
     # and line 64 is 565.00. Line 23 is 0, so line 65 is line 22, 0; lines 66 to 68 are 0 and
     # line 69 is 565.00 + 0 = 565.00.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -1856,7 +1869,7 @@ def test_part_5_line_45_is_8_percent_of_line_42_when_employment_income_is_above_
     # 50 is 0. Line 51 is 3,356.10 and line 57 is 3,356.10 (lines 52 to 56 are 0); line 58 is
     # 678.00 and line 64 is 678.00 (lines 59 to 63 are 0); line 65 is line 22, 348.00, so line
     # 68 is 348.00 (lines 66 and 67 are 0) and line 69 is 678.00 + 348.00 = 1,026.00.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -1920,7 +1933,7 @@ def test_part_5_line_48_doubles_a_positive_line_24_and_line_49_is_what_line_47_h
     # line 16 (115.02) and line 59 (0), 0, and line 67 counts line 20 as positive and takes the
     # lesser of 138.25 and line 66 (0), 0. Lines 57, 64 and 69 are 2,796.75, 565.00 and 565.00
     # as in case (a).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -1984,7 +1997,7 @@ def test_part_5_line_67_takes_line_66_when_line_23_is_negative_and_line_20_posit
     # negative, so line 65 is line 21, the box 16A of 300.00; line 66 is 48.00 and line 67, with
     # line 20 positive, is the lesser of line 20 (65.90) and line 66 (48.00), 48.00; line 68 is
     # 300.00 + 48.00 = 348.00 and line 69 is 678.00 + 348.00 = 1,026.00.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -2052,7 +2065,7 @@ def test_part_5_line_49_is_negative_when_line_48_is_more_than_line_47_and_line_5
     # line 56 is 0 (the count is 0) and line 57 is 3,356.10; line 61 is 0, so line 63 is 0 and
     # line 64 is 678.00. Line 65 is line 22, 396.00 (line 23 positive), line 67 is 0 (line 20 is
     # not positive), line 68 is 396.00 and line 69 is 678.00 + 396.00 = 1,074.00.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "90000",
         (),
         "0",
@@ -2120,7 +2133,7 @@ def test_part_5_line_67_takes_line_20_when_it_is_less_than_line_66() -> None:
     # is line 12 (678.00). Line 23 is negative, so line 65 is line 21, 0.00; line 66 is 148.00
     # and line 67, with line 20 (0.01) positive, is the lesser of 0.01 and 148.00, 0.01. Line 68
     # is 0.01 and line 69 is 678.00 + 0.01 = 678.01.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "75000",
         (),
         "0",
@@ -2189,7 +2202,7 @@ def test_part_5_lines_52_to_64_when_lines_16_and_19_are_negative_and_line_23_pos
     # 678.00, the line 12 maximum. Line 23 is positive, so line 65 is line 22, 348.00; lines 66
     # and 67 are 0 (line 20 is negative), line 68 is 348.00 and line 69 is 678.00 + 348.00 =
     # 1,026.00.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -2260,7 +2273,7 @@ def test_part_5_line_56_takes_line_23_when_it_is_less_than_line_54_and_line_63_i
     # Line 23 and line 61 are positive: line 63 is the lesser of line 61 (100.84) and line 23
     # less line 56 (5.00 - 5.00 = 0.00), 0.00; line 64 is 577.16. Line 65 is line 22, 396.00;
     # lines 66 to 67 are 0 and line 69 is 577.16 + 396.00 = 973.16.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "90000",
         (),
         "0",
@@ -2327,7 +2340,7 @@ def test_part_5_line_56_takes_line_54_and_line_63_takes_what_is_left_of_line_23(
     # line 60 is 0; line 61 is 78.99; line 62 is 599.01. Line 63 is the lesser of line 61
     # (78.99) and line 23 less line 56 (395.00 - 391.01 = 3.99), 3.99, and line 64 is 599.01 +
     # 3.99 = 603.00. Line 65 is line 22, 396.00, and line 69 is 603.00 + 396.00 = 999.00.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "90000",
         (),
         "0",
@@ -2393,7 +2406,7 @@ def test_part_5_line_60_adds_back_the_cent_line_16_is_over_when_line_19_is_a_cen
     # is positive, so line 60 is the lesser of line 16 (0.01) and line 59 (0.01), 0.01; line 61
     # is 0.00 and line 62 is 34.01. Line 23 is 0, so line 63 is 0.00, line 64 is 34.01 (the
     # required line 12), line 65 is line 22, 0, and line 69 is 34.01.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "6900.50",
         (),
         "0",
@@ -2451,7 +2464,7 @@ def test_part_5_line_45_is_0_when_line_42_is_negative() -> None:
     # negative amount is below the band, so 0.00, not -400.00. Lines 46 and 47 are 0.00, line 48
     # is 0 (line 24 is 0) and line 49 is 0.00. Lines 51 to 69 are those of case (b): 3,356.10,
     # 3,356.10, 678.00, 678.00, 348.00 and 1,026.00 on lines 51, 57, 58, 64, 65 and 69.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -2506,7 +2519,7 @@ def test_part_5_without_self_employment_income_lines_43_to_47_are_0() -> None:
     # is 0 (line 24 is 0), line 49 is 0.00 and line 50 is 0. Lines 51 to 69 are those of case
     # (a): 2,796.75, 2,796.75, 565.00, 565.00, 0.00 and 565.00 on lines 51, 57, 58, 64, 65 and
     # 69.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -2562,7 +2575,7 @@ def test_part_5_without_self_employment_income_line_49_is_minus_line_48() -> Non
     # so line 50 is 276.50 x 50% = 138.25, the same as the 138.25 of line 44800 on the return
     # (line 29 of Part 3a). Lines 51 to 69 are those of case (c): 2,796.75, 2,796.75, 565.00,
     # 565.00, 0 and 565.00 on lines 51, 57, 58, 64, 65 and 69.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -2617,7 +2630,7 @@ def test_the_trace_records_line_48_as_a_fraction_and_line_50_as_a_rate() -> None
     # Return BN as filed: line 24 of Part 3 is 138.25, so line 48 is 138.25 x 2 = 276.50 (a
     # fraction, 2 / 1, to the cent), line 49 is 0.00 - 276.50 = -276.50 and line 50 is line 49 as a
     # positive amount, 276.50, x 50% = 138.25.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -2648,7 +2661,9 @@ def test_the_trace_records_line_48_as_a_fraction_and_line_50_as_a_rate() -> None
 def test_the_trace_records_lines_43_to_45_as_the_tier_on_the_earnings_of_their_line() -> None:
     # Case (a): line 43 is the tier on line 30 (11,300.01), line 44 the tier on line 30 and line 45
     # the tier on line 42 (8,699.99); the contributory earnings are the earnings themselves.
-    case_a = compute("60000", (), "0", "0", "0", "0", "0", professional_income="20000")
+    case_a = compute_with_schedule_8(
+        "60000", (), "0", "0", "0", "0", "0", professional_income="20000"
+    )
     tiers = part_5_trace(case_a, ContributionTierLine)
     for line, earnings, earnings_amount, result in (
         (CPP_PART_5_LINE_43, CPP_PART_5_LINE_30, "11300.01", "1118.70"),
@@ -2661,7 +2676,9 @@ def test_the_trace_records_lines_43_to_45_as_the_tier_on_the_earnings_of_their_l
         assert tiers[line].result == D(result), line.identifier
     # A loss with employment income above 71,300: line 42 is -5,000.00, which the tier floors to
     # contributory earnings of 0, so line 45 is 0.00.
-    loss = compute("80000", (), "0", "0", "0", "0", "0", professional_income="-5000")
+    loss = compute_with_schedule_8(
+        "80000", (), "0", "0", "0", "0", "0", professional_income="-5000"
+    )
     tier = part_5_trace(loss, ContributionTierLine)[CPP_PART_5_LINE_45]
     assert tier.earnings is CPP_PART_5_LINE_42
     assert tier.earnings_amount == D("-5000.00")
@@ -2674,7 +2691,7 @@ def test_the_trace_names_the_candidate_lines_51_to_67_took_or_the_zero() -> None
     # 400.00): lines 51 and 58 take the actual amounts (lines 9 and 10 of Part 3), line 53 and line
     # 60 take "0", line 56 takes its lesser (28.37), line 63 takes its lesser (5.73), line 65 takes
     # line 22 and line 67 takes "0".
-    case_e = compute(
+    case_e = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -2736,7 +2753,7 @@ def test_the_trace_names_the_candidate_lines_51_to_67_took_or_the_zero() -> None
         ), line.identifier
     # Line 65 takes line 21 (box 16A, 300.00) when line 23 is negative, and line 67 then takes its
     # lesser (48.00): box 16 of 4,100.00 and box 16A of 300.00 on employment income of 80,000.
-    case_c = compute(
+    case_c = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -2786,7 +2803,7 @@ def test_part_5_lines_57_and_69_equal_the_base_and_enhanced_contributions_on_the
     line_30800: str,
     line_22215: str,
 ) -> None:
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         employment,
         (),
         "0",
@@ -2849,7 +2866,7 @@ def test_part_5_lines_70_to_88_for_employment_income_of_60000_and_line_27_of_200
     # completed the return takes line 30800 from line 57 (2,796.75), line 22215 from line 69
     # (565.00), line 44800 from line 50 (0.00), line 42100 from line 49 if positive (2,040.70),
     # line 31000 from line 70 (559.35) and line 22200 from line 88 (1,481.35).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -2918,7 +2935,7 @@ def test_part_5_line_84_halves_line_45_when_employment_income_is_above_71300() -
     # 5 completed the return takes line 30800 from line 57 (3,356.10), line 22215 from line 69
     # (1,026.00), line 44800 from line 50 (0.00), line 42100 from line 49 if positive (96.00),
     # line 31000 from line 70 (0.00) and line 22200 from line 88 (96.00).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -2989,7 +3006,7 @@ def test_part_5_line_a_is_line_73_when_line_24_of_part_3_is_less_than_line_72() 
     # line 44800 from line 50 (0.00), line 42100 from line 49 if positive (1,764.20), line 31000
     # from line 70 (559.35) and line 22200 from line 88 (1,343.10); Part 3a's line 29 would be
     # 138.25.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -3061,7 +3078,7 @@ def test_part_5_line_a_is_line_72_and_line_86_comes_off_line_84_when_line_74_is_
     # line 30800 from line 57 (2,796.75), line 22215 from line 69 (565.00), line 44800 from line
     # 50 (0.00), line 42100 from line 49 if positive (564.20), line 31000 from line 70 (559.35)
     # and line 22200 from line 88 (743.10); Part 3a's line 29 would be 738.25.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -3133,7 +3150,7 @@ def test_part_5_line_87_is_0_when_line_86_is_more_than_line_84_and_line_49_is_ne
     # (565.00), line 44800 from line 50 (217.90), line 42100 from line 49 if positive (0.00),
     # line 31000 from line 70 (559.35) and line 22200 from line 88 (461.00); Part 3a's line 29
     # would be 1,238.25.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -3205,7 +3222,7 @@ def test_part_5_line_74_is_0_and_line_86_is_0_when_line_73_equals_line_72() -> N
     # 69 (565.00), line 44800 from line 50 (0.00), line 42100 from line 49 if positive (696.00),
     # line 31000 from line 70 (559.35) and line 22200 from line 88 (809.00); Part 3a's line 29
     # would be 672.35.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -3276,7 +3293,7 @@ def test_part_5_line_80_is_a_cent_negative_when_line_75_is_a_cent_more_than_line
     # (2,796.75), line 22215 from line 69 (565.00), line 44800 from line 50 (132.29), line 42100
     # from line 49 if positive (0.00), line 31000 from line 70 (4.96) and line 22200 from line
     # 88 (1.01); Part 3a's line 29 would be 138.25.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -3346,7 +3363,7 @@ def test_part_5_without_self_employment_income_only_lines_73_74_and_86_are_not_0
     # line 30800 from line 57 (2,796.75), line 22215 from line 69 (565.00), line 44800 from line
     # 50 (138.25), line 42100 from line 49 if positive (0.00), line 31000 from line 70 (0.00)
     # and line 22200 from line 88 (0.00); Part 3a's line 29 would be 138.25.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -3415,7 +3432,7 @@ def test_part_5_lines_70_to_88_are_0_for_a_loss_with_employment_income_above_713
     # line 30800 from line 57 (3,356.10), line 22215 from line 69 (1,026.00), line 44800 from
     # line 50 (0.00), line 42100 from line 49 if positive (0.00), line 31000 from line 70 (0.00)
     # and line 22200 from line 88 (0.00).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -3485,7 +3502,7 @@ def test_part_5_line_84_is_the_only_one_of_lines_70_to_88_not_0_when_line_24_is_
     # line 57 (3,356.10), line 22215 from line 69 (678.01), line 44800 from line 50 (0.00), line
     # 42100 from line 49 if positive (791.98), line 31000 from line 70 (0.00) and line 22200
     # from line 88 (791.98).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "75000",
         (),
         "0",
@@ -3556,7 +3573,7 @@ def test_part_5_line_87_is_30_10_when_line_24_is_positive_and_line_23_negative()
     # takes line 30800 from line 57 (3,356.10), line 22215 from line 69 (1,026.00), line 44800
     # from line 50 (0.00), line 42100 from line 49 if positive (60.20), line 31000 from line 70
     # (0.00) and line 22200 from line 88 (78.10); Part 3a's line 29 would be 17.90.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "80000",
         (),
         "0",
@@ -3623,7 +3640,7 @@ def test_part_5_line_87_is_30_10_when_line_24_is_positive_and_line_23_negative()
 def test_without_part_5_completed_the_return_lines_are_part_3s_and_part_4s_which_is_0(
     employment: str, line_27: str, box_16: str | None, overpayment: str
 ) -> None:
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         employment,
         (),
         "0",
@@ -3661,10 +3678,10 @@ def test_part_5_without_employment_income_gives_part_4s_lines_14_15_and_17() -> 
     # 0.00, line 80 is 816.75, line 83 is 165.00, line 84 is 0.00 and line 87 is 0.00, so line
     # 88 is 816.75 + 165.00 + 165.00 + 0.00 + 0.00 = 1,146.75: the form's lines 49, 70 and 88
     # are Part 4's lines 14, 15 and 17.
-    part_5 = compute(
+    part_5 = compute_with_schedule_8(
         "0", (), "0", "0", "0", "0", "0", professional_income="20000", cpp_part_5_completed=1
     )
-    part_4 = compute(
+    part_4 = compute_with_schedule_8(
         "0", (), "0", "0", "0", "0", "0", professional_income="20000", cpp_part_4_completed=1
     )
 
@@ -3712,7 +3729,7 @@ def test_with_both_parts_completed_the_return_adds_part_4s_lines_and_part_5s() -
     # 1,481.35. So line 42100 is 1,963.50 + 2,040.70 = 4,004.20, line 31000 is 816.75 + 559.35 =
     # 1,376.10 and line 22200 is 1,146.75 + 1,481.35 = 2,628.10; lines 30800, 22215 and 44800 come
     # from Part 5 (2,796.75, 565.00 and 0.00) and Part 4 does not touch them.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -3754,7 +3771,7 @@ def test_part_5_completed_moves_the_credit_the_deductions_and_the_totals_by_the_
     # and line 44800 is line 50, 0.00, not Part 3a's line 29, 138.25, so the total credits (line
     # 166) are 138.25 less. Lines 30800 and 22215 are line 57 and line 69, which equal Part 3a's
     # line 25 and line 28 here.
-    without = compute(
+    without = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -3767,7 +3784,7 @@ def test_part_5_completed_moves_the_credit_the_deductions_and_the_totals_by_the_
         cpp_t4_base_and_first_additional_contributions="3500.00",
         cpp_t4_second_additional_contributions="0",
     )
-    routed = compute(
+    routed = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -3823,7 +3840,9 @@ def test_the_trace_names_part_5_or_part_3_for_lines_30800_22215_and_44800() -> N
         "cpp_t4_second_additional_contributions": "0",
     }
     routed = chosen_lines(
-        compute("60000", (), "0", "0", "0", "0", "0", cpp_part_5_completed=1, **arguments)
+        compute_with_schedule_8(
+            "60000", (), "0", "0", "0", "0", "0", cpp_part_5_completed=1, **arguments
+        )
     )
     for line, chosen_kind, chosen_value in (
         (CPP_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_57, "2796.75"),
@@ -3849,7 +3868,7 @@ def test_the_trace_names_part_5_or_part_3_for_lines_30800_22215_and_44800() -> N
             chosen_kind=chosen_kind,
             chosen_value=D(chosen_value),
         ), line.identifier
-    kept = chosen_lines(compute("60000", (), "0", "0", "0", "0", "0", **arguments))
+    kept = chosen_lines(compute_with_schedule_8("60000", (), "0", "0", "0", "0", "0", **arguments))
     for line, chosen_kind, chosen_value in (
         (CPP_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN, "2796.75"),
         (
@@ -3871,7 +3890,7 @@ def test_the_trace_names_part_5_or_part_3_for_lines_30800_22215_and_44800() -> N
 def test_the_trace_counts_part_5_lines_49_70_and_88_once_for_each_part_5_completed() -> None:
     # Case (c) with Part 5 completed: line 49 if positive (1,764.20), line 70 (559.35) and line 88
     # (1,343.10) are each counted once, then added to the Part 4 route (0 here).
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",
@@ -3928,7 +3947,7 @@ def test_the_trace_records_lines_70_to_88_as_rates_differences_and_a_lesser() ->
     # Case (c): line 70 is 50% of 1,118.70, line 75 is line A (138.25, line 73) x 83.1933% =
     # 115.0147, 115.01, line 77 is 138.25 - 115.01 = 23.24, line 80 is 559.35 - 115.01 = 444.34
     # and line 83 is 113.00 - 23.24 = 89.76; line 74 is 672.35 - 138.25 = 534.10.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "60000",
         (),
         "0",

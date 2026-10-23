@@ -296,6 +296,8 @@ inputs:
   ca/cpp_t4_base_and_first_additional_contributions: "0"
   ca/cpp_t4_second_additional_contributions: "0"
   ca/unapplied_net_capital_losses_2000: "0"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca/t2125:
     - ca/business_sales_subtotal: "50000"
@@ -342,14 +344,7 @@ expected:
       ca/income_support_benefits: "0"
       ca/total_income: "30000.00"
       ca/cpp_second_additional_earnings_maximum: "9900.00"
-      ca/cpp_base_contributions: "0.00"
-      ca/cpp_first_additional_contributions: "0.00"
-      ca/cpp_required_base_and_first_additional_contributions: "0.00"
-      ca/cpp_second_additional_contributions: "0.00"
-      ca/cpp_contributions_difference: "0.00"
-      ca/cpp_part_5_line_30: "26500.00"
       ca/cpp_part_5_line_49: "3153.50"
-      ca/cpp_enhanced_contributions: "0.00"
       ca/ei_premiums: "0.00"
       ca/rrsp_contributions_available: "0"
       ca/rrsp_deduction_maximum: "0"
@@ -537,3 +532,11 @@ expected:
       ca/rc381_cpp_payable_on_self_employment: "3153.50"
       ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings: "1311.75"
       ca/rc381_cpp_deduction_on_self_employment_and_other_earnings: "1841.75"
+  ca/schedule_8:
+    - ca/cpp_base_contributions: "0.00"
+      ca/cpp_first_additional_contributions: "0.00"
+      ca/cpp_required_base_and_first_additional_contributions: "0.00"
+      ca/cpp_second_additional_contributions: "0.00"
+      ca/cpp_contributions_difference: "0.00"
+      ca/cpp_part_5_line_30: "26500.00"
+      ca/cpp_enhanced_contributions: "0.00"

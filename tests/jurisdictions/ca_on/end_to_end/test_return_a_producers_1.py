@@ -1131,7 +1131,9 @@ from tests.jurisdictions.ca_on.end_to_end.support import return_a, run_a
 
 
 def test_each_amount_is_produced_by_its_capability() -> None:
-    worksheet = return_a()
+    result = run_a()
+    (worksheet,) = result["ca-on/return"]
+    (schedule_8,) = result["ca/schedule_8"]
     assert worksheet.producer_of(EMPLOYMENT_INCOME) is None
     assert isinstance(worksheet.producer_of(CAPITAL_GAIN), Sum)
     assert worksheet.producer_of(UNUSED_RRSP_CONTRIBUTIONS) is None
@@ -1737,13 +1739,15 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD) is not (
         worksheet.producer_of(REFUND_OR_BALANCE_OWING)
     )
-    assert isinstance(worksheet.producer_of(CPP_BASE_CONTRIBUTIONS), TieredContribution)
-    assert isinstance(worksheet.producer_of(CPP_FIRST_ADDITIONAL_CONTRIBUTIONS), TieredContribution)
+    assert isinstance(schedule_8.producer_of(CPP_BASE_CONTRIBUTIONS), TieredContribution)
     assert isinstance(
-        worksheet.producer_of(CPP_SECOND_ADDITIONAL_CONTRIBUTIONS), TieredContribution
+        schedule_8.producer_of(CPP_FIRST_ADDITIONAL_CONTRIBUTIONS), TieredContribution
+    )
+    assert isinstance(
+        schedule_8.producer_of(CPP_SECOND_ADDITIONAL_CONTRIBUTIONS), TieredContribution
     )
     tiers = {
-        worksheet.producer_of(kind)
+        schedule_8.producer_of(kind)
         for kind in (
             CPP_BASE_CONTRIBUTIONS,
             CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
@@ -1753,10 +1757,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert len(tiers) == 3
     assert isinstance(worksheet.producer_of(EI_PREMIUMS), TieredContribution)
     assert worksheet.producer_of(EI_PREMIUMS) not in tiers
-    assert isinstance(worksheet.producer_of(CPP_ENHANCED_CONTRIBUTIONS), Sum)
+    assert isinstance(schedule_8.producer_of(CPP_ENHANCED_CONTRIBUTIONS), Sum)
     # Schedule 8 Parts 3a and 3b: the counts, the "whichever is less" candidates, the chosen lines
     # and the three return lines that line 24 routes.
-    assert isinstance(worksheet.producer_of(CPP_ZERO), CreditAmount)
+    assert isinstance(schedule_8.producer_of(CPP_ZERO), CreditAmount)
     for count in (
         CPP_LINE_24_POSITIVE,
         CPP_LINE_16_NOT_NEGATIVE,
@@ -1768,7 +1772,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_LINE_23_AND_LINE_40_POSITIVE,
         CPP_LINE_20_POSITIVE,
     ):
-        assert isinstance(worksheet.producer_of(count), CountByConditions), count.identifier
+        assert isinstance(schedule_8.producer_of(count), CountByConditions), count.identifier
     for lesser in (
         CPP_PART_3B_LINE_32_LESSER,
         CPP_PART_3B_LINE_35_LESSER,
@@ -1776,7 +1780,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_3B_LINE_42_LESSER,
         CPP_PART_3B_LINE_46_LESSER,
     ):
-        assert isinstance(worksheet.producer_of(lesser), LesserOf), lesser.identifier
+        assert isinstance(schedule_8.producer_of(lesser), LesserOf), lesser.identifier
     for chosen in (
         CPP_PART_3B_LINE_30,
         CPP_PART_3B_LINE_32,
@@ -1793,15 +1797,15 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
         CPP_OVERPAYMENT,
     ):
-        assert isinstance(worksheet.producer_of(chosen), ChooseByCount), chosen.identifier
+        assert isinstance(schedule_8.producer_of(chosen), ChooseByCount), chosen.identifier
     for floored in (CPP_PART_3B_LINE_31, CPP_PART_3B_LINE_38, CPP_PART_3B_LINE_45):
-        assert isinstance(worksheet.producer_of(floored), SubtractNotBelowZero)
+        assert isinstance(schedule_8.producer_of(floored), SubtractNotBelowZero)
     for difference in (
         CPP_PART_3B_LINE_33,
         CPP_PART_3B_LINE_40,
         CPP_PART_3B_LINE_23_LESS_LINE_35,
     ):
-        assert isinstance(worksheet.producer_of(difference), Subtract)
+        assert isinstance(schedule_8.producer_of(difference), Subtract)
     for total in (
         CPP_PART_3B_LINE_34,
         CPP_PART_3B_LINE_36,
@@ -1810,26 +1814,26 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_3B_LINE_47,
         CPP_PART_3B_LINE_48,
     ):
-        assert isinstance(worksheet.producer_of(total), Sum)
+        assert isinstance(schedule_8.producer_of(total), Sum)
     # Schedule 8 Part 3 line 2 and Part 5 lines 1 to 42: the counts, the "whichever is less"
     # candidates, the lines chosen by count, the floors, the plain differences and sums, line 20 (a
     # multiplication by a fraction) and line 35 (a division by a rate).
-    assert isinstance(worksheet.producer_of(CPP_PART_3_LINE_2), LesserOf)
+    assert isinstance(schedule_8.producer_of(CPP_PART_3_LINE_2), LesserOf)
     for count in (
         CPP_PART_5_LINE_20_NEGATIVE_LINE_23_POSITIVE,
         CPP_PART_5_LINE_20_POSITIVE_LINE_23_NEGATIVE,
         CPP_PART_5_LINE_33_MORE_THAN_LINE_17,
     ):
-        assert isinstance(worksheet.producer_of(count), CountByConditions), count.identifier
+        assert isinstance(schedule_8.producer_of(count), CountByConditions), count.identifier
     for lesser in (
         CPP_PART_5_LINE_9_LESSER,
         CPP_PART_5_LINE_15_LESSER,
         CPP_PART_5_LINE_22,
         CPP_PART_5_LINE_42_LESSER,
     ):
-        assert isinstance(worksheet.producer_of(lesser), LesserOf), lesser.identifier
+        assert isinstance(schedule_8.producer_of(lesser), LesserOf), lesser.identifier
     for chosen in (CPP_PART_5_LINE_9, CPP_PART_5_LINE_15, CPP_PART_5_LINE_42):
-        assert isinstance(worksheet.producer_of(chosen), ChooseByCount), chosen.identifier
+        assert isinstance(schedule_8.producer_of(chosen), ChooseByCount), chosen.identifier
     for floored in (
         CPP_PART_5_LINE_6,
         CPP_PART_5_LINE_8,
@@ -1842,7 +1846,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_5_LINE_29,
         CPP_PART_5_LINE_30,
     ):
-        assert isinstance(worksheet.producer_of(floored), SubtractNotBelowZero), floored.identifier
+        assert isinstance(schedule_8.producer_of(floored), SubtractNotBelowZero), floored.identifier
     for difference in (
         CPP_PART_5_LINE_7,
         CPP_PART_5_LINE_13,
@@ -1850,11 +1854,11 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_5_LINE_39,
         CPP_PART_5_LINE_41,
     ):
-        assert isinstance(worksheet.producer_of(difference), Subtract), difference.identifier
+        assert isinstance(schedule_8.producer_of(difference), Subtract), difference.identifier
     for total in (CPP_PART_5_LINE_4, CPP_PART_5_LINE_10, CPP_PART_5_LINE_16, CPP_PART_5_LINE_33):
-        assert isinstance(worksheet.producer_of(total), Sum), total.identifier
-    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_20), ApplyFraction)
-    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_35), DividedByRate)
+        assert isinstance(schedule_8.producer_of(total), Sum), total.identifier
+    assert isinstance(schedule_8.producer_of(CPP_PART_5_LINE_20), ApplyFraction)
+    assert isinstance(schedule_8.producer_of(CPP_PART_5_LINE_35), DividedByRate)
     # Schedule 8 Part 5 lines 43 to 69: the tiers of lines 43 to 45, line 48's doubling (a fraction)
     # and line 50's half (a rate), the two counts of lines 56 and 63, the candidates and the lines
     # chosen by count, the floors and the plain differences and sums.
@@ -1863,14 +1867,14 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_5_LINE_44,
         CPP_PART_5_LINE_45,
     ):
-        assert isinstance(worksheet.producer_of(tier), TieredContribution), tier.identifier
-    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_48), ApplyFraction)
-    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_50), ApplyRate)
+        assert isinstance(schedule_8.producer_of(tier), TieredContribution), tier.identifier
+    assert isinstance(schedule_8.producer_of(CPP_PART_5_LINE_48), ApplyFraction)
+    assert isinstance(schedule_8.producer_of(CPP_PART_5_LINE_50), ApplyRate)
     for count in (
         CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE,
         CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE,
     ):
-        assert isinstance(worksheet.producer_of(count), CountByConditions), count.identifier
+        assert isinstance(schedule_8.producer_of(count), CountByConditions), count.identifier
     for lesser in (
         CPP_PART_5_LINE_53_LESSER,
         CPP_PART_5_LINE_56_LESSER,
@@ -1878,7 +1882,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_5_LINE_63_LESSER,
         CPP_PART_5_LINE_67_LESSER,
     ):
-        assert isinstance(worksheet.producer_of(lesser), LesserOf), lesser.identifier
+        assert isinstance(schedule_8.producer_of(lesser), LesserOf), lesser.identifier
     for chosen in (
         CPP_PART_5_LINE_51,
         CPP_PART_5_LINE_53,
@@ -1889,7 +1893,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_5_LINE_65,
         CPP_PART_5_LINE_67,
     ):
-        assert isinstance(worksheet.producer_of(chosen), ChooseByCount), chosen.identifier
+        assert isinstance(schedule_8.producer_of(chosen), ChooseByCount), chosen.identifier
     for floored in (
         CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
         CPP_PART_5_LINE_50_LINE_49_POSITIVE,
@@ -1897,14 +1901,14 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_5_LINE_59,
         CPP_PART_5_LINE_66,
     ):
-        assert isinstance(worksheet.producer_of(floored), SubtractNotBelowZero), floored.identifier
+        assert isinstance(schedule_8.producer_of(floored), SubtractNotBelowZero), floored.identifier
     for difference in (
         CPP_PART_5_LINE_49,
         CPP_PART_5_LINE_54,
         CPP_PART_5_LINE_61,
         CPP_PART_5_LINE_23_LESS_LINE_56,
     ):
-        assert isinstance(worksheet.producer_of(difference), Subtract), difference.identifier
+        assert isinstance(schedule_8.producer_of(difference), Subtract), difference.identifier
     for total in (
         CPP_PART_5_LINE_46,
         CPP_PART_5_LINE_47,
@@ -1915,36 +1919,43 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_5_LINE_68,
         CPP_PART_5_LINE_69,
     ):
-        assert isinstance(worksheet.producer_of(total), Sum), total.identifier
+        assert isinstance(schedule_8.producer_of(total), Sum), total.identifier
     # Schedule 8 Part 5 lines 70 to 88: the halves of lines 43, 44 and 45 and line A's 83.1933% are
     # rates, line 73 and lines 86 and 87 (and line 49 if positive, for line 42100) are floors,
     # line 74 and lines 77, 80 and 83 are differences, line A is the lesser of lines 72 and 73,
     # and lines 72 and 88 are sums.
     for rate in (CPP_PART_5_LINE_70, CPP_PART_5_LINE_71, CPP_PART_5_LINE_75, CPP_PART_5_LINE_84):
-        assert isinstance(worksheet.producer_of(rate), ApplyRate), rate.identifier
-    for floored in (
-        CPP_PART_5_LINE_73,
-        CPP_PART_5_LINE_86,
-        CPP_PART_5_LINE_87,
-        CPP_PART_5_LINE_49_IF_POSITIVE,
-    ):
-        assert isinstance(worksheet.producer_of(floored), SubtractNotBelowZero), floored.identifier
+        assert isinstance(schedule_8.producer_of(rate), ApplyRate), rate.identifier
+    for floored in (CPP_PART_5_LINE_73, CPP_PART_5_LINE_86, CPP_PART_5_LINE_87):
+        assert isinstance(schedule_8.producer_of(floored), SubtractNotBelowZero), floored.identifier
+    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_49_IF_POSITIVE), SubtractNotBelowZero)
     for difference in (
         CPP_PART_5_LINE_74,
         CPP_PART_5_LINE_77,
         CPP_PART_5_LINE_80,
         CPP_PART_5_LINE_83,
     ):
-        assert isinstance(worksheet.producer_of(difference), Subtract), difference.identifier
-    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_75_BASE), LesserOf)
+        assert isinstance(schedule_8.producer_of(difference), Subtract), difference.identifier
+    assert isinstance(schedule_8.producer_of(CPP_PART_5_LINE_75_BASE), LesserOf)
+    for total in (CPP_PART_5_LINE_72, CPP_PART_5_LINE_88):
+        assert isinstance(schedule_8.producer_of(total), Sum), total.identifier
     for total in (
-        CPP_PART_5_LINE_72,
-        CPP_PART_5_LINE_88,
         CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
         CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
         CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     ):
         assert isinstance(worksheet.producer_of(total), Sum), total.identifier
+    # The return reads each line of Schedule 8 it uses through the total of the form's lines.
+    for total in (
+        CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        CPP_OVERPAYMENT,
+        CPP_PART_5_LINE_49,
+        CPP_PART_5_LINE_70,
+        CPP_PART_5_LINE_88,
+        CPP_ZERO,
+    ):
+        assert isinstance(worksheet.producer_of(total), RecordTotal), total.identifier
     # T1 lines 31000, 22200 and 42100 from Part 5 are counted once for each Part 5 completed.
     for routed in (
         CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,

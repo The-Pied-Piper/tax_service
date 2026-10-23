@@ -452,6 +452,8 @@ inputs:
   ca/cpp_t4_base_and_first_additional_contributions: "0"
   ca/cpp_t4_second_additional_contributions: "0"
   ca/unapplied_net_capital_losses_2000: "0"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca-on/return:
     - ca/taxable_capital_gains: "0.00"
@@ -461,12 +463,6 @@ expected:
       ca/net_rental_income: "12000"
       ca/total_income: "12000.00"
       ca/cpp_second_additional_earnings_maximum: "9900.00"
-      ca/cpp_base_contributions: "0.00"
-      ca/cpp_first_additional_contributions: "0.00"
-      ca/cpp_required_base_and_first_additional_contributions: "0.00"
-      ca/cpp_second_additional_contributions: "0.00"
-      ca/cpp_contributions_difference: "0.00"
-      ca/cpp_enhanced_contributions: "0.00"
       ca/ei_premiums: "0.00"
       ca/rrsp_contributions_available: "0"
       ca/rrsp_deduction_maximum: "0"
@@ -651,6 +647,13 @@ expected:
       ca/amt_alternative_minimum_tax_payable: "0"
       ca/amt_federal_tax_payable_under_minimum_tax: "0"
       ca/amt_carryover_available_for_2026: "598.71"
+  ca/schedule_8:
+    - ca/cpp_base_contributions: "0.00"
+      ca/cpp_first_additional_contributions: "0.00"
+      ca/cpp_required_base_and_first_additional_contributions: "0.00"
+      ca/cpp_second_additional_contributions: "0.00"
+      ca/cpp_contributions_difference: "0.00"
+      ca/cpp_enhanced_contributions: "0.00"
 
   ca/t776:
     - ca/rental_gross_rents: "24000"

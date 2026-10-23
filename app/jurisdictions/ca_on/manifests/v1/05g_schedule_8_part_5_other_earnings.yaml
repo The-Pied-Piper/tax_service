@@ -1,3 +1,6 @@
+# Form Schedule 8 (ca/schedule_8), Parts 3a to 5: see 05c_schedule_8_part_3.yaml.
+form:
+  name: ca/schedule_8
 capabilities:
   # Schedule 8 Part 5 line 70 "Base CPP contributions through self-employment income and other
   # earnings: Line 70: Enter the result of the following calculation (in dollars and cents) on

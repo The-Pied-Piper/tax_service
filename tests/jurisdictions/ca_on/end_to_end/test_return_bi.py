@@ -124,8 +124,9 @@ def test_the_trace_keeps_the_lines_of_each_statement_under_its_position() -> Non
         if isinstance(line, FormInstanceLine)
     ]
 
-    # The forms run in the order of their imports: the return reads the form's export.
+    # The forms run in the order of their imports: the return reads the forms' exports.
     assert [(group.form, group.position) for group in groups] == [
+        ("ca/schedule_8", 1),
         ("ca/t776", 1),
         ("ca/t776", 2),
         ("ca-on/return", 1),

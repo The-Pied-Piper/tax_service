@@ -1,3 +1,27 @@
+# Form Schedule 8, Canada Pension Plan Contributions and Overpayment: the form ca/schedule_8, run
+# once for the copy of the form the return carries (the record list ca/schedule_8_instances: none or
+# one; the record has no fields, because every figure the form reads is a starting amount of the
+# return). Parts 3, 3a, 3b and 5 of the form are this part and 05d to 05h; Part 4 stays in the
+# return. The form exports the lines the return reads, which T1 totals in 05i_schedule_8_totals.yaml
+# and which are 0 with no copy of the form, and the line 13 of Part 3 "Line 11 plus line 12", which
+# nothing on the return reads.
+form:
+  name: ca/schedule_8
+  instances: ca/schedule_8_instances
+  # The return carries at most one copy of Schedule 8. Slice 2 (Form RC381) adds
+  # `exclusive_group: ca/cpp_calculation` here and on RC381's form: the loader refuses a group that
+  # names only one form, so it is left out while Schedule 8 is the only one.
+  max_instances: 1
+  min_instances: 0
+  exports:
+    - ca/cpp_base_contributions_on_return
+    - ca/cpp_enhanced_contributions_on_return
+    - ca/cpp_overpayment
+    - ca/cpp_part_5_line_49
+    - ca/cpp_part_5_line_70
+    - ca/cpp_part_5_line_88
+    - ca/cpp_zero
+    - ca/cpp_required_base_and_first_additional_contributions
 capabilities:
   # Schedule 8 Part 3 line 9 "amount from line 8 multiplied by 83.1933% =", line 8 being the
   # total actual base and first additional contributions on the T4 slips (line 8 and line

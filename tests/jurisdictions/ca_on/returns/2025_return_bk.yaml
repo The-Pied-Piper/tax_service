@@ -559,6 +559,8 @@ inputs:
   ca/cpp_t4_base_and_first_additional_contributions: "0"
   ca/cpp_t4_second_additional_contributions: "0"
   ca/unapplied_net_capital_losses_2000: "0"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca-on/return:
     - ca/taxable_capital_gains: "0.00"
@@ -569,12 +571,6 @@ expected:
       ca/net_self_employment_income: "10000"
       ca/total_income: "10000.00"
       ca/cpp_second_additional_earnings_maximum: "9900.00"
-      ca/cpp_base_contributions: "0.00"
-      ca/cpp_first_additional_contributions: "0.00"
-      ca/cpp_required_base_and_first_additional_contributions: "0.00"
-      ca/cpp_second_additional_contributions: "0.00"
-      ca/cpp_contributions_difference: "0.00"
-      ca/cpp_enhanced_contributions: "0.00"
       ca/ei_premiums: "0.00"
       ca/rrsp_contributions_available: "0"
       ca/rrsp_deduction_maximum: "0"
@@ -761,6 +757,13 @@ expected:
       ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings: "321.75"
       ca/rc381_cpp_deduction_on_self_employment_and_other_earnings: "451.75"
       ca/rc381_cpp_payable_on_self_employment: "773.50"
+  ca/schedule_8:
+    - ca/cpp_base_contributions: "0.00"
+      ca/cpp_first_additional_contributions: "0.00"
+      ca/cpp_required_base_and_first_additional_contributions: "0.00"
+      ca/cpp_second_additional_contributions: "0.00"
+      ca/cpp_contributions_difference: "0.00"
+      ca/cpp_enhanced_contributions: "0.00"
 
   ca/t2042:
     - ca/farm_gross_income: "12000"

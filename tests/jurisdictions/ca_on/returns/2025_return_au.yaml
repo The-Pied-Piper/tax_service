@@ -66,6 +66,8 @@ inputs:
   ca/resident_in_canada_throughout_2025: "1"
   ca/aged_18_or_older_at_end_of_2025: "1"
   ca/unapplied_net_capital_losses_2000: "0"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca-on/return:
     - ca/qsbcs_proceeds: "0"
@@ -107,10 +109,6 @@ expected:
       ca/rc381_part_3_line_21: "565.00"
       ca/rc381_part_3_line_69: "3361.75"
       ca/rc381_cpp_overpayment: "3361.75"
-      ca/cpp_required_base_and_first_additional_contributions: "3361.75"
-      ca/cpp_contributions_difference: "0.00"
-      ca/cpp_part_5_line_57: "2796.75"
-      ca/cpp_part_5_line_69: "565.00"
       ca/amt_adjusted_income_with_gains: "88285.00"
       ca/amt_minimum_amount: "0"
       ca/amt_basic_federal_tax: "8547.35"
@@ -121,3 +119,8 @@ expected:
       ca/amt_carryover_available_for_2026: "0"
       ca/rc381_part_4_line_91: "3361.75"
       ca/rc381_cpp_overpayment_on_return: "3361.75"
+  ca/schedule_8:
+    - ca/cpp_required_base_and_first_additional_contributions: "3361.75"
+      ca/cpp_contributions_difference: "0.00"
+      ca/cpp_part_5_line_57: "2796.75"
+      ca/cpp_part_5_line_69: "565.00"

@@ -85,7 +85,7 @@ INPUTS = frozenset[str]()
 # nothing here is a declared output.
 OUTPUTS = frozenset[str]()
 
-STEPS = {
+FORM_STEPS = {
     # Schedule 8 Part 5 line 43 "Required base contributions on CPP pensionable earnings: Line
     # 43: amount from line 30 multiplied by 9.9% (maximum $6,712.20) =": the tier of Part 4 line
     # 10 on line 30, which is the earnings of Part 4 line 9 here.
@@ -465,7 +465,7 @@ STEPS = {
     ),
 }
 
-WIRING = {
+FORM_WIRING = {
     (
         TieredContribution,
         frozenset({CPP_PART_5_LINE_30}),

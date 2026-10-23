@@ -1116,6 +1116,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         *result["ca/t2042"][0].trace,
         *result["ca/t2121"][0].trace,
         *result["ca/t776"][0].trace,
+        *result["ca/schedule_8"][0].trace,
         *result["ca-on/return"][0].trace,
     )
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}

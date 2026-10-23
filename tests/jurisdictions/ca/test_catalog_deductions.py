@@ -101,6 +101,7 @@ from app.jurisdictions.ca.catalog import (
     RESIDENCY_AMOUNT,
     RESIDENCY_DEDUCTION,
     RESIDENCY_NET_INCOME_LIMIT,
+    SCHEDULE_8_INSTANCES,
     SECURITY_OPTIONS_DEDUCTIONS,
     SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_BASE_CREDIT,
@@ -772,6 +773,17 @@ def test_the_cpp_t4_box_totals_are_non_negative_money_the_filer_enters(
         registry.kind("ca/cpp_t4_second_additional_contributions")
         is CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS
     )
+
+
+def test_the_schedule_8_instances_are_a_record_list_with_no_fields(
+    registry: ArtifactRegistry,
+) -> None:
+    assert isinstance(SCHEDULE_8_INSTANCES, RecordListKind)
+    assert SCHEDULE_8_INSTANCES.identifier == "ca/schedule_8_instances"
+    assert SCHEDULE_8_INSTANCES.fields == ()
+    assert registry.kind("ca/schedule_8_instances") is SCHEDULE_8_INSTANCES
+    assert "ca/schedule_8_instances" in RECORD_LISTS
+    assert "ca/schedule_8_instances" in REGISTERED
 
 
 def test_the_cpp_part_3_lines_that_print_no_brackets_are_non_negative(

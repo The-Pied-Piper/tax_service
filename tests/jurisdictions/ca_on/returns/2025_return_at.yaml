@@ -172,13 +172,11 @@ inputs:
   ca-on/spouse_return_ontario_basic_personal_amount: "12747"
   ca-on/spouse_return_ontario_line_24: "1500"
   ca/unapplied_net_capital_losses_2000: "0"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca-on/return:
     - ca/total_income: "40000"
-      ca/cpp_base_contributions: "1806.75"
-      ca/cpp_first_additional_contributions: "365.00"
-      ca/cpp_required_base_and_first_additional_contributions: "2171.75"
-      ca/cpp_enhanced_contributions: "365.00"
       ca/ei_premiums: "656.00"
       ca/deductions_from_total_income: "365.00"
       ca/net_income: "39635.00"
@@ -250,9 +248,6 @@ expected:
       ca/rc381_part_3_line_21: "365.00"
       ca/rc381_part_3_line_69: "2171.75"
       ca/rc381_cpp_overpayment: "2171.75"
-      ca/cpp_contributions_difference: "0.00"
-      ca/cpp_part_5_line_57: "1806.75"
-      ca/cpp_part_5_line_69: "365.00"
       ca/amt_adjusted_income_with_gains: "39635.00"
       ca/amt_minimum_amount: "0"
       ca/amt_basic_federal_tax: "205.22"
@@ -263,3 +258,11 @@ expected:
       ca/amt_carryover_available_for_2026: "0"
       ca/rc381_part_4_line_91: "2171.75"
       ca/rc381_cpp_overpayment_on_return: "2171.75"
+  ca/schedule_8:
+    - ca/cpp_base_contributions: "1806.75"
+      ca/cpp_first_additional_contributions: "365.00"
+      ca/cpp_required_base_and_first_additional_contributions: "2171.75"
+      ca/cpp_enhanced_contributions: "365.00"
+      ca/cpp_contributions_difference: "0.00"
+      ca/cpp_part_5_line_57: "1806.75"
+      ca/cpp_part_5_line_69: "365.00"

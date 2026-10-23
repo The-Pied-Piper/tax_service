@@ -404,6 +404,13 @@ actual second additional contributions on CPP pensionable earnings from box 16A 
 slips": the amount the filer enters from the T4 slips, a starting amount.
 """
 
+SCHEDULE_8_INSTANCES = RecordListKind.declare(CATALOG, "schedule_8_instances", fields=())
+"""Copies of Schedule 8, Canada Pension Plan contributions and overpayment, one record for each
+copy of the form the return carries (none or one): a record has no fields, because every figure the
+form reads is a starting amount of the return. The form `ca/schedule_8` runs once for each record;
+the return reads its lines through totals, which are 0 with no record. A field is not an artifact
+of the return."""
+
 CPP_ACTUAL_BASE_CONTRIBUTIONS = CATALOG.declare(
     "cpp_actual_base_contributions", Decimal, non_negative=True
 )

@@ -44,7 +44,7 @@ INPUTS = frozenset[str]()
 # lines 49, 50, 57 and 69 of the earlier Part 5 steps are read by the routing steps too.
 OUTPUTS = frozenset[str]()
 
-STEPS = {
+FORM_STEPS = {
     # Schedule 8 Part 5 line 70 "Base CPP contributions through self-employment income and other
     # earnings: Line 70: Enter the result of the following calculation (in dollars and cents) on
     # line 31000 of your return. amount from line 43 multiplied by 50% =".
@@ -169,7 +169,7 @@ STEPS = {
     ),
 }
 
-WIRING = {
+FORM_WIRING = {
     (
         ApplyRate,
         frozenset({CPP_PART_5_LINE_43}),

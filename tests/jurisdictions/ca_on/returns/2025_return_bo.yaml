@@ -397,6 +397,8 @@ inputs:
   ca/resident_in_canada_throughout_2025: "1"
   ca/aged_18_or_older_at_end_of_2025: "1"
   ca/unapplied_net_capital_losses_2000: "0"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca-on/return:
     - ca/total_income: "70000.00"
@@ -404,9 +406,6 @@ expected:
       ca/cpp_second_additional_earnings_maximum: "9900.00"
       ca/cpp_additional_maximum_pensionable_earnings: "81200.00"
       ca/cpp_basic_exemption: "3500.00"
-      ca/cpp_base_contributions: "3291.75"
-      ca/cpp_first_additional_contributions: "665.00"
-      ca/cpp_enhanced_contributions: "665.00"
       ca/ei_premiums: "1077.48"
       ca/net_income_before_adjustments: "69697.48"
       ca/other_payments_limit_income: "69697.48"
@@ -445,7 +444,6 @@ expected:
       ca/rc381_part_3_line_24: "1695.75"
       ca/rc381_part_3_line_26: "0.00"
       ca/amt_regular_net_federal_tax_payable: "7920.12"
-      ca/cpp_required_base_and_first_additional_contributions: "3956.75"
       ca/rc381_part_3_line_27: "46400.12"
       ca/rc381_part_3_line_28: "40742.96"
       ca/rc381_part_3_line_29: "2000.00"
@@ -615,3 +613,8 @@ expected:
       ca/rc381_cpp_payable_on_self_employment: "602.20"
       ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings: "64.35"
       ca/rc381_cpp_deduction_on_self_employment_and_other_earnings: "710.10"
+  ca/schedule_8:
+    - ca/cpp_base_contributions: "3291.75"
+      ca/cpp_first_additional_contributions: "665.00"
+      ca/cpp_enhanced_contributions: "665.00"
+      ca/cpp_required_base_and_first_additional_contributions: "3956.75"
