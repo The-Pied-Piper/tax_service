@@ -6,7 +6,7 @@ statements as the record list `ca/t2125_statements`, whose fields are the T2125 
 exports its line 9946, "Your net income (loss)", which T1 line 13500 "Net" totals over the
 statements. The entries of the form are listed in `manifest_families/t2125.py`. The five printed
 constants of Charts B and C stay selections of the return too (the part
-`03f_t2125_vehicle_limits.yaml`), as Forms T2042 and T2121 still read them there.
+`03f_t2125_vehicle_limits.yaml`), as Form T2121 still reads them there.
 """
 
 from __future__ import annotations
@@ -94,7 +94,7 @@ def test_the_return_selects_only_the_total_of_line_9946_and_the_five_printed_con
     selected = set(default.capabilities)
 
     assert t2125.STEPS <= selected
-    # What the form holds, the return holds only for the five constants Forms T2042 and T2121 read.
+    # What the form holds, the return holds only for the five constants Form T2121 reads.
     assert selected & t2125.FORM_STEPS == t2125.STEPS & t2125.FORM_STEPS
     assert {step.produces["output"] for step in selected & t2125.FORM_STEPS} == VEHICLE_CONSTANTS
 

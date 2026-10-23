@@ -2519,8 +2519,8 @@ def test_each_t2125_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(BUSINESS_SHARE_OF_NET_INCOME), ChooseByCount)
     assert isinstance(worksheet.producer_of(BUSINESS_HOME_INCOME_LIMIT), SumNotBelowZero)
     assert isinstance(worksheet.producer_of(BUSINESS_INCOME), Subtract)
-    # The form holds its own copy of the printed constants; the return form's is the one Forms
-    # T2042 and T2121 read.
+    # The form holds its own copy of the printed constants; the return form's is the one Form
+    # T2121 reads.
     assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
     assert isinstance(return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
 
