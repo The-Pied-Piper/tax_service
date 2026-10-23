@@ -28,6 +28,7 @@ D = Decimal
 A = ArtifactKind("ex/a", Decimal)
 B = ArtifactKind("ex/b", Decimal)
 C = ArtifactKind("ex/c", Decimal)
+SUM = ArtifactKind("ex/sum", Decimal)
 
 
 @dataclass(frozen=True)
@@ -165,6 +166,40 @@ def test_producer_of_rejects_a_kind_it_holds_no_artifact_of() -> None:
 def test_apply_rejects_missing_input() -> None:
     with pytest.raises(MissingArtifactError, match="Double needs 'a'"):
         Worksheet(Artifact(C, D(1))).apply(Double(A, B))
+
+
+class Add(Capability):
+    """Produces `out` = `left` + `right`: a capability that consumes two kinds."""
+
+    CONSUMES = {"left": Decimal, "right": Decimal}
+    PRODUCES = {"out": Decimal}
+
+    def __init__(self, left: Money, right: Money, out: Money) -> None:
+        super().__init__(left=left, right=right, out=out)
+        self._left, self._right, self._out = left, right, out
+
+    def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+        value = self._input(inputs, self._left).value + self._input(inputs, self._right).value
+        return CapabilityResult(outputs=(Artifact(self._out, value),), trace=(DoubledLine(value),))
+
+
+def test_apply_names_every_missing_input_in_label_order() -> None:
+    with pytest.raises(MissingArtifactError, match="Add needs 'a', 'b'"):
+        Worksheet(Artifact(C, D(1))).apply(Add(B, A, SUM))
+
+
+def test_apply_names_only_the_missing_inputs_among_present_ones() -> None:
+    with pytest.raises(MissingArtifactError, match="Add needs 'b'$"):
+        Worksheet(Artifact(A, D(1)), Artifact(C, D(1))).apply(Add(A, B, SUM))
+
+
+def test_apply_with_every_input_present_records_the_output_and_trace() -> None:
+    worksheet = Worksheet(Artifact(A, D(1)), Artifact(B, D(2)), Artifact(C, D(9)))
+
+    worksheet.apply(Add(A, B, SUM))
+
+    assert worksheet.get(SUM) == Artifact(SUM, D(3))
+    assert worksheet.trace == (DoubledLine(D(3)),)
 
 
 def test_apply_rejects_outputs_beyond_the_contract() -> None:
