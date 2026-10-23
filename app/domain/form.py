@@ -90,7 +90,7 @@ class FormComposition:
                 raise InvalidCompositionError(
                     f"form {name!r}: export {export.identifier!r} is another form's export"
                 )
-        if max_instances is not None and max_instances < 1:
+        if max_instances is not None and (isinstance(max_instances, bool) or max_instances < 1):
             raise InvalidCompositionError(
                 f"form {name!r}: max_instances must be at least 1, got {max_instances}"
             )

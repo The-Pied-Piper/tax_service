@@ -85,7 +85,9 @@ class Form:
         if self.instances is None and (
             self.max_instances is not None or self.exclusive_group is not None
         ):
-            raise InvalidManifestError("max_instances and exclusive_group need instances")
+            raise InvalidManifestError(
+                f"form {self.name!r}: max_instances and exclusive_group need instances"
+            )
         if self.max_instances is not None:
             if not isinstance(self.max_instances, int) or isinstance(self.max_instances, bool):
                 raise InvalidManifestError(
