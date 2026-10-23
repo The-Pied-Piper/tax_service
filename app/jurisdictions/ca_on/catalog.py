@@ -1,4 +1,4 @@
-"""The Ontario artifact catalog: Ontario's own kinds, named from Forms ON428 (§2, §7), ON479,
+"""The Ontario artifact catalog: Ontario's own kinds, named from Forms ON428 (§2, §8), ON479,
 Schedule ON479-A, T1221, ON-BEN and T1206 Part 3.
 
 Only the kinds in use are declared. Amounts are Decimal, non-negative except the Form T1206 Part 3

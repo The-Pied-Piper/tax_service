@@ -1,6 +1,6 @@
 # Tax Engine — Capability Composition Design
 
-Status: DRAFT — architecture settled; tax-law claims in §2/§7 are UNVERIFIED
+Status: DRAFT — architecture settled; tax-law claims in §2 are UNVERIFIED
 assertions and must be validated against the jurisdiction's official sources
 before implementation hardens around them.
 
@@ -29,7 +29,7 @@ open-ended. Consequences:
 
 Ordering is expressed through **artifacts**, not capability-to-capability
 dependencies. An artifact is a named intermediate with an external referent,
-produced by exactly one capability and consumed by any number. Every artifact
+produced by exactly one capability within a worksheet and consumed by any number. Every artifact
 needs an external justification — a line in the law/worksheet it mirrors, or a
 specific consumer contract it satisfies — and "it made the design cleaner"
 is neither. A kind may also declare a constraint its line carries: a money
@@ -192,7 +192,8 @@ A manifest is `(jurisdiction, version, valid_from_tax_year, inputs, forms)`:
 `inputs` are the artifacts a computation starts from, and `forms` are the
 groups of selections that run (§6). The `capabilities` list above is the
 selections of the default form; a part may instead give its selections to a
-named form with a `form:` key.
+named form with a `form:` key. In YAML the default form is written as
+top-level `capabilities` and `outputs` (its exports); `inputs` is required.
 
 Rules:
 - No edges, no ordering, no conditionals, no expressions in YAML — the moment an `if`
@@ -281,48 +282,57 @@ A **form** is a named group of capabilities with the artifacts it exports. A
 **Worksheet** is one filled-in copy of a form: the figures one run of it
 produced. The return is not a form with others beneath it: forms are **peers**,
 flat, and none is special. Some jurisdictions' returns are one form, others
-a set of forms that together are the return (Canada is close to the second).
+are a set of forms that together are the return (Canada is close to the second).
 A form is never a capability, and forms do not nest.
 
 - `Form` is frozen manifest data: `name`, `instances`, `exports` and
-  `capabilities` (its selections). A form's inputs are not declared; they are
-  derived from what its selections consume and nothing in the form produces.
+  `capabilities` (its selections). A form's inputs are not declared: with instances they are the fields of the
+  record; without, the starting artifacts its selections read or export; plus
+  its imports.
 - `FormComposition` is the form wired: its inner `Composition`, whose outputs
   are the form's exports.
 - `FormSet` holds a computation's forms. It orders them by what they import,
-  runs each form once per instance on its own `Worksheet`, and keeps every
-  form's exports in one store.
+  runs each form once per instance on its own `Worksheet`, keeps the derived
+  `<form>.<export>` kinds in one store, and hands each run its imports as
+  starting artifacts.
 
 **Instances.** A form's `instances` kind is a record list the caller supplies,
 one record per instance (a second T2125 is a second record); the record's
-fields are the form's inputs. A form with no instances list has exactly one
+fields are the form's inputs. The instances kind is itself one of the
+manifest's `inputs`, supplied with the other starting artifacts. A form with no instances list has exactly one
 implicit instance, and takes its inputs from the computation's starting
 artifacts.
 
 **Exports.** For each export `X` of form `B`, the engine derives the kind
 `B.X`: a record list of one field, `X`, with one record per instance, in
-instance order. A list-valued export is a list of lists. A kind a record cannot
+instance order. A kind identifier has at most one dot; a form cannot export a dotted kind. A list-valued export is a list of lists. A kind a record cannot
 hold (a rate, say, or digits) gets none and stays on the form's own worksheets.
-The dot is the delimiter (the slash stays the namespace): `ca/t2125.business_income`.
+The dot is the delimiter (the slash stays the namespace), as in `ca/t2125.business_income`, were T2125 its own form.
 The dotted identifier is built by the engine, never written in a manifest.
 
 **Imports.** Any form may read another's exports, by the derived kind, and
 none needs declaring. Forms are run in the order the imports give. A cycle of
-imports, an import no form exports, and a derived kind given as an input are
-refused when the `FormSet` is built.
+imports (a form reading its own `B.X` is one), an import no form exports, and a
+derived kind given as an input are among those refused when the `FormSet` is
+built (a derived kind given at `compute` is refused too).
 
 **Result.** A computation returns a plain mapping: form name to one
-`Worksheet` per instance, in instance order, none for a form whose instances
-list is empty. Errors and the trace name the form and the instance:
+`Worksheet` per instance, in instance order, an empty tuple for a form whose
+instances list is empty. Errors and the trace name the form and the instance:
 `<form>, instance N` (1 for a form without an instances list).
 
 **Loader.** A part with a `form:` key (`name`, and `exports` with an optional
 `instances`) gives its `capabilities` to that form. A form may span several
 parts, but exactly one declares its exports; a part with a `form:` key takes no
 `inputs` or `outputs`. A part with no `form:` key joins the default form,
-`<jurisdiction>/return` (for Ontario `ca-on/return`), whose exports are the
-manifest's `outputs`. The name is reserved for those parts, and is otherwise an
-ordinary form's.
+`<namespace>/return` (the lower-cased jurisdiction code; for Ontario `ca-on/return`), whose exports are the
+manifest's `outputs`. The default form's name is reserved for those parts: a part with a `form:`
+key that names it is rejected. A single manifest file is not a part and takes no
+`form:` key (all of it is the default form). Only `name` is required in a
+`form:` block; `exports` and `instances` are optional per part, but `instances`
+without `exports` is an error, and every form needs a part that declares its
+exports. Default-form `outputs` sharing a local id (`ex/x` and `ca/x`) are
+rejected.
 
 ## 7. Provenance
 
@@ -343,8 +353,9 @@ ordinary form's.
   return computed on the bad revision" is a fingerprint lookup, not an
   investigation. (Retroactivity requirement — accounting-firm audit
   question.)
-- Trace: each capability emits a labeled breakdown; orchestrator
-  concatenates in execution order. Target readability: the tax
+- Trace: each capability emits a labeled breakdown; the `FormSet` emits one
+  trace per form instance (form name and instance number), forms in run order,
+  capabilities in execution order within each. Target readability: the tax
   authority's own worksheet (e.g. CRA's), line-by-line, each line
   attributable to one capability + parameter set.
   **This trace is the AI-interface safety property: engine computes and

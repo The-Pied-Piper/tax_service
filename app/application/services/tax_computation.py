@@ -1,4 +1,4 @@
-"""Tax computation: a jurisdiction's manifest for a tax year built into a composition, and run.
+"""Tax computation: a jurisdiction's manifest for a tax year built into a set of forms, run.
 
 The service does the I/O only: it reads the jurisdiction through its port, asks it for the
 manifest of the tax year, resolves each selection's capability class and datasets and the
@@ -37,7 +37,7 @@ from app.domain.worksheet import Worksheet
 
 
 class TaxComputationService:
-    """Builds and runs the composition a jurisdiction's manifest describes for a tax year."""
+    """Builds and runs the set of forms (a `FormSet`) a manifest describes for a tax year."""
 
     def __init__(
         self,
