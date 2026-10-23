@@ -259,19 +259,17 @@ def return_bo(
     cpt20_t4_earnings: str = "2500",
     net_partnership_income: str = "0",
     form: str = "ca/rc381",
-    carrying: str = "ca/rc381",
 ) -> Worksheet:
     """Return BO's inputs (`returns/2025_return_bo.yaml`): employment income of 70000 on a T4 for
     Ontario employment (box 26 `line_1`, box 16 `line_19`, box 16A `line_25`) and a T4 for Quebec
     employment (box 26 `line_2`, box 17 `line_39`, box 17A `line_45`), and the CPT20 election
     earnings of Part 4 lines 2 and 3 (50373 and 50399).
 
-    The return carries Form RC381 instead of Schedule 8 (the exclusive group `ca/cpp_calculation`)
-    unless `carrying` says otherwise, and the worksheet is that of the one Form RC381 unless `form`
-    names another form of the return (`ca-on/return` or `ca/schedule_8`)."""
+    The return carries Form RC381 instead of Schedule 8 (the exclusive group `ca/cpp_calculation`),
+    and the worksheet is that of the one Form RC381 unless `form` is the return's own form
+    `ca-on/return`."""
     return compute_form(
         form,
-        carrying,
         "70000",
         (),
         "0",
@@ -6468,7 +6466,7 @@ def test_return_bo_part_4_with_no_t4_slips_gives_schedule_8_part_4s_amounts() ->
         net_partnership_income="80000",
     )
     worksheet = return_bo(**no_t4_slips)
-    schedule_8 = return_bo(form="ca-on/return", **no_t4_slips)
+    on_return = return_bo(form="ca-on/return", **no_t4_slips)
 
     assert worksheet.get(RC381_PART_4_LINE_114).value == D("0")
     assert worksheet.get(RC381_PART_4_LINE_116_LESSER).value == D("0")
@@ -6476,15 +6474,15 @@ def test_return_bo_part_4_with_no_t4_slips_gives_schedule_8_part_4s_amounts() ->
     assert worksheet.get(RC381_PART_4_LINE_129).value == D("5408.10")
     assert (
         worksheet.get(RC381_PART_4_LINE_111).value
-        == schedule_8.get(SELF_EMPLOYED_CPP_BASE_CREDIT).value
+        == on_return.get(SELF_EMPLOYED_CPP_BASE_CREDIT).value
     )
     assert (
         worksheet.get(RC381_PART_4_LINE_129).value
-        == schedule_8.get(SELF_EMPLOYED_CPP_DEDUCTION).value
+        == on_return.get(SELF_EMPLOYED_CPP_DEDUCTION).value
     )
     assert (
         worksheet.get(RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS).value
-        == schedule_8.get(SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE).value
+        == on_return.get(SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE).value
     )
 
 
@@ -7602,7 +7600,7 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
     # (The return carries Schedule 8 or Form RC381, so the T1 lines are read from the return with
     # Schedule 8 and the Form RC381 lines from the same return carrying Form RC381.)
     with_schedule_8 = compute_with_schedule_8("60000", (), "0", "0", "0", "0", "0")
-    worksheet = compute_form("ca/rc381", "ca/rc381", "60000", (), "0", "0", "0", "0", "0")
+    worksheet = compute_form("ca/rc381", "60000", (), "0", "0", "0", "0", "0")
 
     assert with_schedule_8.get(CPP_BASE_CONTRIBUTIONS).value == D("2796.75")
     assert with_schedule_8.get(CPP_ENHANCED_CONTRIBUTIONS).value == D("565.00")

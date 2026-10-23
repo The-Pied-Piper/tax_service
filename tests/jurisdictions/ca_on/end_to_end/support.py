@@ -2908,7 +2908,8 @@ def rc381_own_trace(worksheet: Worksheet) -> tuple[TraceLine, ...]:
     """The trace lines of Form RC381's own steps (the kinds `ca/rc381_...`) in `worksheet`.
 
     Not the form's copies of the return's steps (the Part 2 table, Part 4 line 1 and the net
-    self-employment income it adds), which are checked with the return.
+    self-employment income it adds), which are checked with the return. The trace lines have no
+    common base that carries an output, so it is read by name.
     """
     return tuple(
         line
@@ -2917,20 +2918,14 @@ def rc381_own_trace(worksheet: Worksheet) -> tuple[TraceLine, ...]:
     )
 
 
-def compute_form(form: str, carrying: str, *args: Any, **kwargs: Any) -> Worksheet:
+def compute_form(form: str, *args: Any, **kwargs: Any) -> Worksheet:
     """The worksheet of the one copy of `form` that `starting(...)` gives, the return carrying one
-    copy of `carrying` and none of the other.
+    copy of Form RC381 and no Schedule 8.
 
-    The return carries Schedule 8 (`ca/schedule_8`) or Form RC381 (`ca/rc381`), not both (the
-    exclusive group `ca/cpp_calculation`). `form` is `carrying` or the return's own form
-    `ca-on/return`.
+    The return carries Schedule 8 or Form RC381, not both (the exclusive group
+    `ca/cpp_calculation`). `form` is `ca/rc381` or the return's own form `ca-on/return`.
     """
-    (worksheet,) = run(
-        *args,
-        schedule_8_copies=int(carrying == "ca/schedule_8"),
-        rc381_copies=int(carrying == "ca/rc381"),
-        **kwargs,
-    )[form]
+    (worksheet,) = run(*args, schedule_8_copies=0, rc381_copies=1, **kwargs)[form]
     return worksheet
 
 
