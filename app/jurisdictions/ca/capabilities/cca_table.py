@@ -56,6 +56,17 @@ subclass that consumes a `non_compliant` record list besides the `classes` (colu
 "Non-compliant amount of CCA (see Chart B below)", summed per class, 0 for a class it does not
 list) limits it to column 23, "CCA claim for the year (column 21 minus column 22)": 0 if column 22
 is above column 21. The least a claim may be is column 9 less column 22, never below 0.
+
+Guide T4002 2025, "You were asking?": "Since your fiscal period is less than 365 days, you have to
+prorate your CCA claim. Calculate your CCA using the rules discussed in this chapter. However, base
+your CCA claim on the number of days in your fiscal period compared to 365 days. In this case, your
+fiscal period is 214 days. Suppose you calculate your CCA to be $3,500. The amount of CCA you can
+claim is $2,052 ($3,500 × 214 ÷ 365)." A subclass that consumes an int `fiscal_period_days`
+(the days of the fiscal period, from 1 up to the dataset's `full_year_days`, 365 in 2025; outside
+them is an `InputBelowBoundError` or `InputAboveBoundError`) prorates the maximum: column 19 times
+the rate times the days over `full_year_days`, as one exact fraction rounded once with the
+dataset's rule (not the rounded maximum prorated). The sale's cap at column 7 still applies to it;
+column 9 is not prorated. A table without the slot is not prorated.
 """
 
 from __future__ import annotations
@@ -106,7 +117,9 @@ class CcaRow:
     `class_number` (column 1), its `class_rate` from the dataset, columns 2, 3, 5, 11 and 12, the
     `claimed` CCA and `no_property_left` (1 if none, else 0); `diep_additions` (column 4),
     `diep_proceeds` (column 6) and `immediate_expensing` (column 9), each 0 unless the list lists
-    it; `column_22` (0 unless the table consumes it); and `column_7`, `column_8`, `column_10` and
+    it; `column_22` (0 unless the table consumes it); `fiscal_period_days` (the days of the fiscal
+    period, the dataset's full year unless the table consumes it) and whether the row is
+    `prorated` (the table consumes it); and `column_7`, `column_8`, `column_10` and
     `column_13`."""
 
     position: int
@@ -123,6 +136,8 @@ class CcaRow:
     diep_additions: Decimal = _ZERO
     diep_proceeds: Decimal = _ZERO
     immediate_expensing: Decimal = _ZERO
+    fiscal_period_days: int = 365
+    prorated: bool = False
 
     @property
     def column_7(self) -> Decimal:
@@ -207,19 +222,38 @@ class CcaTable(Capability):
     ) -> None:
         """Wire the class-rate dataset and the record list read; the subclass keeps `output`. A
         subclass that consumes more kinds (`non_compliant`, the record list of column 22 amounts;
-        money kinds) passes them by slot name."""
+        `fiscal_period_days`, the int kind of the days of the fiscal period; money kinds) passes
+        them by slot name."""
         super().__init__(classes=classes, output=output, **consumed)
         self._class_rates = class_rates
         self._classes = classes
         self._non_compliant = consumed.get("non_compliant")
+        self._fiscal_period_days = consumed.get("fiscal_period_days")
 
     def _rows(self, inputs: tuple[Artifact[Any], ...]) -> tuple[CcaRow, ...]:
         """Each consumed record, in order, as a row with its class found in the dataset."""
         records = self._input(inputs, self._classes).value.records
         column_22 = self._column_22(inputs)
+        days = self._days(inputs)
         return tuple(
-            self._row(position, record, column_22) for position, record in enumerate(records, 1)
+            self._row(position, record, column_22, days)
+            for position, record in enumerate(records, 1)
         )
+
+    def _days(self, inputs: tuple[Artifact[Any], ...]) -> int | None:
+        """The days of the fiscal period in the consumed `fiscal_period_days`, or `None` when the
+        table does not consume it; below 1 is an InputBelowBoundError and above the dataset's days
+        in a full year an InputAboveBoundError."""
+        if self._fiscal_period_days is None:
+            return None
+        days: int = self._input(inputs, self._fiscal_period_days).value
+        identifier = self._fiscal_period_days.identifier
+        full_year = self._class_rates.values.full_year_days
+        if days < 1:
+            raise InputBelowBoundError(f"{identifier} {days} is below the minimum 1")
+        if days > full_year:
+            raise InputAboveBoundError(f"{identifier} {days} is above the maximum {full_year}")
+        return days
 
     def _column_22(self, inputs: tuple[Artifact[Any], ...]) -> dict[Decimal, Decimal]:
         """The column 22 amount of each class in the consumed `non_compliant` record list, summed
@@ -231,7 +265,13 @@ class CcaTable(Capability):
                 amounts[number] = amounts.get(number, _ZERO) + Decimal(record[NON_COMPLIANT_CCA])
         return amounts
 
-    def _row(self, position: int, record: Record, column_22: Mapping[Decimal, Decimal]) -> CcaRow:
+    def _row(
+        self,
+        position: int,
+        record: Record,
+        column_22: Mapping[Decimal, Decimal],
+        days: int | None,
+    ) -> CcaRow:
         item = f"item {position}"
         class_number = Decimal(record[CCA_CLASS_NUMBER])
         class_rate = self._class_rates.values.for_class(class_number)
@@ -282,6 +322,8 @@ class CcaTable(Capability):
             diep_additions=diep_additions,
             diep_proceeds=diep_proceeds,
             immediate_expensing=immediate_expensing,
+            fiscal_period_days=self._class_rates.values.full_year_days if days is None else days,
+            prorated=days is not None,
         )
 
     @staticmethod
@@ -320,11 +362,18 @@ class CcaTable(Capability):
             if row.half_year_rule_on_sale
             else row.column_13 + column_15 + column_17 - column_18
         )
-        maximum = (
-            _ZERO
-            if row.zero_reason is not CcaZeroReason.NONE
-            else rounding.apply(column_19 * rate.rate.value)
-        )
+        if row.zero_reason is not CcaZeroReason.NONE:
+            maximum = _ZERO
+        elif row.prorated:
+            # Guide T4002: base the claim "on the number of days in your fiscal period compared to
+            # 365 days"; one exact fraction, rounded once.
+            maximum = rounding.apply(
+                ExactFraction(column_19 * rate.rate.value)
+                * row.fiscal_period_days
+                / self._class_rates.values.full_year_days
+            )
+        else:
+            maximum = rounding.apply(column_19 * rate.rate.value)
         if row.half_year_rule_on_sale:
             # The sale's base amount can exceed what is left of the class (column 7), and the UCC
             # cannot go below 0.

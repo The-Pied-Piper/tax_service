@@ -109,14 +109,16 @@ ALL_CLASSES = (
 
 
 def class_rates(
-    rounding: RoundingRule = CENT, classes: tuple[ClassRate, ...] = ALL_CLASSES
+    rounding: RoundingRule = CENT,
+    classes: tuple[ClassRate, ...] = ALL_CLASSES,
+    full_year_days: int = 365,
 ) -> ParameterDataset[ClassRates]:
-    """By default the classes above, to the cent."""
+    """By default the classes above, to the cent, with 365 days in a full year."""
     return ParameterDataset(
         "ca/cca_class_rates",
         2025,
         CLASS_RATES,
-        ClassRates(classes),
+        ClassRates(classes, full_year_days),
         rounding,
         ("https://example.org/t4036",),
     )

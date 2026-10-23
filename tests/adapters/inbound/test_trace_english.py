@@ -4487,8 +4487,8 @@ def test_the_closing_line_is_unchanged_when_column_9_is_0() -> None:
 
 
 def test_column_9_is_the_last_field_of_the_claim_and_closing_lines() -> None:
-    assert [f.name for f in fields(CcaClaimLine)][-2:] == ["column_9", "half_year_rule_on_sale"]
-    assert [f.name for f in fields(ClosingUccLine)][-2:] == ["column_9", "half_year_rule_on_sale"]
+    assert [f.name for f in fields(CcaClaimLine)][-3:-1] == ["column_9", "half_year_rule_on_sale"]
+    assert [f.name for f in fields(ClosingUccLine)][-3:-1] == ["column_9", "half_year_rule_on_sale"]
 
 
 def expensed_loss_line(column_7: str, column_9: str, result: str) -> TerminalLossLine:
@@ -5217,3 +5217,99 @@ def test_renders_the_part_2_total_of_the_properties_by_position() -> None:
     line = ItemsTotalLine(RESIDENCE_GAIN, ((1, D("25000.00")), (2, D("0"))), D("25000.00"))
 
     assert render(line) == "residence_gain: item 1 25000 + item 2 0 = 25000"
+
+
+# Guide T4002 "You were asking?": "Since your fiscal period is less than 365 days, you have to
+# prorate your CCA claim. ... base your CCA claim on the number of days in your fiscal period
+# compared to 365 days. In this case, your fiscal period is 214 days. Suppose you calculate your
+# CCA to be $3,500. The amount of CCA you can claim is $2,052 ($3,500 × 214 ÷ 365)." A claim line
+# and a closing UCC line of a prorated row say so; the claim line's maximum is the prorated one, and
+# the unprorated 20% of column 19 (3,500.00) is worked again from column 19 as the capped one is.
+
+
+def prorated_claim_line(fiscal_period_days: int = 214) -> CcaClaimLine:
+    return CcaClaimLine(
+        output=CCA_CLAIM,
+        position=1,
+        class_rate=class_rate("8", "0.20"),
+        no_property_left=0,
+        column_7=D("17500.00"),
+        column_14=D("0"),
+        column_15=D("0"),
+        column_16=D("0"),
+        column_17=D("0"),
+        column_18=D("0"),
+        column_19=D("17500.00"),
+        zero_reason=CcaZeroReason.NONE,
+        maximum=D("2052.05"),
+        rounding=CENT,
+        claim=D("2052.05"),
+        fiscal_period_days=fiscal_period_days,
+    )
+
+
+def test_the_claim_line_shows_the_proration_of_a_short_fiscal_period() -> None:
+    assert render(prorated_claim_line()) == (
+        "cca_claim: item 1 class 8: column 7 17500, column 14 0, column 15 0, column 16 0, "
+        "column 17 0, column 18 0, column 19 17500, "
+        "maximum 20% of column 19 = 3500 (half-up to 0.01), prorated 214/365 = 2052.05, "
+        "claim 2052.05"
+    )
+
+
+def test_the_claim_line_shows_no_proration_for_a_full_year() -> None:
+    line = replace(
+        prorated_claim_line(365), maximum=D("3500.00"), claim=D("3500.00"), fiscal_period_days=365
+    )
+
+    assert render(line) == (
+        "cca_claim: item 1 class 8: column 7 17500, column 14 0, column 15 0, column 16 0, "
+        "column 17 0, column 18 0, column 19 17500, "
+        "maximum 20% of column 19 = 3500 (half-up to 0.01), claim 3500"
+    )
+
+
+def test_the_claim_line_shows_the_proration_of_one_day() -> None:
+    line = replace(prorated_claim_line(1), maximum=D("9.59"), claim=D("9.59"))
+
+    assert render(line).endswith(
+        "maximum 20% of column 19 = 3500 (half-up to 0.01), prorated 1/365 = 9.59, claim 9.59"
+    )
+
+
+def test_the_claim_line_shows_column_9_and_the_proration() -> None:
+    line = replace(prorated_claim_line(), column_9=D("1000"), claim=D("3052.05"))
+
+    assert render(line) == (
+        "cca_claim: item 1 class 8: column 7 17500, column 9 1000, column 14 0, column 15 0, "
+        "column 16 0, column 17 0, column 18 0, column 19 17500, "
+        "maximum 20% of column 19 = 3500 (half-up to 0.01), prorated 214/365 = 2052.05, "
+        "claim 3052.05"
+    )
+
+
+def prorated_closing_line(fiscal_period_days: int = 214) -> ClosingUccLine:
+    return ClosingUccLine(
+        CLOSING_UCC,
+        1,
+        class_rate("8", "0.20"),
+        0,
+        D("17500.00"),
+        CcaZeroReason.NONE,
+        D("2052.05"),
+        D("15447.95"),
+        fiscal_period_days=fiscal_period_days,
+    )
+
+
+def test_the_closing_line_names_the_proration_in_the_claim() -> None:
+    assert render(prorated_closing_line()) == (
+        "closing_ucc: item 1 class 8: column 7 17500 less claim 2052.05 (prorated 214/365) = "
+        "15447.95"
+    )
+
+
+def test_the_closing_line_is_unchanged_for_a_full_year() -> None:
+    assert render(prorated_closing_line(365)) == (
+        "closing_ucc: item 1 class 8: column 7 17500 less claim 2052.05 = 15447.95"
+    )

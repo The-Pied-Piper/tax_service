@@ -49,7 +49,9 @@ class CcaClaimLine(TraceLine):
     expensing amount, 0 unless the class has a DIEP) and at least `column_9`. Under the
     `half_year_rule_on_sale` (Class 10.1, column 2 and column 7 above 0, no property left) column 19
     is one half of column 2, the positive-column-7 zero for no property left does not apply and the
-    maximum is at most column 7.
+    maximum is at most column 7. A fiscal period of `fiscal_period_days` below 365 prorates the
+    maximum (Guide T4002: the CCA "based on the number of days in your fiscal period compared to
+    365 days"); 365, the default, is no proration.
 
     Its own class, not a `CappedAmountLine`: the amount is worked on for one class, named by
     position, in many columns that the English rendering shows one by one.
@@ -72,6 +74,7 @@ class CcaClaimLine(TraceLine):
     claim: Decimal
     column_9: Decimal = Decimal(0)
     half_year_rule_on_sale: bool = False
+    fiscal_period_days: int = 365
 
     @property
     def amount(self) -> Decimal:
@@ -139,7 +142,8 @@ class ClosingUccLine(TraceLine):
     0 for the `zero_reason` it records when column 7 is negative or is positive with
     `no_property_left` (1 if no property is left in the class `class_rate`, else 0). The `claim`
     includes `column_9`, the immediate expensing amount of the class (0 unless it has a DIEP). A
-    row that used the `half_year_rule_on_sale` does not close at 0 for no property left.
+    row that used the `half_year_rule_on_sale` does not close at 0 for no property left. A
+    `fiscal_period_days` below 365 says the claim was prorated; 365, the default, is no proration.
 
     Its own class, not a `RecordTotalLine`: each class gives a record of a list, not a part of a
     total.
@@ -155,6 +159,7 @@ class ClosingUccLine(TraceLine):
     result: Decimal
     column_9: Decimal = Decimal(0)
     half_year_rule_on_sale: bool = False
+    fiscal_period_days: int = 365
 
     @property
     def amount(self) -> Decimal:

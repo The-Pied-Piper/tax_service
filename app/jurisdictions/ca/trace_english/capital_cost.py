@@ -4,6 +4,8 @@ renderer class per line class, each registered with `@english_renderer`.
 
 from __future__ import annotations
 
+from fractions import Fraction as ExactFraction
+
 from app.adapters.inbound.trace_english.figures import EnglishFigures
 from app.adapters.inbound.trace_english.registry import english_renderer
 from app.domain.parameters.class_rates import RecaptureAndTerminalLoss
@@ -15,6 +17,9 @@ from app.jurisdictions.ca.trace.capital_cost import (
     RecapturedCcaLine,
     TerminalLossLine,
 )
+
+# The days of a full fiscal period a short one is compared to (Guide T4002: "compared to 365 days").
+_FULL_YEAR_DAYS = 365
 
 
 @english_renderer
@@ -58,21 +63,26 @@ class CcaClaimRenderer:
             available = "maximum 0 as column 7 is negative"
         elif zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
             available = "maximum 0 as no property is left in the class"
-        elif (
-            line.half_year_rule_on_sale and rule.apply(column_19 * class_rate.rate.value) > maximum
-        ):
-            # The rate of column 19 is more than column 7 and the UCC cannot go below 0.
-            available = (
-                f"maximum {EnglishFigures.percent(class_rate.rate.value)}% of column 19 = "
-                f"{EnglishFigures.money(rule.apply(column_19 * class_rate.rate.value))} "
-                f"({EnglishFigures.rounding(rule)}), limited to column 7 = "
-                f"{EnglishFigures.money(maximum)}"
-            )
         else:
+            percent = EnglishFigures.percent(class_rate.rate.value)
+            rate_of_column_19 = column_19 * class_rate.rate.value
+            days = line.fiscal_period_days
+            reached = maximum
+            if line.half_year_rule_on_sale or days != _FULL_YEAR_DAYS:
+                # The rate of column 19 as worked, before the sale's cap at column 7.
+                reached = rule.apply(rate_of_column_19)
             available = (
-                f"maximum {EnglishFigures.percent(class_rate.rate.value)}% of column 19 = "
-                f"{EnglishFigures.money(maximum)} ({EnglishFigures.rounding(rule)})"
+                f"maximum {percent}% of column 19 = {EnglishFigures.money(reached)} "
+                f"({EnglishFigures.rounding(rule)})"
             )
+            if days != _FULL_YEAR_DAYS:
+                reached = rule.apply(ExactFraction(rate_of_column_19) * days / _FULL_YEAR_DAYS)
+                available += (
+                    f", prorated {days}/{_FULL_YEAR_DAYS} = {EnglishFigures.money(reached)}"
+                )
+            if line.half_year_rule_on_sale and reached > maximum:
+                # That is more than column 7 and the UCC cannot go below 0.
+                available += f", limited to column 7 = {EnglishFigures.money(maximum)}"
         return (
             f"{EnglishFigures.cca_class(output.label, position, class_rate)}: {columns}, "
             f"{available}, claim {EnglishFigures.money(claim)}"
@@ -181,9 +191,14 @@ class ClosingUccRenderer:
             including = (
                 f" (including column 9 {EnglishFigures.money(column_9)})" if column_9 > 0 else ""
             )
+            prorated = (
+                f" (prorated {line.fiscal_period_days}/{_FULL_YEAR_DAYS})"
+                if line.fiscal_period_days != _FULL_YEAR_DAYS
+                else ""
+            )
             found = (
                 f"column 7 {EnglishFigures.money(column_7)} less claim "
-                f"{EnglishFigures.money(claim)}{on_sale}{including} ="
+                f"{EnglishFigures.money(claim)}{on_sale}{prorated}{including} ="
             )
         return (
             f"{EnglishFigures.cca_class(output.label, position, class_rate)}: {found} "

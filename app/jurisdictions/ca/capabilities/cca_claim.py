@@ -39,7 +39,7 @@ class CcaClaim(CcaTable):
         class_rates: ParameterDataset[ClassRates],
         classes: ArtifactKind[RecordList],
         output: Money,
-        **consumed: ArtifactKind[RecordList],
+        **consumed: ArtifactKind[Any],
     ) -> None:
         """Wire the capability: its class-rate dataset, the record list it reads, the kind
         produced. A subclass consuming more record lists passes them by slot name."""
@@ -69,6 +69,7 @@ class CcaClaim(CcaTable):
                     claim=row.claimed,
                     column_9=row.immediate_expensing,
                     half_year_rule_on_sale=row.half_year_rule_on_sale,
+                    fiscal_period_days=row.fiscal_period_days,
                 )
             )
         items = tuple((line.position, line.claim) for line in lines)

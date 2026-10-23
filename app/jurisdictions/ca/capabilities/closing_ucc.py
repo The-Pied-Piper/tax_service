@@ -39,7 +39,7 @@ class ClosingUcc(CcaTable):
         class_rates: ParameterDataset[ClassRates],
         classes: ArtifactKind[RecordList],
         output: ArtifactKind[RecordList],
-        **consumed: ArtifactKind[RecordList],
+        **consumed: ArtifactKind[Any],
     ) -> None:
         """Wire the capability: its class-rate dataset, the record list it reads, the record list
         kind produced, of the class number and the UCC at the end of the year. A subclass
@@ -66,6 +66,7 @@ class ClosingUcc(CcaTable):
                     result,
                     row.immediate_expensing,
                     row.half_year_rule_on_sale,
+                    row.fiscal_period_days,
                 )
             )
             records.append({CCA_CLASS_NUMBER: row.class_number, CCA_UCC_AT_END: result})
