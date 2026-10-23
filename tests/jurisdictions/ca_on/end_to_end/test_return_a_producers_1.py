@@ -87,6 +87,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_BASIC_EXEMPTION,
     AMT_BASIC_FEDERAL_TAX,
     AMT_CAPITAL_GAINS_ADDED,
+    AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
@@ -105,6 +106,16 @@ from app.jurisdictions.ca.catalog import (
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+    AMT_FOREIGN_BUSINESS_INCOME,
+    AMT_FOREIGN_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM,
+    AMT_FOREIGN_INCOME_LIMIT,
+    AMT_FOREIGN_NON_BUSINESS_INCOME,
+    AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+    AMT_FOREIGN_TAX_CREDIT_LESSER,
+    AMT_FOREIGN_TAXES_PAID,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_INVESTMENT_TAX_CREDIT_CLAIM,
@@ -144,6 +155,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
     AMT_T2038_AMOUNT_I,
     AMT_T2203_COLUMN_5_PERCENTAGE,
@@ -151,6 +163,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
     AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
     AMT_TAX_SHELTER_ADJUSTMENTS,
+    AMT_TOTAL_FOREIGN_INCOME,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
     BUSINESS_INCOME,
@@ -2238,3 +2251,27 @@ def test_the_part_2_and_part_8_amounts_are_produced_by_their_capabilities() -> N
     assert worksheet.producer_of(AMT_T2203_COLUMN_5_PERCENTAGE) is None
     assert worksheet.producer_of(AMT_INVESTMENT_TAX_CREDIT_CLAIM) is None
     assert worksheet.producer_of(AMT_T2038_AMOUNT_I) is None
+
+
+def test_the_part_4_amounts_are_produced_by_their_capabilities() -> None:
+    worksheet = return_a()
+
+    # Part 4 line 3 is the claim checked against line 23 of Part 1, an at-most check; line 4 is a
+    # sum floored at zero; line 6 and line 7 are rates; line 9 is a floored sum; line 10 is the
+    # lesser of lines 6 and 9; line 11 is the greater of Part 3 line 7 and line 10.
+    assert isinstance(
+        worksheet.producer_of(AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO), SumNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE), AtMost)
+    assert isinstance(worksheet.producer_of(AMT_TOTAL_FOREIGN_INCOME), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_FOREIGN_INCOME_LIMIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_FOREIGN_TAXES_PAID), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_FOREIGN_TAX_CREDIT_LESSER), LesserOf)
+    assert isinstance(worksheet.producer_of(AMT_SPECIAL_FOREIGN_TAX_CREDIT), GreaterOf)
+    # The caller's figures are inputs: no capability produces them.
+    assert worksheet.producer_of(AMT_FOREIGN_BUSINESS_INCOME) is None
+    assert worksheet.producer_of(AMT_FOREIGN_NON_BUSINESS_INCOME) is None
+    assert worksheet.producer_of(AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM) is None
+    assert worksheet.producer_of(AMT_FOREIGN_NON_BUSINESS_TAX_PAID) is None
+    assert worksheet.producer_of(AMT_FOREIGN_BUSINESS_TAX_PAID) is None

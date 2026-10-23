@@ -443,3 +443,4 @@ expected:
   ca/net_capital_loss_numerator_one_2000: "1.00"
   ca/amt_basic_federal_tax: "3619.94"
   ca/amt_regular_net_federal_tax_payable: "3619.94"
+  ca/amt_special_foreign_tax_credit: "0"

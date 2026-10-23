@@ -3,6 +3,10 @@ T691. Form T691 (2025) Part 1 line 96: "Federal tax rate" "× 20.5%" (line 96), 
 "Gross minimum amount: line 95 multiplied by the percentage on line 96.". The 20.5% is the printed
 percentage of the form, a rate of 0.205, applied to a dollars-and-cents product, so it is rounded
 half-up to the cent, the owner's decision, as the form states no rounding rule.
+
+The same printed 20.5% is Form T691 (2025) Part 4 line 5, "Applicable rate" "× 20.5%", which line 6,
+"Foreign income limit for special foreign tax credit: line 4 multiplied by the percentage on line 5
+(if negative, enter "0")", applies to line 4. One rate dataset serves both lines.
 """
 
 from __future__ import annotations
@@ -57,3 +61,12 @@ def test_applies_to_the_base(base: str, result: str) -> None:
     result_outputs = capability.compute((Artifact(BASE, D(base)),)).outputs
 
     assert result_outputs == (Artifact(AMOUNT, D(result)),)
+
+
+def test_applies_to_part_4_line_4_for_the_foreign_income_limit() -> None:
+    # Part 4 line 6: line 4 of 2300.00 multiplied by the 20.5% of line 5, 471.50 exactly.
+    capability = ApplyRate(SOURCE.get(FAMILY, 2025, RATE), BASE, AMOUNT)
+
+    result_outputs = capability.compute((Artifact(BASE, D("2300.00")),)).outputs
+
+    assert result_outputs == (Artifact(AMOUNT, D("471.50")),)

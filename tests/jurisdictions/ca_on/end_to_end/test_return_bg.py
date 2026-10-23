@@ -33,6 +33,11 @@ from app.jurisdictions.ca.catalog import (
     AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
+    AMT_FOREIGN_INCOME_LIMIT,
+    AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+    AMT_FOREIGN_TAX_CREDIT_LESSER,
+    AMT_FOREIGN_TAXES_PAID,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
@@ -68,13 +73,16 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
     AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
     AMT_TAX_SHELTER_ADJUSTMENTS,
+    AMT_TOTAL_FOREIGN_INCOME,
     CAPITAL_GAIN,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
+    FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
@@ -122,6 +130,12 @@ def return_bg(
     non_resident: int = 0,
     itc_claim: str = "0",
     amount_i: str = "0",
+    foreign_business_income: str = "0",
+    foreign_non_business_income: str = "0",
+    foreign_capital_gains_claim: str = "0",
+    foreign_non_business_tax: str = "0",
+    foreign_business_tax: str = "0",
+    foreign_tax_countries: tuple[tuple[str, str], ...] = (),
 ) -> Worksheet:
     """Return BG's inputs (`returns/2025_return_bg.yaml`), with the Part 1 amounts given."""
     return compute(
@@ -168,6 +182,12 @@ def return_bg(
         amt_non_resident_or_deemed_resident=non_resident,
         amt_investment_tax_credit_claim=itc_claim,
         amt_t2038_amount_i=amount_i,
+        amt_foreign_business_income=foreign_business_income,
+        amt_foreign_non_business_income=foreign_non_business_income,
+        amt_foreign_capital_gains_non_taxable_claim=foreign_capital_gains_claim,
+        amt_foreign_non_business_tax_paid=foreign_non_business_tax,
+        amt_foreign_business_tax_paid=foreign_business_tax,
+        foreign_tax_countries_rows=foreign_tax_countries,
     )
 
 
@@ -896,3 +916,136 @@ def test_an_investment_tax_credit_claim_above_t2038_amount_i_is_refused() -> Non
     assert str(raised.value).startswith(
         "ca/amt_investment_tax_credit_claim 200 is above ca/amt_t2038_amount_i 150"
     )
+
+
+def test_return_bg_part_4_is_zero_by_default() -> None:
+    # No foreign income, tax or claim, and no T2209 credit: lines 3, 4, 6, 7, 9, 10 and 11 are 0.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE).value == D("0")
+    assert worksheet.get(AMT_TOTAL_FOREIGN_INCOME).value == D("0")
+    assert worksheet.get(AMT_FOREIGN_INCOME_LIMIT).value == D("0")
+    assert worksheet.get(AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS).value == D("0")
+    assert worksheet.get(AMT_FOREIGN_TAXES_PAID).value == D("0")
+    assert worksheet.get(AMT_FOREIGN_TAX_CREDIT_LESSER).value == D("0")
+    assert worksheet.get(AMT_SPECIAL_FOREIGN_TAX_CREDIT).value == D("0")
+
+
+def test_return_bg_part_4_worked_case_is_line_by_line() -> None:
+    # Line 1 1500.00 and line 2 500.00; line 3 is a claim of 300.00, at most line 23 of Part 1
+    # (700.00). Line 4 is 1500.00 + 500.00 + 300.00 = 2300.00, and line 6 is 2300.00 times 20.5%,
+    # 471.50. Line 7 is 600.00 times 66.6666%, 399.9996, rounded to 400.00; line 8 is 100.00, so
+    # line 9 is 500.00. Line 10 is the lesser of 471.50 and 500.00, 471.50. Line 11 is the greater
+    # of the federal foreign tax credit, 0.00, and 471.50: 471.50.
+    worksheet = return_bg(
+        foreign_business_income="1500",
+        foreign_non_business_income="500",
+        foreign_capital_gains_claim="300",
+        foreign_non_business_tax="600",
+        foreign_business_tax="100",
+    )
+
+    assert worksheet.get(AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE).value == D("300.00")
+    assert worksheet.get(AMT_TOTAL_FOREIGN_INCOME).value == D("2300.00")
+    assert worksheet.get(AMT_FOREIGN_INCOME_LIMIT).value == D("471.50")
+    assert worksheet.get(AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS).value == D("400.00")
+    assert worksheet.get(AMT_FOREIGN_TAXES_PAID).value == D("500.00")
+    assert worksheet.get(AMT_FOREIGN_TAX_CREDIT_LESSER).value == D("471.50")
+    assert worksheet.get(AMT_SPECIAL_FOREIGN_TAX_CREDIT).value == D("471.50")
+
+
+def test_return_bg_line_3_accepts_a_claim_equal_to_line_23() -> None:
+    # A claim of 700.00 is equal to line 23 of Part 1 (700.00), so it is not above it: line 3 is
+    # 700.00, line 4 is 700.00 and line 6 is 700.00 times 20.5%, 143.50.
+    worksheet = return_bg(foreign_capital_gains_claim="700")
+
+    assert worksheet.get(AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE).value == D("700")
+    assert worksheet.get(AMT_TOTAL_FOREIGN_INCOME).value == D("700")
+    assert worksheet.get(AMT_FOREIGN_INCOME_LIMIT).value == D("143.50")
+
+
+def test_return_bg_line_3_refuses_a_claim_above_line_23_and_does_not_cap_it() -> None:
+    # A claim of 800.00 is above line 23 of Part 1 (700.00): an input error, not capped to 700.00.
+    with pytest.raises(InputAboveBoundError) as raised:
+        return_bg(foreign_capital_gains_claim="800")
+
+    assert str(raised.value).startswith(
+        "ca/amt_foreign_capital_gains_non_taxable_claim 800 is above "
+        "ca/amt_capital_gains_added_not_below_zero 700.00"
+    )
+
+
+def test_return_bg_line_3_refuses_a_claim_when_line_23_is_negative() -> None:
+    # With graduated rate estate amounts of 3000.00, line 23 of Part 1 is -1000.00 (see the test
+    # above it). The most line 3 may claim is line 23 taken as 0, so a claim of 100.00 is above it
+    # and is refused, not capped.
+    with pytest.raises(InputAboveBoundError) as raised:
+        return_bg(graduated_rate_estate="3000.00", foreign_capital_gains_claim="100")
+
+    assert str(raised.value).startswith(
+        "ca/amt_foreign_capital_gains_non_taxable_claim 100 is above "
+        "ca/amt_capital_gains_added_not_below_zero 0"
+    )
+
+
+def test_return_bg_line_3_accepts_a_zero_claim_when_line_23_is_negative() -> None:
+    # Line 23 of Part 1 is -1000.00, so the bound of line 3 is 0: a claim of 0.00 is not above it,
+    # and line 3 is 0.00, so line 4 and line 6 are 0.00 as well.
+    worksheet = return_bg(graduated_rate_estate="3000.00", foreign_capital_gains_claim="0")
+
+    assert worksheet.get(AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE).value == D("0")
+    assert worksheet.get(AMT_TOTAL_FOREIGN_INCOME).value == D("0")
+    assert worksheet.get(AMT_FOREIGN_INCOME_LIMIT).value == D("0")
+
+
+def test_return_bg_line_4_takes_a_negative_business_income_into_account() -> None:
+    # Foreign business income of -300.00 (a loss, net of expenses) and 500.00 of non-business
+    # income: line 4 is 200.00, and line 6 is 200.00 times 20.5%, 41.00.
+    worksheet = return_bg(foreign_business_income="-300", foreign_non_business_income="500")
+
+    assert worksheet.get(AMT_TOTAL_FOREIGN_INCOME).value == D("200.00")
+    assert worksheet.get(AMT_FOREIGN_INCOME_LIMIT).value == D("41.00")
+
+
+def test_return_bg_line_4_is_zero_when_the_total_of_the_foreign_income_is_below_zero() -> None:
+    # Line 1 of -2500.00 and line 2 of 500.00 add to -2000.00, which is not above zero: line 4 is
+    # 0, and line 6 is 0 times 20.5%, 0.00.
+    worksheet = return_bg(foreign_business_income="-2500", foreign_non_business_income="500")
+
+    assert worksheet.get(AMT_TOTAL_FOREIGN_INCOME).value == D("0")
+    assert worksheet.get(AMT_FOREIGN_INCOME_LIMIT).value == D("0")
+
+
+def test_return_bg_line_10_is_line_9_when_the_taxes_paid_are_lower() -> None:
+    # Non-business tax of 30.00 is line 7, 30.00 times 66.6666%, 19.99998, rounded to 20.00; with no
+    # business tax, line 8 is 0.00, so line 9 is 20.00. Line 6 is 471.50 (for 2300.00 of line 4),
+    # so line 10 is the lesser, 20.00, and line 11 is the greater of 0.00 and 20.00: 20.00.
+    worksheet = return_bg(
+        foreign_business_income="1500",
+        foreign_non_business_income="500",
+        foreign_capital_gains_claim="300",
+        foreign_non_business_tax="30",
+    )
+
+    assert worksheet.get(AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS).value == D("20.00")
+    assert worksheet.get(AMT_FOREIGN_TAXES_PAID).value == D("20.00")
+    assert worksheet.get(AMT_FOREIGN_TAX_CREDIT_LESSER).value == D("20.00")
+    assert worksheet.get(AMT_SPECIAL_FOREIGN_TAX_CREDIT).value == D("20.00")
+
+
+def test_return_bg_line_11_is_the_t2209_credit_when_it_is_more_than_line_10() -> None:
+    # One country paying 500.00 tax on 1000.00 of foreign non-business income: the Form T2209 line 2
+    # is 1000.00 times the basic federal tax of 5846.47 over the net income of 60435.00, 96.74, and
+    # line 3 is the lesser of 500.00 and 96.74, 96.74: the federal foreign tax credit. Line 10 is
+    # the lesser of line 6 (471.50) and line 9 (20.00), 20.00, so line 11 is 96.74, the greater.
+    worksheet = return_bg(
+        foreign_business_income="1500",
+        foreign_non_business_income="500",
+        foreign_capital_gains_claim="300",
+        foreign_non_business_tax="30",
+        foreign_tax_countries=(("500", "1000"),),
+    )
+
+    assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT).value == D("96.74")
+    assert worksheet.get(AMT_FOREIGN_TAX_CREDIT_LESSER).value == D("20.00")
+    assert worksheet.get(AMT_SPECIAL_FOREIGN_TAX_CREDIT).value == D("96.74")

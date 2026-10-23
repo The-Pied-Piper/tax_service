@@ -42,6 +42,9 @@ from app.jurisdictions.ca.catalog import (
     AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_FEDERAL_SURTAX_AT_48_PERCENT,
     AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FOREIGN_INCOME_LIMIT,
+    AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
@@ -51,6 +54,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
     AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
     AMT_T2203_COLUMN_5_PERCENTAGE,
+    AMT_TOTAL_FOREIGN_INCOME,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
     BUSINESS_VEHICLE_LEASE_PRICE_BASE,
@@ -250,6 +254,27 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert rated == {
+        # Form T691 Part 4 line 6 "Foreign income limit for special foreign tax credit: line 4
+        # multiplied by the percentage on line 5 (if negative, enter "0")", with line 5 "Applicable
+        # rate" "× 20.5%": line 4, 0.00 for Return A, at 20.5%, 0 times 0.205, 0.00.
+        AMT_FOREIGN_INCOME_LIMIT: RateAppliedLine(
+            output=AMT_FOREIGN_INCOME_LIMIT,
+            base=AMT_TOTAL_FOREIGN_INCOME,
+            base_amount=D("0"),
+            rate=Rate(D("0.205")),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T691 Part 4 line 7 "Total non-business income tax paid to a foreign country (12)"
+        # "× 66.6666%": the caller's tax paid, 0 for Return A, at 66.6666%, 0 times 0.666666, 0.00.
+        AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS: RateAppliedLine(
+            output=AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+            base=AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
+            base_amount=D("0"),
+            rate=Rate(D("0.666666")),
+            rounding=CENT,
+            result=D("0"),
+        ),
         # Form T691 Part 3 line 2 "Federal surtax on business income earned outside Canada"
         # "Multiply the amount from line 1 by 48%.": line 1, the basic federal tax of 16951.38, at
         # 48%, 16951.38 x 0.48 = 8136.6624, rounded half-up to 8136.66.

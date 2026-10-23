@@ -8,7 +8,8 @@ gains exemption, the capital gains deductions, the basic exemption, the federal 
 credits. Part 9 of the form: the resource
 property and flow-through shares. Part 2 of the form: the basic federal tax. Part 8 of the form:
 the minimum tax carryover applied on line 40427. Part 3 of the form: the federal surtax, the
-federal tax payable and the regular net federal tax payable.
+federal tax payable and the regular net federal tax payable. Part 4 of the form: the special
+foreign tax credit.
 """
 
 from __future__ import annotations
@@ -167,6 +168,12 @@ AMT_CAPITAL_GAINS_ADDED = CATALOG.declare("amt_capital_gains_added", Decimal)
 22. If line 20 is negative, enter whichever is less: the amount from line 21 or line 22 (show in
 brackets).": line 22 when line 20 is not negative, otherwise the lesser of line 21 and line 22 as a
 negative amount."""
+
+AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO = CATALOG.declare(
+    "amt_capital_gains_added_not_below_zero", Decimal, non_negative=True
+)
+"""Capital gains added, not below zero: not a form line. Part 1 line 23 with a loss taken as 0, the
+most Part 4 line 3 may claim, so a loss on line 23 still accepts a claim of 0."""
 
 AMT_PUBLICLY_LISTED_GIFTS_TOTAL = CATALOG.declare(
     "amt_publicly_listed_gifts_total", Decimal, non_negative=True
@@ -702,3 +709,77 @@ AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE = CATALOG.declare(
 )
 """Regular net federal tax payable, Form T691 Part 3 line 15 "Line 10 minus line 14 (if negative,
 enter "0")" "Regular net federal tax payable": line 10 less line 14, not below zero."""
+
+AMT_FOREIGN_BUSINESS_INCOME = CATALOG.declare("amt_foreign_business_income", Decimal)
+"""Foreign business income, Form T691 Part 4 line 1 "(i) Foreign business income (total business
+income earned in the foreign country, minus allowable expenses and deductions for the foreign
+income)": a caller's figure, which is net of expenses and so may be a loss, left signed."""
+
+AMT_FOREIGN_NON_BUSINESS_INCOME = CATALOG.declare(
+    "amt_foreign_non_business_income", Decimal, non_negative=True
+)
+"""Foreign non-business income, Form T691 Part 4 line 2 "Foreign non-business income (on which
+non-business income tax was paid to a foreign country (12))": a starting amount, the caller's
+figure."""
+
+AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM = CATALOG.declare(
+    "amt_foreign_capital_gains_non_taxable_claim", Decimal, non_negative=True
+)
+"""Non-taxable part of foreign capital gains claimed, Form T691 Part 4 line 3 "Non-taxable part of
+foreign capital gains included in adjusted taxable income (cannot be more than line 23 of Part 1)"
+"67940": the amount the filer claims, an input, which may not be more than line 23 of Part 1."""
+
+AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE = CATALOG.declare(
+    "amt_foreign_capital_gains_non_taxable", Decimal, non_negative=True
+)
+"""Non-taxable part of foreign capital gains, Form T691 Part 4 line 3 "Non-taxable part of foreign
+capital gains included in adjusted taxable income (cannot be more than line 23 of Part 1)" "67940":
+the claim, which may not be more than the capital gains added of Part 1 line 23 not below zero, a
+claim above it is refused, not capped."""
+
+AMT_TOTAL_FOREIGN_INCOME = CATALOG.declare("amt_total_foreign_income", Decimal, non_negative=True)
+"""Total foreign income, Form T691 Part 4 line 4 "Total foreign income: add lines 1 to 3 (if
+negative, enter "0")": lines 1, 2 and 3 added, not below zero."""
+
+AMT_FOREIGN_INCOME_LIMIT = CATALOG.declare("amt_foreign_income_limit", Decimal, non_negative=True)
+"""Foreign income limit for special foreign tax credit, Form T691 Part 4 line 6 "Foreign income
+limit for special foreign tax credit: line 4 multiplied by the percentage on line 5 (if negative,
+enter "0")" and "Applicable rate" "× 20.5%" on line 5: line 4 times the rate of Part 1 line 96,
+rounded once to the cent. Line 4 is never negative, so the floor cannot apply."""
+
+AMT_FOREIGN_NON_BUSINESS_TAX_PAID = CATALOG.declare(
+    "amt_foreign_non_business_tax_paid", Decimal, non_negative=True
+)
+"""Non-business income tax paid to a foreign country, Form T691 Part 4 line 7 "(ii) Total
+non-business income tax paid to a foreign country (12)": a starting amount, the caller's figure;
+footnote (12) is the caller's definition of it."""
+
+AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS = CATALOG.declare(
+    "amt_foreign_non_business_tax_two_thirds", Decimal, non_negative=True
+)
+"""Non-business income tax paid times 66.6666%, Form T691 Part 4 line 7 "× 66.6666%": the tax paid
+of line 7 times the percentage of its dataset, rounded once to the cent."""
+
+AMT_FOREIGN_BUSINESS_TAX_PAID = CATALOG.declare(
+    "amt_foreign_business_tax_paid", Decimal, non_negative=True
+)
+"""Business income tax paid to a foreign country, Form T691 Part 4 line 8 "Total business income
+tax paid to a foreign country (13)": a starting amount, the caller's figure."""
+
+AMT_FOREIGN_TAXES_PAID = CATALOG.declare("amt_foreign_taxes_paid", Decimal, non_negative=True)
+"""Foreign taxes paid for special foreign tax credit, Form T691 Part 4 line 9 "Foreign taxes paid
+for special foreign tax credit: line 7 plus line 8 (if negative, enter "0")": lines 7 and 8 added,
+not below zero."""
+
+AMT_FOREIGN_TAX_CREDIT_LESSER = CATALOG.declare(
+    "amt_foreign_tax_credit_lesser", Decimal, non_negative=True
+)
+"""Lesser of the foreign income limit and the foreign taxes paid, Form T691 Part 4 line 10 "Enter
+whichever is less: amount from line 6 or line 9.": the lesser of lines 6 and 9."""
+
+AMT_SPECIAL_FOREIGN_TAX_CREDIT = CATALOG.declare(
+    "amt_special_foreign_tax_credit", Decimal, non_negative=True
+)
+"""Special foreign tax credit, Form T691 Part 4 line 11 "Enter whichever is more: amount from line 7
+of Part 3 or line 10." "Special foreign tax credit": the greater of the federal foreign tax credit
+of Part 3 line 7 (Form T2209) and line 10."""

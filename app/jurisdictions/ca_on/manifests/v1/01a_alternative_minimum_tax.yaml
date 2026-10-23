@@ -7,3 +7,12 @@ inputs:
   - ca/amt_non_resident_or_deemed_resident
   - ca/amt_investment_tax_credit_claim
   - ca/amt_t2038_amount_i
+  # Form T691 Part 4 line 1 "(i) Foreign business income", line 2 "Foreign non-business income",
+  # line 3 "Non-taxable part of foreign capital gains included in adjusted taxable income", line 7
+  # "(ii) Total non-business income tax paid to a foreign country (12)" and line 8 "Total business
+  # income tax paid to a foreign country (13)": the caller's figures, as the form takes them.
+  - ca/amt_foreign_business_income
+  - ca/amt_foreign_non_business_income
+  - ca/amt_foreign_capital_gains_non_taxable_claim
+  - ca/amt_foreign_non_business_tax_paid
+  - ca/amt_foreign_business_tax_paid

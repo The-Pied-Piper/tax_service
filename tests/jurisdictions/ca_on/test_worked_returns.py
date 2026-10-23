@@ -651,6 +651,7 @@ expected:
   ca/amt_basic_federal_tax: "-1181.85"
   ca/amt_federal_surtax_at_48_percent: "-567.29"
   ca/amt_regular_net_federal_tax_payable: "0"
+  ca/amt_special_foreign_tax_credit: "0"
 """
 
 

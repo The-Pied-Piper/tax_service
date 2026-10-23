@@ -17,6 +17,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_BASIC_EXEMPTION,
     AMT_BASIC_FEDERAL_TAX,
     AMT_CAPITAL_GAINS_ADDED,
+    AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
@@ -43,6 +44,16 @@ from app.jurisdictions.ca.catalog import (
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
     AMT_FINANCING_EXPENSES,
     AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+    AMT_FOREIGN_BUSINESS_INCOME,
+    AMT_FOREIGN_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM,
+    AMT_FOREIGN_INCOME_LIMIT,
+    AMT_FOREIGN_NON_BUSINESS_INCOME,
+    AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+    AMT_FOREIGN_TAX_CREDIT_LESSER,
+    AMT_FOREIGN_TAXES_PAID,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
     AMT_GROSS_MINIMUM_AMOUNT,
@@ -107,6 +118,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
@@ -119,6 +131,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_TAX_SHELTER_ADJUSTMENTS,
     AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
     AMT_TAX_SHELTER_LOSSES,
+    AMT_TOTAL_FOREIGN_INCOME,
     AMT_TREATY_EXEMPT_CAPITAL_GAINS,
 )
 from tests.jurisdictions.ca.catalog_snapshot import SIGNED
@@ -249,6 +262,25 @@ PART_3_KINDS: tuple[ArtifactKind[Decimal], ...] = (
 PART_3_COUNTS: tuple[ArtifactKind[int], ...] = (
     AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
     AMT_LINE_3_HAS_AMOUNT,
+)
+
+# Part 4 lines 1 to 11: the special foreign tax credit, with the caller's foreign figures and the
+# claim on line 3. The bound of line 3, line 23 of Part 1 with a loss taken as 0, is not a form line
+# but is a money kind of the same family.
+PART_4_KINDS: tuple[ArtifactKind[Decimal], ...] = (
+    AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
+    AMT_FOREIGN_BUSINESS_INCOME,
+    AMT_FOREIGN_NON_BUSINESS_INCOME,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
+    AMT_TOTAL_FOREIGN_INCOME,
+    AMT_FOREIGN_INCOME_LIMIT,
+    AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+    AMT_FOREIGN_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_TAXES_PAID,
+    AMT_FOREIGN_TAX_CREDIT_LESSER,
+    AMT_SPECIAL_FOREIGN_TAX_CREDIT,
 )
 
 
@@ -584,6 +616,34 @@ def test_the_part_3_counts_are_the_registered_ones(registry: ArtifactRegistry) -
         assert registry.get(kind.identifier) is kind
 
 
+def test_the_part_4_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert (
+        registry.get("ca/amt_capital_gains_added_not_below_zero")
+        is AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO
+    )
+    assert registry.get("ca/amt_foreign_business_income") is AMT_FOREIGN_BUSINESS_INCOME
+    assert registry.get("ca/amt_foreign_non_business_income") is AMT_FOREIGN_NON_BUSINESS_INCOME
+    assert (
+        registry.get("ca/amt_foreign_capital_gains_non_taxable_claim")
+        is AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM
+    )
+    assert (
+        registry.get("ca/amt_foreign_capital_gains_non_taxable")
+        is AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE
+    )
+    assert registry.get("ca/amt_total_foreign_income") is AMT_TOTAL_FOREIGN_INCOME
+    assert registry.get("ca/amt_foreign_income_limit") is AMT_FOREIGN_INCOME_LIMIT
+    assert registry.get("ca/amt_foreign_non_business_tax_paid") is AMT_FOREIGN_NON_BUSINESS_TAX_PAID
+    assert (
+        registry.get("ca/amt_foreign_non_business_tax_two_thirds")
+        is AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS
+    )
+    assert registry.get("ca/amt_foreign_business_tax_paid") is AMT_FOREIGN_BUSINESS_TAX_PAID
+    assert registry.get("ca/amt_foreign_taxes_paid") is AMT_FOREIGN_TAXES_PAID
+    assert registry.get("ca/amt_foreign_tax_credit_lesser") is AMT_FOREIGN_TAX_CREDIT_LESSER
+    assert registry.get("ca/amt_special_foreign_tax_credit") is AMT_SPECIAL_FOREIGN_TAX_CREDIT
+
+
 def test_the_alternative_minimum_tax_kinds_are_money() -> None:
     for kind in (
         PART_1_KINDS
@@ -593,6 +653,7 @@ def test_the_alternative_minimum_tax_kinds_are_money() -> None:
         + NON_DEDUCTIBLE_AND_RATE_KINDS
         + PART_2_AND_8_KINDS
         + PART_3_KINDS
+        + PART_4_KINDS
     ):
         assert kind.value_type is Decimal, kind.identifier
 
@@ -606,6 +667,7 @@ def test_the_bracketed_lines_are_signed_and_the_rest_are_not_below_zero() -> Non
         + NON_DEDUCTIBLE_AND_RATE_KINDS
         + PART_2_AND_8_KINDS
         + PART_3_KINDS
+        + PART_4_KINDS
     ):
         assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier
 
@@ -617,3 +679,10 @@ def test_the_federal_surtax_at_48_percent_holds_a_negative_base() -> None:
     assert Artifact(AMT_FEDERAL_SURTAX_AT_48_PERCENT, Decimal("-567.29")).value == Decimal(
         "-567.29"
     )
+
+
+def test_the_foreign_business_income_holds_a_negative_amount() -> None:
+    # Part 4 line 1, "Foreign business income (total business income earned in the foreign country,
+    # minus allowable expenses and deductions for the foreign income)": it is net of expenses, so
+    # it can be a loss, and the kind holds it; line 4 is then reduced by it.
+    assert Artifact(AMT_FOREIGN_BUSINESS_INCOME, Decimal("-300")).value == Decimal("-300")

@@ -26,6 +26,11 @@ from app.jurisdictions.ca.catalog import (
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
     AMT_FINANCING_EXPENSES,
+    AMT_FOREIGN_BUSINESS_INCOME,
+    AMT_FOREIGN_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM,
+    AMT_FOREIGN_NON_BUSINESS_INCOME,
+    AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
     AMT_INVESTMENT_COUNSEL_FEES,
@@ -1975,6 +1980,11 @@ def compute(
     amt_non_resident_or_deemed_resident: int = 0,
     amt_investment_tax_credit_claim: str = "0",
     amt_t2038_amount_i: str = "0",
+    amt_foreign_business_income: str = "0",
+    amt_foreign_non_business_income: str = "0",
+    amt_foreign_capital_gains_non_taxable_claim: str = "0",
+    amt_foreign_non_business_tax_paid: str = "0",
+    amt_foreign_business_tax_paid: str = "0",
 ) -> Worksheet:
     # The T4 box 16 and 16A amounts default to the required ones for the employment income given,
     # so line 24 is 0 unless a test gives its own.
@@ -2692,6 +2702,14 @@ def compute(
         Artifact(AMT_NON_RESIDENT_OR_DEEMED_RESIDENT, amt_non_resident_or_deemed_resident),
         Artifact(AMT_INVESTMENT_TAX_CREDIT_CLAIM, D(amt_investment_tax_credit_claim)),
         Artifact(AMT_T2038_AMOUNT_I, D(amt_t2038_amount_i)),
+        Artifact(AMT_FOREIGN_BUSINESS_INCOME, D(amt_foreign_business_income)),
+        Artifact(AMT_FOREIGN_NON_BUSINESS_INCOME, D(amt_foreign_non_business_income)),
+        Artifact(
+            AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM,
+            D(amt_foreign_capital_gains_non_taxable_claim),
+        ),
+        Artifact(AMT_FOREIGN_NON_BUSINESS_TAX_PAID, D(amt_foreign_non_business_tax_paid)),
+        Artifact(AMT_FOREIGN_BUSINESS_TAX_PAID, D(amt_foreign_business_tax_paid)),
     )
 
 
