@@ -721,6 +721,7 @@ from app.jurisdictions.ca.catalog import (
     T657_T2017_LINE_13,
     T657_T2048_LINE_17217_FOR_2024,
     T776_STATEMENTS,
+    T2125_STATEMENTS,
     T5013_DIVIDEND_TAX_CREDIT,
     T5013_INVESTMENT_INCOME,
     T5013_TAXABLE_DIVIDENDS,
@@ -1204,6 +1205,27 @@ def business_cca_classes(
     return Artifact(kind, RecordList(kind.fields, records))
 
 
+def t2125_statement(
+    *,
+    business: Mapping[str, str] | None = None,
+    business_partner: int = 0,
+    business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+) -> dict[ArtifactKind[Any], object]:
+    """One Form T2125 statement, a record of `ca/t2125_statements`: its inputs, as given or 0."""
+    artifacts: list[Artifact[Any]] = [
+        *business_amount_artifacts(business or {}),
+        Artifact(BUSINESS_PARTNER, business_partner),
+        business_cca_classes(*business_cca_classes_rows),
+    ]
+    return {artifact.kind: artifact.value for artifact in artifacts}
+
+
+def t2125_statements(statements: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
+    """The statements of Form T2125, one record for each mapping of `t2125_statement` arguments."""
+    records = [t2125_statement(**statement) for statement in statements]
+    return Artifact(T2125_STATEMENTS, RecordList(T2125_STATEMENTS.fields, records))
+
+
 # The Form T2042 amounts the caller enters, in the form's order: the non-negative ones, then the
 # signed one (amount 5A, the T5013 amount or a share of a loss).
 FARM_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
@@ -1679,6 +1701,7 @@ def starting(
     rental_partner_gst_hst_rebate: str = "0",
     rental_partner_other_expenses: str = "0",
     rental_statements: tuple[Mapping[str, Any], ...] | None = None,
+    business_statements: tuple[Mapping[str, Any], ...] | None = None,
     business: Mapping[str, str] | None = None,
     business_partner: int = 0,
     business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
@@ -2110,6 +2133,17 @@ def starting(
             },
         )
     )
+    business_statement_list: tuple[Mapping[str, Any], ...] = (
+        business_statements
+        if business_statements is not None
+        else (
+            {
+                "business": business,
+                "business_partner": business_partner,
+                "business_cca_classes_rows": business_cca_classes_rows,
+            },
+        )
+    )
     return (
         Artifact(EMPLOYMENT_INCOME, D(employment_income)),
         dispositions(QSBCS_DISPOSITIONS, *qsbcs_dispositions),
@@ -2186,9 +2220,7 @@ def starting(
         Artifact(NET_PARTNERSHIP_INCOME, D(net_partnership_income)),
         Artifact(RDSP_INCOME, D(rdsp_income)),
         t776_statements(statements),
-        *business_amount_artifacts(business or {}),
-        Artifact(BUSINESS_PARTNER, business_partner),
-        business_cca_classes(*business_cca_classes_rows),
+        t2125_statements(business_statement_list),
         *farm_amount_artifacts(farm or {}),
         Artifact(FARM_PARTNER, farm_partner),
         farm_cca_classes(*farm_cca_classes_rows),

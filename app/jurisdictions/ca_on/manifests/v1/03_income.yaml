@@ -266,6 +266,15 @@ capabilities:
       records: ca/t776.net_rental_income
     produces:
       output: ca/net_rental_income
+  # T1 line 22 and line 13500 "Net": Form T2125 line 9946 "Your net income (loss)" ... "Report
+  # the net income amount from line 9946 on the applicable line of your income tax and benefit
+  # return as indicated below: business income on line 13500", for each T2125 statement the
+  # return carries, added. With no statement the total is 0.
+  - name: core/record_total
+    consumes:
+      records: ca/t2125.business_income
+    produces:
+      output: ca/business_income
   # T1 line 33 and line 15000 "Line 28 plus line 32 Total income": every income line the
   # return lists, in line order (lines 1 to 20, line 13 being the net rental income, line
   # 12600 "Net"; here with the amount of dividends of line 9 (12000), the taxable capital

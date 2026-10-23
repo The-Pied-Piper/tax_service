@@ -56,78 +56,9 @@ inputs:
   # Form T776: the statements, one record for each rental operation (any number); the form
   # ca/t776 reads their fields.
   - ca/t776_statements
-  # Form T2125 (business statement) Part 3A to Part 7 and Area A: the caller's amounts, in the
-  # form's order, and the Area A class list; T1 line 22 (line 13500) is T2125 line 9946, computed.
-  - ca/business_gross_sales
-  - ca/business_sales_adjustments
-  - ca/business_quick_method_gst_hst
-  - ca/business_quick_method_remitted
-  - ca/business_reserves_deducted_last_year
-  - ca/business_other_income
-  - ca/business_opening_inventory
-  - ca/business_purchases
-  - ca/business_direct_wage_costs
-  - ca/business_subcontracts
-  - ca/business_other_costs
-  - ca/business_closing_inventory
-  - ca/business_advertising
-  - ca/business_meals_and_entertainment
-  - ca/business_bad_debts
-  - ca/business_insurance
-  - ca/business_interest_and_bank_charges
-  - ca/business_business_taxes_licences_and_memberships
-  - ca/business_office_expenses
-  - ca/business_office_stationery_and_supplies
-  - ca/business_professional_fees
-  - ca/business_management_and_administration_fees
-  - ca/business_rent
-  - ca/business_repairs_and_maintenance
-  - ca/business_salaries_wages_and_benefits
-  - ca/business_property_taxes
-  - ca/business_travel_expenses
-  - ca/business_utilities
-  - ca/business_fuel_costs
-  - ca/business_delivery_freight_and_express
-  - ca/business_vehicle_business_kilometres
-  - ca/business_vehicle_total_kilometres
-  - ca/business_vehicle_fuel_and_oil
-  - ca/business_vehicle_insurance
-  - ca/business_vehicle_licence_and_registration
-  - ca/business_vehicle_maintenance_and_repairs
-  - ca/business_vehicle_electricity_zev
-  - ca/business_vehicle_other_expenses_10
-  - ca/business_vehicle_other_expenses_11
-  - ca/business_vehicle_parking_fees
-  - ca/business_vehicle_supplementary_insurance
-  - ca/business_vehicle_interest_payable
-  - ca/business_vehicle_interest_days
-  - ca/business_vehicle_lease_charges
-  - ca/business_vehicle_lease_payments_before
-  - ca/business_vehicle_lease_days
-  - ca/business_vehicle_list_price
-  - ca/business_vehicle_sales_tax_rate
-  - ca/business_cca_personal_part
-  - ca/business_other_expenses
-  - ca/business_journalism_labour_tax_credit
-  - ca/business_partner_gst_hst_rebate
-  - ca/business_partner_other_amount_a
-  - ca/business_partner_other_amount_b
-  - ca/business_partner_other_amount_c
-  - ca/business_partner_other_amount_d
-  - ca/business_partner_other_amount_e
-  - ca/business_home_heat
-  - ca/business_home_electricity
-  - ca/business_home_insurance
-  - ca/business_home_maintenance
-  - ca/business_home_mortgage_interest
-  - ca/business_home_property_taxes
-  - ca/business_home_other_expenses
-  - ca/business_home_personal_use_part
-  - ca/business_home_cca
-  - ca/business_home_carried_forward
-  - ca/business_partner_share
-  - ca/business_partner
-  - ca/business_cca_classes
+  # Form T2125: the statements, one record for each business (any number); the form ca/t2125
+  # reads their fields.
+  - ca/t2125_statements
   # Form T2042 (statement of farming) Parts 3 to 7 and Area A: the caller's amounts, in the
   # form's order, and the Area A class list; T1 line 25 (line 14100) is T2042 line 9946,
   # computed.

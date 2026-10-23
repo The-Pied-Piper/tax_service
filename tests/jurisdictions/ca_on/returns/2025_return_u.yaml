@@ -601,8 +601,11 @@ expected:
   ca/taxable_capital_gains: "0.00"
   ca/taxable_dividends_other_than_eligible: "0.00"
   ca/total_income: "50000.00"
-  ca/business_gross_income: "50000"
-  ca/business_net_income_before_adjustments: "50000"
+  ca/t2125:
+    - ca/business_gross_income: "50000"
+      ca/business_net_income_before_adjustments: "50000"
+      ca/business_closing_ucc: []
+      ca/business_home_carry_forward: "0"
   ca/business_income: "50000"
   ca/net_self_employment_income: "50000"
   ca/cpp_maximum_pensionable_earnings: "71300.00"

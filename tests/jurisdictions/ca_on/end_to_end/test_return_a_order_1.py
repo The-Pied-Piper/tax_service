@@ -67,9 +67,29 @@ from app.jurisdictions.ca.catalog import (
     AMT_TOTAL_FOREIGN_INCOME,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
+    BUSINESS_ADJUSTED_GROSS_SALES,
+    BUSINESS_CCA_CLAIM,
+    BUSINESS_COST_OF_GOODS_SOLD,
+    BUSINESS_COST_OF_GOODS_SUBTOTAL,
+    BUSINESS_GROSS_INCOME,
+    BUSINESS_GROSS_PROFIT,
+    BUSINESS_HOME_ALLOWABLE_CLAIM,
+    BUSINESS_HOME_EXPENSES,
+    BUSINESS_HOME_INCOME_LIMIT,
+    BUSINESS_INCOME,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,
+    BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
+    BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
+    BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
+    BUSINESS_PARTNERSHIP_TOTAL,
+    BUSINESS_QUICK_METHOD_ASSISTANCE,
+    BUSINESS_RESERVES_AND_OTHER_INCOME,
+    BUSINESS_SALES_SUBTOTAL,
+    BUSINESS_SHARE_OF_NET_INCOME,
+    BUSINESS_TOTAL_EXPENSES,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
@@ -531,8 +551,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1281
-    assert len(order) == 1281
+    assert len(order) == 1232
+    assert len(order) == 1232
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
@@ -1815,3 +1835,40 @@ def test_each_t776_capability_runs_after_what_it_consumes() -> None:
     )
     assert position[RENTAL_PARTNER_SHARE_WITH_REBATE] < position[RENTAL_PARTNERSHIP_NET_INCOME]
     assert position[RENTAL_PARTNERSHIP_NET_INCOME] < position[NET_RENTAL_INCOME]
+
+
+def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
+    # The form ca/t2125 is wired on its own: its capabilities are ordered inside the form, once
+    # for each statement; the return form reads only the form's exports.
+    order = service().compose(CA_ON, 2025).form("ca/t2125").composition.order
+    assert len(order) == 55
+    position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
+    # T2125 Parts 3A to 3D: amount 3C after amounts 3A and 3B, line 8000 after 3C and 3F, line
+    # 8299 after line 8000 and amount 3O, line 8519 after line 8299 and line 8518, which comes
+    # after amount 3V.
+    assert position[BUSINESS_SALES_SUBTOTAL] < position[BUSINESS_ADJUSTED_GROSS_SALES]
+    assert position[BUSINESS_QUICK_METHOD_ASSISTANCE] < position[BUSINESS_ADJUSTED_GROSS_SALES]
+    assert position[BUSINESS_ADJUSTED_GROSS_SALES] < position[BUSINESS_GROSS_INCOME]
+    assert position[BUSINESS_RESERVES_AND_OTHER_INCOME] < position[BUSINESS_GROSS_INCOME]
+    assert position[BUSINESS_COST_OF_GOODS_SUBTOTAL] < position[BUSINESS_COST_OF_GOODS_SOLD]
+    assert position[BUSINESS_GROSS_INCOME] < position[BUSINESS_GROSS_PROFIT]
+    assert position[BUSINESS_COST_OF_GOODS_SOLD] < position[BUSINESS_GROSS_PROFIT]
+    # Part 4: Chart A line 16 (line 9281) and the CCA (line 9936) and terminal loss (line 9270)
+    # before line 9368, which comes before line 9369.
+    assert position[BUSINESS_MOTOR_VEHICLE_EXPENSES] < position[BUSINESS_TOTAL_EXPENSES]
+    assert position[BUSINESS_CCA_CLAIM] < position[BUSINESS_TOTAL_EXPENSES]
+    assert position[BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS] < position[BUSINESS_TOTAL_EXPENSES]
+    assert position[BUSINESS_TOTAL_EXPENSES] < position[BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS]
+    # Parts 5 and 7: amounts 5A to 5D in turn, amount 7N after 5D, line 9945 after amount 7P, and
+    # line 9946 after amount 5D and line 9945.
+    assert (
+        position[BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS]
+        < position[BUSINESS_SHARE_OF_NET_INCOME]
+        < position[BUSINESS_PARTNERSHIP_TOTAL]
+        < position[BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS]
+    )
+    assert position[BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS] < position[BUSINESS_HOME_INCOME_LIMIT]
+    assert position[BUSINESS_HOME_INCOME_LIMIT] < position[BUSINESS_HOME_ALLOWABLE_CLAIM]
+    assert position[BUSINESS_HOME_ALLOWABLE_CLAIM] < position[BUSINESS_HOME_EXPENSES]
+    assert position[BUSINESS_HOME_EXPENSES] < position[BUSINESS_INCOME]
+    assert position[BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS] < position[BUSINESS_INCOME]
