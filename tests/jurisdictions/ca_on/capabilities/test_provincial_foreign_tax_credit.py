@@ -41,7 +41,7 @@ divisor, worked as an exact fraction and rounded once with the `rounding` datase
 total of the sheets' line 1 is at or under `threshold` (one form), the divisor is that total plus
 line 8; when it is over, the divisor is line 7 over `rate` plus line 8. A zero divisor is a
 ValidationError naming "line 2 of Form T2036". With the count 1 the sheet's trace line carries the
-line 11, the divisor (a Fraction) and whether the separate-sheet branch was used, and its
+line 11, the divisor (a ExactFraction) and whether the separate-sheet branch was used, and its
 `federal_credit` holds the line 2 used; with the count 0 those fields keep their defaults.
 """
 
@@ -50,7 +50,7 @@ from __future__ import annotations
 import decimal
 from collections.abc import Mapping
 from decimal import Decimal
-from fractions import Fraction
+from fractions import Fraction as ExactFraction
 from types import MappingProxyType
 from typing import Any, assert_type, cast
 
@@ -934,7 +934,7 @@ def minimum_line(
     line_4: str,
     result: str,
     line_11: str,
-    divisor: Fraction,
+    divisor: ExactFraction,
     separate: bool,
 ) -> Any:
     return ProvincialForeignTaxCreditLine(
@@ -971,7 +971,7 @@ def test_traces_the_one_form_line_2_with_its_divisor() -> None:
         .trace
     )
 
-    one, two = Fraction(300), Fraction(300)
+    one, two = ExactFraction(300), ExactFraction(300)
     assert trace == (
         minimum_line(1, "120", "36.00", "84.00", "10000", "500.00", "84.00", "90", one, False),
         minimum_line(2, "80", "24.00", "56.00", "5000", "250.00", "56.00", "90", two, False),
@@ -995,7 +995,7 @@ def test_traces_the_separate_sheet_line_2_with_its_exact_divisor() -> None:
         .trace
     )
 
-    divisor = Fraction(D("666.666")) / Fraction(RATE_FIGURE)
+    divisor = ExactFraction(D("666.666")) / ExactFraction(RATE_FIGURE)
     assert divisor == 1000
     assert trace == (
         minimum_line(
@@ -1016,7 +1016,7 @@ def test_the_traced_separate_sheet_divisor_is_the_unrounded_fraction() -> None:
     )
 
     assert isinstance(line, ProvincialForeignTaxCreditLine)
-    assert line.divisor == Fraction(D("100.01")) / Fraction(RATE_FIGURE)
+    assert line.divisor == ExactFraction(D("100.01")) / ExactFraction(RATE_FIGURE)
     assert line.federal_credit == D("166.65")
     assert line.separate_sheet is True
 
@@ -1156,3 +1156,9 @@ def test_a_computation_applies_the_datasets_rounding() -> None:
     )["ca-on/return"][0]
 
     assert worksheet.get(CREDIT).value == D("3")
+
+
+def test_a_line_2_above_line_1_is_refused_with_a_message() -> None:
+    # One sheet of 100 with line 11 of 150 over a divisor of 100: line 2 = 150, more than line 1.
+    with pytest.raises(ValidationError, match="more than the 100"):
+        minimum_tax_total(("100", "10000", "0"), line_7="0", line_8="0", line_11="150")

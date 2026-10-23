@@ -1079,7 +1079,7 @@ def test_line_72_and_the_tax_reduction_conditions_do_not_enter_the_tax_otherwise
     # special foreign tax credit share: with the 500 on T691 Part 4 line 7 (and no foreign income
     # on its line 2, so line 10 is 0) line 11 is the greater of 87.51 and 0, 87.51; the total
     # foreign tax, 500, is more than $200, so line 2 = 500 / (333.33 / 66.6666% + 0) x 87.51 =
-    # 87.5099..., half-up 87.51, the same as the T2209 line 2 above.
+    # 87.5107..., half-up 87.51, the same as the T2209 line 2 above.
     worksheet = compute(
         "24000",
         (),

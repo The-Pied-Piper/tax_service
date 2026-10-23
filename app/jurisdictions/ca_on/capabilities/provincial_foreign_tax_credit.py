@@ -31,7 +31,8 @@ line 7 of Part 4 of Form T691, Alternative Minimum Tax, divided by 66.6666% and 
 against the `threshold` dataset (the $200); line 7 is the consumed `non_business_tax_paid`, line 8
 `business_tax_paid`, line 11 `special_foreign_tax_credit`, and the 66.6666% the `rate` dataset. At
 or under the threshold the sheets share the one form's line 2, each as its line 1 times line 11
-over the total of line 1 plus line 8; over it each sheet is its line 1 times line 11 over line 7
+over the total of line 1 plus line 8 (each sheet's line 2 rounded on its own, so the sheets add to
+the form's line 2 to within a cent); over it each sheet is its line 1 times line 11 over line 7
 divided by the rate plus line 8. Line 2 is worked as an exact fraction and rounded once with the
 `rounding` dataset's rule; a zero divisor is refused with a ValidationError. With the count 0 line
 2 is the sheet's line 3 of Form T2209.
@@ -172,6 +173,12 @@ class ProvincialForeignTaxCredit(Capability):
                 )
             else:
                 federal_credit = Decimal(record[FOREIGN_TAX_CREDIT_SHEET_LINE_3])
+            if federal_credit > tax_paid:
+                raise ValidationError(
+                    f"line 2 of Form T2036, {federal_credit}, is more than the {tax_paid} of its "
+                    "line 1, so line 3 would be negative; the amounts on lines 7, 8 and 11 of "
+                    "Part 4 of Form T691 do not fit the tax paid on the sheets"
+                )
             line_3 = tax_paid - federal_credit
             line_4 = ApplyRatio.ratio_of(income, provincial_tax, net_income, rule)
             lines.append(

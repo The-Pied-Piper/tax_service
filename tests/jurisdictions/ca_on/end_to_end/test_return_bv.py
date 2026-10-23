@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fractions import Fraction
+from fractions import Fraction as ExactFraction
 from typing import Any
 
 import pytest
@@ -34,7 +34,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, compute
 
 US = ("300", "3000")
 UK = ("150", "300")
-RATE = Fraction(D("0.666666"))
+RATE = ExactFraction(D("0.666666"))
 
 
 def return_bv(**overrides: Any) -> Worksheet:
@@ -126,7 +126,7 @@ def test_two_countries_over_200_take_line_2_of_form_t2036_from_the_special_credi
     # 30.50, total 91.50 (line 2 from Form T2209, 300 and 58.50, would give 0.00 and 34.30).
     worksheet = return_bv()
 
-    divisor = Fraction(D("300.00")) / RATE
+    divisor = ExactFraction(D("300.00")) / RATE
     assert sheet_lines(worksheet) == [
         ProvincialForeignTaxCreditLine(
             output=ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
@@ -237,7 +237,7 @@ def test_one_sheet_with_exactly_200_of_tax_is_one_form_with_line_2_at_the_specia
             line_4=D("74.73"),
             result=D("66.67"),
             special_credit=D("133.33"),
-            divisor=Fraction(200),
+            divisor=ExactFraction(200),
             separate_sheet=False,
         )
     ]
@@ -295,7 +295,7 @@ def test_two_countries_with_150_of_tax_are_one_pooled_sheet_with_line_2_at_the_s
             line_4=D("54.31"),
             result=D("51.60"),
             special_credit=D("98.40"),
-            divisor=Fraction(150),
+            divisor=ExactFraction(150),
             separate_sheet=False,
         )
     ]
