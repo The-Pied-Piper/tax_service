@@ -1,0 +1,92 @@
+# Return BM: a filer with a qualified property, an SR&ED claim, flow-through mining expenditures
+# (mineral and critical mineral exploration), two apprentices (one over the 20000 cap) and a repayment of
+# SR&ED assistance, computed on Form T2038(IND) (investment tax credit) Parts A and B only. Parts
+# C (recapture) and D and E are not part of this return: Part C has no entries and computes to
+# zero, and Part D (the claim, line 41200) and Part E (line 45400) are not yet computed. The
+# caller's lines are chosen figures, entered as the form takes them; each amount is computed from
+# them.
+jurisdiction: CA-ON
+tax_year: 2025
+description: >-
+  A single filer, a 2025 Ontario resident, with the investment tax credit of Form T2038(IND)
+  Parts A and B and no other income, deduction or credit. Every caller's line below is a chosen
+  figure. Part A amount 1 is the SR&ED expenditures on line 67120, a chosen figure of 40000.00,
+  times 0.15 = 6000.00. Amount 2 is the agricultural SR&ED contributions on line 67130, a chosen
+  figure of 10000.00, times 0.15 = 1500.00. Amount 3 is the partnership allocation on line 67135,
+  a chosen figure of 2000.00, read as it is. Amount 4 is the qualified property on line 67140, a
+  chosen figure of 10000.00, times 0.10 = 1000.00. Amount A, "Total current-year refundable
+  credits (add amounts 1 to 4)", is 6000.00 plus 1500.00 plus 2000.00 plus 1000.00 = 10500.00.
+  Part B amount B is the flow-through mining expenditures on line 67170, a chosen figure of
+  20000.00, times 0.15 = 3000.00. Amount C is the flow-through critical mineral expenditures on
+  line 67175, a chosen figure of 5000.00, times 0.30 = 1500.00. Table 1 has two apprentices, each
+  with a chosen figure of eligible salary and wages: the first of 25000.00, whose column 3 is the
+  lesser of 25000.00 and 20000.00, so 20000.00; the second of 15000.00, whose column 3 is the lesser
+  of 15000.00 and 20000.00, so 15000.00. The total of column 3 is 20000.00 plus 15000.00 =
+  35000.00. Line 67180 adds the T3 box 40 amount, a chosen figure of 5000.00, so line 67180 is
+  35000.00 plus 5000.00 = 40000.00, and amount D is 40000.00 times 0.10 = 4000.00. Line 67184, the
+  repayment of assistance that reduced SR&ED expenditures in 2014 and prior years, is a chosen
+  figure of 1000.00, times 0.20 = 200.00 (amount 1). Line 67185, the same for 2015 and subsequent
+  years, is a chosen figure of 2000.00, times 0.15 = 300.00 (amount 2). Amount E, "Total repayment
+  of assistance for SR&ED (add amounts 1 and 2)", is 200.00 plus 300.00 = 500.00. Amount F, "Total
+  current-year non-refundable tax credits (add amounts B, C, D and E)", is 3000.00 plus 1500.00
+  plus 4000.00 plus 500.00 = 9000.00. The filer has no income, so the rest of the return
+  computes to zero except the printed constants of Form RC381 Part 2 (lines G to J) and the
+  CPP second additional earnings maximum of 9900.00, and Form T691 Part 8 line 17, "Total minimum
+  tax carryover available for 2026", which is 2338.71 as the form prints it (no floor) for a
+  filer with no income; each is stated in the expected values.
+sources:
+  - >-
+    CRA, Form T2038(IND) (25E), docs/cra-forms-2025/t2038-ind-25e.pdf (confirmed from the PDF; no
+    .txt published): "ITC for qualified expenditures for SR&ED (amount from line 559 of Form T661
+    plus applicable amount from box 40* of your T3 slip, minus amounts from lines 67130 and
+    67135)" "× 0.15 ="; "80% of total contributions made to agricultural organizations for SR&ED"
+    "× 0.15 ="; "ITC allocated from a partnership for SR&ED (see boxes 186, 187, and 189 of your
+    T5013 slips)"; "ITC for total investments in qualified property (include applicable amount
+    from box 40* of your T3 slip)" "× 0.10 ="; "Total current-year refundable credits (add amounts
+    1 to 4)"; "Enter amount A at amount 2 in Part D"; "Mineral exploration tax credit (METC)" "×
+    0.15 ="; "Critical mineral exploration tax credit (CMETC)" "× 0.30 ="; "The lesser of eligible
+    salary and wages** payable in the year or $20,000."; "Total apprenticeship job creation tax
+    credit (Total of amounts in column 3 plus applicable amount from box 40* of your T3 slip)"
+    "× 0.10 ="; "The credit is 10% of the total of the amounts in Table 1, column 3."; "Repayment of
+    assistance that reduced qualified SR&ED expenditures incurred in 2014 and prior years (amount
+    from line 560 of Form T661)" "× 0.20 ="; "Repayment of assistance that reduced qualified SR&ED
+    expenditures incurred in 2015 and subsequent years (amount from line 560 of Form T661)" "×
+    0.15 ="; "Total repayment of assistance for SR&ED (add amounts 1 and 2)"; "Total current-year
+    non-refundable tax credits (add amounts B, C, D and E)"; "Enter amount F at amount 3 in Part
+    D".
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2038-ind/t2038-ind-25e.pdf
+inputs:
+  ca/cpp_months: "12"
+  ca/qpp_months: "12"
+  ca/itc_sred_expenditures: "40000"
+  ca/itc_agricultural_sred_contributions: "10000"
+  ca/itc_sred_partnership_allocation: "2000"
+  ca/itc_qualified_property: "10000"
+  ca/itc_mineral_exploration_expenditures: "20000"
+  ca/itc_critical_mineral_expenditures: "5000"
+  ca/itc_apprentices:
+    - ca/itc_apprentice_salary_and_wages: "25000"
+    - ca/itc_apprentice_salary_and_wages: "15000"
+  ca/itc_apprenticeship_t3_box_40: "5000"
+  ca/itc_sred_repayment_2014_and_prior: "1000"
+  ca/itc_sred_repayment_2015_and_after: "2000"
+expected:
+  ca/itc_sred_credit: "6000.00"
+  ca/itc_agricultural_sred_credit: "1500.00"
+  ca/itc_qualified_property_credit: "1000.00"
+  ca/itc_refundable_credits: "10500.00"
+  ca/itc_mineral_exploration_credit: "3000.00"
+  ca/itc_critical_mineral_credit: "1500.00"
+  ca/itc_apprenticeship_wages_total: "35000.00"
+  ca/itc_apprenticeship_wages_with_t3: "40000.00"
+  ca/itc_apprenticeship_credit: "4000.00"
+  ca/itc_sred_repayment_credit_2014_and_prior: "200.00"
+  ca/itc_sred_repayment_credit_2015_and_after: "300.00"
+  ca/itc_sred_repayment_credit: "500.00"
+  ca/itc_nonrefundable_credits: "9000.00"
+  ca/amt_carryover_available_for_2026: "2338.71"
+  ca/cpp_second_additional_earnings_maximum: "9900.00"
+  ca/rc381_part_2_line_g: "71300.00"
+  ca/rc381_part_2_line_h: "9900.00"
+  ca/rc381_part_2_line_i: "81200.00"
+  ca/rc381_part_2_line_j: "3500.00"

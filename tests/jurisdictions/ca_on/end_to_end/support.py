@@ -414,8 +414,19 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    ITC_AGRICULTURAL_SRED_CONTRIBUTIONS,
+    ITC_APPRENTICE_SALARY_AND_WAGES,
+    ITC_APPRENTICES,
+    ITC_APPRENTICESHIP_T3_BOX_40,
+    ITC_CRITICAL_MINERAL_EXPENDITURES,
+    ITC_MINERAL_EXPLORATION_EXPENDITURES,
+    ITC_QUALIFIED_PROPERTY,
     ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
     ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
+    ITC_SRED_EXPENDITURES,
+    ITC_SRED_PARTNERSHIP_ALLOCATION,
+    ITC_SRED_REPAYMENT_2014_AND_PRIOR,
+    ITC_SRED_REPAYMENT_2015_AND_AFTER,
     JOURNALISM_LABOUR_TAX_CREDIT,
     LABOUR_SPONSORED_FUNDS_NET_COST,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
@@ -880,6 +891,12 @@ def placement_list(*expenditures: str) -> Artifact[RecordList]:
     return Artifact(
         COOP_EDUCATION_PLACEMENTS, RecordList(COOP_EDUCATION_PLACEMENTS.fields, records)
     )
+
+
+def apprentice_list(*salaries: str) -> Artifact[RecordList]:
+    """The Table 1 apprentices of Form T2038(IND), one record per salary and wages, in order."""
+    records = [{ITC_APPRENTICE_SALARY_AND_WAGES: D(amount)} for amount in salaries]
+    return Artifact(ITC_APPRENTICES, RecordList(ITC_APPRENTICES.fields, records))
 
 
 def ei_excluded_slips_list(*net_incomes: str) -> Artifact[RecordList]:
@@ -2113,6 +2130,16 @@ def starting(
     amt_investment_tax_credit_claim: str = "0",
     amt_t2038_amount_i: str = "0",
     amt_t2038_part_d_amount_15: str = "0",
+    itc_sred_expenditures: str = "0",
+    itc_agricultural_sred_contributions: str = "0",
+    itc_sred_partnership_allocation: str = "0",
+    itc_qualified_property: str = "0",
+    itc_mineral_exploration_expenditures: str = "0",
+    itc_critical_mineral_expenditures: str = "0",
+    itc_apprentices: tuple[str, ...] = (),
+    itc_apprenticeship_t3_box_40: str = "0",
+    itc_sred_repayment_2014_and_prior: str = "0",
+    itc_sred_repayment_2015_and_after: str = "0",
     amt_foreign_business_income: str = "0",
     amt_foreign_non_business_income: str = "0",
     amt_foreign_capital_gains_non_taxable_claim: str = "0",
@@ -2825,6 +2852,16 @@ def starting(
         Artifact(AMT_INVESTMENT_TAX_CREDIT_CLAIM, D(amt_investment_tax_credit_claim)),
         Artifact(AMT_T2038_AMOUNT_I, D(amt_t2038_amount_i)),
         Artifact(AMT_T2038_PART_D_AMOUNT_15, D(amt_t2038_part_d_amount_15)),
+        Artifact(ITC_SRED_EXPENDITURES, D(itc_sred_expenditures)),
+        Artifact(ITC_AGRICULTURAL_SRED_CONTRIBUTIONS, D(itc_agricultural_sred_contributions)),
+        Artifact(ITC_SRED_PARTNERSHIP_ALLOCATION, D(itc_sred_partnership_allocation)),
+        Artifact(ITC_QUALIFIED_PROPERTY, D(itc_qualified_property)),
+        Artifact(ITC_MINERAL_EXPLORATION_EXPENDITURES, D(itc_mineral_exploration_expenditures)),
+        Artifact(ITC_CRITICAL_MINERAL_EXPENDITURES, D(itc_critical_mineral_expenditures)),
+        apprentice_list(*itc_apprentices),
+        Artifact(ITC_APPRENTICESHIP_T3_BOX_40, D(itc_apprenticeship_t3_box_40)),
+        Artifact(ITC_SRED_REPAYMENT_2014_AND_PRIOR, D(itc_sred_repayment_2014_and_prior)),
+        Artifact(ITC_SRED_REPAYMENT_2015_AND_AFTER, D(itc_sred_repayment_2015_and_after)),
         Artifact(AMT_FOREIGN_BUSINESS_INCOME, D(amt_foreign_business_income)),
         Artifact(AMT_FOREIGN_NON_BUSINESS_INCOME, D(amt_foreign_non_business_income)),
         Artifact(

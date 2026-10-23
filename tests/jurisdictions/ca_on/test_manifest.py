@@ -35,6 +35,7 @@ from tests.jurisdictions.ca_on.manifest_families import (
     deductions_schedule_8_part_5_contributions,
     deductions_schedule_8_part_5_other_earnings,
     income,
+    investment_tax_credit,
     net_tax,
     non_refundable_credits,
     ontario_alternative_minimum_tax,
@@ -79,6 +80,7 @@ FAMILIES: tuple[ModuleType, ...] = (
     non_refundable_credits,
     rc381_cpp_qpp,
     credits_against_federal_tax,
+    investment_tax_credit,
     resp_aips,
     other_inputs,
     net_tax,
@@ -182,6 +184,10 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # when
     # no later reserve is reported, which nothing reads (the carried total is what the next chart
     # reads).
+    # Form T2038(IND) Part A "Total current-year refundable credits (add amounts 1 to 4)", amount A,
+    # and Part B "Total current-year non-refundable tax credits (add amounts B, C, D and E)", amount
+    # F, are declared outputs until Part D reads them ("Enter amount A at amount 2 in Part D" and
+    # "Enter amount F at amount 3 in Part D").
     assert set(found.forms[0].exports) == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.forms[0].capabilities) == STEPS
