@@ -91,7 +91,10 @@ class WorkedReturn:
 
     @property
     def expected(self) -> tuple[Artifact[Any], ...]:
-        """The lines expected of the return's own worksheet; none when the file gives none."""
+        """The lines expected of the return's own worksheet; none when the file gives none.
+
+        The return's own form has the one instance, which `check_forms` enforces.
+        """
         for found in self.form_expected:
             if found.form == self.return_form:
                 return found.instances[0] if found.instances else ()
@@ -133,8 +136,7 @@ class WorkedReturn:
         count, no records for a record list, the empty text for digits. A declared output the file
         leaves out is expected to be 0, or the empty text for digits, so a line that fires on a
         return not meant to trigger it still fails. Raises WorkedReturnError naming the file and
-        the identifier for one
-        `artifacts` does not know or that holds no blank.
+        the identifier for one `artifacts` does not know or that holds no blank.
         """
         given = {artifact.kind.identifier for artifact in self.inputs}
         listed = {artifact.kind.identifier for artifact in self.expected}

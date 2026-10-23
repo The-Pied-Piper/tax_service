@@ -98,6 +98,7 @@ def check_against(worked: WorkedReturn, service: TaxComputationService) -> None:
     result = service.compute(worked.jurisdiction, worked.tax_year, *worked.inputs)
 
     for form in worked.form_expected:
+        assert len(result[form.form]) == len(form.instances), f"{worked.path.name}: {form.form}"
         for position, lines in enumerate(form.instances, start=1):
             worksheet = result[form.form][position - 1]
             for expected in lines:

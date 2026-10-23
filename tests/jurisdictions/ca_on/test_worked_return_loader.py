@@ -771,10 +771,14 @@ def test_a_record_list_under_expected_loads_its_records_in_order(
 ) -> None:
     # A return can expect a line it produces as a list (T776 Area A's closing UCC), in the same
     # spelling as a record list input.
-    expected = "expected:\n  ca-on/return:\n" + DEPENDANTS.split("\n", 1)[1].replace(
-        "  ex/dependants:", "    - ex/dependants:", 1
-    ).replace("    - ex/dependant_net_income", "        - ex/dependant_net_income").replace(
-        "      ex/months_resident", "          ex/months_resident"
+    expected = (
+        "expected:\n"
+        "  ca-on/return:\n"
+        "    - ex/dependants:\n"
+        '        - ex/dependant_net_income: "25000"\n'
+        '          ex/months_resident: "12"\n'
+        '        - ex/dependant_net_income: "5000.50"\n'
+        '          ex/months_resident: "6"\n'
     )
     text = with_section("inputs", DEPENDANTS).replace(SECTIONS["expected"], expected)
     path = write(tmp_path, text, "ok.yaml")
@@ -1383,6 +1387,41 @@ def test_a_form_that_is_not_a_list_names_the_file_and_key(
 ) -> None:
     with pytest.raises(WorkedReturnError, match=r"per\.yaml: expected\.ex/rental must be a list"):
         per_instance(tmp_path, lines, 'expected:\n  ex/rental: "5"\n')
+
+
+def test_with_blanks_keeps_the_returns_own_entry_where_the_file_put_it(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    text = (
+        "expected:\n"
+        "  ex/rental:\n"
+        '    - ex/net_income: "10000"\n'
+        '    - ex/net_income: "4000"\n'
+        "  ca-on/return:\n"
+        '    - ex/total_net_income: "14000"\n'
+    )
+    worked = per_instance(tmp_path, lines, text)
+
+    filled = worked.with_blanks(frozenset(), frozenset({"ex/other_amount"}), lines)
+
+    assert [found.form for found in filled.form_expected] == ["ex/rental", "ca-on/return"]
+    assert [a.kind.identifier for a in filled.expected] == [
+        "ex/total_net_income",
+        "ex/other_amount",
+    ]
+
+
+def test_with_blanks_gives_a_file_with_no_entry_for_its_own_form_one_of_blanks(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    worked = per_instance(
+        tmp_path, lines, 'expected:\n  ex/rental:\n    - ex/net_income: "1"\n    - {}\n'
+    )
+
+    filled = worked.with_blanks(frozenset(), frozenset({"ex/other_amount"}), lines)
+
+    assert [found.form for found in filled.form_expected] == ["ca-on/return", "ex/rental"]
+    assert [(a.kind.identifier, a.value) for a in filled.expected] == [("ex/other_amount", D(0))]
 
 
 def test_with_blanks_keeps_the_form_expectations_and_adds_none(
