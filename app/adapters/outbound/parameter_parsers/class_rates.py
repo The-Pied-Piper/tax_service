@@ -9,6 +9,7 @@ from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.errors import DomainError, InvalidClassRatesError
 from app.domain.parameters.class_rates import (
     CLASS_RATES,
+    ClassElection,
     ClassRate,
     ClassRates,
     HalfYearRule,
@@ -27,6 +28,8 @@ _CLASS_KEYS = frozenset(
         "riip_factor",
     }
 )
+_OPTIONAL_CLASS_KEYS = frozenset({"elections"})
+_ELECTION_KEYS = frozenset({"rate"})
 # Each factor is read as a `fraction` dataset's body is: the same keys, the same parts.
 _FRACTIONS = FractionParser()
 
@@ -36,7 +39,9 @@ class ClassRatesParser:
     """Parser for `class_rates` datasets: `classes`, keyed by each class number as a quoted
     decimal, each a `rate`, a `half_year_rule`, a `recapture_and_terminal_loss`, a
     `half_year_rule_on_sale`, an `aiip_factor` and a `riip_factor`, each factor a quoted whole
-    `numerator` and `denominator` read as a `fraction` dataset's are; and `full_year_days`, a quoted
+    `numerator` and `denominator` read as a `fraction` dataset's are, and optionally `elections`,
+    keyed by each code as a quoted whole number above 0, each a `rate` as a quoted decimal; and
+    `full_year_days`, a quoted
     whole number above 0, the days of a full fiscal period."""
 
     kind = CLASS_RATES
@@ -56,7 +61,7 @@ class ClassRatesParser:
 
     def _class(self, key: str, entry: YamlNode) -> ClassRate:
         class_number = YamlNode(key, entry.where).parse_decimal()
-        fields = entry.require_mapping(_CLASS_KEYS)
+        fields = entry.require_mapping(_CLASS_KEYS, optional=_OPTIONAL_CLASS_KEYS)
         rate = fields.field("rate").parse_decimal()
         half_year_rule = fields.field("half_year_rule").parse_choice(HalfYearRule)
         recapture_and_terminal_loss = fields.field("recapture_and_terminal_loss").parse_choice(
@@ -67,6 +72,12 @@ class ClassRatesParser:
         )
         aiip_factor = fields.field("aiip_factor").require_mapping(_FRACTIONS.body_keys)
         riip_factor = fields.field("riip_factor").require_mapping(_FRACTIONS.body_keys)
+        elections_node = fields.optional_field("elections")
+        elections = (
+            ()
+            if elections_node is None
+            else tuple(self._election(code, held) for code, held in elections_node.fields())
+        )
         try:
             return ClassRate(
                 class_number,
@@ -76,7 +87,16 @@ class ClassRatesParser:
                 _FRACTIONS.parse(aiip_factor),
                 _FRACTIONS.parse(riip_factor),
                 half_year_rule_on_sale,
+                elections,
             )
         except DomainError as exc:
             # Name the class: the value objects do not know where in the table they sit.
+            raise InvalidClassRatesError(f"{entry.where}: {exc}") from exc
+
+    def _election(self, key: str, entry: YamlNode) -> ClassElection:
+        code = YamlNode(key, entry.where).parse_whole_number()
+        rate = entry.require_mapping(_ELECTION_KEYS).field("rate").parse_decimal()
+        try:
+            return ClassElection(code, Rate(rate))
+        except DomainError as exc:
             raise InvalidClassRatesError(f"{entry.where}: {exc}") from exc

@@ -381,8 +381,15 @@ def test_rejects_an_election_code_listed_twice() -> None:
 def test_rejects_elections_that_are_not_a_tuple(elections: object) -> None:
     with pytest.raises(TypeError, match="elections must be a tuple"):
         ClassRate(
-            D("1"), Rate(D("0.04")), APPLIES, INCLUDED, ZERO, ONE_HALF, NOT_ON_SALE, elections
-        )  # type: ignore[arg-type]
+            D("1"),
+            Rate(D("0.04")),
+            APPLIES,
+            INCLUDED,
+            ZERO,
+            ONE_HALF,
+            NOT_ON_SALE,
+            elections,  # type: ignore[arg-type]
+        )
 
 
 def test_rejects_an_election_that_is_not_an_election() -> None:

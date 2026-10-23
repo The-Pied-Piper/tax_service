@@ -3871,12 +3871,6 @@ def test_a_dataset_without_elections_reads_as_before(tmp_path: Path) -> None:
             id="code-zero",
         ),
         pytest.param(
-            '"3": {rate: "0.10"}',
-            '"01": {rate: "0.10"}',
-            r"classes\.10\.1.*election 1 is listed more than once",
-            id="code-twice-by-value",
-        ),
-        pytest.param(
             '"1": {rate: "0.10"}',
             '"1": {rate: 0.10}',
             r"classes\.10\.1\.elections\.1\.rate must be a string, got float",

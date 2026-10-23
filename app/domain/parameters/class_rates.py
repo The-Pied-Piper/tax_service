@@ -4,11 +4,13 @@ Each class is keyed by its number as printed, an exact `Decimal` so a class such
 number; it holds its `rate`, whether the half-year rule applies to it or it is exempt, whether
 recapture and a terminal loss apply to it or it is excluded, and two factors, the `aiip_factor` and
 the `riip_factor`. A class also states whether it has the half-year rule on sale
-(`half_year_rule_on_sale`) or not. The factors are `Fraction`s, the `fraction` kind's
-values, kept as given: a form can print a factor of 0 as well as one such as seven eighths. The
-table holds at least one class, no class number twice (by value), in the order given; a class it
-does not list is `None`. The table also holds the days in a full fiscal period, which a first
-fiscal period of fewer days is prorated against.
+(`half_year_rule_on_sale`) or not. A class may list `elections`, each a whole `code` above 0 and the
+`rate` a row takes when the caller elects that code, such as the 10% of a purpose-built residential
+rental or of a building put in a separate class (Guide T4036 2025, "Class 1 (4%)"). The factors are
+`Fraction`s, the `fraction` kind's values, kept as given: a form can print a factor of 0 as well as
+one such as seven eighths. The table holds at least one class, no class number twice (by value), in
+the order given; a class it does not list is `None`. The table also holds the days in a full fiscal
+period, which a first fiscal period of fewer days is prorated against.
 The code holds no jurisdiction's tables.
 """
 
@@ -46,10 +48,31 @@ class HalfYearRuleOnSale(Enum):
 
 
 @dataclass(frozen=True)
+class ClassElection:
+    """One election a class lists: its whole `code` above 0 and the `rate` a row takes when the
+    caller elects it.
+
+    Anything else is refused when it is built.
+    """
+
+    code: int
+    rate: Rate
+
+    def __post_init__(self) -> None:
+        # bool is an int subclass but not a code.
+        if not isinstance(self.code, int) or isinstance(self.code, bool):
+            raise TypeError(f"code must be an int, got {type(self.code).__name__}")
+        if self.code <= 0:
+            raise InvalidClassRatesError(f"code must be above 0, got {self.code}")
+        if not isinstance(self.rate, Rate):
+            raise TypeError(f"rate must be a Rate, got {type(self.rate).__name__}")
+
+
+@dataclass(frozen=True)
 class ClassRate:
     """One class: its positive `class_number`, its `rate`, its `half_year_rule`, its
-    `recapture_and_terminal_loss` and its `aiip_factor` and `riip_factor`, each a `Fraction`, and
-    its `half_year_rule_on_sale`.
+    `recapture_and_terminal_loss` and its `aiip_factor` and `riip_factor`, each a `Fraction`, its
+    `half_year_rule_on_sale` and its `elections`, none unless given, each code once.
 
     Anything else is refused when it is built.
     """
@@ -61,6 +84,7 @@ class ClassRate:
     aiip_factor: Fraction
     riip_factor: Fraction
     half_year_rule_on_sale: HalfYearRuleOnSale
+    elections: tuple[ClassElection, ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(self.class_number, Decimal):
@@ -89,6 +113,20 @@ class ClassRate:
             )
         self._check_factor("aiip_factor", self.aiip_factor)
         self._check_factor("riip_factor", self.riip_factor)
+        if not isinstance(self.elections, tuple):
+            raise TypeError(f"elections must be a tuple, got {type(self.elections).__name__}")
+        for index, election in enumerate(self.elections):
+            if not isinstance(election, ClassElection):
+                raise TypeError(f"elections must hold ClassElection, got {type(election).__name__}")
+            if any(election.code == earlier.code for earlier in self.elections[:index]):
+                raise InvalidClassRatesError(f"election {election.code} is listed more than once")
+
+    def election_rate(self, code: int) -> Rate | None:
+        """The rate of the election `code`, or `None` if the class does not list it."""
+        for election in self.elections:
+            if election.code == code:
+                return election.rate
+        return None
 
     @staticmethod
     def _check_factor(name: str, value: Fraction) -> None:

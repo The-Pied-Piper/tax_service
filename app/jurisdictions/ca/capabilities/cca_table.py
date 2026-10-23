@@ -83,7 +83,7 @@ slot is not prorated. Under `rounding: none` a prorated maximum that does not te
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal
 from fractions import Fraction as ExactFraction
 from typing import Any, ClassVar
@@ -115,6 +115,7 @@ from app.jurisdictions.ca.catalog import (
     CCA_NO_PROPERTY_LEFT,
     CCA_PERSONAL_PART_REMAINING,
     CCA_PROCEEDS,
+    CCA_RATE_ELECTION,
     CCA_RIIP_ADDITIONS,
     CCA_UCC_AT_START,
     NON_COMPLIANT_CCA,
@@ -127,7 +128,8 @@ _ZERO = Decimal(0)
 @dataclass(frozen=True)
 class CcaRow:
     """One row of the table as the caller entered it, the class at `position` (from 1): its
-    `class_number` (column 1), its `class_rate` from the dataset, columns 2, 3, 5, 11 and 12, the
+    `class_number` (column 1), its `class_rate` from the dataset (at the rate of its election, if it
+    makes one), columns 2, 3, 5, 11 and 12, the
     `claimed` CCA and `no_property_left` (1 if none, else 0); `diep_additions` (column 4),
     `diep_proceeds` (column 6) and `immediate_expensing` (column 9), each 0 unless the list lists
     it; `column_22` (0 unless the table consumes it); `fiscal_period_days` (the days of the fiscal
@@ -311,6 +313,7 @@ class CcaTable(Capability):
         half_year_rule_differs = CCA_HALF_YEAR_RULE_DIFFERS in record and bool(
             record[CCA_HALF_YEAR_RULE_DIFFERS]
         )
+        class_rate = self._elected(item, class_rate, record)
         ucc_at_start = Decimal(record[CCA_UCC_AT_START])
         column_8 = max(
             _ZERO, min(diep_additions - diep_proceeds, ucc_at_start + additions - proceeds)
@@ -346,6 +349,21 @@ class CcaTable(Capability):
             personal_part_remaining=personal_part_remaining,
             half_year_rule_differs=half_year_rule_differs,
         )
+
+    @staticmethod
+    def _elected(item: str, class_rate: ClassRate, record: Record) -> ClassRate:
+        """`class_rate` at the rate of the election the record makes (Guide T4036, "Class 1
+        (4%)"), the class as it is when the list does not list the election or it is 0; a code the
+        class does not list is an InvalidRecordError naming the item."""
+        code = int(record[CCA_RATE_ELECTION]) if CCA_RATE_ELECTION in record else 0
+        if code == 0:
+            return class_rate
+        elected = class_rate.election_rate(code)
+        if elected is None:
+            raise InvalidRecordError(
+                f"{item}: class {class_rate.class_number} does not list election {code}"
+            )
+        return replace(class_rate, rate=elected)
 
     @staticmethod
     def _optional(record: Record, kind: Money) -> Decimal:
