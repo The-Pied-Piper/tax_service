@@ -222,6 +222,7 @@ from app.jurisdictions.ca.catalog import (
     T5_TAXABLE_DIVIDENDS,
     T5_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     T776_STATEMENTS,
+    T2042_STATEMENTS,
     T2125_STATEMENTS,
     T5013_DIVIDEND_TAX_CREDIT,
     T5013_INVESTMENT_INCOME,
@@ -546,6 +547,7 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert registry.get("ca/net_rental_income") is NET_RENTAL_INCOME
     assert registry.get("ca/t776_statements") is T776_STATEMENTS
     assert registry.get("ca/t2125_statements") is T2125_STATEMENTS
+    assert registry.get("ca/t2042_statements") is T2042_STATEMENTS
 
 
 def test_the_income_kinds_are_money() -> None:

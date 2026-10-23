@@ -473,6 +473,16 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
+    FARM_CCA_CLASSES,
+    FARM_CCA_TABLE_CLAIM,
+    FARM_CLOSING_UCC,
+    FARM_GROSS_INCOME,
+    FARM_HOME_INCOME_LIMIT,
+    FARM_PARTNER,
+    FARM_RECAPTURED_CCA,
+    FARM_SHARE_OF_NET_INCOME,
+    FARM_TERMINAL_LOSS,
+    FARM_WHEAT,
     FARMING_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
@@ -1528,9 +1538,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(BUSINESS_INCOME), RecordTotal)
     imported = ArtifactRegistry.shared().kind("ca/t2125.business_income")
     assert worksheet.producer_of(imported) is None
-    # T1 line 25 (line 14100) is T2042 line 9946, "Amount 5C minus line 9945", no longer a starting
-    # amount either.
-    assert isinstance(worksheet.producer_of(FARMING_INCOME), Subtract)
+    # T1 line 25 (line 14100) totals the lines 9946 of the T2042 statements, which the form exports.
+    assert isinstance(worksheet.producer_of(FARMING_INCOME), RecordTotal)
+    imported_farming = ArtifactRegistry.shared().kind("ca/t2042.farming_income")
+    assert worksheet.producer_of(imported_farming) is None
     # T1 line 26 (line 14300) is T2121 line 9946, "Amount 5C minus line 9945", no longer a starting
     # amount either.
     assert isinstance(worksheet.producer_of(FISHING_INCOME), Subtract)
@@ -2508,7 +2519,27 @@ def test_each_t2125_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(BUSINESS_SHARE_OF_NET_INCOME), ChooseByCount)
     assert isinstance(worksheet.producer_of(BUSINESS_HOME_INCOME_LIMIT), SumNotBelowZero)
     assert isinstance(worksheet.producer_of(BUSINESS_INCOME), Subtract)
-    # The form holds its own copy of the printed constants; the return form's is the one Forms
-    # T2042 and T2121 read.
+    # The form holds its own copy of the printed constants; the return form's is the one Form
+    # T2121 reads.
+    assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
+    assert isinstance(return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
+
+
+def test_each_t2042_amount_is_produced_by_its_capability() -> None:
+    # The statement's worksheet: the form's own, where each T2042 line is produced and the
+    # statement's fields are starting artifacts.
+    worksheet = run_a()["ca/t2042"][0]
+    for starting in (FARM_WHEAT, FARM_PARTNER, FARM_CCA_CLASSES):
+        assert worksheet.producer_of(starting) is None, starting.identifier
+    assert isinstance(worksheet.producer_of(FARM_GROSS_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(FARM_RECAPTURED_CCA), RecapturedCca)
+    assert isinstance(worksheet.producer_of(FARM_CCA_TABLE_CLAIM), CcaClaim)
+    assert isinstance(worksheet.producer_of(FARM_TERMINAL_LOSS), TerminalLoss)
+    assert isinstance(worksheet.producer_of(FARM_CLOSING_UCC), ClosingUcc)
+    assert isinstance(worksheet.producer_of(FARM_SHARE_OF_NET_INCOME), ChooseByCount)
+    assert isinstance(worksheet.producer_of(FARM_HOME_INCOME_LIMIT), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(FARMING_INCOME), Subtract)
+    # The form holds its own copy of the printed constants; the return form's is the one Form T2121
+    # reads.
     assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
     assert isinstance(return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)

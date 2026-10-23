@@ -1,9 +1,9 @@
-# The printed constants of Form T2125 Charts B and C that Forms T2042 and T2121 read: T2042 and T2121
-# are not forms yet, so the return selects the steps they read, and the form ca/t2125 has its own
-# copy of each in `03b_t2125.yaml`. T2125 Chart B "Available interest expense for passenger
-# vehicles and zero-emission passenger vehicles" and Chart C "Eligible leasing cost for passenger
-# vehicles": the printed constants are datasets of the same name, one step each ("$350***", "÷ 30",
-# "$44,706", "$1,100" and "$38,000").
+# The printed constants of Form T2125 Charts B and C that Form T2121 reads: T2121 is not a form yet,
+# so the return selects the steps it reads, and the forms ca/t2125 and ca/t2042 have their own copy
+# of each in `03b_t2125.yaml` and `03c_t2042.yaml`. T2125 Chart B "Available interest expense for
+# passenger vehicles and zero-emission passenger vehicles" and Chart C "Eligible leasing cost for
+# passenger vehicles": the printed constants are datasets of the same name, one step each
+# ("$350***", "÷ 30", "$44,706", "$1,100" and "$38,000").
 capabilities:
   - name: core/credit_amount
     params:

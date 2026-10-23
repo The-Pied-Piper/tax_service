@@ -6,7 +6,7 @@ run once for each statement of `ca/t2125_statements`, whose fields are the T2125
 `ca/t2125.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the two
 nothing reads (`OUTPUTS` is empty). The return's own entries are the instances input, the total of
 the net income over the statements that is T1 line 13500 (`STEPS` and `WIRING`), and the five
-printed constants of Charts B and C that Forms T2042 and T2121 read (the form has its own copy of
+printed constants of Charts B and C that Form T2121 reads (the form has its own copy of
 each).
 """
 
@@ -940,7 +940,7 @@ FORM_EXPORTS = (
 OUTPUTS: frozenset[str] = frozenset()
 
 # T1 line 13500 "Net": the total of T2125 line 9946 over the statements; and the five printed
-# constants of Charts B and C that Forms T2042 and T2121 read from the return.
+# constants of Charts B and C that Form T2121 reads from the return.
 STEPS = {
     CapabilitySelection(
         name="core/record_total",
