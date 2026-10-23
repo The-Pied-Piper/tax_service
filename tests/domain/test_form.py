@@ -1066,6 +1066,27 @@ def sides(form: FormComposition, count: int) -> Artifact[Any]:
     return Artifact(kind, RecordList(kind.fields, [{SALES: D(10), COSTS: D(4)}] * count))
 
 
+def copies(name: str, *, group: str | None = None) -> FormComposition:
+    """A form of up to one copy whose copies carry no figures: it reads sales and costs as given."""
+    return FormComposition(
+        name,
+        [Subtract(SALES, COSTS, PROFIT)],
+        instances=RecordListKind(f"{name}_copies", fields=()),
+        exports=[PROFIT],
+        starting=frozenset({SALES, COSTS}),
+        max_instances=1,
+        min_instances=0,
+        exclusive_group=group,
+    )
+
+
+def copy_list(form: FormComposition, count: int) -> Artifact[Any]:
+    """`count` empty copies of `form`."""
+    kind = form.instances
+    assert kind is not None
+    return Artifact(kind, RecordList(kind.fields, [{}] * count))
+
+
 def side_set(*forms: FormComposition) -> FormSet:
     """The forms plus a form `ex-on/return` that totals the profit of the first.
 
@@ -1289,27 +1310,6 @@ def test_a_group_of_two_forms_with_a_minimum_of_one_is_refused_when_the_set_is_b
         "exclusive group 'ex/either': forms 'ex/first' and 'ex/second' can never hold: "
         "each always has at least one instance"
     )
-
-
-def copies(name: str, *, group: str | None = None) -> FormComposition:
-    """A form of up to one copy whose copies carry no figures: it reads sales and costs as given."""
-    return FormComposition(
-        name,
-        [Subtract(SALES, COSTS, PROFIT)],
-        instances=RecordListKind(f"{name}_copies", fields=()),
-        exports=[PROFIT],
-        starting=frozenset({SALES, COSTS}),
-        max_instances=1,
-        min_instances=0,
-        exclusive_group=group,
-    )
-
-
-def copy_list(form: FormComposition, count: int) -> Artifact[Any]:
-    """`count` empty copies of `form`."""
-    kind = form.instances
-    assert kind is not None
-    return Artifact(kind, RecordList(kind.fields, [{}] * count))
 
 
 def test_a_form_whose_copies_carry_no_figures_runs_once_per_copy_on_the_shared_inputs() -> None:

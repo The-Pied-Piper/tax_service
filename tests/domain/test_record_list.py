@@ -8,8 +8,8 @@ zero; an error names the record by its position from 1 ("item 2") and the field 
 A list may be empty. `RecordListKind.declare` declares a record-list kind on a catalog, a
 `RecordListKind` whose value type is `RecordList` and which carries its fields; it refuses a
 repeated field and a field kind that is not `Decimal` or `int`. A list without fields holds empty
-records and only counts them. Names are made up;
-like the artifact tests, the catalog tests point `ArtifactRegistry.shared` at a fresh registry.
+records and only counts them. Names are made up; like the artifact tests, the catalog tests point
+`ArtifactRegistry.shared` at a fresh registry.
 """
 
 from __future__ import annotations
