@@ -22,8 +22,8 @@ capabilities:
   # from line 50 or line 51. Enter the amount from line 52 on line 42800 of your return. (2) If
   # you were a resident of Ontario, enter this amount on line 88 of Form ON428 and complete the
   # remaining lines of that form.": the Ontario tax on split income never takes line 88 below line
-  # 50 (line 50 being line 47, the foreign tax credit of line 49 not being wired), and line 52 is
-  # the part ON428 line 90 adds the health premium to.
+  # 50 (line 47 less the foreign tax credit of line 49), and line 52 is the part ON428 line 90 adds
+  # the health premium to.
   - name: core/greater_of
     consumes:
       amounts:

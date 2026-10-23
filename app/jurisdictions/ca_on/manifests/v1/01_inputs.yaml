@@ -496,3 +496,5 @@ inputs:
   - ca/t657_chart_1_rows
   - ca/split_income_from_foreign_sources
   - ca/total_income_from_foreign_sources
+  - ca/split_income_non_business_from_foreign_sources
+  - ca/total_non_business_income_from_foreign_sources

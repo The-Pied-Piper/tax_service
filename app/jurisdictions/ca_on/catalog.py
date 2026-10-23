@@ -472,10 +472,17 @@ SPLIT_INCOME_LINE_47 = CATALOG.declare("split_income_line_47", Decimal)
 The form prints no "(if negative, enter "0")", so the kind is signed.
 """
 
+SPLIT_INCOME_LINE_49 = CATALOG.declare("split_income_line_49", Decimal, non_negative=True)
+"""Provincial foreign tax credit on split income, Form T1206 Part 3 line 49 "Part of the amount
+from line 68370 on page 8 that is non-business income" over "Part of the amount from line 68380 on
+page 8 that is non-business income", "× Amount from line number of your Form 428 shown in column 7
+in Chart C on page 5" (ON428 line 82): the provincial foreign tax credit times the share of the
+split income that is non-business income from foreign sources, 0 when there is no such income."""
+
 SPLIT_INCOME_LINE_50 = CATALOG.declare("split_income_line_50", Decimal)
 """Ontario tax on split income after the foreign tax credit, Form T1206 Part 3 line 50 "Line 48
 minus line 49", line 48 being "Amount from line 47 on the previous page": line 47 less the
-provincial foreign tax credit of line 49, which is not wired, so line 50 carries line 47.
+provincial foreign tax credit of line 49.
 
 The form prints no "(if negative, enter "0")", so the kind is signed.
 """

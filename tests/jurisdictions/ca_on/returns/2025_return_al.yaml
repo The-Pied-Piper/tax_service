@@ -20,8 +20,7 @@
 # line 18 is 0.00, line 19 is 9.0301% x 11,500 = 1,038.4615, rounded half-up to the cent,
 # 1,038.46, line 20 is 15.0198% of 0.00, 0.00 and line 21 is 1,038.46; line 22 is 3,795.00
 # - 1,038.46 = 2,756.54 and line 24 the same (line 23, the foreign tax credit, is 0.00:
-# no income from foreign sources). Line 29 is the federal tax less credits of the T1 (line
-# 41700, 417.83) plus
+# no income from foreign sources). Line 29 is the federal tax less credits of the T1 (line 41700, 417.83) plus
 # line 41500 (0), and line 30 is the greater of line 24 and line 29, 2,756.54, which, with
 # the special taxes (line 41800, 0), is the net federal tax (line 42000). T1206 Part 3 is
 # the Ontario side: line 33 (ON428 line 54, line 61510) is 20.53% x 11,500 = 2,360.95;
@@ -29,9 +28,9 @@
 # make line 36 0.00 and line 38 0.00, so line 39 is 2,360.95; line 42 is 10% of the 0.00 of
 # line 18, and line 45 is 2.9863% of the 11,500 of line 2 = 343.4245, rounded half-up to
 # the cent, 343.42, so line 46 is 343.42 and line 47 is 2,360.95 - 343.42 = 2,017.53,
-# which is line 50 (line 49 is not wired). Line 51 is ON428 line 88, and line 52 the more
-# of lines 50 and 51, 2,017.53, which is the Ontario tax before the health premium. Not
-# yet computed, so not in this file: line 49 of T1206. The chart of line 23500
+# which is line 50 (line 49 is 0.00, no income from foreign sources). Line 51 is ON428 line 88, and line 52 the more
+# of lines 50 and 51, 2,017.53, which is the Ontario tax before the health premium. The
+# chart of line 23500
 # does not apply (no old age security, EI benefits or net federal supplements), so line 23500 is 0 and
 # line 23600 equals line 23400. T1206 line 33C is 2,360.95 / 5.05% = 46,751.49 (a declared
 # output: nothing reads it). T1206 line 8A is 3,795.00 / 14.5% = 26,172.41, added to the taxable income
@@ -80,7 +79,7 @@ description: >-
   income of $0.00, at or below $57,375): $0.00 + $26,172.41 = $26,172.41, and line 13 is
   that less the credit amounts of line 101 (the basic personal amount, $16,129.00) =
   $10,043.41, line 14 (unused tuition from 2024, $0) is $0 and line 15 is $10,043.41;
-  line 24 is line 22, $2,756.54 (line 23 is 0.00); line 25 (line 40600) is $417.83,
+  line 24 is line 22, $2,756.54 (line 23 is $0.00, no income from foreign sources); line 25 (line 40600) is $417.83,
   line 26 (line 41600) is $0.00, line 27 is $417.83, line 28 (line 41500) is $0 and line 29
   is $417.83; line 30 is the greater of $2,756.54 and $417.83: $2,756.54, and line 42000 is
   line 30 plus line 41800 ($0.00): $2,756.54, so the floor of line 24 applies here, because
@@ -94,7 +93,7 @@ description: >-
   are $0.00 and line 39 is $2,360.95 - $0.00 = $2,360.95; line 42 is 10% of the $0.00 of
   line 18, $0.00, and line 45 is 2.9863% x the $11,500 of line 2 = $343.4245, rounded
   half-up to the cent: $343.42, so line 46 is $343.42 and line 47 is $2,360.95 - $343.42 =
-  $2,017.53, as is line 50 (line 49 is not wired). Line 33C is line 33A (line 33, $2,360.95)
+  $2,017.53, as is line 50 (line 49 is $0.00, no income from foreign sources). Line 33C is line 33A (line 33, $2,360.95)
   divided by the 5.05% of line 33B (Chart C column 3): $2,360.95 / 0.0505 = $46,751.4851,
   rounded half-up to the cent: $46,751.49, a declared output that nothing on the return
   reads. The Ontario tax with the tax on split
@@ -186,7 +185,8 @@ sources:
     line 16 is 11,500 and line 17 is 11,500, so line 18 is 11,500 - 11,500 = 0.00; line 19
     is 11,500 x 9.0301% = 1,038.4615, rounded half-up to the cent, 1,038.46; line 20 is 0.00
     x 15.0198% = 0.00; line 21 is 1,038.46 + 0.00; line 22 is 3,795.00 - 1,038.46 =
-    2,756.54; line 23 is 0.00, so line 24 is line 22 (not negative): 2,756.54. Line 25
+    2,756.54; line 23 is 0.00 (no income from foreign sources), so line 24 is line 22 (not negative):
+    2,756.54. Line 25
     is 417.83, line 26 is 0.00, line 27 is 417.83, line 28 is 0, line 29 is 417.83; line 30
     is the more of 2,756.54 and 417.83: 2,756.54, and line 42000 is 2,756.54 + 0.00 =
     2,756.54. Lines 14, 19 and 20 are dollars-and-cents boxes, rounded half-up to the cent;
@@ -264,7 +264,7 @@ sources:
     20.53% = 2,360.95; line 36 is 0 + 0 and line 38 is 5.05% x 0 = 0.00; line 39 is 2,360.95
     - 0.00; line 42 is 10% x 0.00 = 0.00; line 45 is 2.9863% x 11,500 = 343.4245, rounded
     half-up to the cent, 343.42; line 46 is 0.00 + 343.42; line 47 is 2,360.95 - 343.42 =
-    2,017.53; line 50 is line 47 (line 49 is not wired); line 52 is the more of line 50
+    2,017.53; line 50 is line 47 (line 49 is 0.00, no income from foreign sources); line 52 is the more of line 50
     (2,017.53) and line 51 (ON428 line 88, 2,017.53). ON428 line 55 is 0.00 + 2,360.95,
     line 65 is 2,360.95 - 2,360.95 = 0.00, line 69 is 2,360.95 + 0.00, line 71 is 2,360.95 -
     343.42 = 2,017.53 and the Ontario tax reduction is 588.00 less 2,017.53, not below

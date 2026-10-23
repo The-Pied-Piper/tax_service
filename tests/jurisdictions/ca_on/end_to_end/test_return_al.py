@@ -646,7 +646,10 @@ def test_return_als_trace_follows_form_t1206_part_3_line_by_line() -> None:
         "split_income_line_46: split_income_line_42 0 + split_income_line_45 343.42 = 343.42",
         "split_income_line_47: split_income_line_39 2360.95 less split_income_line_46 343.42 "
         "= 2017.53",
-        "split_income_line_50: split_income_line_47 2017.53 = 2017.53",
+        "split_income_line_49: provincial_foreign_tax_credit 0 "
+        "× split_income_non_business_from_foreign_sources 0 "
+        "/ total_non_business_income_from_foreign_sources 0 (half-up to 0.01)",
+        "split_income_line_50: split_income_line_47 2017.53 less split_income_line_49 0 = 2017.53",
         "ontario_tax_with_split_income: ontario_tax_after_credits 0 "
         "+ ontario_tax_on_split_income 2360.95 = 2360.95",
         "ontario_tax_on_split_income_for_surtax: ontario_tax_on_split_income 2360.95 = 2360.95",

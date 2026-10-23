@@ -213,6 +213,7 @@ from app.jurisdictions.ca_on.catalog import (
     SPLIT_INCOME_LINE_45,
     SPLIT_INCOME_LINE_46,
     SPLIT_INCOME_LINE_47,
+    SPLIT_INCOME_LINE_49,
     SPLIT_INCOME_LINE_50,
     SPLIT_INCOME_LINE_52,
     SPOUSE_ADJUSTED_TAXABLE_INCOME,
@@ -411,6 +412,7 @@ REGISTERED = frozenset(
         "ca-on/split_income_line_45",
         "ca-on/split_income_line_46",
         "ca-on/split_income_line_47",
+        "ca-on/split_income_line_49",
         "ca-on/split_income_line_50",
         "ca-on/split_income_line_52",
         "ca-on/ontario_health_premium",
@@ -836,6 +838,7 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/split_income_line_45") is SPLIT_INCOME_LINE_45
     assert registry.get("ca-on/split_income_line_46") is SPLIT_INCOME_LINE_46
     assert registry.get("ca-on/split_income_line_47") is SPLIT_INCOME_LINE_47
+    assert registry.get("ca-on/split_income_line_49") is SPLIT_INCOME_LINE_49
     assert registry.get("ca-on/split_income_line_50") is SPLIT_INCOME_LINE_50
     assert registry.get("ca-on/split_income_line_52") is SPLIT_INCOME_LINE_52
     assert registry.get("ca-on/ontario_health_premium") is ONTARIO_HEALTH_PREMIUM
@@ -1450,9 +1453,9 @@ def test_the_co_operative_education_partnership_lines_are_a_yes_no_count_and_nin
 
 def test_the_t1206_part_3_lines_that_may_be_negative_are_signed(registry: ArtifactRegistry) -> None:
     # Form T1206 Part 3 line 39 "Line 33 minus line 38", line 47 "Line 39 minus line 46" and
-    # line 50 (line 49 is not wired, so line 50 carries line 47) print no "(if negative, enter
-    # "0")": a disability or dividend credit larger than the tax gives a negative line, which
-    # line 52 then compares with ON428 line 88.
+    # line 50 "Line 48 minus line 49" print no "(if negative, enter "0")": a disability or
+    # dividend credit larger than the tax gives a negative line, which line 52 then compares with
+    # ON428 line 88.
     for kind in (SPLIT_INCOME_LINE_39, SPLIT_INCOME_LINE_47, SPLIT_INCOME_LINE_50):
         assert kind.value_type is Decimal
         assert kind.non_negative is False, kind.identifier
@@ -1460,8 +1463,8 @@ def test_the_t1206_part_3_lines_that_may_be_negative_are_signed(registry: Artifa
 
 
 def test_the_other_t1206_part_3_kinds_are_non_negative_amounts(registry: ArtifactRegistry) -> None:
-    # Lines 33, 36, 38, 42, 45, 46 and 52 are a rate times a non-negative base, a sum of
-    # non-negative amounts, or (line 52) the greater of a signed line and ON428 line 88, which is
+    # Lines 33, 36, 38, 42, 45, 46, 49 and 52 are a rate or a share times a non-negative base, a sum
+    # of non-negative amounts, or (line 52) the greater of a signed line and ON428 line 88, which is
     # not below zero; ON428 lines 54, 64 and 55 and the health premium's taxable income are
     # amounts too, and 58440 is the caller's disability amount for self.
     for kind in (
@@ -1470,6 +1473,7 @@ def test_the_other_t1206_part_3_kinds_are_non_negative_amounts(registry: Artifac
         SPLIT_INCOME_LINE_42,
         SPLIT_INCOME_LINE_45,
         SPLIT_INCOME_LINE_46,
+        SPLIT_INCOME_LINE_49,
         SPLIT_INCOME_LINE_52,
         ONTARIO_TAX_ON_SPLIT_INCOME,
         TOSI_ADJUSTED_TAXABLE_INCOME,

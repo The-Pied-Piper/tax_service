@@ -2496,9 +2496,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((ontario.SPLIT_INCOME_LINE_42, D("0")), (ontario.SPLIT_INCOME_LINE_45, D("0"))),
             D("0"),
         ),
-        ontario.SPLIT_INCOME_LINE_50: SumLine(
-            ontario.SPLIT_INCOME_LINE_50, ((ontario.SPLIT_INCOME_LINE_47, D("0")),), D("0")
-        ),
         ontario.ONTARIO_TAX_WITH_SPLIT_INCOME: SumLine(
             ontario.ONTARIO_TAX_WITH_SPLIT_INCOME,
             (

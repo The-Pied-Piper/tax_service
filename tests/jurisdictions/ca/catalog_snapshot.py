@@ -1019,6 +1019,8 @@ REGISTERED = frozenset(
         "ca/other_split_income",
         "ca/split_income_from_foreign_sources",
         "ca/total_income_from_foreign_sources",
+        "ca/split_income_non_business_from_foreign_sources",
+        "ca/total_non_business_income_from_foreign_sources",
         "ca/deductions_from_total_income",
         "ca/net_income_before_adjustments",
         "ca/net_income",

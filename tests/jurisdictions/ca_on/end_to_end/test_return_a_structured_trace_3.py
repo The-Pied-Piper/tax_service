@@ -1392,6 +1392,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        ontario.SPLIT_INCOME_LINE_50: SubtractedLine(
+            output=ontario.SPLIT_INCOME_LINE_50,
+            minuend=ontario.SPLIT_INCOME_LINE_47,
+            minuend_amount=D("0"),
+            subtrahend=ontario.SPLIT_INCOME_LINE_49,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
         SPLIT_INCOME_LINE_15: SubtractedLine(
             output=SPLIT_INCOME_LINE_15,
             minuend=SPLIT_INCOME_LINE_10,

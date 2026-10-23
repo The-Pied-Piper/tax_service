@@ -400,6 +400,18 @@ TOTAL_INCOME_FROM_FOREIGN_SOURCES = CATALOG.declare(
 """Total income from foreign sources, Form T1206 Part 2 line 68380 "Total income from foreign
 sources": a starting amount."""
 
+SPLIT_INCOME_NON_BUSINESS_FROM_FOREIGN_SOURCES = CATALOG.declare(
+    "split_income_non_business_from_foreign_sources", Decimal, non_negative=True
+)
+"""Non-business part of the split income from foreign sources, Form T1206 Part 3 line 49 "Part of
+the amount from line 68370 on page 8 that is non-business income": a starting amount."""
+
+TOTAL_NON_BUSINESS_INCOME_FROM_FOREIGN_SOURCES = CATALOG.declare(
+    "total_non_business_income_from_foreign_sources", Decimal, non_negative=True
+)
+"""Non-business part of the total income from foreign sources, Form T1206 Part 3 line 49 "Part of
+the amount from line 68380 on page 8 that is non-business income": a starting amount."""
+
 CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
     "cpp_t4_base_and_first_additional_contributions", Decimal, non_negative=True
 )

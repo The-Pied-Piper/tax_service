@@ -2612,7 +2612,8 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         LIFT_REDUCTION
     )
     # The Ontario half of Form T1206 Part 3, one step per line: lines 33, 38, 42 and 45 rates,
-    # 36, 46 and 50 sums, 39 and 47 differences, 52 the greater of line 50 and ON428 line 88.
+    # 36 and 46 sums, 39, 47 and 50 differences, 49 the foreign tax credit times a share, 52 the
+    # greater of line 50 and ON428 line 88.
     for kind in (
         ontario.ONTARIO_TAX_ON_SPLIT_INCOME,
         ontario.SPLIT_INCOME_LINE_38,
@@ -2625,14 +2626,18 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     for kind in (
         ontario.SPLIT_INCOME_LINE_36,
         ontario.SPLIT_INCOME_LINE_46,
-        ontario.SPLIT_INCOME_LINE_50,
         ontario.ONTARIO_TAX_WITH_SPLIT_INCOME,
         ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
         ontario.HEALTH_PREMIUM_INCOME,
     ):
         assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
-    for kind in (ontario.SPLIT_INCOME_LINE_39, ontario.SPLIT_INCOME_LINE_47):
+    for kind in (
+        ontario.SPLIT_INCOME_LINE_39,
+        ontario.SPLIT_INCOME_LINE_47,
+        ontario.SPLIT_INCOME_LINE_50,
+    ):
         assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+    assert isinstance(worksheet.producer_of(ontario.SPLIT_INCOME_LINE_49), ApplyRatioOrZero)
     assert isinstance(worksheet.producer_of(ontario.ONTARIO_SURTAX_BASE), SubtractNotBelowZero)
     # ON428 line 61 "Line 55 minus line 60 (if negative, enter "0")".
     assert isinstance(
