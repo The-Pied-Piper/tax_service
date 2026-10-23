@@ -12,7 +12,9 @@ $396.00)" (line 26). The QPP side of Part 3: "amount from line 39 x 84.375%" (li
 "amount from line 38 x 5.4% = (maximum $3,661.20)" (line 42), "amount from line 38 x 1% =
 (maximum $678.00)" (line 43) and "amount from line 35 x 4% = (maximum $396.00)" (line 46). Part 4:
 "Amount from line 26 × 16.80672 = 27" (line 27), the CPP contributions grossed up to the
-self-employed rate (twice the employee's 4.95% and 1%, 1 / 0.0595 to five decimal places).
+self-employed rate (twice the employee's 4.95% and 1%, 1 / 0.0595 to five decimal places), and
+"Amount from line 40 × 15.625 = 41" (line 41), the QPP contributions grossed up the same way
+(1 / 0.064, which is exactly 15.625: the QPP rate of 5.4% and 1% is 6.4%).
 
 The form prints no "upper" of its own for lines 22, 23, 26, 42, 43 and 46: the tiers run from 0
 to the maximum the printed maximum implies (67,800.00 at 4.95%, 5.4% and 1% and 9,900.00 at 4%).
@@ -63,6 +65,7 @@ REQUIRED_SECOND_ADDITIONAL = "ca/rc381_required_second_additional"
 QPP_BASE_SHARE_RATE = "ca/rc381_qpp_base_share_rate"
 REQUIRED_QPP_BASE = "ca/rc381_required_qpp_base"
 CPP_GROSS_UP_FRACTION = "ca/rc381_cpp_gross_up_fraction"
+QPP_GROSS_UP_FRACTION = "ca/rc381_qpp_gross_up_fraction"
 
 # Made up for this test and not registered.
 EARNINGS = ArtifactKind("ex/earnings", Decimal)
@@ -371,6 +374,54 @@ def test_part_4_line_27_is_line_26_times_16_80672(line_26: str, line_27: str) ->
     assert result.outputs == (Artifact(CONTRIBUTION, D(line_27)),)
 
 
+# Part 4 line 41.
+
+
+def test_2025_part_4_line_41_is_15625_over_1000_to_the_cent() -> None:
+    data = SOURCE.get(QPP_GROSS_UP_FRACTION, 2025, FRACTION)
+
+    # "× 15.625" kept as printed, not reduced and not turned into a rate: 15.625 is above 1, which
+    # a rate refuses, as line 27's 16.80672 is.
+    assert data.values == Fraction(15625, 1000)
+    assert data.rounding == CENT
+
+
+@pytest.mark.parametrize(
+    ("line_40", "line_41"),
+    [
+        # Return BO's line 40 of 2,432.00 (line 28 less line 31 when line 61 of Part 3 is
+        # positive): 2,432.00 x 15.625 = 38,000.00, which is 2,432.00 / 6.4%.
+        ("2432.00", "38000.00"),
+        ("0", "0.00"),
+        # 1.00 x 15.625 = 15.625, up to 15.63 (half up); 0.01 x 15.625 = 0.15625, up to 0.16;
+        # 0.02 x 15.625 = 0.3125, down to 0.31; 0.03 x 15.625 = 0.46875, up to 0.47.
+        ("1.00", "15.63"),
+        ("0.01", "0.16"),
+        ("0.02", "0.31"),
+        ("0.03", "0.47"),
+        # A tie: 0.04 x 15.625 = 0.625, up to 0.63 (half even would give 0.62); 0.12 x 15.625 =
+        # 1.875, up to 1.88.
+        ("0.04", "0.63"),
+        ("0.12", "1.88"),
+        # 100.00 x 15.625 = 1,562.50; 1,568.00 x 15.625 = 24,500.00.
+        ("100.00", "1562.50"),
+        ("1568.00", "24500.00"),
+        # Line 40 may be a negative amount (line 35A's second sentence is, in brackets): -1.00 x
+        # 15.625 = -15.625, half up (away from zero) to -15.63.
+        ("-1.00", "-15.63"),
+        ("-0.03", "-0.47"),
+    ],
+)
+def test_part_4_line_41_is_line_40_times_15_625(line_40: str, line_41: str) -> None:
+    capability = ApplyFraction(
+        SOURCE.get(QPP_GROSS_UP_FRACTION, 2025, FRACTION), EARNINGS, CONTRIBUTION
+    )
+
+    result = capability.compute((Artifact(EARNINGS, D(line_40)),))
+
+    assert result.outputs == (Artifact(CONTRIBUTION, D(line_41)),)
+
+
 # Sources and headers.
 
 
@@ -386,6 +437,7 @@ def test_part_4_line_27_is_line_26_times_16_80672(line_26: str, line_27: str) ->
         (QPP_BASE_SHARE_RATE, RATE),
         (REQUIRED_QPP_BASE, CONTRIBUTION_TIER),
         (CPP_GROSS_UP_FRACTION, FRACTION),
+        (QPP_GROSS_UP_FRACTION, FRACTION),
     ],
 )
 def test_2025_rc381_datasets_cite_only_the_rc381_pdf(family: str, kind: ParameterKind[Any]) -> None:
@@ -410,6 +462,7 @@ def test_2025_rc381_datasets_cite_only_the_rc381_pdf(family: str, kind: Paramete
         (QPP_BASE_SHARE_RATE, ("amount from line 39", "84.375%")),
         (REQUIRED_QPP_BASE, ("amount from line 38", "5.4%", "(maximum $3,661.20)")),
         (CPP_GROSS_UP_FRACTION, ("Amount from line 26", "16.80672", "Part 4", "line 27")),
+        (QPP_GROSS_UP_FRACTION, ("Amount from line 40", "15.625", "Part 4", "line 41")),
     ],
 )
 def test_the_dataset_header_quotes_rc381_as_the_form_prints_it(
@@ -458,6 +511,7 @@ def test_the_shared_dataset_header_also_quotes_the_qpp_line(
         QPP_BASE_SHARE_RATE,
         REQUIRED_QPP_BASE,
         CPP_GROSS_UP_FRACTION,
+        QPP_GROSS_UP_FRACTION,
     ],
 )
 def test_the_dataset_header_states_its_rounding_decision(family: str) -> None:

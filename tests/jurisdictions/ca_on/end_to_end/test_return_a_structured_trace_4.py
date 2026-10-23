@@ -713,6 +713,10 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_23,
     RC381_PART_4_LINE_23_LESSER,
     RC381_PART_4_LINE_24_LESSER,
+    RC381_PART_4_LINE_35,
+    RC381_PART_4_LINE_36,
+    RC381_PART_4_LINE_38,
+    RC381_PART_4_LINE_39,
     REFUND,
     RENTAL_CCA_CLAIM,
     RENTAL_CCA_CLAIM_BEFORE_LIMIT,
@@ -989,6 +993,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form RC381 Part 4 line 39 "Enter whichever is less: amount from line 35 or line 38.":
+        # both are 0 for Return A.
+        RC381_PART_4_LINE_39: LesserOfLine(
+            output=RC381_PART_4_LINE_39,
+            parts=((RC381_PART_4_LINE_35, D("0")), (RC381_PART_4_LINE_38, D("0"))),
+            result=D("0"),
+        ),
         # Form RC381 Part 4 line 23 "enter whichever is less: amount from line 68 of Part 3 or
         # line 17A" and line 24 "Enter whichever is less: amount from line 17A or line 23.":
         # every part is 0 for Return A.
@@ -4189,6 +4200,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS, D("0")),
                 (AMT_FOREIGN_BUSINESS_TAX_PAID, D("0")),
             ),
+            total=D("0"),
+        ),
+        # Form RC381 Part 4 line 36 "Enter the amount from line 68 of Part 3 if positive. If not,
+        # enter "0".": Return A's line 68 is 0.
+        RC381_PART_4_LINE_36: SumNotBelowZeroLine(
+            output=RC381_PART_4_LINE_36,
+            parts=((RC381_PART_3_LINE_68, D("0.00")),),
             total=D("0"),
         ),
         # Form RC381 Part 3a line 74 "Overpayment: Enter the amount from line 69." for line 44800,

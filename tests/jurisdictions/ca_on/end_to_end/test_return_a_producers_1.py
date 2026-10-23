@@ -751,6 +751,34 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_25A,
     RC381_PART_4_LINE_26,
     RC381_PART_4_LINE_27,
+    RC381_PART_4_LINE_31,
+    RC381_PART_4_LINE_31_DIFFERENCE,
+    RC381_PART_4_LINE_32,
+    RC381_PART_4_LINE_33,
+    RC381_PART_4_LINE_34,
+    RC381_PART_4_LINE_35,
+    RC381_PART_4_LINE_35A,
+    RC381_PART_4_LINE_35AA,
+    RC381_PART_4_LINE_35AA_FROM_LINE_17,
+    RC381_PART_4_LINE_35AB,
+    RC381_PART_4_LINE_35AB_FROM_LINE_20,
+    RC381_PART_4_LINE_35AB_WHEN_LINE_35_ZERO,
+    RC381_PART_4_LINE_36,
+    RC381_PART_4_LINE_38,
+    RC381_PART_4_LINE_39,
+    RC381_PART_4_LINE_40,
+    RC381_PART_4_LINE_41,
+    RC381_PART_4_LINE_42,
+    RC381_PART_4_LINE_46,
+    RC381_PART_4_LINE_46_DIFFERENCE,
+    RC381_PART_4_LINE_47,
+    RC381_PART_4_LINE_51,
+    RC381_PART_4_LINE_51_DIFFERENCE,
+    RC381_PART_4_LINE_52,
+    RC381_PART_4_LINE_53,
+    RC381_PART_4_LINE_54,
+    RC381_PART_4_LINE_55,
+    RC381_PART_4_LINE_56,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REFUND_OR_BALANCE_OWING,
@@ -1219,6 +1247,49 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         assert isinstance(worksheet.producer_of(kind), LesserOf), kind.identifier
     assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_23_MULTIPLIED), ApplyChosenRate)
     assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_27), ApplyFraction)
+    # Form RC381 Part 4 lines 31 to 56: the sums and differences, the signs read by "If line 61 of
+    # Part 3 is ..." and "If line 68 of Part 3 is positive ...", the helpers printed inside lines
+    # 31, 35A, 46 and 51, the positive parts of lines 33 and 54, the gross-up of line 41.
+    for kind in (
+        RC381_PART_4_LINE_35A,
+        RC381_PART_4_LINE_40,
+        RC381_PART_4_LINE_42,
+        RC381_PART_4_LINE_53,
+        RC381_PART_4_LINE_56,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+    for kind in (
+        RC381_PART_4_LINE_31_DIFFERENCE,
+        RC381_PART_4_LINE_32,
+        RC381_PART_4_LINE_35,
+        RC381_PART_4_LINE_38,
+        RC381_PART_4_LINE_46_DIFFERENCE,
+        RC381_PART_4_LINE_47,
+        RC381_PART_4_LINE_51_DIFFERENCE,
+        RC381_PART_4_LINE_52,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+    for kind in (RC381_PART_4_LINE_33, RC381_PART_4_LINE_54):
+        assert isinstance(worksheet.producer_of(kind), PositivePartOfNegation), kind.identifier
+    for kind in (
+        RC381_PART_4_LINE_31,
+        RC381_PART_4_LINE_35AA,
+        RC381_PART_4_LINE_35AB_WHEN_LINE_35_ZERO,
+        RC381_PART_4_LINE_35AB,
+        RC381_PART_4_LINE_46,
+        RC381_PART_4_LINE_51,
+    ):
+        assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
+    # "Whichever is less ... when positive" (lines 34, 35A's amount from line 17 and 55) and its
+    # "show in brackets" sibling (35A's amount from line 20).
+    for kind in (RC381_PART_4_LINE_34, RC381_PART_4_LINE_35AA_FROM_LINE_17, RC381_PART_4_LINE_55):
+        assert type(worksheet.producer_of(kind)) is LesserOfWhenPositive, kind.identifier
+    assert isinstance(
+        worksheet.producer_of(RC381_PART_4_LINE_35AB_FROM_LINE_20), LesserOfWhenPositiveInBrackets
+    )
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_36), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_39), LesserOf)
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_41), ApplyFraction)
     # Line 3 (box 50399) is a starting amount, so nothing produces it.
     assert worksheet.producer_of(CPT20_T4_EARNINGS) is None
     assert worksheet.producer_of(RC381_PART_3_LINE_7) is not None

@@ -3,9 +3,10 @@
 # RC381 replaces Schedule 8. This return carries Part 2 (the months and the QPP lines G to J),
 # Part 3 lines 1 to 93 (the CPP side on lines 3, 6 to 11, 14 to 16, 18 and 20 to 26, the QPP side
 # on lines 27 to 31, 34 to 36, 38 and 40 to 46, the totals on lines 49 to 69, and Parts 3a and 3b
-# on lines 70 to 93, with the three results for employment income only) and Part 4 lines 1 to 27
-# (the CPP side before the QPP gross-up, with a chosen CPT20 election of $10,000 and $2,500); the
-# rest of Part 4 is not yet computed, and the results are not yet carried to the T1 lines 30800,
+# on lines 70 to 93, with the three results for employment income only) and Part 4 lines 1 to 56
+# (the CPP side before the QPP gross-up, the QPP side, line 42 and the second additional
+# contributions, with a chosen CPT20 election of $10,000 and $2,500); the rest of Part 4 (lines 57
+# onward) is not yet computed, and the results are not yet carried to the T1 lines 30800,
 # 22215 and 44800, which below are still Schedule 8's, from the whole employment income, as are
 # 22200, 31000 and 42100. The other lines are blank.
 jurisdiction: CA-ON
@@ -90,10 +91,23 @@ description: >-
   68.00; lines 17 and 20 are both positive, which the form does not settle, and line 21 is 0
   (what the engine enters on line 21 for a positive line 17 and a negative line 20 is -104.25
   here); line 22 = 0 (line 17A is not more than line 14, which is 0, and the quotient has a zero
-  divisor); line 23 = 0.00. The remaining lines
+  divisor); line 23 = 0.00. Part 4 (lines 28 to 56): line 28 (the amount from line 39 of Part 3)
+  is 2,500.00. Line 61 of Part 3 is positive: complete lines 28 to 32 only, and continue at line
+  40. Line 29 (the amount from line 61 of Part 3) is 172.25 and line 30 (the amount from line
+  12) is 104.25, so line 31 = 172.25 less 104.25 = 68.00 and line 32 = line 28 less line 31 =
+  2,500.00 less 68.00 = 2,432.00. Lines 33 to 39 are not completed: line 33 = 0 (line 61 is not
+  negative), line 34 = 0, line 35 = 0, line 35A = 0, line 36 = 0 (line 68 of Part 3 is 0), line
+  38 = 0 and line 39 = 0. Line 40 = 2,432.00 + 0 + 0 = 2,432.00 and line 41 = 2,432.00 x 15.625 =
+  38,000.00;
+  line 42 = line 27 plus line 41 = 28,500.00 + 38,000.00 = 66,500.00. There are no second
+  additional contributions (boxes 16A and 17A are blank) and line 68 of Part 3 is 0, not
+  positive, so lines 44 to 46 and 49 to 51 are not completed and lines 46 and 51 are "0": line
+  43 = 0, line 47 = 0 less 0 = 0, line 48 = 0, line 52 = 0 less 0 = 0, line 53 = 0 + 0 = 0; line
+  54 = 0 and line 55 = 0 (line 68 is not negative); line 56 = 0 + 0 = 0. The remaining lines
   of the T1 are
-  calculator). Not triggered: Part 3b's branches (line 69 is positive), Part 4 lines 28 to
-  91 and the lines of Part 4's block for a negative line 61, the effect of the CPT20 election on
+  calculator). Not triggered: Part 3b's branches (line 69 is positive), Part 4 lines 57 to
+  91 and the lines of Part 4's blocks for a negative or "0" line 61 and for a positive or
+  negative line 68 of Part 3 (the end-to-end tests have them), the effect of the CPT20 election on
   Schedule 8 Part 4 (the count of Part 4 completed stays 0, so lines 42100, 31000 and 22200 are
   as without the election), the second additional contributions of lines 25 and 45 (boxes 16A
   and 17A, none), and every other credit and deduction not named here.
@@ -204,6 +218,37 @@ sources:
     is less: amount from line 17A or line 23." (line 24); "Amount from line 13" (line 25);
     "Amount from line 21" (line 25A); "Add lines 24 to 25A." (line 26); "Amount from line 26 ×
     16.80672 =" (line 27).
+  - >-
+    CRA, Form RC381 (2025), Part 4 (continued): "If line 61 of Part 3 is: "0", do not complete
+    lines 29 to 39. Complete line 28 and enter the amount on line 40 and continue at line 41.
+    positive, complete lines 28 to 32 only, and continue at line 40. negative, complete line 28
+    and enter "0" at line 31 and continue at line 32."; "Total actual base and first additional
+    QPP contributions from line 39 of Part 3" (line 28); "Amount from line 61 of Part 3" (line
+    29); "Amount from line 12 (if negative, show in brackets)" (line 30); "Line 29 minus line 30
+    (if negative, show in brackets)" (line 31); "Line 28 minus line 31" (line 32); "Enter the
+    amount from line 61 of Part 3 as a positive amount." (line 33); "If line 17A is positive,
+    enter whichever is less: amount from line 17A or line 33. If not, enter "0"." (line 34);
+    "Line 33 minus line 34" (line 35); "If line 35 and line 17 are both positive, enter the
+    amount from line 17. If line 35 is "0" and line 20 is positive, enter the amount from line 20
+    (show in brackets). If not, enter "0"." (line 35A); "Enter the amount from line 68 of Part 3
+    if positive. If not, enter "0"." (line 36); "Amount from line 24" (line 37); "Line 36 minus
+    line 37" (line 38); "Enter whichever is less: amount from line 35 or line 38." (line 39);
+    "Add lines 32, 35A, and 39." (line 40); "Amount from line 40 × 15.625 =" (line 41); "Line 27
+    plus line 41" (line 42); "Total actual second additional CPP contributions from line 25 of
+    Part 3" (line 43); "If line 68 of Part 3 is positive, complete lines 44 to 46. If not,
+    enter "0" on line 46 and continue at line 47."; "Amount from line 62 of Part 3" (line 44);
+    "Amount from line 65 of Part 3" (line 45); "Line 44 minus line 45 (if negative, show in
+    brackets)" (line 46); "Line 43 minus line 46 (if negative, show in brackets)" (line 47);
+    "Total actual second additional QPP contributions from line 45 of Part 3" (line 48); "If
+    line 68 of Part 3 is positive, complete lines 49 to 51. If not, enter "0" on line 51 and
+    continue at line 52."; "Enter the amount from line 68 of Part 3." (line 49); "Enter the
+    amount from line 46 (if negative, show in brackets)." (line 50); "Line 49 minus line 50 (if
+    negative, show in brackets)" (line 51); "Line 48 minus line 51" (line 52); "Line 47 plus line
+    52" (line 53); "If line 61 of Part 3 is positive and line 68 of Part 3 is negative, complete
+    lines 54 and 55. If not, enter "0" on line 55 and continue at line 56." (lines 54 and 55);
+    "Enter the amount from line 68 of Part 3 as a positive amount." (line 54); "If line 61 of
+    Part 3 is positive, enter whichever is less: amount from line 61 of Part 3 or line 54."
+    (line 55); "Line 53 plus line 55" (line 56).
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/rc381/rc381-25e.pdf
 inputs:
   ca/employment_income: "70000"
@@ -342,3 +387,31 @@ expected:
   ca/rc381_part_4_line_25a: "0"
   ca/rc381_part_4_line_26: "1695.75"
   ca/rc381_part_4_line_27: "28500.00"
+  ca/rc381_part_4_line_31_difference: "68.00"
+  ca/rc381_part_4_line_31: "68.00"
+  ca/rc381_part_4_line_32: "2432.00"
+  ca/rc381_part_4_line_33: "0"
+  ca/rc381_part_4_line_34: "0"
+  ca/rc381_part_4_line_35: "0"
+  ca/rc381_part_4_line_35aa_from_line_17: "104.25"
+  ca/rc381_part_4_line_35aa: "0"
+  ca/rc381_part_4_line_35ab_from_line_20: "-68.00"
+  ca/rc381_part_4_line_35ab_when_line_35_zero: "-68.00"
+  ca/rc381_part_4_line_35ab: "0"
+  ca/rc381_part_4_line_35a: "0"
+  ca/rc381_part_4_line_36: "0"
+  ca/rc381_part_4_line_38: "0"
+  ca/rc381_part_4_line_39: "0"
+  ca/rc381_part_4_line_40: "2432.00"
+  ca/rc381_part_4_line_41: "38000.00"
+  ca/rc381_part_4_line_42: "66500.00"
+  ca/rc381_part_4_line_46_difference: "0.00"
+  ca/rc381_part_4_line_46: "0"
+  ca/rc381_part_4_line_47: "0"
+  ca/rc381_part_4_line_51_difference: "0.00"
+  ca/rc381_part_4_line_51: "0"
+  ca/rc381_part_4_line_52: "0"
+  ca/rc381_part_4_line_53: "0"
+  ca/rc381_part_4_line_54: "0"
+  ca/rc381_part_4_line_55: "0"
+  ca/rc381_part_4_line_56: "0"

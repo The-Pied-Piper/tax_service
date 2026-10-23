@@ -6,11 +6,14 @@ Part 3 lines 1 to 3, 6 to 11, 14 to 16, 18 to 24, 26 to 31, 34 to 36, 38, 40 to 
 56, 59 to 61, 64 and 67 to 69, and the entries on lines 19, 25, 39 and 45, then Part 3a and Part 3b
 (lines 73, 75 to 93, the helper under line 87 and the three results for lines 30800, 22215 and
 44800), then Part 4 lines 1 to 27 (the CPP side before the QPP gross-up: lines 4, 8, 11 to 14, 17,
-17A, 20 to 27, and the helpers printed inside lines 13, 21, 23 and 24). The eight kinds a caller
-enters and the three results carry a docstring that quotes the form's own words. Lines 53, 60, 61,
-68 and 69 are signed: "if negative, show in brackets". So is the helper under line 87, "the result
-of line 68 minus line 80". In Part 4 lines 8, 11, 12, 17 and 20 are signed for the same reason,
-and so are line 4 (line 1 is not floored), lines 21, 23 to 25A and 26 and 27.
+17A, 20 to 27, and the helpers printed inside lines 13, 21, 23 and 24), then Part 4 lines 31 to 56
+(the QPP side before the gross-up and the totals: lines 31 to 36, 38 to 42, 46, 47, 51 to 56, and
+the helpers printed inside lines 31, 35A, 46 and 51). The eight kinds a caller enters and the three
+results carry a docstring that quotes the form's own words. Lines 53, 60, 61, 68 and 69 are signed:
+"if negative, show in brackets". So is the helper under line 87, "the result of line 68 minus line
+80". In Part 4 lines 8, 11, 12, 17 and 20 are signed for the same reason, and so are line 4 (line 1
+is not floored), lines 21, 23 to 25A and 26 and 27, then lines 31 and 32 (line 12 may be more than
+line 61), 35A, 38 to 42, 46, 47, 51 to 53 and 56.
 """
 
 from __future__ import annotations
@@ -124,6 +127,34 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_25A,
     RC381_PART_4_LINE_26,
     RC381_PART_4_LINE_27,
+    RC381_PART_4_LINE_31,
+    RC381_PART_4_LINE_31_DIFFERENCE,
+    RC381_PART_4_LINE_32,
+    RC381_PART_4_LINE_33,
+    RC381_PART_4_LINE_34,
+    RC381_PART_4_LINE_35,
+    RC381_PART_4_LINE_35A,
+    RC381_PART_4_LINE_35AA,
+    RC381_PART_4_LINE_35AA_FROM_LINE_17,
+    RC381_PART_4_LINE_35AB,
+    RC381_PART_4_LINE_35AB_FROM_LINE_20,
+    RC381_PART_4_LINE_35AB_WHEN_LINE_35_ZERO,
+    RC381_PART_4_LINE_36,
+    RC381_PART_4_LINE_38,
+    RC381_PART_4_LINE_39,
+    RC381_PART_4_LINE_40,
+    RC381_PART_4_LINE_41,
+    RC381_PART_4_LINE_42,
+    RC381_PART_4_LINE_46,
+    RC381_PART_4_LINE_46_DIFFERENCE,
+    RC381_PART_4_LINE_47,
+    RC381_PART_4_LINE_51,
+    RC381_PART_4_LINE_51_DIFFERENCE,
+    RC381_PART_4_LINE_52,
+    RC381_PART_4_LINE_53,
+    RC381_PART_4_LINE_54,
+    RC381_PART_4_LINE_55,
+    RC381_PART_4_LINE_56,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     T4_CPP_SECOND_ADDITIONAL_BOX_16A,
     T4_QPP_CONTRIBUTIONS_BOX_17,
@@ -211,13 +242,23 @@ PART_3_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
 # Part 4 lines that cannot come out below zero: the lines that print no "if negative, show in
 # brackets" and are an amount less an amount that is never more (line 13 is line 5 less line 12,
 # which is line 5 less (line 19 less line 24), so line 24 of Part 3 or line 5 itself), a positive
-# part (lines 14 and 17A), or the lesser of two lines that are both above zero (line 21's).
+# part (lines 14, 17A, 33, 36 and 54), or the lesser of two lines that are both above zero (lines
+# 21's, 34, 35A's amount from line 17 and 55). Line 35 is line 33 less line 34, which is never
+# more than line 33; line 35A's first sentence is line 17 or "0".
 PART_4_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_4_LINE_13_DIFFERENCE,
     RC381_PART_4_LINE_13,
     RC381_PART_4_LINE_14,
     RC381_PART_4_LINE_17A,
     RC381_PART_4_LINE_21_LESSER,
+    RC381_PART_4_LINE_33,
+    RC381_PART_4_LINE_34,
+    RC381_PART_4_LINE_35,
+    RC381_PART_4_LINE_35AA_FROM_LINE_17,
+    RC381_PART_4_LINE_35AA,
+    RC381_PART_4_LINE_36,
+    RC381_PART_4_LINE_54,
+    RC381_PART_4_LINE_55,
 )
 
 # The three results of Part 3a and Part 3b for "earnings subject to contributions ... from
@@ -252,6 +293,26 @@ SIGNED_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_4_LINE_25A,
     RC381_PART_4_LINE_26,
     RC381_PART_4_LINE_27,
+    RC381_PART_4_LINE_31_DIFFERENCE,
+    RC381_PART_4_LINE_31,
+    RC381_PART_4_LINE_32,
+    RC381_PART_4_LINE_35AB_FROM_LINE_20,
+    RC381_PART_4_LINE_35AB_WHEN_LINE_35_ZERO,
+    RC381_PART_4_LINE_35AB,
+    RC381_PART_4_LINE_35A,
+    RC381_PART_4_LINE_38,
+    RC381_PART_4_LINE_39,
+    RC381_PART_4_LINE_40,
+    RC381_PART_4_LINE_41,
+    RC381_PART_4_LINE_42,
+    RC381_PART_4_LINE_46_DIFFERENCE,
+    RC381_PART_4_LINE_46,
+    RC381_PART_4_LINE_47,
+    RC381_PART_4_LINE_51_DIFFERENCE,
+    RC381_PART_4_LINE_51,
+    RC381_PART_4_LINE_52,
+    RC381_PART_4_LINE_53,
+    RC381_PART_4_LINE_56,
 )
 
 
@@ -395,6 +456,54 @@ def test_the_rc381_part_4_kinds_are_the_registered_ones(registry: ArtifactRegist
     assert registry.get("ca/rc381_part_4_line_27") is RC381_PART_4_LINE_27
 
 
+def test_the_rc381_part_4_lines_31_to_56_kinds_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    # Line 31 "Line 29 minus line 30" printed inside the line (entered when line 61 of Part 3 is
+    # positive), then line 31 itself.
+    assert registry.get("ca/rc381_part_4_line_31_difference") is RC381_PART_4_LINE_31_DIFFERENCE
+    assert registry.get("ca/rc381_part_4_line_31") is RC381_PART_4_LINE_31
+    assert registry.get("ca/rc381_part_4_line_32") is RC381_PART_4_LINE_32
+    assert registry.get("ca/rc381_part_4_line_33") is RC381_PART_4_LINE_33
+    assert registry.get("ca/rc381_part_4_line_34") is RC381_PART_4_LINE_34
+    assert registry.get("ca/rc381_part_4_line_35") is RC381_PART_4_LINE_35
+    # Line 35A prints two sentences: "If line 35 and line 17 are both positive, enter the amount
+    # from line 17." (35aa, with the amount from line 17 as its helper) and "If line 35 is "0" and
+    # line 20 is positive, enter the amount from line 20 (show in brackets)." (35ab, with the
+    # amount from line 20 in brackets as its helper and the choice for line 35 at "0" before the
+    # block's "negative" gate), and the line is their sum.
+    assert registry.get("ca/rc381_part_4_line_35aa_from_line_17") is (
+        RC381_PART_4_LINE_35AA_FROM_LINE_17
+    )
+    assert registry.get("ca/rc381_part_4_line_35aa") is RC381_PART_4_LINE_35AA
+    assert registry.get("ca/rc381_part_4_line_35ab_from_line_20") is (
+        RC381_PART_4_LINE_35AB_FROM_LINE_20
+    )
+    assert registry.get("ca/rc381_part_4_line_35ab_when_line_35_zero") is (
+        RC381_PART_4_LINE_35AB_WHEN_LINE_35_ZERO
+    )
+    assert registry.get("ca/rc381_part_4_line_35ab") is RC381_PART_4_LINE_35AB
+    assert registry.get("ca/rc381_part_4_line_35a") is RC381_PART_4_LINE_35A
+    assert registry.get("ca/rc381_part_4_line_36") is RC381_PART_4_LINE_36
+    assert registry.get("ca/rc381_part_4_line_38") is RC381_PART_4_LINE_38
+    assert registry.get("ca/rc381_part_4_line_39") is RC381_PART_4_LINE_39
+    assert registry.get("ca/rc381_part_4_line_40") is RC381_PART_4_LINE_40
+    assert registry.get("ca/rc381_part_4_line_41") is RC381_PART_4_LINE_41
+    assert registry.get("ca/rc381_part_4_line_42") is RC381_PART_4_LINE_42
+    # Lines 46 and 51 print "Line 44 minus line 45" and "Line 49 minus line 50", completed only
+    # when line 68 of Part 3 is positive ("If not, enter "0""): the difference is a helper.
+    assert registry.get("ca/rc381_part_4_line_46_difference") is RC381_PART_4_LINE_46_DIFFERENCE
+    assert registry.get("ca/rc381_part_4_line_46") is RC381_PART_4_LINE_46
+    assert registry.get("ca/rc381_part_4_line_47") is RC381_PART_4_LINE_47
+    assert registry.get("ca/rc381_part_4_line_51_difference") is RC381_PART_4_LINE_51_DIFFERENCE
+    assert registry.get("ca/rc381_part_4_line_51") is RC381_PART_4_LINE_51
+    assert registry.get("ca/rc381_part_4_line_52") is RC381_PART_4_LINE_52
+    assert registry.get("ca/rc381_part_4_line_53") is RC381_PART_4_LINE_53
+    assert registry.get("ca/rc381_part_4_line_54") is RC381_PART_4_LINE_54
+    assert registry.get("ca/rc381_part_4_line_55") is RC381_PART_4_LINE_55
+    assert registry.get("ca/rc381_part_4_line_56") is RC381_PART_4_LINE_56
+
+
 def test_the_rc381_amounts_are_money() -> None:
     for kind in (
         *INPUT_AMOUNTS,
@@ -455,6 +564,12 @@ def test_the_rc381_lines_that_may_be_negative_are_signed() -> None:
     # brackets)", lines 23 and 24 (line 68 of Part 3 may be negative, and "whichever is less" has
     # no floor), line 25A (line 21), line 26 "Add lines 24 to 25A." and line 27 (line 26 times
     # 16.80672).
+    # Part 4 line 31 (and its helper) "Line 29 minus line 30 (if negative, show in brackets)", line
+    # 32 "Line 28 minus line 31" (line 31 may be negative), line 35A's second sentence "(show in
+    # brackets)", lines 38 and 39 (no floor is printed; line 38 is not below zero in fact, which
+    # the kind does not rely on), line 40 "Add lines 32, 35A, and 39.", line 41 (line 40 times
+    # 15.625), line 42, lines 46, 47, 51 and 52 "(if negative, show in brackets)" (and the
+    # helpers printed inside lines 46 and 51), line 53 and line 56.
     for kind in SIGNED_AMOUNTS:
         assert kind.non_negative is False, kind.identifier
 
