@@ -2,8 +2,8 @@
 # statement of the list ca/t2125_statements (one for each business; any number, none included).
 # Each statement's fields are the T2125 inputs. The form exports its line 9946 "Your net income
 # (loss)", which T1 line 13500 "Net" adds over the statements, and the lines nothing on the return
-# reads, which the return declares as outputs, one record for each statement. The five printed
-# constants of Charts B and C are the form's own copies of the datasets of the same name.
+# reads, which the return declares as outputs, one record for each statement. The printed constants
+# of Charts B and C are the datasets of the form's one motor vehicle step.
 form:
   name: ca/t2125
   instances: ca/t2125_statements
@@ -194,192 +194,24 @@ capabilities:
       classes: ca/business_cca_classes
     produces:
       output: ca/business_closing_ucc
-  # T2125 Chart B "Available interest expense for passenger vehicles and zero-emission passenger
-  # vehicles" and Chart C "Eligible leasing cost for passenger vehicles": the printed constants
-  # are datasets of the same name, one step each ("$350***", "÷ 30", "$44,706", "$1,100" and
-  # "$38,000"), and the amounts of the charts are the steps that follow.
-  - name: core/credit_amount
+  # T2125 Charts A to C, "Motor vehicle expenses", filled in for each vehicle of the statement's
+  # list and added: Chart A line 16 "Allowable motor vehicle expenses: Add amounts 13 to 15
+  # (enter this total on line 9281 of Part 4)". The printed constants of Charts B and C
+  # ("$350***", "÷ 30", "$44,706", "$1,100", "$38,000" and "× 85%") are its datasets, and the
+  # sales tax rate of the province is the statement's one input. The line 9281 kind is produced
+  # here and is no longer a caller input.
+  - name: ca/business_vehicle_expenses
     params:
-      amount: ca/business_vehicle_interest_limit
-    produces:
-      output: ca/business_vehicle_interest_limit
-  - name: core/credit_amount
-    params:
-      amount: ca/business_vehicle_days_divisor
-    produces:
-      output: ca/business_vehicle_days_divisor
-  - name: core/credit_amount
-    params:
-      amount: ca/business_vehicle_list_price_limit
-    produces:
-      output: ca/business_vehicle_list_price_limit
-  - name: core/credit_amount
-    params:
-      amount: ca/business_vehicle_lease_charge_limit
-    produces:
-      output: ca/business_vehicle_lease_charge_limit
-  - name: core/credit_amount
-    params:
-      amount: ca/business_vehicle_lease_cost_limit
-    produces:
-      output: ca/business_vehicle_lease_cost_limit
-  # Chart B line 18 "($350*** ÷ 30) × the number of days in the fiscal period for which interest
-  # was payable (accrual method) or paid (cash method)".
-  - name: core/apply_ratio
-    params:
-      rounding: ca/business_vehicle_interest_rounding
+      interest_limit: ca/business_vehicle_interest_limit
+      days_divisor: ca/business_vehicle_days_divisor
+      list_price_limit: ca/business_vehicle_list_price_limit
+      lease_charge_limit: ca/business_vehicle_lease_charge_limit
+      lease_cost_limit: ca/business_vehicle_lease_cost_limit
+      lease_price_rate: ca/business_vehicle_lease_price_rate
+      rounding: ca/business_vehicle_rounding
     consumes:
-      amount: ca/business_vehicle_interest_limit
-      numerator: ca/business_vehicle_interest_days
-      denominator: ca/business_vehicle_days_divisor
-    produces:
-      output: ca/business_vehicle_interest_for_period
-  # Chart B line 19 "Available interest expense: Amount 17 or 18, whichever is less (include this
-  # in amount 4 of Chart A above)": the lesser of line 17 "Total interest payable (accrual method)
-  # or paid (cash method) in the fiscal period" and line 18.
-  - name: core/lesser_of
-    consumes:
-      amounts:
-        - ca/business_vehicle_interest_payable
-        - ca/business_vehicle_interest_for_period
-    produces:
-      output: ca/business_vehicle_available_interest
-  # Chart C: the sales tax (GST and PST, or HST) on each printed amount at the rate of the
-  # caller's province, "Use a GST rate of 5% or HST rate applicable to your province.", then the
-  # printed amount plus that tax.
-  - name: ca/apply_percentage
-    params:
-      rounding: ca/business_vehicle_sales_tax_rounding
-    consumes:
-      amount: ca/business_vehicle_list_price_limit
-      percentage: ca/business_vehicle_sales_tax_rate
-    produces:
-      output: ca/business_vehicle_list_price_limit_tax
-  - name: ca/apply_percentage
-    params:
-      rounding: ca/business_vehicle_sales_tax_rounding
-    consumes:
-      amount: ca/business_vehicle_lease_charge_limit
-      percentage: ca/business_vehicle_sales_tax_rate
-    produces:
-      output: ca/business_vehicle_lease_charge_limit_tax
-  - name: ca/apply_percentage
-    params:
-      rounding: ca/business_vehicle_sales_tax_rounding
-    consumes:
-      amount: ca/business_vehicle_lease_cost_limit
-      percentage: ca/business_vehicle_sales_tax_rate
-    produces:
-      output: ca/business_vehicle_lease_cost_limit_tax
-  - name: core/sum
-    consumes:
-      parts:
-        - ca/business_vehicle_list_price_limit
-        - ca/business_vehicle_list_price_limit_tax
-    produces:
-      output: ca/business_vehicle_list_price_limit_with_tax
-  - name: core/sum
-    consumes:
-      parts:
-        - ca/business_vehicle_lease_charge_limit
-        - ca/business_vehicle_lease_charge_limit_tax
-    produces:
-      output: ca/business_vehicle_lease_charge_limit_with_tax
-  - name: core/sum
-    consumes:
-      parts:
-        - ca/business_vehicle_lease_cost_limit
-        - ca/business_vehicle_lease_cost_limit_tax
-    produces:
-      output: ca/business_vehicle_lease_cost_limit_with_tax
-  # Chart C line 23 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST), whichever is more".
-  - name: core/greater_of
-    consumes:
-      amounts:
-        - ca/business_vehicle_list_price
-        - ca/business_vehicle_list_price_limit_with_tax
-    produces:
-      output: ca/business_vehicle_lease_price_base
-  # Chart C line 24 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST), whichever is more ×
-  # 85%".
-  - name: core/apply_rate
-    params:
-      rate: ca/business_vehicle_lease_price_rate
-    consumes:
-      base: ca/business_vehicle_lease_price_base
-    produces:
-      output: ca/business_vehicle_lease_price_85_percent
-  # Chart C line 25 "[($1,100 + GST and PST, or $1,100 + HST) × amount 22] ÷ 30".
-  - name: core/apply_ratio
-    params:
-      rounding: ca/business_vehicle_lease_charge_rounding
-    consumes:
-      amount: ca/business_vehicle_lease_charge_limit_with_tax
-      numerator: ca/business_vehicle_lease_days
-      denominator: ca/business_vehicle_days_divisor
-    produces:
-      output: ca/business_vehicle_lease_charge_portion
-  # Chart C line 26, printed "Amount 25: amount 21" with a subtraction sign: amount 25 less amount
-  # 21, signed (a negative result is kept).
-  - name: core/subtract
-    consumes:
-      amount: ca/business_vehicle_lease_charge_portion
-      less: ca/business_vehicle_lease_payments_before
-    produces:
-      output: ca/business_vehicle_lease_charges_net
-  # Chart C line 27 "[($38,000 + GST and PST, or $38,000 + HST) × amount 20] ÷ amount 24".
-  - name: core/apply_ratio
-    params:
-      rounding: ca/business_vehicle_lease_cost_rounding
-    consumes:
-      amount: ca/business_vehicle_lease_cost_limit_with_tax
-      numerator: ca/business_vehicle_lease_charges
-      denominator: ca/business_vehicle_lease_price_85_percent
-    produces:
-      output: ca/business_vehicle_lease_cost_portion
-  # Chart C line 28 "Eligible leasing cost: Amount 26 or 27, whichever is less (enter in amount 8
-  # of Chart A above)".
-  - name: core/lesser_of
-    consumes:
-      amounts:
-        - ca/business_vehicle_lease_charges_net
-        - ca/business_vehicle_lease_cost_portion
-    produces:
-      output: ca/business_vehicle_leasing_cost
-  # Chart A line 12 "Total motor vehicle expenses: Add amounts 3 to 11.", amount 4 being line 19
-  # and amount 8 being line 28.
-  - name: core/sum
-    consumes:
-      parts:
-        - ca/business_vehicle_fuel_and_oil
-        - ca/business_vehicle_available_interest
-        - ca/business_vehicle_insurance
-        - ca/business_vehicle_licence_and_registration
-        - ca/business_vehicle_maintenance_and_repairs
-        - ca/business_vehicle_leasing_cost
-        - ca/business_vehicle_electricity_zev
-        - ca/business_vehicle_other_expenses_10
-        - ca/business_vehicle_other_expenses_11
-    produces:
-      output: ca/business_vehicle_total_expenses
-  # Chart A line 13 "Business use part: amount 1 ÷ amount 2 × amount 12 = 13".
-  - name: ca/apply_ratio_or_zero
-    params:
-      rounding: ca/business_vehicle_business_use_rounding
-    consumes:
-      amount: ca/business_vehicle_total_expenses
-      numerator: ca/business_vehicle_business_kilometres
-      denominator: ca/business_vehicle_total_kilometres
-    produces:
-      output: ca/business_vehicle_business_use_part
-  # Chart A line 16 "Allowable motor vehicle expenses: Add amounts 13 to 15 (enter this total on
-  # line 9281 of Part 4)": the line 9281 kind, produced here and no longer a caller input.
-  - name: core/sum
-    consumes:
-      parts:
-        - ca/business_vehicle_business_use_part
-        - ca/business_vehicle_parking_fees
-        - ca/business_vehicle_supplementary_insurance
+      vehicles: ca/business_vehicles
+      sales_tax_rate: ca/business_vehicle_sales_tax_rate
     produces:
       output: ca/business_motor_vehicle_expenses
   # T2125 Part 4 "Total expenses: Total of amounts 4B to 4V 9368": the 19 expense lines 4B

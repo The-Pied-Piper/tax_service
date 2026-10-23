@@ -140,6 +140,12 @@ def test_importing_the_federal_package_registers_the_recaptured_cca_capability()
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.recaptured_cca"
 
 
+def test_importing_the_federal_package_registers_the_business_vehicle_expenses_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/business_vehicle_expenses")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.business_vehicle_expenses"
+
+
 def test_importing_the_federal_package_registers_the_terminal_loss_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/terminal_loss")
 

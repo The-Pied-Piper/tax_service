@@ -1874,7 +1874,7 @@ def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2125 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2125").composition.order
-    assert len(order) == 55
+    assert len(order) == 34
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # T2125 Parts 3A to 3D: amount 3C after amounts 3A and 3B, line 8000 after 3C and 3F, line
     # 8299 after line 8000 and amount 3O, line 8519 after line 8299 and line 8518, which comes

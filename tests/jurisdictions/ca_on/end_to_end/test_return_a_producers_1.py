@@ -33,6 +33,7 @@ from app.jurisdictions.ca.capabilities.amount_when_more import AmountWhenMore
 from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZero
+from app.jurisdictions.ca.capabilities.business_vehicle_expenses import BusinessVehicleExpenses
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
 from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
@@ -224,12 +225,14 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,
     BUSINESS_PARTNER,
     BUSINESS_RECAPTURED_CCA,
     BUSINESS_SALES_SUBTOTAL,
     BUSINESS_SHARE_OF_NET_INCOME,
     BUSINESS_TERMINAL_LOSS,
     BUSINESS_VEHICLE_INTEREST_LIMIT,
+    BUSINESS_VEHICLES,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
@@ -2948,8 +2951,14 @@ def test_each_t2125_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(BUSINESS_SHARE_OF_NET_INCOME), ChooseByCount)
     assert isinstance(worksheet.producer_of(BUSINESS_HOME_INCOME_LIMIT), SumNotBelowZero)
     assert isinstance(worksheet.producer_of(BUSINESS_INCOME), Subtract)
-    # The form holds its own copy of the printed constants; the return form has none.
-    assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
+    # Charts A to C are one capability over the statement's vehicles, a starting list; the printed
+    # constants are its datasets, so neither the form nor the return has an artifact for them.
+    assert worksheet.producer_of(BUSINESS_VEHICLES) is None
+    assert isinstance(
+        worksheet.producer_of(BUSINESS_MOTOR_VEHICLE_EXPENSES), BusinessVehicleExpenses
+    )
+    with pytest.raises(MissingArtifactError):
+        worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)
     with pytest.raises(MissingArtifactError):
         return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)
 
