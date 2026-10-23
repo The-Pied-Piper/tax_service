@@ -1,5 +1,6 @@
-"""ImmediateExpensingClaim: the total immediate expensing claim of the CCA table, T776 Area A.
+"""ImmediateExpensingClaim: the total immediate expensing claim of the CCA table.
 
+The rental form (T776, Area A) and the business form (T2125, Area A) both print it.
 T776 "Line i: Total immediate expensing claim for the year: Total of column 9", with Note 5: "The
 total immediate expensing amount for the tax year (total of column 9) is limited to the lesser of"
 the immediate expensing limit, "the UCC of DIEPs in column 8" and "the amount of income, if any,
