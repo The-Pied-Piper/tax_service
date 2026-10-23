@@ -2,11 +2,11 @@
 limited by column 22.
 
 T776 "Line ii: Total CCA claim for the year: Total of column 23": `CcaClaim` with each class's
-claim refused above column 21 ("column 19 multiplied by column 20, or a lower amount") less column
-22 ("Non-compliant amount of CCA (see Chart B below)", from the consumed `non_compliant` record
-list, 0 for a class it does not list), which is column 23 as printed ("column 21 minus column
-22"). It subclasses `CcaClaim` alone and overrides only the limit step of `CcaTable`; the output
-and the trace are those of `CcaClaim`.
+claim refused above column 21 ("column 19 multiplied by column 20, or a lower amount", plus column
+9) less column 22 ("Non-compliant amount of CCA (see Chart B below)", from the consumed
+`non_compliant` record list, 0 for a class it does not list), which is column 23 as printed
+("column 21 minus column 22"). It subclasses `CcaClaim` alone and overrides only the limit step of
+`CcaTable`; the output and the trace are those of `CcaClaim`.
 """
 
 from __future__ import annotations
@@ -44,4 +44,4 @@ class CcaClaimAfterColumn22(CcaClaim):
         super().__init__(class_rates, classes, output, non_compliant=non_compliant)
 
     def _limit(self, row: CcaRow, maximum: Decimal) -> Decimal:
-        return max(Decimal(0), maximum - row.column_22)
+        return max(Decimal(0), maximum + row.immediate_expensing - row.column_22)

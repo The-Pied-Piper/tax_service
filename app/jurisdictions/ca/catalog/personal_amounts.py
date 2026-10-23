@@ -492,6 +492,21 @@ CCA_RIIP_ADDITIONS = CATALOG.declare("cca_riip_additions", Decimal, non_negative
 ZEVs acquired after 2024": a starting amount, a field of each record of a list of capital cost
 allowance classes."""
 
+CCA_DIEP_ADDITIONS = CATALOG.declare("cca_diep_additions", Decimal, non_negative=True)
+"""DIEP additions, Area A "Column 4: Cost of additions from column 3 that are DIEPs (property must
+be available for use before 2025)": a starting amount, a field of each record of a list of capital
+cost allowance classes."""
+
+CCA_DIEP_PROCEEDS = CATALOG.declare("cca_diep_proceeds", Decimal, non_negative=True)
+"""DIEP proceeds, Area A "Column 6: Proceeds of dispositions of DIEP (enter amount from column 5
+that relates to DIEP from column 4)": a starting amount, a field of each record of a list of
+capital cost allowance classes."""
+
+CCA_IMMEDIATE_EXPENSING = CATALOG.declare("cca_immediate_expensing", Decimal, non_negative=True)
+"""Immediate expensing amount, Area A "Column 9: Immediate expensing amount for DIEPs (Note 5)": the
+caller's amount for the class, a field of each record of a list of capital cost allowance
+classes."""
+
 CCA_CLAIMED = CATALOG.declare("cca_claimed", Decimal, non_negative=True)
 """CCA claimed, T776 Area A "Column 23: CCA claim for the year" (T2125 column 21): the caller's
 election, "any amount you like, from zero to the maximum allowed for the year" (Guide T4036), a

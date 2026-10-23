@@ -145,6 +145,9 @@ from app.jurisdictions.ca.catalog import (
     CCA_AIIP_ADDITIONS,
     CCA_CLAIMED,
     CCA_CLASS_NUMBER,
+    CCA_DIEP_ADDITIONS,
+    CCA_DIEP_PROCEEDS,
+    CCA_IMMEDIATE_EXPENSING,
     CCA_NO_PROPERTY_LEFT,
     CCA_PROCEEDS,
     CCA_RIIP_ADDITIONS,
@@ -1921,6 +1924,15 @@ def test_the_principal_residence_gain_is_a_non_negative_decimal(registry: Artifa
         # "Column 12: Cost of remaining additions from column 10 that are RIIPs or ZEVs acquired
         # after 2024".
         (CCA_RIIP_ADDITIONS, "ca/cca_riip_additions"),
+        # "Column 4: Cost of additions from column 3 that are DIEPs (property must be available
+        # for use before 2025)".
+        (CCA_DIEP_ADDITIONS, "ca/cca_diep_additions"),
+        # "Column 6: Proceeds of dispositions of DIEP (enter amount from column 5 that relates to
+        # DIEP from column 4)".
+        (CCA_DIEP_PROCEEDS, "ca/cca_diep_proceeds"),
+        # "Column 9: Immediate expensing amount for DIEPs (Note 5)": the caller's amount for the
+        # class, a field of each record.
+        (CCA_IMMEDIATE_EXPENSING, "ca/cca_immediate_expensing"),
         # T776 "Column 23: CCA claim for the year" (T2125 column 21): the amount claimed, an
         # election from 0 to the class's maximum.
         (CCA_CLAIMED, "ca/cca_claimed"),
@@ -1958,12 +1970,15 @@ def test_the_cca_table_fields_are_kinds_of_their_own() -> None:
         CCA_PROCEEDS,
         CCA_AIIP_ADDITIONS,
         CCA_RIIP_ADDITIONS,
+        CCA_DIEP_ADDITIONS,
+        CCA_DIEP_PROCEEDS,
+        CCA_IMMEDIATE_EXPENSING,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
         CCA_UCC_AT_END,
     )
 
-    assert len({kind.identifier for kind in kinds}) == 9
+    assert len({kind.identifier for kind in kinds}) == 12
     assert {kind.identifier for kind in kinds} <= REGISTERED
     assert not {kind.identifier for kind in kinds} & RECORD_LISTS
 

@@ -5,10 +5,11 @@ the amount from your income as a terminal loss under "Terminal loss" on line 994
 Part 4 on line 9270"), and "Recapture and terminal loss do not apply to a Class 10.1 property
 unless it is a DIEP". Each class of the consumed record list is one row of the table, worked on
 its own as `CcaTable` works it: its terminal loss is column 7 when column 7 is positive and no
-property is left in the class, else 0, and 0 for a class the `class_rates` dataset excludes.
-Column 7 is exact, so nothing is rounded. The output is the total of the terminal losses, 0 when
-there are no classes. It records one `TerminalLossLine` for each class, by position from 1, then
-an `ItemsTotalLine`.
+property is left in the class, else 0, and 0 for a class the `class_rates` dataset excludes unless
+the row has DIEP additions (column 4). As the note prints it, the terminal loss is column 7, before
+any immediate expensing in column 9. Column 7 is exact, so nothing is rounded. The output is the
+total of the terminal losses, 0 when there are no classes. It records one `TerminalLossLine` for
+each class, by position from 1, then an `ItemsTotalLine`.
 """
 
 from __future__ import annotations
@@ -58,6 +59,7 @@ class TerminalLoss(CcaTable):
                 row.column_7
                 if row.zero_reason is CcaZeroReason.NO_PROPERTY_LEFT and row.note_3_applies
                 else Decimal(0),
+                row.diep_additions > 0,
             )
             for row in self._rows(inputs)
         )

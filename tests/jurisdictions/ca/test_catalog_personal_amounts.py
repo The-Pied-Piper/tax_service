@@ -19,6 +19,9 @@ from app.jurisdictions.ca.catalog import (
     CCA_AIIP_ADDITIONS,
     CCA_CLAIMED,
     CCA_CLASS_NUMBER,
+    CCA_DIEP_ADDITIONS,
+    CCA_DIEP_PROCEEDS,
+    CCA_IMMEDIATE_EXPENSING,
     CCA_NO_PROPERTY_LEFT,
     CCA_PROCEEDS,
     CCA_RIIP_ADDITIONS,
@@ -154,6 +157,9 @@ def test_the_personal_amounts_kinds_are_the_registered_ones(registry: ArtifactRe
     assert registry.get("ca/cca_proceeds") is CCA_PROCEEDS
     assert registry.get("ca/cca_aiip_additions") is CCA_AIIP_ADDITIONS
     assert registry.get("ca/cca_riip_additions") is CCA_RIIP_ADDITIONS
+    assert registry.get("ca/cca_diep_additions") is CCA_DIEP_ADDITIONS
+    assert registry.get("ca/cca_diep_proceeds") is CCA_DIEP_PROCEEDS
+    assert registry.get("ca/cca_immediate_expensing") is CCA_IMMEDIATE_EXPENSING
     assert registry.get("ca/cca_claimed") is CCA_CLAIMED
     assert registry.get("ca/cca_no_property_left") is CCA_NO_PROPERTY_LEFT
     assert registry.get("ca/cca_ucc_at_end") is CCA_UCC_AT_END
@@ -224,6 +230,9 @@ def test_the_personal_amounts_kinds_are_money() -> None:
         CCA_PROCEEDS,
         CCA_AIIP_ADDITIONS,
         CCA_RIIP_ADDITIONS,
+        CCA_DIEP_ADDITIONS,
+        CCA_DIEP_PROCEEDS,
+        CCA_IMMEDIATE_EXPENSING,
         CCA_CLAIMED,
         CCA_UCC_AT_END,
         INFIRM_CHILDREN_AMOUNT,

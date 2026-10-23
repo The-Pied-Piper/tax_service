@@ -64,6 +64,7 @@ class ClosingUcc(CcaTable):
                     row.zero_reason,
                     row.claimed,
                     result,
+                    row.immediate_expensing,
                 )
             )
             records.append({CCA_CLASS_NUMBER: row.class_number, CCA_UCC_AT_END: result})
