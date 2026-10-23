@@ -56,6 +56,7 @@ from app.jurisdictions.ca.catalog import (
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMT_ADJUSTED_TAXABLE_INCOME,
     AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_BASIC_EXEMPTION,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
@@ -82,15 +83,19 @@ from app.jurisdictions.ca.catalog import (
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_INVESTMENT_TAX_CREDIT_CLAIM,
+    AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
     AMT_LINE_3_HAS_AMOUNT,
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
+    AMT_NET_MINIMUM_TAX_PAYABLE,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_NET_TAX_LESS_SURTAX,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
@@ -103,6 +108,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_NET,
     AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     AMT_T2038_AMOUNT_I,
+    AMT_T2038_PART_D_AMOUNT_15,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TOTAL_FOREIGN_INCOME,
     ANNUAL_GAINS_LIMIT_2025,
@@ -2309,6 +2315,56 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=AMT_REGULAR_TAX_CREDITS_TOTAL,
             subtrahend_amount=D("0"),
             result=D("16951.38"),
+        ),
+        # Form T691 Part 5 line 3 "Line 1 minus line 2 (if negative, enter "0")" "Net minimum tax
+        # payable": line 1, 0, less line 2, 0, 0.
+        AMT_NET_MINIMUM_TAX_PAYABLE: SubtractedNotBelowZeroLine(
+            output=AMT_NET_MINIMUM_TAX_PAYABLE,
+            minuend=AMT_MINIMUM_AMOUNT,
+            minuend_amount=D("0"),
+            subtrahend=AMT_SPECIAL_FOREIGN_TAX_CREDIT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T691 Part 5 line 6 "Line 4 minus line 5 (if negative, enter "0")": line 4, 16951.38,
+        # less line 5, the federal surtax of 0, 16951.38.
+        AMT_REGULAR_NET_TAX_LESS_SURTAX: SubtractedNotBelowZeroLine(
+            output=AMT_REGULAR_NET_TAX_LESS_SURTAX,
+            minuend=AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_FEDERAL_SURTAX,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
+        # Form T691 Part 5 line 7 "Line 3 minus line 6 (if negative, enter "0")": line 3, 0, less
+        # line 6, 16951.38: 0.
+        AMT_MINIMUM_TAX_AFTER_REGULAR_TAX: SubtractedNotBelowZeroLine(
+            output=AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
+            minuend=AMT_NET_MINIMUM_TAX_PAYABLE,
+            minuend_amount=D("0"),
+            subtrahend=AMT_REGULAR_NET_TAX_LESS_SURTAX,
+            subtrahend_amount=D("16951.38"),
+            result=D("0"),
+        ),
+        # Form T691 Part 5 line 10 "Line 8 minus line 9 (if negative, enter "0")": line 8, the
+        # investment tax credit of 0, less line 9, 0, 0.
+        AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D: SubtractedNotBelowZeroLine(
+            output=AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
+            minuend=AMT_INVESTMENT_TAX_CREDIT,
+            minuend_amount=D("0"),
+            subtrahend=AMT_T2038_PART_D_AMOUNT_15,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T691 Part 5 line 11 "Line 7 minus line 10 (if negative, enter "0")": line 7, 0, less
+        # line 10, 0: 0.
+        AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE: SubtractedNotBelowZeroLine(
+            output=AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
+            minuend=AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
+            minuend_amount=D("0"),
+            subtrahend=AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
+            subtrahend_amount=D("0"),
+            result=D("0"),
         ),
         # Form T691 Part 8 line 11 "Maximum carryover that can be applied in 2025: line 9 minus line
         # 10 (if negative, enter "0")": 16951.38 less the minimum amount of 0, 16951.38.

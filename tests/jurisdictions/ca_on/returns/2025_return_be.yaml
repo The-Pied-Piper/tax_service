@@ -220,3 +220,4 @@ expected:
   ca/amt_basic_federal_tax: "5743.97"
   ca/amt_regular_net_federal_tax_payable: "5743.97"
   ca/amt_special_foreign_tax_credit: "0"
+  ca/amt_alternative_minimum_tax_payable: "0"

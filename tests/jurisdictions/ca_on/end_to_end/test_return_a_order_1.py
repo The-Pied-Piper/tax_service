@@ -26,6 +26,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_BASIC_FEDERAL_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_FEDERAL_SURTAX,
@@ -41,10 +42,15 @@ from app.jurisdictions.ca.catalog import (
     AMT_FOREIGN_TAX_CREDIT_LESSER,
     AMT_FOREIGN_TAXES_PAID,
     AMT_INVESTMENT_TAX_CREDIT,
+    AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
     AMT_LINE_3_HAS_AMOUNT,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
+    AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_NET_MINIMUM_TAX_PAYABLE,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_NET_TAX_LESS_SURTAX,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     AMT_TOTAL_FOREIGN_INCOME,
@@ -513,8 +519,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1273
-    assert len(order) == 1273
+    assert len(order) == 1278
+    assert len(order) == 1278
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
@@ -551,6 +557,23 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[AMT_FOREIGN_TAXES_PAID] < position[AMT_FOREIGN_TAX_CREDIT_LESSER]
     assert position[AMT_FOREIGN_TAX_CREDIT_LESSER] < position[AMT_SPECIAL_FOREIGN_TAX_CREDIT]
     assert position[FEDERAL_FOREIGN_TAX_CREDIT] < position[AMT_SPECIAL_FOREIGN_TAX_CREDIT]
+    # Part 5 line 3 is line 1 less line 2; line 6 is line 4 less line 5; line 7 is line 3 less line
+    # 6; line 10 is line 8 less line 9, the caller's figure, which nothing produces; line 11 is line
+    # 7 less line 10.
+    assert position[AMT_MINIMUM_AMOUNT] < position[AMT_NET_MINIMUM_TAX_PAYABLE]
+    assert position[AMT_SPECIAL_FOREIGN_TAX_CREDIT] < position[AMT_NET_MINIMUM_TAX_PAYABLE]
+    assert position[AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE] < position[AMT_REGULAR_NET_TAX_LESS_SURTAX]
+    assert position[AMT_FEDERAL_SURTAX] < position[AMT_REGULAR_NET_TAX_LESS_SURTAX]
+    assert position[AMT_NET_MINIMUM_TAX_PAYABLE] < position[AMT_MINIMUM_TAX_AFTER_REGULAR_TAX]
+    assert position[AMT_REGULAR_NET_TAX_LESS_SURTAX] < position[AMT_MINIMUM_TAX_AFTER_REGULAR_TAX]
+    assert position[AMT_INVESTMENT_TAX_CREDIT] < position[AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D]
+    assert (
+        position[AMT_MINIMUM_TAX_AFTER_REGULAR_TAX] < position[AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE]
+    )
+    assert (
+        position[AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D]
+        < position[AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE]
+    )
     assert (
         position[INVESTMENT_INCOME_BEFORE_PRIOR_YEARS]
         < position[INTEREST_AND_OTHER_INVESTMENT_INCOME]

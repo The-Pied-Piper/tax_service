@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+import pytest
+
 from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
+from app.domain.errors import NegativeArtifactError
 from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
@@ -12,6 +15,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
@@ -60,6 +64,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_INVESTMENT_COUNSEL_FEES,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_INVESTMENT_TAX_CREDIT_CLAIM,
+    AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
     AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
     AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
@@ -73,6 +78,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
@@ -81,6 +87,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
+    AMT_NET_MINIMUM_TAX_PAYABLE,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_DEDUCTIBLE_INTEREST,
@@ -100,6 +107,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_NET_TAX_LESS_SURTAX,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
@@ -124,6 +132,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
     AMT_T2038_AMOUNT_I,
+    AMT_T2038_PART_D_AMOUNT_15,
     AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
@@ -281,6 +290,18 @@ PART_4_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_FOREIGN_TAXES_PAID,
     AMT_FOREIGN_TAX_CREDIT_LESSER,
     AMT_SPECIAL_FOREIGN_TAX_CREDIT,
+)
+
+# Part 5 lines 1 to 11: the net minimum tax payable, the regular net tax less the surtax, the
+# minimum tax after the regular tax, the investment tax credit less amount 15 of Part D of Form
+# T2038(IND), and the alternative minimum tax payable; line 9 is the caller's figure.
+PART_5_KINDS: tuple[ArtifactKind[Decimal], ...] = (
+    AMT_NET_MINIMUM_TAX_PAYABLE,
+    AMT_REGULAR_NET_TAX_LESS_SURTAX,
+    AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
+    AMT_T2038_PART_D_AMOUNT_15,
+    AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
 )
 
 
@@ -644,6 +665,21 @@ def test_the_part_4_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert registry.get("ca/amt_special_foreign_tax_credit") is AMT_SPECIAL_FOREIGN_TAX_CREDIT
 
 
+def test_the_part_5_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert registry.get("ca/amt_net_minimum_tax_payable") is AMT_NET_MINIMUM_TAX_PAYABLE
+    assert registry.get("ca/amt_regular_net_tax_less_surtax") is AMT_REGULAR_NET_TAX_LESS_SURTAX
+    assert registry.get("ca/amt_minimum_tax_after_regular_tax") is AMT_MINIMUM_TAX_AFTER_REGULAR_TAX
+    assert registry.get("ca/amt_t2038_part_d_amount_15") is AMT_T2038_PART_D_AMOUNT_15
+    assert (
+        registry.get("ca/amt_investment_tax_credit_less_part_d")
+        is AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D
+    )
+    assert (
+        registry.get("ca/amt_alternative_minimum_tax_payable")
+        is AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE
+    )
+
+
 def test_the_alternative_minimum_tax_kinds_are_money() -> None:
     for kind in (
         PART_1_KINDS
@@ -654,6 +690,7 @@ def test_the_alternative_minimum_tax_kinds_are_money() -> None:
         + PART_2_AND_8_KINDS
         + PART_3_KINDS
         + PART_4_KINDS
+        + PART_5_KINDS
     ):
         assert kind.value_type is Decimal, kind.identifier
 
@@ -668,6 +705,7 @@ def test_the_bracketed_lines_are_signed_and_the_rest_are_not_below_zero() -> Non
         + PART_2_AND_8_KINDS
         + PART_3_KINDS
         + PART_4_KINDS
+        + PART_5_KINDS
     ):
         assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier
 
@@ -686,3 +724,13 @@ def test_the_foreign_business_income_holds_a_negative_amount() -> None:
     # minus allowable expenses and deductions for the foreign income)": it is net of expenses, so
     # it can be a loss, and the kind holds it; line 4 is then reduced by it.
     assert Artifact(AMT_FOREIGN_BUSINESS_INCOME, Decimal("-300")).value == Decimal("-300")
+
+
+def test_the_part_d_amount_15_refuses_a_negative_amount() -> None:
+    # Part 5 line 9, "Amount from line 15 of Part D of Form T2038(IND)": the credit claimed on Part
+    # D line 15 is never negative, so a negative figure is an input error, refused and not taken as
+    # 0.
+    with pytest.raises(
+        NegativeArtifactError, match="ca/amt_t2038_part_d_amount_15 cannot be negative"
+    ):
+        Artifact(AMT_T2038_PART_D_AMOUNT_15, Decimal("-1"))

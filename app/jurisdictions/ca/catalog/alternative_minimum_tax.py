@@ -9,7 +9,8 @@ credits. Part 9 of the form: the resource
 property and flow-through shares. Part 2 of the form: the basic federal tax. Part 8 of the form:
 the minimum tax carryover applied on line 40427. Part 3 of the form: the federal surtax, the
 federal tax payable and the regular net federal tax payable. Part 4 of the form: the special
-foreign tax credit.
+foreign tax credit. Part 5 of the form: the obligation to pay alternative minimum tax, from the net
+minimum tax payable to the alternative minimum tax payable.
 """
 
 from __future__ import annotations
@@ -783,3 +784,41 @@ AMT_SPECIAL_FOREIGN_TAX_CREDIT = CATALOG.declare(
 """Special foreign tax credit, Form T691 Part 4 line 11 "Enter whichever is more: amount from line 7
 of Part 3 or line 10." "Special foreign tax credit": the greater of the federal foreign tax credit
 of Part 3 line 7 (Form T2209) and line 10."""
+
+AMT_NET_MINIMUM_TAX_PAYABLE = CATALOG.declare(
+    "amt_net_minimum_tax_payable", Decimal, non_negative=True
+)
+"""Net minimum tax payable, Form T691 Part 5 line 3 "Line 1 minus line 2 (if negative, enter "0")"
+"Net minimum tax payable": line 1 less line 2, not below zero."""
+
+AMT_REGULAR_NET_TAX_LESS_SURTAX = CATALOG.declare(
+    "amt_regular_net_tax_less_surtax", Decimal, non_negative=True
+)
+"""Regular net tax less the surtax, Form T691 Part 5 line 6 "Line 4 minus line 5 (if negative, enter
+"0")": line 4, the regular net federal tax payable of Part 3 line 15, less line 5, the federal
+surtax of Part 3 line 4, which may be negative and is then added back; not below zero."""
+
+AMT_MINIMUM_TAX_AFTER_REGULAR_TAX = CATALOG.declare(
+    "amt_minimum_tax_after_regular_tax", Decimal, non_negative=True
+)
+"""Minimum tax after the regular tax, Form T691 Part 5 line 7 "Line 3 minus line 6 (if negative,
+enter "0")": line 3 less line 6, not below zero."""
+
+AMT_T2038_PART_D_AMOUNT_15 = CATALOG.declare(
+    "amt_t2038_part_d_amount_15", Decimal, non_negative=True
+)
+"""Amount 15 of Part D of Form T2038(IND), Form T691 Part 5 line 9 "Amount from line 15 of Part D of
+Form T2038(IND)": the credit claimed on Part D line 15, the caller's figure, never negative."""
+
+AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D = CATALOG.declare(
+    "amt_investment_tax_credit_less_part_d", Decimal, non_negative=True
+)
+"""Investment tax credit less amount 15 of Part D, Form T691 Part 5 line 10 "Line 8 minus line 9 (if
+negative, enter "0")": line 8, the investment tax credit of Part 3 line 12, less line 9, not below
+zero."""
+
+AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE = CATALOG.declare(
+    "amt_alternative_minimum_tax_payable", Decimal, non_negative=True
+)
+"""Alternative minimum tax payable, Form T691 Part 5 line 11 "Line 7 minus line 10 (if negative,
+enter "0")": line 7 less line 10, not below zero; a positive amount means Parts 6 and 7 apply."""

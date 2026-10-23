@@ -85,6 +85,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
@@ -122,6 +123,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_INVESTMENT_TAX_CREDIT_CLAIM,
+    AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
@@ -130,12 +132,14 @@ from app.jurisdictions.ca.catalog import (
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
+    AMT_NET_MINIMUM_TAX_PAYABLE,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
@@ -149,6 +153,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_NET_TAX_LESS_SURTAX,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RESOURCE_INCOME_TOTAL,
@@ -161,6 +166,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
     AMT_T2038_AMOUNT_I,
+    AMT_T2038_PART_D_AMOUNT_15,
     AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
@@ -2331,3 +2337,22 @@ def test_the_part_4_amounts_are_produced_by_their_capabilities() -> None:
     assert worksheet.producer_of(AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM) is None
     assert worksheet.producer_of(AMT_FOREIGN_NON_BUSINESS_TAX_PAID) is None
     assert worksheet.producer_of(AMT_FOREIGN_BUSINESS_TAX_PAID) is None
+
+
+def test_the_part_5_amounts_are_produced_by_their_capabilities() -> None:
+    worksheet = return_a()
+
+    # Part 5 lines 3, 6, 7, 10 and 11 are each a subtraction floored at zero; line 9 is the caller's
+    # figure, so no capability produces it.
+    assert isinstance(worksheet.producer_of(AMT_NET_MINIMUM_TAX_PAYABLE), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_REGULAR_NET_TAX_LESS_SURTAX), SubtractNotBelowZero)
+    assert isinstance(
+        worksheet.producer_of(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX), SubtractNotBelowZero
+    )
+    assert isinstance(
+        worksheet.producer_of(AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D), SubtractNotBelowZero
+    )
+    assert isinstance(
+        worksheet.producer_of(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE), SubtractNotBelowZero
+    )
+    assert worksheet.producer_of(AMT_T2038_PART_D_AMOUNT_15) is None

@@ -25,6 +25,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
@@ -73,6 +74,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_INVESTMENT_COUNSEL_FEES,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_INVESTMENT_TAX_CREDIT_CLAIM,
+    AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
     AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
     AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
@@ -86,6 +88,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
@@ -94,6 +97,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
+    AMT_NET_MINIMUM_TAX_PAYABLE,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_DEDUCTIBLE_INTEREST,
@@ -113,6 +117,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_NET_TAX_LESS_SURTAX,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
@@ -137,6 +142,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
     AMT_T2038_AMOUNT_I,
+    AMT_T2038_PART_D_AMOUNT_15,
     AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
@@ -231,13 +237,13 @@ INPUTS = frozenset(
         "ca/amt_foreign_capital_gains_non_taxable_claim",
         "ca/amt_foreign_non_business_tax_paid",
         "ca/amt_foreign_business_tax_paid",
+        "ca/amt_t2038_part_d_amount_15",
     }
 )
 
 OUTPUTS = frozenset(
     {
-        "ca/amt_regular_net_federal_tax_payable",
-        "ca/amt_special_foreign_tax_credit",
+        "ca/amt_alternative_minimum_tax_payable",
     }
 )
 
@@ -1142,6 +1148,64 @@ STEPS = {
         },
         produces={"output": "ca/amt_special_foreign_tax_credit"},
     ),
+    # Part 5 line 3 "Line 1 minus line 2 (if negative, enter "0")" "Net minimum tax payable": line
+    # 1, the minimum amount of line 103 of Part 1, less line 2, the special foreign tax credit of
+    # Part 4 line 11, and never below zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/amt_minimum_amount",
+            "less": "ca/amt_special_foreign_tax_credit",
+        },
+        produces={"output": "ca/amt_net_minimum_tax_payable"},
+    ),
+    # Part 5 line 6 "Line 4 minus line 5 (if negative, enter "0")": line 4, the regular net federal
+    # tax payable of Part 3 line 15, less line 5, the federal surtax of Part 3 line 4. Line 5 may be
+    # negative when the basic federal tax is negative, and then it is added back.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/amt_regular_net_federal_tax_payable",
+            "less": "ca/amt_federal_surtax",
+        },
+        produces={"output": "ca/amt_regular_net_tax_less_surtax"},
+    ),
+    # Part 5 line 7 "Line 3 minus line 6 (if negative, enter "0")": line 3 less line 6, never below
+    # zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/amt_net_minimum_tax_payable",
+            "less": "ca/amt_regular_net_tax_less_surtax",
+        },
+        produces={"output": "ca/amt_minimum_tax_after_regular_tax"},
+    ),
+    # Part 5 line 10 "Line 8 minus line 9 (if negative, enter "0")": line 8, the investment tax
+    # credit of Part 3 line 12, less line 9, amount 15 of Part D of Form T2038(IND) (the caller's
+    # figure), and never below zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/amt_investment_tax_credit",
+            "less": "ca/amt_t2038_part_d_amount_15",
+        },
+        produces={"output": "ca/amt_investment_tax_credit_less_part_d"},
+    ),
+    # Part 5 line 11 "Line 7 minus line 10 (if negative, enter "0")": line 7 less line 10, never
+    # below zero. Nothing reads it until Parts 6 and 7 land.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/amt_minimum_tax_after_regular_tax",
+            "less": "ca/amt_investment_tax_credit_less_part_d",
+        },
+        produces={"output": "ca/amt_alternative_minimum_tax_payable"},
+    ),
 }
 
 WIRING = {
@@ -1678,5 +1742,30 @@ WIRING = {
         GreaterOf,
         frozenset({FEDERAL_FOREIGN_TAX_CREDIT, AMT_FOREIGN_TAX_CREDIT_LESSER}),
         frozenset({AMT_SPECIAL_FOREIGN_TAX_CREDIT}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({AMT_MINIMUM_AMOUNT, AMT_SPECIAL_FOREIGN_TAX_CREDIT}),
+        frozenset({AMT_NET_MINIMUM_TAX_PAYABLE}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE, AMT_FEDERAL_SURTAX}),
+        frozenset({AMT_REGULAR_NET_TAX_LESS_SURTAX}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({AMT_NET_MINIMUM_TAX_PAYABLE, AMT_REGULAR_NET_TAX_LESS_SURTAX}),
+        frozenset({AMT_MINIMUM_TAX_AFTER_REGULAR_TAX}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({AMT_INVESTMENT_TAX_CREDIT, AMT_T2038_PART_D_AMOUNT_15}),
+        frozenset({AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({AMT_MINIMUM_TAX_AFTER_REGULAR_TAX, AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D}),
+        frozenset({AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE}),
     ),
 }
