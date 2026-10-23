@@ -328,9 +328,16 @@ form, its export would be `ca/t2125.business_income`. The dotted identifier is b
 
 **Imports.** Any form may read another's exports, by the derived kind, and
 none needs declaring. Forms are run in the order the imports give. A cycle of
-imports (a form reading its own `B.X` is one), an import no form exports, and a
-derived kind given as an input are among those refused when the `FormSet` is
-built (a derived kind given at `compute` is refused too).
+imports, an import no form exports, and a derived kind given as an input are
+among those refused when the `FormSet` is built (a derived kind given at
+`compute` is refused too).
+
+**Earlier runs.** A form may read its own `B.X`. Each run then receives it as a
+starting artifact holding the records of the runs before it, in run order: none
+in the first run, and none in a form without an instances list. It is not an
+import and adds no edge to the order. A capability over it does what the form
+needs, such as totalling the earlier runs' amounts. The kind later forms read
+still holds every run.
 
 **Result.** A computation returns a plain mapping: form name to one
 `Worksheet` per instance, in instance order, an empty tuple for a form whose
