@@ -44,7 +44,7 @@ from app.domain.errors import (
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
@@ -471,9 +471,15 @@ def service(dataset: ParameterDataset[RoundingOnly] | None = None) -> TaxComputa
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ex/part_earned", "ex/all_earned"}),
-        outputs=frozenset({"ex/earned_share"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ex/earned_share",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (DIVIDEND, DIVISOR, OUTPUT):
@@ -487,7 +493,9 @@ def service(dataset: ParameterDataset[RoundingOnly] | None = None) -> TaxComputa
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, RatioTruncated)
@@ -496,7 +504,9 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset()
 
 
 def test_a_computation_truncates_the_ratio_to_five_decimals() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *inputs("30000", "70000"))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *inputs("30000", "70000"))[
+        "ca-on/return"
+    ][0]
 
     assert worksheet.get(OUTPUT).value == Rate(D("0.42857"))
     assert isinstance(worksheet.producer_of(OUTPUT), RatioTruncated)
