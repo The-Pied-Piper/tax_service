@@ -21,8 +21,8 @@ are the T2121's own, `fish_*`, and are neither the T2042's `farm_*` ones, the T2
 ones nor the T776's `rental_*` ones.
 
 Each dataset is tested with the capability that reads it, on made-up kinds; the lines together,
-from the Area G answers to line i, are in `returns/2025_return_bw.yaml` and
-`end_to_end/test_return_bw.py`.
+from the Area G answers to line i, are in `returns/2025_return_by.yaml` and
+`end_to_end/test_return_by.py`.
 """
 
 from __future__ import annotations

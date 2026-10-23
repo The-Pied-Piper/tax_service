@@ -21,8 +21,8 @@ are the T2042's own, `farm_*`, and are neither the T2125's `business_*` ones nor
 `rental_*` ones.
 
 Each dataset is tested with the capability that reads it, on made-up kinds; the lines together,
-from the Area G answers to line i, are in `returns/2025_return_bu.yaml` and
-`end_to_end/test_return_bu.py`.
+from the Area G answers to line i, are in `returns/2025_return_bx.yaml` and
+`end_to_end/test_return_bx.py`.
 """
 
 from __future__ import annotations

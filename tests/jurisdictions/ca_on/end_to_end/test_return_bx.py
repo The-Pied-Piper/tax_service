@@ -1,4 +1,4 @@
-"""CA-ON 2025 end to end: return bu."""
+"""CA-ON 2025 end to end: return bx."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ from app.jurisdictions.ca.catalog import (
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
 from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
-# Return BU's T2042, Return BC's with the wheat raised by 5200 to 55200 (a chosen figure, so that
+# Return BX's T2042, Return BC's with the wheat raised by 5200 to 55200 (a chosen figure, so that
 # line 9946 stays Return BC's 30000): income lines of 85200 (wheat 55200 on line 9371, cattle
 # 30000 on line 9471) and expenses of 50000 (fertilizers and lime 20000 on line 9662, seeds and
 # plants 30000 on line 9664), with no inventory adjustment or partner.
@@ -89,10 +89,10 @@ AREA_G = {
 }
 
 
-def run_bu(
+def run_bx(
     changes: Mapping[str, Any] | None = None, **overrides: Any
 ) -> dict[str, tuple[Worksheet, ...]]:
-    """Return BU's inputs, as in `returns/2025_return_bu.yaml`: Return BC's sole proprietor with
+    """Return BX's inputs, as in `returns/2025_return_bx.yaml`: Return BC's sole proprietor with
     one DIEP expensed at once and Area G.
 
     One T2042 statement for the farm: income of 85200 (line 9659 and T1 line 14099), expenses of
@@ -119,15 +119,15 @@ def run_bu(
     )
 
 
-def statement_bu(changes: Mapping[str, Any] | None = None) -> Worksheet:
-    """The worksheet of Return BU's one T2042 statement: its lines, as the form computes them."""
-    return run_bu(changes)["ca/t2042"][0]
+def statement_bx(changes: Mapping[str, Any] | None = None) -> Worksheet:
+    """The worksheet of Return BX's one T2042 statement: its lines, as the form computes them."""
+    return run_bx(changes)["ca/t2042"][0]
 
 
 def class_8_row(
     claim: str, expensed: str
 ) -> tuple[str, str, str, str, str, str, str, int, str, str, str]:
-    """Class 8 of Return BU with the given claim (column 21) and column 9."""
+    """Class 8 of Return BX with the given claim (column 21) and column 9."""
     return ("8", "10000", "5000", "0", "0", "0", claim, 0, "5000", "0", expensed)
 
 
@@ -138,14 +138,14 @@ def large_class_8_row(
     return ("8", "10000", "40000", "0", "0", "0", claim, 0, "40000", "0", expensed)
 
 
-def test_return_bus_class_8_works_the_diep_columns_to_a_column_21_of_5200() -> None:
+def test_return_bxs_class_8_works_the_diep_columns_to_a_column_21_of_5200() -> None:
     # Area A, class 8: column 7 is 10000 + 5000 - 0 = 15000; column 8 is column 4 minus column 6,
     # 5000 - 0 = 5000, not more than column 7; column 9 is a chosen 3000, not more than column 8;
     # column 10 is 5000 - 3000 = 2000 and column 13 is 15000 - 3000 = 12000; columns 11, 12, 14,
     # 15, 16 and 17 are 0; column 18 is one half x (2000 - 0 - 0 - 0) = 1000.00; column 19 is
     # 12000 + 0 + 0 - 1000.00 = 11000.00; the maximum (column 19 x column 20) is 11000.00 x 20% =
     # 2200.00 and column 21 is 2200.00 + 3000 = 5200.00, the claim.
-    statement = statement_bu()
+    statement = statement_bx()
     rendered = EnglishTraceRenderer().render_all(statement.trace)
 
     assert (
@@ -156,11 +156,11 @@ def test_return_bus_class_8_works_the_diep_columns_to_a_column_21_of_5200() -> N
     assert statement.get(FARM_CCA_TABLE_CLAIM).value == D("5200.00")
 
 
-def test_return_bus_line_i_is_3000_the_total_of_column_9() -> None:
+def test_return_bxs_line_i_is_3000_the_total_of_column_9() -> None:
     # Line i "Total immediate expensing claim for the year: Total of column 9" is 3000, within the
     # least of endnote 5's three amounts: the immediate expensing limit 750000.00, the UCC of
     # DIEPs in column 8 (5000) and the income before CCA, 35200.00.
-    statement = statement_bu()
+    statement = statement_bx()
     rendered = EnglishTraceRenderer().render_all(statement.trace)
 
     assert statement.get(FARM_IMMEDIATE_EXPENSING_CLAIM).value == D("3000")
@@ -175,14 +175,14 @@ def test_return_bus_line_i_is_3000_the_total_of_column_9() -> None:
     ) in rendered
 
 
-def test_return_bus_income_before_cca_is_amount_4c_plus_line_9936_not_below_zero() -> None:
+def test_return_bxs_income_before_cca_is_amount_4c_plus_line_9936_not_below_zero() -> None:
     # Endnote 5 "the amount of income, if any, earned from the source of income that is a business
     # (before any CCA deductions) in which the relevant DIEP is used for the tax year": the form
     # names no line for it (to be confirmed). Amount 4C is 85200 - 55200.00 = 30000.00, which is
     # after the 5200.00 of line 9936; adding it back, 30000.00 + 5200.00 = 35200.00, which is the
     # gross income 85200 less the other expenses 50000 (the recapture on line 9600 is in gross
     # income, the terminal loss on line 9790 an expense, both 0 here).
-    statement = statement_bu()
+    statement = statement_bx()
     rendered = EnglishTraceRenderer().render_all(statement.trace)
 
     assert statement.get(FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS).value == D("30000.00")
@@ -194,7 +194,7 @@ def test_return_bus_income_before_cca_is_amount_4c_plus_line_9936_not_below_zero
     ) in rendered
 
 
-def test_return_bus_amount_iv_is_750000_from_50_percent_of_1_5_million() -> None:
+def test_return_bxs_amount_iv_is_750000_from_50_percent_of_1_5_million() -> None:
     # Endnote 5 and Area G: the farm is associated with one EPOP (1) and an agreement was filed
     # (1), so the limit is amount iv. "Immediate expensing limit allocated to your business:
     # Multiply $1.5 million by the percentage assigned to your business in column 3**": 1500000 x
@@ -202,7 +202,7 @@ def test_return_bus_amount_iv_is_750000_from_50_percent_of_1_5_million() -> None
     # footnote ("** If the total of column 3 is more than 100%, enter "0."") does not apply.
     # Amount iv times the 1 agreement filed is 750000.00, chosen by the 1 for associated over the
     # $1.5 million; no amount is allocated by the minister (0), so the limit is 750000.00.
-    statement = statement_bu()
+    statement = statement_bx()
 
     assert statement.get(FARM_IMMEDIATE_EXPENSING_CAP).value == D("1500000")
     assert statement.get(FARM_EPOP_PERCENTAGE_MAXIMUM).value == D("100")
@@ -214,8 +214,8 @@ def test_return_bus_amount_iv_is_750000_from_50_percent_of_1_5_million() -> None
     assert statement.get(FARM_IMMEDIATE_EXPENSING_LIMIT).value == D("750000.00")
 
 
-def test_return_bus_trace_shows_the_limit_chain() -> None:
-    rendered = EnglishTraceRenderer().render_all(statement_bu().trace)
+def test_return_bxs_trace_shows_the_limit_chain() -> None:
+    rendered = EnglishTraceRenderer().render_all(statement_bx().trace)
 
     for line in (
         "farm_immediate_expensing_cap: credit amount 1500000 (half-up to 0.01)",
@@ -238,11 +238,11 @@ def test_return_bus_trace_shows_the_limit_chain() -> None:
         assert line in rendered, line
 
 
-def test_return_bus_line_ii_and_line_9936_are_5200_and_line_9899_is_30000() -> None:
+def test_return_bxs_line_ii_and_line_9936_are_5200_and_line_9899_is_30000() -> None:
     # Line ii, the total of column 21, is 5200.00, so is line 9936 (no personal part of CCA, no
     # CCA for business-use-of-home expenses). Line 9898 is 50000 + 5200.00 = 55200.00 (the terminal
     # loss on line 9790 is 0) and line 9899 is 85200 - 55200.00 = 30000.00.
-    statement = statement_bu()
+    statement = statement_bx()
 
     assert statement.get(FARM_GROSS_INCOME).value == D("85200")
     assert statement.get(FARM_GROSS_INCOME_BEFORE_EXPENSES).value == D("85200")
@@ -254,10 +254,10 @@ def test_return_bus_line_ii_and_line_9936_are_5200_and_line_9899_is_30000() -> N
     assert statement.get(FARM_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("30000.00")
 
 
-def test_return_bus_closing_ucc_is_9800_for_class_8() -> None:
+def test_return_bxs_closing_ucc_is_9800_for_class_8() -> None:
     # Column 22 is column 7 less column 21: 15000 - 5200.00 = 9800.00 (the claim includes the 3000
     # of column 9), next year's column 2.
-    statement = statement_bu()
+    statement = statement_bx()
 
     records = statement.get(FARM_CLOSING_UCC).value.records
     assert [(record[CCA_CLASS_NUMBER], record[CCA_UCC_AT_END]) for record in records] == [
@@ -270,11 +270,11 @@ def test_return_bus_closing_ucc_is_9800_for_class_8() -> None:
     ) in rendered
 
 
-def test_return_bus_net_farming_income_is_30000_on_line_9946_and_t1_line_14100() -> None:
+def test_return_bxs_net_farming_income_is_30000_on_line_9946_and_t1_line_14100() -> None:
     # Part 5: no partner (count 0), so amount 5A is amount 4C, 30000.00, and amounts 5B and 5C are
     # 30000.00. Part 7 is nil. Line 9946 is 30000.00 - 0 = 30000.00, T1 line 25 and line 14100;
     # the net self-employment income (line 27) is 0 + 0 + 0 + 30000.00 + 0.
-    result = run_bu()
+    result = run_bx()
     worksheet = result["ca-on/return"][0]
 
     assert result["ca/t2042"][0].get(FARMING_INCOME).value == D("30000.00")
@@ -282,11 +282,11 @@ def test_return_bus_net_farming_income_is_30000_on_line_9946_and_t1_line_14100()
     assert worksheet.get(NET_SELF_EMPLOYMENT_INCOME).value == D("30000.00")
 
 
-def test_return_bus_figures_that_depend_on_income_are_return_bcs() -> None:
+def test_return_bxs_figures_that_depend_on_income_are_return_bcs() -> None:
     # Line 9946 is Return BC's 30000.00, so total income, net income and taxable income are
     # 30000.00 and the tax lines are Return BC's: the federal tax 30000.00 x 14.5% = 4350.00, the
     # Ontario tax 30000.00 x 5.05% = 1515.00 and the total payable 3182.57.
-    worksheet = run_bu()["ca-on/return"][0]
+    worksheet = run_bx()["ca-on/return"][0]
 
     assert worksheet.get(TOTAL_INCOME).value == D("30000.00")
     assert worksheet.get(NET_INCOME).value == D("30000.00")
@@ -301,7 +301,7 @@ def test_a_farm_not_associated_with_an_epop_has_the_whole_1_5_million() -> None:
     # Endnote 5 "$1.5 million, if you are not associated with any other eligible person or
     # partnership (EPOP) in the tax year": the Area G answers are not read, so the 50 and the
     # total of 150 (more than 100%) change nothing.
-    statement = statement_bu(
+    statement = statement_bx(
         {
             "farm_epop_associated": 0,
             "farm_epop_agreement_filed": 0,
@@ -319,7 +319,7 @@ def test_an_associated_farm_with_no_agreement_filed_has_a_limit_of_zero() -> Non
     # a percentage to one or more of the associated EPOPs was not filed with the minister in a
     # prescribed form": the limit is 0, below the 3000 of column 9.
     with pytest.raises(InputAboveBoundError) as raised:
-        run_bu({"farm_epop_agreement_filed": 0})
+        run_bx({"farm_epop_agreement_filed": 0})
 
     assert str(raised.value) == (
         "ca/t2042, instance 1: total of column 9 (3000) is above the immediate expensing limit (0)"
@@ -330,7 +330,7 @@ def test_a_total_of_column_3_above_100_gives_a_limit_of_zero() -> None:
     # "** If the total of column 3 is more than 100%, enter "0."": 100% less 100.01 is negative,
     # so amount iv is 0.
     with pytest.raises(InputAboveBoundError) as raised:
-        run_bu({"farm_epop_percentage_total": "100.01"})
+        run_bx({"farm_epop_percentage_total": "100.01"})
 
     assert str(raised.value) == (
         "ca/t2042, instance 1: total of column 9 (3000) is above the immediate expensing limit (0)"
@@ -339,7 +339,7 @@ def test_a_total_of_column_3_above_100_gives_a_limit_of_zero() -> None:
 
 def test_a_total_of_column_3_of_exactly_100_is_not_more_than_100() -> None:
     # 100% less 100 is 0, which is not negative: amount iv is 1500000 x 100% = 1500000.00.
-    statement = statement_bu({"farm_epop_percentage": "100"})
+    statement = statement_bx({"farm_epop_percentage": "100"})
 
     assert statement.get(FARM_IMMEDIATE_EXPENSING_ALLOCATED).value == D("1500000.00")
     assert statement.get(FARM_IMMEDIATE_EXPENSING_LIMIT).value == D("1500000.00")
@@ -348,7 +348,7 @@ def test_a_total_of_column_3_of_exactly_100_is_not_more_than_100() -> None:
 def test_a_percentage_of_0_2_gives_a_limit_of_exactly_the_3000_of_column_9() -> None:
     # Amount iv is 1500000 x 0.2% = 3000.00; a total above the limit is refused, not one equal to
     # it.
-    statement = statement_bu({"farm_epop_percentage": "0.2"})
+    statement = statement_bx({"farm_epop_percentage": "0.2"})
 
     assert statement.get(FARM_IMMEDIATE_EXPENSING_ALLOCATED).value == D("3000.00")
     assert statement.get(FARM_IMMEDIATE_EXPENSING_CLAIM).value == D("3000")
@@ -357,7 +357,7 @@ def test_a_percentage_of_0_2_gives_a_limit_of_exactly_the_3000_of_column_9() -> 
 def test_a_percentage_of_0_1_gives_a_limit_of_1500_so_column_9_is_refused() -> None:
     # Amount iv is 1500000 x 0.1% = 1500.00, below the 3000 of column 9.
     with pytest.raises(InputAboveBoundError) as raised:
-        run_bu({"farm_epop_percentage": "0.1"})
+        run_bx({"farm_epop_percentage": "0.1"})
 
     assert str(raised.value) == (
         "ca/t2042, instance 1: total of column 9 (3000) is above the immediate expensing limit "
@@ -369,7 +369,7 @@ def test_an_amount_allocated_by_the_minister_replaces_the_limit() -> None:
     # Endnote 5 "any amount allocated by the minister under subsection 1104(3.4) of the
     # Regulations": with no agreement filed the limit would be 0, but the minister's 5000 is the
     # limit; 2000 is below the 3000 of column 9.
-    statement = statement_bu(
+    statement = statement_bx(
         {
             "farm_epop_agreement_filed": 0,
             "farm_minister_allocation_given": 1,
@@ -380,7 +380,7 @@ def test_an_amount_allocated_by_the_minister_replaces_the_limit() -> None:
     assert statement.get(FARM_IMMEDIATE_EXPENSING_LIMIT).value == D("5000")
     assert statement.get(FARM_IMMEDIATE_EXPENSING_CLAIM).value == D("3000")
     with pytest.raises(InputAboveBoundError) as raised:
-        run_bu(
+        run_bx(
             {
                 "farm_epop_agreement_filed": 0,
                 "farm_minister_allocation_given": 1,
@@ -400,7 +400,7 @@ def test_a_column_9_total_equal_to_the_income_before_cca_is_allowed() -> None:
     # 35200 = 14800; column 18 is one half x 4800 = 2400.00; column 19 is 14800 - 2400.00 =
     # 12400.00; column 21 is 12400.00 x 20% = 2480.00 + 35200 = 37680.00. The income before CCA
     # does not move with the claim (amount 4C plus line 9936 is the gross income less amount 4B).
-    statement = statement_bu({"farm_cca_classes_rows": (large_class_8_row("37680.00", "35200"),)})
+    statement = statement_bx({"farm_cca_classes_rows": (large_class_8_row("37680.00", "35200"),)})
 
     assert statement.get(FARM_IMMEDIATE_EXPENSING_CLAIM).value == D("35200")
     assert statement.get(FARM_INCOME_BEFORE_CCA).value == D("35200.00")
@@ -414,7 +414,7 @@ def test_a_column_9_total_above_the_income_before_cca_is_refused() -> None:
     # is 2399.50; column 19 is 14799 - 2399.50 = 12399.50; column 21 is 2479.90 + 35201 =
     # 37680.90.
     with pytest.raises(InputAboveBoundError) as raised:
-        run_bu({"farm_cca_classes_rows": (large_class_8_row("37680.90", "35201"),)})
+        run_bx({"farm_cca_classes_rows": (large_class_8_row("37680.90", "35201"),)})
 
     assert str(raised.value) == (
         "ca/t2042, instance 1: total of column 9 (35201) is above the income before CCA (35200.00)"
@@ -426,7 +426,7 @@ def test_a_loss_before_cca_gives_an_income_before_cca_of_zero() -> None:
     # -25200.00 and adding back the 5200.00 of line 9936 is -20000.00, so the income before CCA is
     # 0 and the 3000 of column 9 is refused.
     with pytest.raises(InputAboveBoundError) as raised:
-        run_bu({"farm": {**FARM, "wheat": "0"}})
+        run_bx({"farm": {**FARM, "wheat": "0"}})
 
     assert str(raised.value) == (
         "ca/t2042, instance 1: total of column 9 (3000) is above the income before CCA (0)"
@@ -436,7 +436,7 @@ def test_a_loss_before_cca_gives_an_income_before_cca_of_zero() -> None:
 def test_a_column_9_above_column_8_is_refused_naming_the_class() -> None:
     # Endnote 4 and endnote 5: column 8 is 5000, so a column 9 of 5001 is refused.
     with pytest.raises(InvalidRecordError) as raised:
-        run_bu({"farm_cca_classes_rows": (class_8_row("5200.00", "5001"),)})
+        run_bx({"farm_cca_classes_rows": (class_8_row("5200.00", "5001"),)})
 
     assert (
         str(raised.value)
@@ -448,7 +448,7 @@ def test_a_class_8_claim_below_column_9_is_refused() -> None:
     # Column 21 includes column 9 (3000) and the claim is column 21 (T2042 has no column 22 of
     # non-compliant CCA), so the claim is at least the 3000.
     with pytest.raises(InputBelowBoundError) as raised:
-        run_bu({"farm_cca_classes_rows": (class_8_row("2999.99", "3000"),)})
+        run_bx({"farm_cca_classes_rows": (class_8_row("2999.99", "3000"),)})
 
     assert str(raised.value) == (
         "ca/t2042, instance 1: item 1: ca/cca_claimed 2999.99 is below the minimum 3000"
@@ -458,7 +458,7 @@ def test_a_class_8_claim_below_column_9_is_refused() -> None:
 def test_a_class_8_claim_above_column_21_is_refused() -> None:
     # Column 21 is 2200.00 + 3000 = 5200.00.
     with pytest.raises(InputAboveBoundError) as raised:
-        run_bu({"farm_cca_classes_rows": (class_8_row("5200.01", "3000"),)})
+        run_bx({"farm_cca_classes_rows": (class_8_row("5200.01", "3000"),)})
 
     assert str(raised.value) == (
         "ca/t2042, instance 1: item 1: ca/cca_claimed 5200.01 is above the maximum 5200.00"
@@ -468,7 +468,7 @@ def test_a_class_8_claim_above_column_21_is_refused() -> None:
 def test_a_return_with_no_diep_has_a_line_i_of_zero() -> None:
     # Class 8 without column 4 and column 9 (a plain 10000 + 5000 of additions): line i is 0 and
     # the claim is the maximum, column 19 = 15000 - 2500.00 = 12500.00 x 20% = 2500.00.
-    statement = statement_bu(
+    statement = statement_bx(
         {
             "farm_cca_classes_rows": (
                 ("8", "10000", "5000", "0", "0", "0", "2500.00", 0, "0", "0", "0"),
