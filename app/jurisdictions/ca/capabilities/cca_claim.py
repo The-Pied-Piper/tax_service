@@ -24,12 +24,12 @@ from app.domain.parameters.class_rates import ClassRates
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.record_list import RecordList
 from app.domain.trace import ItemsTotalLine
-from app.jurisdictions.ca.capabilities.cca_table import CcaTable
+from app.jurisdictions.ca.capabilities.cca_table import CcaClaimTable
 from app.jurisdictions.ca.trace import CcaClaimLine
 
 
 @capability(identifier="cca_claim")
-class CcaClaim(CcaTable):
+class CcaClaim(CcaClaimTable):
     """Produces `output`: the total, over the consumed `classes`, of each class's CCA claimed, at
     most its maximum from the `class_rates` dataset less its column 22 from `non_compliant`."""
 
@@ -45,13 +45,14 @@ class CcaClaim(CcaTable):
     ) -> None:
         """Wire the capability: its class-rate dataset, the record list it reads, the record list
         of column 22 amounts, the kind produced."""
-        super().__init__(class_rates, classes, output, non_compliant)
+        super().__init__(class_rates, classes, non_compliant, output)
         self._output = output
 
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         lines: list[CcaClaimLine] = []
+        column_22 = self._column_22(inputs)
         for row in self._rows(inputs):
-            columns = self._columns(row)
+            columns = self._checked_columns(row, column_22)
             lines.append(
                 CcaClaimLine(
                     output=self._output,
