@@ -46,10 +46,10 @@ class PrincipalResidenceWorksheetLine53Capability(PrincipalResidenceWorksheetRow
                 PrincipalResidenceWorksheetLine53(
                     self._output,
                     row.position,
-                    row.part_2.completed,
-                    row.part_2.line_51,
-                    row.part_2.line_52,
-                    row.part_2.line_53,
+                    row.part_2_completed,
+                    row.line_51,
+                    row.line_52,
+                    row.line_53,
                 )
                 for row in self._worksheet_rows(inputs)
             ]

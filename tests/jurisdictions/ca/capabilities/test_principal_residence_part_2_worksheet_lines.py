@@ -1,15 +1,14 @@
 """Unit tests for Form T2091(IND)-WS Part 2, lines 28 to 58, and line 59 of Part 3, which reads
 line 58.
 
-Each line of Part 2 that is calculated is one capability,
-`PrincipalResidenceWorksheetLine<N>Capability` (N the worksheet's line number), with its own catalog
-kind and trace line. The copies of earlier
-figures (lines 28, 29, 31, 34, 37, 38, 39, 42, 43, 45, 48, 49, 51, 52, 54, 56 and 57) are not
-capabilities. An area is skipped when the form says so: area A (lines 28 to 35) when line 2 is not
-less than line 5, area B (lines 37 to 46) when line 1 is not less than line 4 or line 11 is more
-than line 19, and area C (line 48 to 49) when line 1 is not less than line 4. A skipped line is 0,
-and so is every Part 2 line of a property whose T664 election was not filed or whose Part 2 does not
-apply.
+The generic contract of the capabilities (registration, slots, trace shape, totals, the lines of
+a property not filed) is tested for these lines with the others in
+`test_principal_residence_worksheet_lines.py`, whose helpers are used here. This module pins their
+figures and the skipped areas. An area is skipped when the form says so: area A (lines 28 to 35)
+when line 2 is not less than line 5, area B (lines 37 to 46) when line 1 is not less than line 4
+or line 11 is more than line 19, and area C (line 48 to 49) when line 1 is not less than line 4. A
+skipped line is 0, and so is every Part 2 line of a property whose T664 election was not filed or
+whose Part 2 does not apply.
 
 The figures are those of `principal_residence_figures.py`: `PART_2_WORKSHEET_PROPERTY_1` (Part 2
 applies, Chart 1 does not) and `PART_2_WORKSHEET_PROPERTY_2` (Part 2 applies, Chart 1 applies, area
@@ -23,99 +22,16 @@ from typing import Any, cast
 
 import pytest
 
-import app.jurisdictions.ca.capabilities as ca_capabilities
-from app.domain.artifact import Artifact, ArtifactKind
-from app.domain.capability import CapabilityRegistry
-from app.domain.errors import InvalidCapabilityError, MissingArtifactError
-from app.domain.record_list import RecordList
 from app.domain.trace import ItemsTotalLine
-from app.domain.trace.base import TraceLine
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_30 import (
-    PrincipalResidenceWorksheetLine30Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_32 import (
-    PrincipalResidenceWorksheetLine32Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_33 import (
-    PrincipalResidenceWorksheetLine33Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_35 import (
-    PrincipalResidenceWorksheetLine35Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_36 import (
-    PrincipalResidenceWorksheetLine36Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_40 import (
-    PrincipalResidenceWorksheetLine40Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_41 import (
-    PrincipalResidenceWorksheetLine41Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_44 import (
-    PrincipalResidenceWorksheetLine44Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_46 import (
-    PrincipalResidenceWorksheetLine46Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_47 import (
-    PrincipalResidenceWorksheetLine47Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_50 import (
-    PrincipalResidenceWorksheetLine50Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_53 import (
-    PrincipalResidenceWorksheetLine53Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_55 import (
-    PrincipalResidenceWorksheetLine55Capability,
-)
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_58 import (
-    PrincipalResidenceWorksheetLine58Capability,
-)
 from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_59 import (
     PrincipalResidenceWorksheetLine59Capability,
 )
-from app.jurisdictions.ca.capabilities.principal_residence_worksheet_rows import (
-    PrincipalResidenceWorksheetRows,
-)
 from app.jurisdictions.ca.catalog import (
-    CAREGIVER_AMOUNT,
     PRINCIPAL_RESIDENCE_PROPERTIES,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_30,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_32,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_33,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_35,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_36,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_40,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_41,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_44,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_46,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_47,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_50,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_53,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_55,
-    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_58,
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_59,
     RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994,
 )
-from app.jurisdictions.ca.trace import (
-    PrincipalResidenceWorksheetLine30,
-    PrincipalResidenceWorksheetLine32,
-    PrincipalResidenceWorksheetLine33,
-    PrincipalResidenceWorksheetLine35,
-    PrincipalResidenceWorksheetLine36,
-    PrincipalResidenceWorksheetLine40,
-    PrincipalResidenceWorksheetLine41,
-    PrincipalResidenceWorksheetLine44,
-    PrincipalResidenceWorksheetLine46,
-    PrincipalResidenceWorksheetLine47,
-    PrincipalResidenceWorksheetLine50,
-    PrincipalResidenceWorksheetLine53,
-    PrincipalResidenceWorksheetLine55,
-    PrincipalResidenceWorksheetLine58,
-)
 from tests.jurisdictions.ca.capabilities.principal_residence_figures import (
-    CENT,
     DOLLAR_FLOOR,
     PART_2_WORKSHEET_PROPERTY_1,
     PART_2_WORKSHEET_PROPERTY_2,
@@ -126,61 +42,17 @@ from tests.jurisdictions.ca.capabilities.principal_residence_figures import (
     properties,
     rounding,
 )
+from tests.jurisdictions.ca.capabilities.test_principal_residence_worksheet_lines import (
+    KINDS,
+    PART_2_LINES,
+    TRACE_LINES,
+    capability,
+    value_of,
+)
 
 D = Decimal
 
-PART_2_CAPABILITIES: dict[int, Any] = {
-    30: PrincipalResidenceWorksheetLine30Capability,
-    32: PrincipalResidenceWorksheetLine32Capability,
-    33: PrincipalResidenceWorksheetLine33Capability,
-    35: PrincipalResidenceWorksheetLine35Capability,
-    36: PrincipalResidenceWorksheetLine36Capability,
-    40: PrincipalResidenceWorksheetLine40Capability,
-    41: PrincipalResidenceWorksheetLine41Capability,
-    44: PrincipalResidenceWorksheetLine44Capability,
-    46: PrincipalResidenceWorksheetLine46Capability,
-    47: PrincipalResidenceWorksheetLine47Capability,
-    50: PrincipalResidenceWorksheetLine50Capability,
-    53: PrincipalResidenceWorksheetLine53Capability,
-    55: PrincipalResidenceWorksheetLine55Capability,
-    58: PrincipalResidenceWorksheetLine58Capability,
-}
-
-PART_2_KINDS: dict[int, ArtifactKind[Decimal]] = {
-    30: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_30,
-    32: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_32,
-    33: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_33,
-    35: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_35,
-    36: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_36,
-    40: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_40,
-    41: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_41,
-    44: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_44,
-    46: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_46,
-    47: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_47,
-    50: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_50,
-    53: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_53,
-    55: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_55,
-    58: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_58,
-}
-
-PART_2_TRACE: dict[int, type[TraceLine]] = {
-    30: PrincipalResidenceWorksheetLine30,
-    32: PrincipalResidenceWorksheetLine32,
-    33: PrincipalResidenceWorksheetLine33,
-    35: PrincipalResidenceWorksheetLine35,
-    36: PrincipalResidenceWorksheetLine36,
-    40: PrincipalResidenceWorksheetLine40,
-    41: PrincipalResidenceWorksheetLine41,
-    44: PrincipalResidenceWorksheetLine44,
-    46: PrincipalResidenceWorksheetLine46,
-    47: PrincipalResidenceWorksheetLine47,
-    50: PrincipalResidenceWorksheetLine50,
-    53: PrincipalResidenceWorksheetLine53,
-    55: PrincipalResidenceWorksheetLine55,
-    58: PrincipalResidenceWorksheetLine58,
-}
-
-PART_2_LINE_NUMBERS = list(PART_2_CAPABILITIES)
+PART_2_LINE_NUMBERS = sorted(PART_2_LINES)
 
 # Property 1 (Part 2 applies, Chart 1 does not): area A 60,000.00 (line 36), area B 37,384.62
 # (line 47), area C 0 (line 50), line 58 58,235.29.
@@ -224,40 +96,6 @@ VALUES_PROPERTY_2: dict[int, str] = {
 VALUES_NONE: dict[int, str] = {line: "0" for line in PART_2_LINE_NUMBERS}
 
 
-def capability(
-    line: int,
-    rounding_data: Any = None,
-    factor: Any = None,
-) -> Any:
-    """The capability of `line`, wired to the `ca/principal_residence_properties` record list and
-    its kind; by default the rounding dataset rounds half up to the cent."""
-    return PART_2_CAPABILITIES[line](
-        rounding=rounding_data or rounding(),
-        chart_1_factor=factor or chart_1_factor(),
-        properties=PRINCIPAL_RESIDENCE_PROPERTIES,
-        output=PART_2_KINDS[line],
-    )
-
-
-def output_of(
-    line: int,
-    *given: Any,
-    rule: Any = CENT,
-) -> Artifact[Any]:
-    """The output of `line` over the properties `given`, in the order given."""
-    outputs: tuple[Artifact[Any], ...] = (
-        capability(line, rounding(rule)).compute((properties(*given),)).outputs
-    )
-    (output,) = outputs
-    return output
-
-
-def value_of(line: int, *given: Any, rule: Any = CENT) -> Decimal:
-    value = output_of(line, *given, rule=rule).value
-    assert isinstance(value, Decimal)
-    return value
-
-
 def line_59_of(*given: Any) -> Decimal:
     """Line 59 over the properties `given`."""
     wired = PrincipalResidenceWorksheetLine59Capability(
@@ -269,106 +107,6 @@ def line_59_of(*given: Any) -> Decimal:
     (output,) = wired.compute((properties(*given),)).outputs
     assert isinstance(output.value, Decimal)
     return output.value
-
-
-# --- contract and wiring ------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_is_registered_under_its_identifier(line: int) -> None:
-    registered = CapabilityRegistry.shared().get(f"ca/principal_residence_worksheet_line_{line}")
-
-    assert registered is PART_2_CAPABILITIES[line]
-    assert registered.__module__ == (
-        f"app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_{line}"
-    )
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_is_exported_from_the_ca_capabilities_package(line: int) -> None:
-    assert f"principal_residence_worksheet_line_{line}" in ca_capabilities.__all__
-    module = getattr(ca_capabilities, f"principal_residence_worksheet_line_{line}")
-    assert getattr(module, PART_2_CAPABILITIES[line].__name__) is PART_2_CAPABILITIES[line]
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_is_a_subclass_of_the_worksheet_rows_base(line: int) -> None:
-    assert issubclass(PART_2_CAPABILITIES[line], PrincipalResidenceWorksheetRows)
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_declares_its_contract(line: int) -> None:
-    assert capability(line).consumes == frozenset({PRINCIPAL_RESIDENCE_PROPERTIES})
-    assert capability(line).produces == frozenset({PART_2_KINDS[line]})
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_declares_its_slots(line: int) -> None:
-    cls = PART_2_CAPABILITIES[line]
-    assert list(cls.PARAMETERS) == ["rounding", "chart_1_factor"]
-    assert cls.CONSUMES == {"properties": RecordList}
-    assert cls.PRODUCES == {"output": Decimal}
-    assert not cls.is_list_slot("properties")
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_leaves_its_contract_to_the_base(line: int) -> None:
-    assert "consumes" not in vars(PART_2_CAPABILITIES[line])
-    assert "produces" not in vars(PART_2_CAPABILITIES[line])
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_is_built_from_its_slot_names_as_keywords(line: int) -> None:
-    wired = PART_2_CAPABILITIES[line](
-        rounding=rounding(),
-        chart_1_factor=chart_1_factor(),
-        properties=PRINCIPAL_RESIDENCE_PROPERTIES,
-        output=PART_2_KINDS[line],
-    )
-
-    assert wired.compute((properties(PART_2_WORKSHEET_PROPERTY_1),)).outputs == (
-        Artifact(PART_2_KINDS[line], D(VALUES_PROPERTY_1[line])),
-    )
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_takes_no_separate_rounding_argument(line: int) -> None:
-    with pytest.raises(TypeError):
-        PART_2_CAPABILITIES[line](
-            rounding(),
-            chart_1_factor(),
-            PRINCIPAL_RESIDENCE_PROPERTIES,
-            PART_2_KINDS[line],
-            CENT,
-        )
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_rejects_a_money_kind_for_its_properties(line: int) -> None:
-    name = PART_2_CAPABILITIES[line].__name__
-    with pytest.raises(InvalidCapabilityError, match=f"{name}.*'properties'"):
-        PART_2_CAPABILITIES[line](
-            rounding=rounding(),
-            chart_1_factor=chart_1_factor(),
-            properties=CAREGIVER_AMOUNT,
-            output=PART_2_KINDS[line],
-        )
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_has_one_output_of_its_kind(line: int) -> None:
-    outputs = capability(line).compute((properties(PART_2_WORKSHEET_PROPERTY_1),)).outputs
-
-    assert len(outputs) == 1
-    assert outputs[0].kind is PART_2_KINDS[line]
-    assert type(outputs[0].value) is Decimal
-
-
-def test_line_59_is_registered_under_its_identifier() -> None:
-    registered = CapabilityRegistry.shared().get("ca/principal_residence_worksheet_line_59")
-
-    assert registered is PrincipalResidenceWorksheetLine59Capability
-    assert PrincipalResidenceWorksheetLine59Capability.PRODUCES == {"output": Decimal}
 
 
 # --- computing: the two worked properties -------------------------------------------------------
@@ -384,58 +122,7 @@ def test_each_line_of_property_2(line: int) -> None:
     assert value_of(line, PART_2_WORKSHEET_PROPERTY_2) == D(VALUES_PROPERTY_2[line])
 
 
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_two_properties_give_the_sum_of_their_own_amounts(line: int) -> None:
-    total = value_of(line, PART_2_WORKSHEET_PROPERTY_1, PART_2_WORKSHEET_PROPERTY_2)
-
-    assert total == D(VALUES_PROPERTY_1[line]) + D(VALUES_PROPERTY_2[line])
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_the_total_does_not_depend_on_the_order(line: int) -> None:
-    assert value_of(line, PART_2_WORKSHEET_PROPERTY_1, PART_2_WORKSHEET_PROPERTY_2) == value_of(
-        line, PART_2_WORKSHEET_PROPERTY_2, PART_2_WORKSHEET_PROPERTY_1
-    )
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_no_properties_give_zero(line: int) -> None:
-    result = capability(line).compute((properties(),))
-
-    assert result.outputs == (Artifact(PART_2_KINDS[line], D("0")),)
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_compute_is_repeatable(line: int) -> None:
-    wired = capability(line)
-
-    first = wired.compute((properties(PART_2_WORKSHEET_PROPERTY_1),))
-    second = wired.compute((properties(PART_2_WORKSHEET_PROPERTY_1),))
-
-    assert first == second
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_ignores_artifacts_it_does_not_consume(line: int) -> None:
-    other = Artifact(CAREGIVER_AMOUNT, D("9"))
-
-    result = capability(line).compute((other, properties(PART_2_WORKSHEET_PROPERTY_1)))
-
-    assert result.outputs == (Artifact(PART_2_KINDS[line], D(VALUES_PROPERTY_1[line])),)
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_missing_properties_is_a_missing_artifact(line: int) -> None:
-    with pytest.raises(MissingArtifactError, match="principal_residence_properties"):
-        capability(line).compute(())
-
-
 # --- computing: a property not filed, or with Part 2 not applying, has every Part 2 line 0 -------
-
-
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_a_property_not_filed_has_every_part_2_line_0(line: int) -> None:
-    assert value_of(line, part_2_worksheet(t664_filed=0)) == D(VALUES_NONE[line])
 
 
 @pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
@@ -585,14 +272,6 @@ def test_line_58_is_the_lesser_of_lines_56_and_57() -> None:
 # --- the kinds ----------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("line", PART_2_LINE_NUMBERS)
-def test_each_line_is_a_decimal_kind_registered_under_its_line(line: int) -> None:
-    kind = PART_2_KINDS[line]
-
-    assert kind.identifier == f"ca/principal_residence_worksheet_line_{line}"
-    assert kind.value_type is Decimal
-
-
 def test_line_32_is_a_decimal_count_as_line_23_is() -> None:
     assert value_of(32, PART_2_WORKSHEET_PROPERTY_1) == D("2")
     assert type(value_of(32, PART_2_WORKSHEET_PROPERTY_1)) is Decimal
@@ -649,13 +328,13 @@ def test_traces_one_line_per_property_then_the_total(line: int) -> None:
     )
 
     assert [type(item) for item in trace] == [
-        PART_2_TRACE[line],
-        PART_2_TRACE[line],
+        TRACE_LINES[line],
+        TRACE_LINES[line],
         ItemsTotalLine,
     ]
     total = D(VALUES_PROPERTY_1[line]) + D(VALUES_PROPERTY_2[line])
     assert trace[-1] == ItemsTotalLine(
-        PART_2_KINDS[line],
+        KINDS[line],
         ((1, D(VALUES_PROPERTY_1[line])), (2, D(VALUES_PROPERTY_2[line]))),
         total,
     )

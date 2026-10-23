@@ -48,9 +48,9 @@ class PrincipalResidenceWorksheetLine59Capability(PrincipalResidenceWorksheetRow
                     self._output,
                     row.position,
                     row.filed,
-                    row.part_2.completed,
+                    row.part_2_completed,
                     row.line_27,
-                    row.part_2.line_58,
+                    row.line_58,
                     row.line_59,
                 )
                 for row in self._worksheet_rows(inputs)

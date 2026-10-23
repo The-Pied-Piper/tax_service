@@ -47,10 +47,10 @@ class PrincipalResidenceWorksheetLine32Capability(PrincipalResidenceWorksheetRow
                 PrincipalResidenceWorksheetLine32(
                     self._output,
                     row.position,
-                    row.part_2.area_a,
+                    row.pre_1982_completed,
                     row.line_2,
                     row.plus_one,
-                    Decimal(row.part_2.line_32),
+                    Decimal(row.line_32),
                 )
                 for row in self._worksheet_rows(inputs)
             ]

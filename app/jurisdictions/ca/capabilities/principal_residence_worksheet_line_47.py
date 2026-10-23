@@ -47,10 +47,10 @@ class PrincipalResidenceWorksheetLine47Capability(PrincipalResidenceWorksheetRow
                 PrincipalResidenceWorksheetLine47(
                     self._output,
                     row.position,
-                    row.part_2.completed,
-                    row.part_2.line_41,
-                    row.part_2.line_46,
-                    row.part_2.line_47,
+                    row.part_2_completed,
+                    row.line_41,
+                    row.line_46,
+                    row.line_47,
                 )
                 for row in self._worksheet_rows(inputs)
             ]
