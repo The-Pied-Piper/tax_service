@@ -12,9 +12,19 @@ from app.domain.errors import InvalidRecordError, NegativeArtifactError
 from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
     CREDITS_AGAINST_FEDERAL_TAX,
+    FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LINE_41700,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_4,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_5,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_7,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_8,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_10,
+    FOREIGN_BUSINESS_TAX_PAID,
+    FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
     FOREIGN_NON_BUSINESS_TAX_PAID,
+    FOREIGN_SURTAX_OUTSIDE_CANADA,
     FOREIGN_TAX_COUNTRIES,
     FOREIGN_TAX_CREDIT_SHEET_LINE_3,
     FOREIGN_TAX_CREDIT_SHEETS,
@@ -24,6 +34,7 @@ from app.jurisdictions.ca.catalog import (
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
     LABOUR_SPONSORED_FUNDS_NET_COST,
+    NET_FOREIGN_BUSINESS_INCOME,
     NET_FOREIGN_NON_BUSINESS_INCOME,
     POLITICAL_CREDIT,
     POLITICAL_CREDIT_BEFORE_MAXIMUM,
@@ -157,17 +168,22 @@ def test_the_net_foreign_non_business_income_is_a_non_negative_decimal(
     assert registry.kind("ca/net_foreign_non_business_income") is NET_FOREIGN_NON_BUSINESS_INCOME
 
 
-def test_the_foreign_tax_countries_are_a_record_list_of_lines_43100_and_43300(
+def test_the_foreign_tax_countries_are_a_record_list_of_the_t2209_inputs(
     registry: ArtifactRegistry,
 ) -> None:
     # T2209: "do the applicable calculation ... for each country on a separate sheet"; each
-    # record holds one country's two figures.
+    # record holds one country's non-business figures (lines 43100, 43300), then its business
+    # figures: line 4's two parts (43400), line 43900 and line 6.
     assert isinstance(FOREIGN_TAX_COUNTRIES, RecordListKind)
     assert FOREIGN_TAX_COUNTRIES.identifier == "ca/foreign_tax_countries"
     assert FOREIGN_TAX_COUNTRIES.value_type is RecordList
     assert FOREIGN_TAX_COUNTRIES.fields == (
         FOREIGN_NON_BUSINESS_TAX_PAID,
         NET_FOREIGN_NON_BUSINESS_INCOME,
+        FOREIGN_BUSINESS_TAX_PAID,
+        FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
+        NET_FOREIGN_BUSINESS_INCOME,
+        FOREIGN_SURTAX_OUTSIDE_CANADA,
     )
     assert registry.get("ca/foreign_tax_countries") is FOREIGN_TAX_COUNTRIES
 
@@ -176,10 +192,18 @@ def foreign_country_record(**changes: object) -> dict[ArtifactKind[Any], object]
     names: dict[str, ArtifactKind[Any]] = {
         "tax_paid": FOREIGN_NON_BUSINESS_TAX_PAID,
         "income": NET_FOREIGN_NON_BUSINESS_INCOME,
+        "business_tax_paid": FOREIGN_BUSINESS_TAX_PAID,
+        "unused_credits": FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
+        "business_income": NET_FOREIGN_BUSINESS_INCOME,
+        "surtax": FOREIGN_SURTAX_OUTSIDE_CANADA,
     }
     record: dict[ArtifactKind[Any], object] = {
         FOREIGN_NON_BUSINESS_TAX_PAID: Decimal("1500"),
         NET_FOREIGN_NON_BUSINESS_INCOME: Decimal("10000"),
+        FOREIGN_BUSINESS_TAX_PAID: Decimal("400"),
+        FOREIGN_BUSINESS_UNUSED_TAX_CREDITS: Decimal("50"),
+        NET_FOREIGN_BUSINESS_INCOME: Decimal("6000"),
+        FOREIGN_SURTAX_OUTSIDE_CANADA: Decimal("0"),
     }
     for name, value in changes.items():
         record[names[name]] = value
@@ -203,7 +227,10 @@ def test_the_foreign_tax_countries_may_be_empty() -> None:
     assert RecordList(FOREIGN_TAX_COUNTRIES.fields, []).records == ()
 
 
-@pytest.mark.parametrize("field", ["tax_paid", "income"])
+@pytest.mark.parametrize(
+    "field",
+    ["tax_paid", "income", "business_tax_paid", "unused_credits", "business_income", "surtax"],
+)
 def test_a_foreign_country_refuses_a_negative_figure(field: str) -> None:
     with pytest.raises(NegativeArtifactError, match="item 1"):
         RecordList(FOREIGN_TAX_COUNTRIES.fields, [foreign_country_record(**{field: Decimal("-1")})])
@@ -217,6 +244,52 @@ def test_a_foreign_country_missing_a_figure_is_refused_naming_the_row() -> None:
         RecordList(FOREIGN_TAX_COUNTRIES.fields, [record])
 
 
+@pytest.mark.parametrize(
+    "missing",
+    [
+        FOREIGN_BUSINESS_TAX_PAID,
+        FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
+        NET_FOREIGN_BUSINESS_INCOME,
+        FOREIGN_SURTAX_OUTSIDE_CANADA,
+    ],
+    ids=lambda kind: kind.identifier,
+)
+def test_a_foreign_country_missing_a_business_figure_is_refused_naming_the_row(
+    missing: ArtifactKind[Any],
+) -> None:
+    record = foreign_country_record()
+    del record[missing]
+
+    with pytest.raises(
+        InvalidRecordError, match=f"item 1.*{missing.identifier.removeprefix('ca/')}"
+    ):
+        RecordList(FOREIGN_TAX_COUNTRIES.fields, [record])
+
+
+# --- Form T2209: the business figures of a country (lines 4 to 6) --------------------------------
+
+BUSINESS_FIELDS: list[tuple[str, ArtifactKind[Any]]] = [
+    ("ca/foreign_business_tax_paid", FOREIGN_BUSINESS_TAX_PAID),
+    ("ca/foreign_business_unused_tax_credits", FOREIGN_BUSINESS_UNUSED_TAX_CREDITS),
+    ("ca/net_foreign_business_income", NET_FOREIGN_BUSINESS_INCOME),
+    ("ca/foreign_surtax_outside_canada", FOREIGN_SURTAX_OUTSIDE_CANADA),
+]
+
+
+@pytest.mark.parametrize(("identifier", "kind"), BUSINESS_FIELDS)
+def test_the_foreign_business_record_fields_are_non_negative_decimals(
+    registry: ArtifactRegistry, identifier: str, kind: ArtifactKind[Any]
+) -> None:
+    # T2209 line 4 (43400) "Business income tax paid to a foreign country (5) for the year, plus
+    # any unused foreign tax credits for that country for the 10 years (6) before, and the 3 years
+    # after this year"; line 5 "Net foreign business income (7) 43900"; line 6 "Federal surtax on
+    # income allocated to "Other (Outside Canada)"": record fields, not artifacts of their own.
+    assert kind.identifier == identifier
+    assert kind.value_type is Decimal
+    assert kind.non_negative is True
+    assert registry.kind(identifier) is kind
+
+
 # --- Form T2209: the sheets of the foreign tax credit -------------------------------------------
 
 
@@ -228,7 +301,7 @@ def test_the_sheet_line_3_is_a_non_negative_decimal(registry: ArtifactRegistry) 
     assert registry.kind("ca/foreign_tax_credit_sheet_line_3") is FOREIGN_TAX_CREDIT_SHEET_LINE_3
 
 
-def test_the_foreign_tax_credit_sheets_are_a_record_list_of_lines_1_2_and_3() -> None:
+def test_the_foreign_tax_credit_sheets_are_a_record_list_of_the_sheet_figures() -> None:
     assert isinstance(FOREIGN_TAX_CREDIT_SHEETS, RecordListKind)
     assert FOREIGN_TAX_CREDIT_SHEETS.identifier == "ca/foreign_tax_credit_sheets"
     assert FOREIGN_TAX_CREDIT_SHEETS.value_type is RecordList
@@ -236,6 +309,10 @@ def test_the_foreign_tax_credit_sheets_are_a_record_list_of_lines_1_2_and_3() ->
         FOREIGN_NON_BUSINESS_TAX_PAID,
         NET_FOREIGN_NON_BUSINESS_INCOME,
         FOREIGN_TAX_CREDIT_SHEET_LINE_3,
+        FOREIGN_BUSINESS_TAX_PAID,
+        FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
+        NET_FOREIGN_BUSINESS_INCOME,
+        FOREIGN_SURTAX_OUTSIDE_CANADA,
     )
 
 
@@ -244,11 +321,19 @@ def foreign_sheet_record(**changes: object) -> dict[ArtifactKind[Any], object]:
         "tax_paid": FOREIGN_NON_BUSINESS_TAX_PAID,
         "income": NET_FOREIGN_NON_BUSINESS_INCOME,
         "line_3": FOREIGN_TAX_CREDIT_SHEET_LINE_3,
+        "business_tax_paid": FOREIGN_BUSINESS_TAX_PAID,
+        "unused_credits": FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
+        "business_income": NET_FOREIGN_BUSINESS_INCOME,
+        "surtax": FOREIGN_SURTAX_OUTSIDE_CANADA,
     }
     record: dict[ArtifactKind[Any], object] = {
         FOREIGN_NON_BUSINESS_TAX_PAID: Decimal("1500"),
         NET_FOREIGN_NON_BUSINESS_INCOME: Decimal("10000"),
         FOREIGN_TAX_CREDIT_SHEET_LINE_3: Decimal("1400"),
+        FOREIGN_BUSINESS_TAX_PAID: Decimal("400"),
+        FOREIGN_BUSINESS_UNUSED_TAX_CREDITS: Decimal("50"),
+        NET_FOREIGN_BUSINESS_INCOME: Decimal("6000"),
+        FOREIGN_SURTAX_OUTSIDE_CANADA: Decimal("0"),
     }
     for name, value in changes.items():
         record[names[name]] = value
@@ -274,6 +359,62 @@ def test_the_foreign_tax_credit_sheets_may_be_empty() -> None:
 def test_a_foreign_tax_credit_sheet_refuses_a_negative_line_3() -> None:
     with pytest.raises(NegativeArtifactError):
         RecordList(FOREIGN_TAX_CREDIT_SHEETS.fields, [foreign_sheet_record(line_3=Decimal("-1"))])
+
+
+@pytest.mark.parametrize(
+    "field", ["business_tax_paid", "unused_credits", "business_income", "surtax"]
+)
+def test_a_foreign_tax_credit_sheet_refuses_a_negative_business_figure(field: str) -> None:
+    with pytest.raises(NegativeArtifactError, match="item 1"):
+        RecordList(
+            FOREIGN_TAX_CREDIT_SHEETS.fields, [foreign_sheet_record(**{field: Decimal("-1")})]
+        )
+
+
+def test_a_foreign_tax_credit_sheet_missing_a_business_figure_is_refused_naming_the_row() -> None:
+    record = foreign_sheet_record()
+    del record[NET_FOREIGN_BUSINESS_INCOME]
+
+    with pytest.raises(InvalidRecordError, match="item 1.*net_foreign_business_income"):
+        RecordList(FOREIGN_TAX_CREDIT_SHEETS.fields, [record])
+
+
+# --- Form T2209: the lines of the federal business foreign tax credit -----------------------------
+
+BUSINESS_LINES: list[tuple[str, ArtifactKind[Any], bool]] = [
+    # (identifier, kind, non_negative); line 10 is "Line 8 minus line 9" and can be below 0.
+    ("ca/foreign_business_tax_credit_line_4", FOREIGN_BUSINESS_TAX_CREDIT_LINE_4, True),
+    ("ca/foreign_business_tax_credit_line_5", FOREIGN_BUSINESS_TAX_CREDIT_LINE_5, True),
+    ("ca/foreign_business_tax_credit_line_7", FOREIGN_BUSINESS_TAX_CREDIT_LINE_7, True),
+    ("ca/foreign_business_tax_credit_line_8", FOREIGN_BUSINESS_TAX_CREDIT_LINE_8, True),
+    ("ca/foreign_business_tax_credit_line_10", FOREIGN_BUSINESS_TAX_CREDIT_LINE_10, False),
+    ("ca/federal_business_foreign_tax_credit", FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT, True),
+    (
+        "ca/federal_foreign_tax_credit_before_limit",
+        FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
+        True,
+    ),
+]
+
+
+@pytest.mark.parametrize(("identifier", "kind", "non_negative"), BUSINESS_LINES)
+def test_the_business_line_kinds_are_registered_decimals(
+    registry: ArtifactRegistry, identifier: str, kind: ArtifactKind[Any], non_negative: bool
+) -> None:
+    # T2209 line 4 (43400), 5, 7 "Add lines 5 and 6.", 8, 10 "Line 8 minus line 9", 11 "Federal
+    # business foreign tax credit" and 13 "Add lines 11 and 12." "Federal foreign tax credit".
+    assert kind.identifier == identifier
+    assert kind.value_type is Decimal
+    assert kind.non_negative is non_negative
+    assert registry.kind(identifier) is kind
+
+
+def test_the_business_line_10_may_be_negative_and_the_others_may_not() -> None:
+    Artifact(FOREIGN_BUSINESS_TAX_CREDIT_LINE_10, Decimal("-1"))
+    for _identifier, kind, non_negative in BUSINESS_LINES:
+        if non_negative:
+            with pytest.raises(NegativeArtifactError):
+                Artifact(kind, Decimal("-1"))
 
 
 # --- Form T2038(IND): the apprentices of the apprenticeship job creation tax credit ---------------

@@ -9,26 +9,35 @@ paid to all foreign countries was more than $200, do the applicable calculation 
 ... to each country on a separate sheet in Canadian dollars. Enter the total amount on this form."
 
 Each country is a record of the consumed `countries` list, holding lines 1 and the income of line
-2; `net_income` and `basic_federal_tax` are the return-wide figures of notes (3) and (4). With more
-than one country and a total tax paid above the `pooling_threshold` dataset's amount (the printed
-$200), each country is worked on its own: its income is capped at net income, line 2 is the income
-times basic federal tax over net income, worked by `ApplyRatio.ratio_of` and rounded once with the
-`rounding` dataset's rule, line 3 is the lesser of line 1 and line 2, and the output is the sum of
-the countries' line 3, 0 when there are no countries. Otherwise one pooled calculation is worked
-on the totals (tax paid summed, income summed then capped at net income). A zero net income with
-at least one country is refused with a ValidationError. It records one `ForeignTaxCreditLine` for
-each country, by position from 1, then an `ItemsTotalLine`; the pooled case records one
-`PooledForeignTaxCreditLine` alone.
+2 and the business figures of lines 4 to 6 (see below); `net_income` and `basic_federal_tax` are the
+return-wide figures of notes (3) and (4). With more than one country and the total foreign taxes,
+the non-business tax paid plus the business income tax paid for the year (line 4's first part, not
+its unused credits), above the `pooling_threshold` dataset's amount (the printed $200), each
+country is worked on its own: its income is capped at net income, line 2 is the income times basic
+federal tax over net income, worked by `ApplyRatio.ratio_of` and rounded once with the `rounding`
+dataset's rule, line 3 is the lesser of line 1 and line 2, and the output is the sum of the
+countries' line 3, 0 when there are no countries. Otherwise one pooled calculation is worked on the
+totals (tax paid summed, income summed then capped at net income). A zero net income with at least
+one country is refused with a ValidationError. It records one `ForeignTaxCreditLine` for each
+country, by position from 1, then an `ItemsTotalLine`; the pooled case records one
+`PooledForeignTaxCreditLine` alone, naming the total foreign taxes compared with the threshold.
 
 The second output, `sheets`, lists the T2209 sheets behind the total, in order: one record for each
 country when each is worked on its own, one pooled record otherwise (also for a single country),
 none without countries. A sheet holds line 1 (tax paid), the income used on line 2 (after the cap at
-net income) and line 3, the same figure that enters the total.
+net income) and line 3, the same figure that enters the total, then the business figures for the
+lines 4 to 6 of the business part: the business income tax paid for the year and the unused
+business foreign tax credits (line 4), the net foreign business income (line 5, capped at net
+income as note (7) says: "If your net foreign business income is more than your net income, use
+your net income in the calculation.") and the federal surtax of line 6. A country on its own sheet
+copies its figures; the pooled sheet adds them (the business income added, then capped). The
+business lines are worked from the sheets by the capabilities of lines 4 to 11, not here.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, ClassVar
 
@@ -43,18 +52,37 @@ from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.record_list import RecordList, RecordListKind
 from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.catalog import (
+    FOREIGN_BUSINESS_TAX_PAID,
+    FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
     FOREIGN_NON_BUSINESS_TAX_PAID,
+    FOREIGN_SURTAX_OUTSIDE_CANADA,
     FOREIGN_TAX_CREDIT_SHEET_LINE_3,
+    NET_FOREIGN_BUSINESS_INCOME,
     NET_FOREIGN_NON_BUSINESS_INCOME,
 )
 from app.jurisdictions.ca.trace import ForeignTaxCreditLine, PooledForeignTaxCreditLine
+
+
+@dataclass(frozen=True)
+class ForeignTaxSheet:
+    """One T2209 sheet: line 1 `tax_paid`, the `income` used on line 2, line 3 `result`, and the
+    business figures `business_tax_paid` and `unused_credits` (line 4), `business_income` (line 5,
+    already capped at net income) and `surtax` (line 6)."""
+
+    tax_paid: Decimal
+    income: Decimal
+    result: Decimal
+    business_tax_paid: Decimal
+    unused_credits: Decimal
+    business_income: Decimal
+    surtax: Decimal
 
 
 @capability(identifier="foreign_non_business_tax_credit")
 class ForeignNonBusinessTaxCredit(Capability):
     """Produces `total`: the lesser of tax paid and its share of basic federal tax, for each
     consumed country (or all of them pooled), added; and `sheets`, the record of each T2209 sheet
-    worked."""
+    worked, with the business figures of its lines 4 to 6."""
 
     PARAMETERS: ClassVar[Mapping[str, ParameterKind[Any]]] = {
         "rounding": ROUNDING_ONLY,
@@ -115,16 +143,27 @@ class ForeignNonBusinessTaxCredit(Capability):
         threshold = self._pooling_threshold.values.value
         taxes = [Decimal(record[FOREIGN_NON_BUSINESS_TAX_PAID]) for record in records]
         incomes = [Decimal(record[NET_FOREIGN_NON_BUSINESS_INCOME]) for record in records]
-        if len(records) == 1 or sum(taxes, Decimal(0)) <= threshold:
+        business_taxes = [Decimal(record[FOREIGN_BUSINESS_TAX_PAID]) for record in records]
+        unused = [Decimal(record[FOREIGN_BUSINESS_UNUSED_TAX_CREDITS]) for record in records]
+        business_incomes = [Decimal(record[NET_FOREIGN_BUSINESS_INCOME]) for record in records]
+        surtaxes = [Decimal(record[FOREIGN_SURTAX_OUTSIDE_CANADA]) for record in records]
+        total_foreign_taxes = sum(taxes, Decimal(0)) + sum(business_taxes, Decimal(0))
+        if len(records) == 1 or total_foreign_taxes <= threshold:
             tax_paid = sum(taxes, Decimal(0))
             income = min(sum(incomes, Decimal(0)), net_income)
             line_2 = ApplyRatio.ratio_of(income, basic_federal_tax, net_income, rule)
             result = min(tax_paid, line_2)
+            sheet = ForeignTaxSheet(
+                tax_paid,
+                income,
+                result,
+                sum(business_taxes, Decimal(0)),
+                sum(unused, Decimal(0)),
+                min(sum(business_incomes, Decimal(0)), net_income),
+                sum(surtaxes, Decimal(0)),
+            )
             return CapabilityResult(
-                outputs=(
-                    Artifact(self._total, result),
-                    self._sheet_list([(tax_paid, income, result)]),
-                ),
+                outputs=(Artifact(self._total, result), self._sheet_list([sheet])),
                 trace=(
                     PooledForeignTaxCreditLine(
                         self._total,
@@ -133,6 +172,7 @@ class ForeignNonBusinessTaxCredit(Capability):
                         income,
                         net_income,
                         basic_federal_tax,
+                        total_foreign_taxes,
                         threshold,
                         rule,
                         line_2,
@@ -141,13 +181,23 @@ class ForeignNonBusinessTaxCredit(Capability):
                 ),
             )
         lines: list[ForeignTaxCreditLine] = []
-        sheets: list[tuple[Decimal, Decimal, Decimal]] = []
+        sheets: list[ForeignTaxSheet] = []
         for position, (tax_paid, country_income) in enumerate(
             zip(taxes, incomes, strict=True), start=1
         ):
             income = min(country_income, net_income)
             line_2 = ApplyRatio.ratio_of(income, basic_federal_tax, net_income, rule)
-            sheets.append((tax_paid, income, min(tax_paid, line_2)))
+            sheets.append(
+                ForeignTaxSheet(
+                    tax_paid,
+                    income,
+                    min(tax_paid, line_2),
+                    business_taxes[position - 1],
+                    unused[position - 1],
+                    min(business_incomes[position - 1], net_income),
+                    surtaxes[position - 1],
+                )
+            )
             lines.append(
                 ForeignTaxCreditLine(
                     self._total,
@@ -168,19 +218,23 @@ class ForeignNonBusinessTaxCredit(Capability):
             trace=(*lines, ItemsTotalLine(self._total, items, total)),
         )
 
-    def _sheet_list(self, rows: list[tuple[Decimal, Decimal, Decimal]]) -> Artifact[RecordList]:
-        """The `sheets` output: one record for each (line 1, income used, line 3)."""
+    def _sheet_list(self, rows: list[ForeignTaxSheet]) -> Artifact[RecordList]:
+        """The `sheets` output: one record for each sheet."""
         return Artifact(
             self._sheets,
             RecordList(
                 self._sheets.fields,
                 [
                     {
-                        FOREIGN_NON_BUSINESS_TAX_PAID: tax_paid,
-                        NET_FOREIGN_NON_BUSINESS_INCOME: income,
-                        FOREIGN_TAX_CREDIT_SHEET_LINE_3: line_3,
+                        FOREIGN_NON_BUSINESS_TAX_PAID: sheet.tax_paid,
+                        NET_FOREIGN_NON_BUSINESS_INCOME: sheet.income,
+                        FOREIGN_TAX_CREDIT_SHEET_LINE_3: sheet.result,
+                        FOREIGN_BUSINESS_TAX_PAID: sheet.business_tax_paid,
+                        FOREIGN_BUSINESS_UNUSED_TAX_CREDITS: sheet.unused_credits,
+                        NET_FOREIGN_BUSINESS_INCOME: sheet.business_income,
+                        FOREIGN_SURTAX_OUTSIDE_CANADA: sheet.surtax,
                     }
-                    for tax_paid, income, line_3 in rows
+                    for sheet in rows
                 ],
             ),
         )

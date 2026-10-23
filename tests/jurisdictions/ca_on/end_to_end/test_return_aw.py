@@ -238,6 +238,7 @@ def test_a_total_of_exactly_200_of_foreign_tax_is_pooled() -> None:
             income=D("1500"),
             net_income=D("66990.00"),
             basic_federal_tax=D("7285.81"),
+            total_foreign_taxes=D("200"),
             threshold=D("200"),
             rounding=CENT,
             line_2=D("163.14"),
@@ -247,9 +248,9 @@ def test_a_total_of_exactly_200_of_foreign_tax_is_pooled() -> None:
     assert not [line for line in worksheet.trace if isinstance(line, ForeignTaxCreditLine)]
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "federal_non_business_foreign_tax_credit: all 2 countries pooled, total tax paid 200 "
-        "is not more than 200: 1500 net foreign income x 7285.81 basic federal tax / 66990 "
-        "net income = 163.14 (half-up to 0.01); credit 163.14"
+        "federal_non_business_foreign_tax_credit: all 2 countries pooled, total foreign taxes "
+        "200 is not more than 200: tax paid 200, 1500 net foreign income x 7285.81 basic federal "
+        "tax / 66990 net income = 163.14 (half-up to 0.01); credit 163.14"
     ) in rendered
 
 
