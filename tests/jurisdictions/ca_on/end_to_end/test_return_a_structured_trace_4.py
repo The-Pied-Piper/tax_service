@@ -531,10 +531,17 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_TAXABLE_CAPITAL_GAINS_2025,
     EMPLOYMENT_INCOME,
+    FARM_CCA_CLAIM,
+    FARM_EPOP_ASSOCIATED,
     FARM_HOME_ALLOWABLE_CLAIM,
     FARM_HOME_CARRY_FORWARD,
     FARM_HOME_EXPENSES_AVAILABLE,
     FARM_HOME_INCOME_LIMIT,
+    FARM_IMMEDIATE_EXPENSING_CAP,
+    FARM_IMMEDIATE_EXPENSING_LIMIT,
+    FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FARM_INCOME_BEFORE_CCA,
+    FARM_MINISTER_ALLOCATION_GIVEN,
     FARM_NET_INCOME_AFTER_ADJUSTMENTS,
     FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
     FARM_PARTNER,
@@ -573,10 +580,17 @@ from app.jurisdictions.ca.catalog import (
     FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT,
     FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT,
     FHSA_VARIABLE_H_AMOUNT,
+    FISH_CCA_CLAIM,
+    FISH_EPOP_ASSOCIATED,
     FISH_HOME_ALLOWABLE_CLAIM,
     FISH_HOME_CARRY_FORWARD,
     FISH_HOME_EXPENSES_AVAILABLE,
     FISH_HOME_INCOME_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_CAP,
+    FISH_IMMEDIATE_EXPENSING_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FISH_INCOME_BEFORE_CCA,
+    FISH_MINISTER_ALLOCATION_GIVEN,
     FISH_NET_INCOME_AFTER_ADJUSTMENTS,
     FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
     FISH_PARTNER,
@@ -4061,6 +4075,28 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             parts=((BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS, D("0")), (BUSINESS_CCA_CLAIM, D("0"))),
             total=D("0"),
         ),
+        # Form T2042 Area A endnote 5 "the amount of income, if any, earned from the source of
+        # income that is a business (before any CCA deductions)": amount 4C plus line 9936,
+        # floored, 0 for Return A.
+        FARM_INCOME_BEFORE_CCA: SumNotBelowZeroLine(
+            output=FARM_INCOME_BEFORE_CCA,
+            parts=(
+                (FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS, D("0")),
+                (FARM_CCA_CLAIM, D("0")),
+            ),
+            total=D("0"),
+        ),
+        # Form T2121 Area A endnote 5 "the amount of income, if any, earned from the source of
+        # income that is a business (before any CCA deductions)": line 9369 plus line 9936,
+        # floored, 0 for Return A.
+        FISH_INCOME_BEFORE_CCA: SumNotBelowZeroLine(
+            output=FISH_INCOME_BEFORE_CCA,
+            parts=(
+                (FISH_NET_INCOME_BEFORE_ADJUSTMENTS, D("0")),
+                (FISH_CCA_CLAIM, D("0")),
+            ),
+            total=D("0"),
+        ),
         # T2042 Part 7 amount 7N "Net income (loss) after adjustments (amount 5C) (if negative,
         # enter "0")": amount 5C alone, floored, 0.
         FARM_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
@@ -5382,6 +5418,38 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=BUSINESS_MINISTER_ALLOCATION_GIVEN,
             count=0,
             chosen_kind=BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+            chosen_value=D("1500000.00"),
+        ),
+        # Form T2042 endnote 5: a count of 0 for associated with an EPOP chooses the $1.5 million,
+        # and a count of 0 for an amount allocated by the minister keeps that limit.
+        FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER: ChosenByCountLine(
+            output=FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+            count_kind=FARM_EPOP_ASSOCIATED,
+            count=0,
+            chosen_kind=FARM_IMMEDIATE_EXPENSING_CAP,
+            chosen_value=D("1500000.00"),
+        ),
+        FARM_IMMEDIATE_EXPENSING_LIMIT: ChosenByCountLine(
+            output=FARM_IMMEDIATE_EXPENSING_LIMIT,
+            count_kind=FARM_MINISTER_ALLOCATION_GIVEN,
+            count=0,
+            chosen_kind=FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+            chosen_value=D("1500000.00"),
+        ),
+        # Form T2121 endnote 5: a count of 0 for associated with an EPOP chooses the $1.5 million,
+        # and a count of 0 for an amount allocated by the minister keeps that limit.
+        FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER: ChosenByCountLine(
+            output=FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+            count_kind=FISH_EPOP_ASSOCIATED,
+            count=0,
+            chosen_kind=FISH_IMMEDIATE_EXPENSING_CAP,
+            chosen_value=D("1500000.00"),
+        ),
+        FISH_IMMEDIATE_EXPENSING_LIMIT: ChosenByCountLine(
+            output=FISH_IMMEDIATE_EXPENSING_LIMIT,
+            count_kind=FISH_MINISTER_ALLOCATION_GIVEN,
+            count=0,
+            chosen_kind=FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
             chosen_value=D("1500000.00"),
         ),
         # Form T776 Note 5: a count of 0 for associated with an EPOP chooses the $1.5 million, and a

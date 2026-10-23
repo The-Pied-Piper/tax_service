@@ -263,12 +263,22 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_CREDIT,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     FARM_CCA_CLAIM,
+    FARM_EPOP_PERCENTAGE_MAXIMUM,
+    FARM_EPOP_PERCENTAGE_ROOM,
     FARM_EXPENSES_SUBTOTAL,
     FARM_GROSS_INCOME,
     FARM_GROSS_INCOME_BEFORE_EXPENSES,
     FARM_HOME_ALLOWABLE_CLAIM,
     FARM_HOME_EXPENSES,
     FARM_HOME_INCOME_LIMIT,
+    FARM_IMMEDIATE_EXPENSING_ALLOCATED,
+    FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    FARM_IMMEDIATE_EXPENSING_CAP,
+    FARM_IMMEDIATE_EXPENSING_CLAIM,
+    FARM_IMMEDIATE_EXPENSING_LIMIT,
+    FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FARM_IMMEDIATE_EXPENSING_SHARE,
+    FARM_INCOME_BEFORE_CCA,
     FARM_MOTOR_VEHICLE_EXPENSES,
     FARM_NET_INCOME_AFTER_ADJUSTMENTS,
     FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
@@ -309,12 +319,22 @@ from app.jurisdictions.ca.catalog import (
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FIRST_TIER_DONATION_CREDIT,
     FISH_CCA_CLAIM,
+    FISH_EPOP_PERCENTAGE_MAXIMUM,
+    FISH_EPOP_PERCENTAGE_ROOM,
     FISH_EXPENSES_SUBTOTAL,
     FISH_GROSS_INCOME,
     FISH_GROSS_INCOME_BEFORE_EXPENSES,
     FISH_HOME_ALLOWABLE_CLAIM,
     FISH_HOME_EXPENSES,
     FISH_HOME_INCOME_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_ALLOCATED,
+    FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_CAP,
+    FISH_IMMEDIATE_EXPENSING_CLAIM,
+    FISH_IMMEDIATE_EXPENSING_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FISH_IMMEDIATE_EXPENSING_SHARE,
+    FISH_INCOME_BEFORE_CCA,
     FISH_MOTOR_VEHICLE_EXPENSES,
     FISH_NET_INCOME_AFTER_ADJUSTMENTS,
     FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -2073,7 +2093,7 @@ def test_each_t2042_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2042 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2042").composition.order
-    assert len(order) == 28
+    assert len(order) == 38
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Part 3: the recapture of Area A before line 9600, which comes before line 9659, which comes
     # before amount 4A.
@@ -2089,6 +2109,23 @@ def test_each_t2042_capability_runs_after_what_it_consumes() -> None:
     assert (
         position[FARM_GROSS_INCOME_BEFORE_EXPENSES] < position[FARM_NET_INCOME_BEFORE_ADJUSTMENTS]
     )
+    # Area G and endnote 5: amount iv after the $1.5 million and the room under 100%, the limit
+    # chosen after it in turn, the income before CCA (amount 4C plus line 9936, not below zero)
+    # after both, and line i after the limit and the income before CCA.
+    assert position[FARM_IMMEDIATE_EXPENSING_CAP] < position[FARM_IMMEDIATE_EXPENSING_SHARE]
+    assert position[FARM_EPOP_PERCENTAGE_MAXIMUM] < position[FARM_EPOP_PERCENTAGE_ROOM]
+    assert position[FARM_EPOP_PERCENTAGE_ROOM] < position[FARM_IMMEDIATE_EXPENSING_ALLOCATED]
+    assert (
+        position[FARM_IMMEDIATE_EXPENSING_SHARE]
+        < position[FARM_IMMEDIATE_EXPENSING_ALLOCATED]
+        < position[FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT]
+        < position[FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER]
+        < position[FARM_IMMEDIATE_EXPENSING_LIMIT]
+        < position[FARM_IMMEDIATE_EXPENSING_CLAIM]
+    )
+    assert position[FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS] < position[FARM_INCOME_BEFORE_CCA]
+    assert position[FARM_CCA_CLAIM] < position[FARM_INCOME_BEFORE_CCA]
+    assert position[FARM_INCOME_BEFORE_CCA] < position[FARM_IMMEDIATE_EXPENSING_CLAIM]
     # Parts 5 and 7: amounts 5A to 5C in turn, amount 7N after 5C, line 9945 after amount 7P, and
     # line 9946 after amount 5C and line 9945.
     assert (
@@ -2109,7 +2146,7 @@ def test_each_t2121_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2121 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2121").composition.order
-    assert len(order) == 29
+    assert len(order) == 39
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Part 3: the recapture of Area A before line 9600, which comes before line 9659, which comes
     # before amount 4A.
@@ -2125,6 +2162,23 @@ def test_each_t2121_capability_runs_after_what_it_consumes() -> None:
     assert (
         position[FISH_GROSS_INCOME_BEFORE_EXPENSES] < position[FISH_NET_INCOME_BEFORE_ADJUSTMENTS]
     )
+    # Area G and endnote 5: amount iii after the $1.5 million and the room under 100%, the limit
+    # chosen after it in turn, the income before CCA (line 9369 plus line 9936, not below zero)
+    # after both, and line i after the limit and the income before CCA.
+    assert position[FISH_IMMEDIATE_EXPENSING_CAP] < position[FISH_IMMEDIATE_EXPENSING_SHARE]
+    assert position[FISH_EPOP_PERCENTAGE_MAXIMUM] < position[FISH_EPOP_PERCENTAGE_ROOM]
+    assert position[FISH_EPOP_PERCENTAGE_ROOM] < position[FISH_IMMEDIATE_EXPENSING_ALLOCATED]
+    assert (
+        position[FISH_IMMEDIATE_EXPENSING_SHARE]
+        < position[FISH_IMMEDIATE_EXPENSING_ALLOCATED]
+        < position[FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT]
+        < position[FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER]
+        < position[FISH_IMMEDIATE_EXPENSING_LIMIT]
+        < position[FISH_IMMEDIATE_EXPENSING_CLAIM]
+    )
+    assert position[FISH_NET_INCOME_BEFORE_ADJUSTMENTS] < position[FISH_INCOME_BEFORE_CCA]
+    assert position[FISH_CCA_CLAIM] < position[FISH_INCOME_BEFORE_CCA]
+    assert position[FISH_INCOME_BEFORE_CCA] < position[FISH_IMMEDIATE_EXPENSING_CLAIM]
     # Parts 5 and 7: the net income before adjustments, amounts 5A to 5C in turn, amount 7N after
     # 5C, line 9945 after amount 7P, and line 9946 after amount 5C and line 9945.
     assert (

@@ -323,12 +323,19 @@ from app.jurisdictions.ca.catalog import (
     FARM_CCA_CLAIM_LESS_PERSONAL_PART,
     FARM_CCA_PERSONAL_PART,
     FARM_CCA_TABLE_CLAIM,
+    FARM_EPOP_AGREEMENT_FILED,
+    FARM_EPOP_PERCENTAGE_MAXIMUM,
+    FARM_EPOP_PERCENTAGE_ROOM,
+    FARM_EPOP_PERCENTAGE_TOTAL,
     FARM_GROSS_INCOME_BEFORE_EXPENSES,
     FARM_HOME_CCA,
     FARM_HOME_EXPENSES,
     FARM_HOME_EXPENSES_BUSINESS_PART,
     FARM_HOME_EXPENSES_SUBTOTAL,
     FARM_HOME_PERSONAL_USE_PART,
+    FARM_IMMEDIATE_EXPENSING_ALLOCATED,
+    FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    FARM_IMMEDIATE_EXPENSING_CAP,
     FARM_NET_INCOME_AFTER_ADJUSTMENTS,
     FARM_NET_INCOME_BEFORE_ADJUSTMENTS,
     FARM_PARTNER_OTHER_AMOUNTS,
@@ -369,12 +376,19 @@ from app.jurisdictions.ca.catalog import (
     FISH_CCA_CLAIM_LESS_PERSONAL_PART,
     FISH_CCA_PERSONAL_PART,
     FISH_CCA_TABLE_CLAIM,
+    FISH_EPOP_AGREEMENT_FILED,
+    FISH_EPOP_PERCENTAGE_MAXIMUM,
+    FISH_EPOP_PERCENTAGE_ROOM,
+    FISH_EPOP_PERCENTAGE_TOTAL,
     FISH_GROSS_INCOME_BEFORE_EXPENSES,
     FISH_HOME_CCA,
     FISH_HOME_EXPENSES,
     FISH_HOME_EXPENSES_BUSINESS_PART,
     FISH_HOME_EXPENSES_SUBTOTAL,
     FISH_HOME_PERSONAL_USE_PART,
+    FISH_IMMEDIATE_EXPENSING_ALLOCATED,
+    FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_CAP,
     FISH_INSURANCE_RECOVERY,
     FISH_NET_INCOME_AFTER_ADJUSTMENTS,
     FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -1626,6 +1640,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("100"),
         ),
+        # Form T2042 Area G "** If the total of column 3 is more than 100%, enter "0."", first
+        # step: 100% less the total of column 3, Return A's being 0.
+        FARM_EPOP_PERCENTAGE_ROOM: SubtractedLine(
+            output=FARM_EPOP_PERCENTAGE_ROOM,
+            minuend=FARM_EPOP_PERCENTAGE_MAXIMUM,
+            minuend_amount=D("100"),
+            subtrahend=FARM_EPOP_PERCENTAGE_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("100"),
+        ),
+        # Form T2121 Area G "** If the total of column 3 is more than 100%, enter "0."", first
+        # step: 100% less the total of column 3, Return A's being 0.
+        FISH_EPOP_PERCENTAGE_ROOM: SubtractedLine(
+            output=FISH_EPOP_PERCENTAGE_ROOM,
+            minuend=FISH_EPOP_PERCENTAGE_MAXIMUM,
+            minuend_amount=D("100"),
+            subtrahend=FISH_EPOP_PERCENTAGE_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("100"),
+        ),
         BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS: SubtractedLine(
             output=BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
             minuend=BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,
@@ -1887,6 +1921,42 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # more than 100%, enter "0."".
         BUSINESS_EPOP_PERCENTAGE_MAXIMUM: CreditAmountLine(
             output=BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
+            basis=Credit(amount=D("100")),
+            rounding=CENT,
+            value=D("100.00"),
+        ),
+        # Form T2042 Area A endnote 5 "$1.5 million, if you are not associated with any other
+        # eligible person or partnership (EPOP) in the tax year" and Area G "Immediate expensing
+        # limit allocated to your business: Multiply $1.5 million by the percentage assigned to
+        # your business in column 3**" (amount iv).
+        FARM_IMMEDIATE_EXPENSING_CAP: CreditAmountLine(
+            output=FARM_IMMEDIATE_EXPENSING_CAP,
+            basis=Credit(amount=D("1500000")),
+            rounding=CENT,
+            value=D("1500000.00"),
+        ),
+        # Form T2042 Area G "should not be more than 100%" and "** If the total of column 3 is
+        # more than 100%, enter "0."".
+        FARM_EPOP_PERCENTAGE_MAXIMUM: CreditAmountLine(
+            output=FARM_EPOP_PERCENTAGE_MAXIMUM,
+            basis=Credit(amount=D("100")),
+            rounding=CENT,
+            value=D("100.00"),
+        ),
+        # Form T2121 Area A endnote 5 "$1.5 million, if you are not associated with any other
+        # eligible person or partnership (EPOP) in the tax year" and Area G "Immediate expensing
+        # limit allocated to your business: Multiply $1.5 million by the percentage assigned to
+        # your business in column 3**" (amount iii).
+        FISH_IMMEDIATE_EXPENSING_CAP: CreditAmountLine(
+            output=FISH_IMMEDIATE_EXPENSING_CAP,
+            basis=Credit(amount=D("1500000")),
+            rounding=CENT,
+            value=D("1500000.00"),
+        ),
+        # Form T2121 Area G "should not be more than 100%" and "** If the total of column 3 is
+        # more than 100%, enter "0."".
+        FISH_EPOP_PERCENTAGE_MAXIMUM: CreditAmountLine(
+            output=FISH_EPOP_PERCENTAGE_MAXIMUM,
             basis=Credit(amount=D("100")),
             rounding=CENT,
             value=D("100.00"),
@@ -2839,6 +2909,28 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             amount_kind=BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
             amount_value=D("0.00"),
             count_kind=BUSINESS_EPOP_AGREEMENT_FILED,
+            count=0,
+            result=D("0"),
+        ),
+        # Form T2042 Area A endnote 5 "zero, if you are associated with one or more EPOPs and an
+        # agreement ... was not filed": amount iv, 0.00 for Return A (no percentage assigned),
+        # times a count of 0 agreements filed, a plain 0.
+        FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT: TimesCountLine(
+            output=FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+            amount_kind=FARM_IMMEDIATE_EXPENSING_ALLOCATED,
+            amount_value=D("0.00"),
+            count_kind=FARM_EPOP_AGREEMENT_FILED,
+            count=0,
+            result=D("0"),
+        ),
+        # Form T2121 Area A endnote 5 "zero, if you are associated with one or more EPOPs and an
+        # agreement ... was not filed": amount iii, 0.00 for Return A (no percentage assigned),
+        # times a count of 0 agreements filed, a plain 0.
+        FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT: TimesCountLine(
+            output=FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+            amount_kind=FISH_IMMEDIATE_EXPENSING_ALLOCATED,
+            amount_value=D("0.00"),
+            count_kind=FISH_EPOP_AGREEMENT_FILED,
             count=0,
             result=D("0"),
         ),

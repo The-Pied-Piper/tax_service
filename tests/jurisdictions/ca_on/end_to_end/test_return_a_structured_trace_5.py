@@ -18,7 +18,13 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
     BUSINESS_IMMEDIATE_EXPENSING_SHARE,
     CHILD_CARE_EXPENSES,
+    FARM_EPOP_PERCENTAGE_ROOM,
+    FARM_IMMEDIATE_EXPENSING_ALLOCATED,
+    FARM_IMMEDIATE_EXPENSING_SHARE,
     FEDERAL_BASIC_TAX,
+    FISH_EPOP_PERCENTAGE_ROOM,
+    FISH_IMMEDIATE_EXPENSING_ALLOCATED,
+    FISH_IMMEDIATE_EXPENSING_SHARE,
     OTHER_DEPENDANTS_MEDICAL,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT_BEFORE_MAXIMUM,
@@ -71,6 +77,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             sign_kind=BUSINESS_EPOP_PERCENTAGE_ROOM,
             sign=D("100.00"),
             chosen_kind=BUSINESS_IMMEDIATE_EXPENSING_SHARE,
+            chosen_value=D("0.00"),
+        ),
+        # Form T2042 Area G "** If the total of column 3 is more than 100%, enter "0."": 100% less
+        # the total of column 3 is 100.00 for Return A, not below zero, so amount iv is the $1.5
+        # million times the percentage assigned to your business, 0.00 for Return A.
+        FARM_IMMEDIATE_EXPENSING_ALLOCATED: ChosenBySignLine(
+            output=FARM_IMMEDIATE_EXPENSING_ALLOCATED,
+            sign_kind=FARM_EPOP_PERCENTAGE_ROOM,
+            sign=D("100.00"),
+            chosen_kind=FARM_IMMEDIATE_EXPENSING_SHARE,
+            chosen_value=D("0.00"),
+        ),
+        # Form T2121 Area G "** If the total of column 3 is more than 100%, enter "0."": 100% less
+        # the total of column 3 is 100.00 for Return A, not below zero, so amount iii is the $1.5
+        # million times the percentage assigned to your business, 0.00 for Return A.
+        FISH_IMMEDIATE_EXPENSING_ALLOCATED: ChosenBySignLine(
+            output=FISH_IMMEDIATE_EXPENSING_ALLOCATED,
+            sign_kind=FISH_EPOP_PERCENTAGE_ROOM,
+            sign=D("100.00"),
+            chosen_kind=FISH_IMMEDIATE_EXPENSING_SHARE,
             chosen_value=D("0.00"),
         ),
         # Form T776 Area G Note 11 "If the total of column 3 is more than 100%, enter "0."": 100%

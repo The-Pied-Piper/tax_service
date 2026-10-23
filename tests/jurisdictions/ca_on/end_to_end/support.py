@@ -246,6 +246,10 @@ from app.jurisdictions.ca.catalog import (
     FARM_DAIRY_SUBSIDIES,
     FARM_EGGS,
     FARM_ELECTRICITY,
+    FARM_EPOP_AGREEMENT_FILED,
+    FARM_EPOP_ASSOCIATED,
+    FARM_EPOP_PERCENTAGE,
+    FARM_EPOP_PERCENTAGE_TOTAL,
     FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,
     FARM_FERTILIZERS_AND_LIME,
     FARM_FLAXSEED,
@@ -276,6 +280,8 @@ from app.jurisdictions.ca.catalog import (
     FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
     FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
     FARM_MILK_AND_CREAM,
+    FARM_MINISTER_ALLOCATION,
+    FARM_MINISTER_ALLOCATION_GIVEN,
     FARM_MIXED_GRAINS,
     FARM_OATS,
     FARM_OFFICE_EXPENSES,
@@ -339,6 +345,10 @@ from app.jurisdictions.ca.catalog import (
     FISH_CCA_PERSONAL_PART,
     FISH_COMPENSATION_FOR_LOSS,
     FISH_CREW_SHARES,
+    FISH_EPOP_AGREEMENT_FILED,
+    FISH_EPOP_ASSOCIATED,
+    FISH_EPOP_PERCENTAGE,
+    FISH_EPOP_PERCENTAGE_TOTAL,
     FISH_FISH_PRODUCTS,
     FISH_FISHING_GEAR,
     FISH_FUEL_COSTS,
@@ -357,6 +367,8 @@ from app.jurisdictions.ca.catalog import (
     FISH_INSURANCE_RECOVERY,
     FISH_INTEREST_AND_BANK_CHARGES,
     FISH_MEALS_AND_ENTERTAINMENT,
+    FISH_MINISTER_ALLOCATION,
+    FISH_MINISTER_ALLOCATION_GIVEN,
     FISH_NETS_AND_TRAPS,
     FISH_OFFICE_EXPENSES,
     FISH_OTHER_EXPENSES,
@@ -1425,12 +1437,14 @@ def farm_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decimal]]
 
 
 def farm_cca_classes(
-    *rows: tuple[str, str, str, str, str, str, str, int],
+    *rows: tuple[str, str, str, str, str, str, str, int, str, str, str],
 ) -> Artifact[RecordList]:
     """The Form T2042 Area A rows, one record per class, with the columns of
-    `rental_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
-    column 12, the CCA claimed (column 21) as decimal text, and 1 if no property is left in the
-    class, else 0 (endnote 3)."""
+    `business_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
+    column 12, the CCA claimed (column 21) as decimal text, 1 if no property is left in the
+    class, else 0 (endnote 3), column 4 (the DIEP additions), column 6 (the proceeds of
+    dispositions of DIEP) and column 9 (the immediate expensing amount), each "0" when the class
+    has no DIEP."""
     kind = FARM_CCA_CLASSES
     assert isinstance(kind, RecordListKind)
     records: list[dict[ArtifactKind[Any], object]] = [
@@ -1443,6 +1457,9 @@ def farm_cca_classes(
             CCA_RIIP_ADDITIONS: D(riip_additions),
             CCA_CLAIMED: D(claimed),
             CCA_NO_PROPERTY_LEFT: no_property_left,
+            CCA_DIEP_ADDITIONS: D(diep_additions),
+            CCA_DIEP_PROCEEDS: D(diep_proceeds),
+            CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
         }
         for (
             class_number,
@@ -1453,6 +1470,9 @@ def farm_cca_classes(
             riip_additions,
             claimed,
             no_property_left,
+            diep_additions,
+            diep_proceeds,
+            immediate_expensing,
         ) in rows
     ]
     return Artifact(kind, RecordList(kind.fields, records))
@@ -1462,8 +1482,16 @@ def t2042_statement(
     *,
     farm: Mapping[str, str] | None = None,
     farm_partner: int = 0,
-    farm_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    farm_cca_classes_rows: tuple[
+        tuple[str, str, str, str, str, str, str, int, str, str, str], ...
+    ] = (),
     farm_vehicles_rows: tuple[Mapping[str, str], ...] = (),
+    farm_epop_associated: int = 0,
+    farm_epop_agreement_filed: int = 0,
+    farm_epop_percentage: str = "0",
+    farm_epop_percentage_total: str = "0",
+    farm_minister_allocation_given: int = 0,
+    farm_minister_allocation: str = "0",
 ) -> dict[ArtifactKind[Any], object]:
     """One Form T2042 statement, a record of `ca/t2042_statements`: its inputs, as given or 0, and
     its vehicles (one record per mapping of `business_vehicles`, none by default)."""
@@ -1471,6 +1499,12 @@ def t2042_statement(
         *farm_amount_artifacts(farm or {}),
         Artifact(FARM_PARTNER, farm_partner),
         farm_cca_classes(*farm_cca_classes_rows),
+        Artifact(FARM_EPOP_ASSOCIATED, farm_epop_associated),
+        Artifact(FARM_EPOP_AGREEMENT_FILED, farm_epop_agreement_filed),
+        Artifact(FARM_EPOP_PERCENTAGE, D(farm_epop_percentage)),
+        Artifact(FARM_EPOP_PERCENTAGE_TOTAL, D(farm_epop_percentage_total)),
+        Artifact(FARM_MINISTER_ALLOCATION_GIVEN, farm_minister_allocation_given),
+        Artifact(FARM_MINISTER_ALLOCATION, D(farm_minister_allocation)),
         business_vehicles(*farm_vehicles_rows),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
@@ -1541,12 +1575,14 @@ def fish_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decimal]]
 
 
 def fish_cca_classes(
-    *rows: tuple[str, str, str, str, str, str, str, int],
+    *rows: tuple[str, str, str, str, str, str, str, int, str, str, str],
 ) -> Artifact[RecordList]:
     """The Form T2121 Area A rows, one record per class, with the columns of
-    `farm_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
-    column 12, the CCA claimed (column 21) as decimal text, and 1 if no property is left in the
-    class, else 0 (endnote 3)."""
+    `business_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
+    column 12, the CCA claimed (column 21) as decimal text, 1 if no property is left in the
+    class, else 0 (endnote 3), column 4 (the DIEP additions), column 6 (the proceeds of
+    dispositions of DIEP) and column 9 (the immediate expensing amount), each "0" when the class
+    has no DIEP."""
     kind = FISH_CCA_CLASSES
     assert isinstance(kind, RecordListKind)
     records: list[dict[ArtifactKind[Any], object]] = [
@@ -1559,6 +1595,9 @@ def fish_cca_classes(
             CCA_RIIP_ADDITIONS: D(riip_additions),
             CCA_CLAIMED: D(claimed),
             CCA_NO_PROPERTY_LEFT: no_property_left,
+            CCA_DIEP_ADDITIONS: D(diep_additions),
+            CCA_DIEP_PROCEEDS: D(diep_proceeds),
+            CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
         }
         for (
             class_number,
@@ -1569,6 +1608,9 @@ def fish_cca_classes(
             riip_additions,
             claimed,
             no_property_left,
+            diep_additions,
+            diep_proceeds,
+            immediate_expensing,
         ) in rows
     ]
     return Artifact(kind, RecordList(kind.fields, records))
@@ -1578,8 +1620,16 @@ def t2121_statement(
     *,
     fish: Mapping[str, str] | None = None,
     fish_partner: int = 0,
-    fish_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    fish_cca_classes_rows: tuple[
+        tuple[str, str, str, str, str, str, str, int, str, str, str], ...
+    ] = (),
     fish_vehicles_rows: tuple[Mapping[str, str], ...] = (),
+    fish_epop_associated: int = 0,
+    fish_epop_agreement_filed: int = 0,
+    fish_epop_percentage: str = "0",
+    fish_epop_percentage_total: str = "0",
+    fish_minister_allocation_given: int = 0,
+    fish_minister_allocation: str = "0",
 ) -> dict[ArtifactKind[Any], object]:
     """One Form T2121 statement, a record of `ca/t2121_statements`: its inputs, as given or 0, and
     its vehicles (one record per mapping of `business_vehicles`, none by default)."""
@@ -1588,6 +1638,12 @@ def t2121_statement(
         Artifact(FISH_PARTNER, fish_partner),
         fish_cca_classes(*fish_cca_classes_rows),
         business_vehicles(*fish_vehicles_rows),
+        Artifact(FISH_EPOP_ASSOCIATED, fish_epop_associated),
+        Artifact(FISH_EPOP_AGREEMENT_FILED, fish_epop_agreement_filed),
+        Artifact(FISH_EPOP_PERCENTAGE, D(fish_epop_percentage)),
+        Artifact(FISH_EPOP_PERCENTAGE_TOTAL, D(fish_epop_percentage_total)),
+        Artifact(FISH_MINISTER_ALLOCATION_GIVEN, fish_minister_allocation_given),
+        Artifact(FISH_MINISTER_ALLOCATION, D(fish_minister_allocation)),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
 
