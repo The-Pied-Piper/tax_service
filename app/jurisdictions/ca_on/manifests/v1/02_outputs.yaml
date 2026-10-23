@@ -40,6 +40,29 @@ outputs:
   - ca/principal_residence_line_48
   - ca/principal_residence_line_51
   - ca/principal_residence_line_53
+  # Form T2091(IND)-WS Chart 1 and Parts 1 and 3, and Form T2091(IND) Part 4 line 56: the total
+  # over the properties of each line; no step reads them, so each is declared as an unread
+  # printed line.
+  - ca/principal_residence_worksheet_line_3
+  - ca/principal_residence_worksheet_line_6
+  - ca/principal_residence_worksheet_line_16
+  - ca/principal_residence_worksheet_line_17
+  - ca/principal_residence_worksheet_line_18
+  - ca/principal_residence_worksheet_line_19
+  - ca/principal_residence_worksheet_line_21
+  - ca/principal_residence_worksheet_line_23
+  - ca/principal_residence_worksheet_line_24
+  - ca/principal_residence_worksheet_line_26
+  - ca/principal_residence_worksheet_line_27
+  - ca/principal_residence_worksheet_line_59
+  - ca/principal_residence_worksheet_line_61
+  - ca/principal_residence_worksheet_line_63
+  - ca/principal_residence_worksheet_line_64
+  - ca/principal_residence_worksheet_line_66
+  - ca/principal_residence_line_56
+  # Form T2091(IND) Part 3 line 54 "Total capital gain": line 57 is entered on line 15800 of
+  # Schedule 3 instead, so no step reads it and it is a declared unread printed line.
+  - ca/principal_residence_gain
   - ca/cpp_second_additional_earnings_maximum
   - ca-on/applies_for_energy_and_property_tax_credit
   - ca-on/applies_for_northern_energy_credit

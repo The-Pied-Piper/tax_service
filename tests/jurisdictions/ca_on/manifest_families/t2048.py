@@ -30,7 +30,9 @@ from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZe
 from app.jurisdictions.ca.capabilities.disposition_gains import DispositionGains
 from app.jurisdictions.ca.capabilities.disposition_gains_only import DispositionGainsOnly
 from app.jurisdictions.ca.capabilities.lesser_of_with_maximum import LesserOfWithMaximum
-from app.jurisdictions.ca.capabilities.principal_residence_gain import PrincipalResidenceGain
+from app.jurisdictions.ca.capabilities.principal_residence_line_57 import (
+    PrincipalResidencePart4Line57,
+)
 from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
@@ -114,7 +116,7 @@ from app.jurisdictions.ca.catalog import (
     PRE_1986_DEDUCTIONS_ADJUSTED_2000,
     PRE_1986_DEDUCTIONS_BEFORE_1988,
     PRE_1986_DEDUCTIONS_TOTAL,
-    PRINCIPAL_RESIDENCE_GAIN,
+    PRINCIPAL_RESIDENCE_LINE_57,
     PRINCIPAL_RESIDENCE_PROPERTIES,
     QBT_2024_RESERVE,
     QBT_2025_RESERVE,
@@ -735,10 +737,13 @@ COPIED_STEPS = {
         produces={"output": "ca/personal_use_property_gain_rows"},
     ),
     CapabilitySelection(
-        name="ca/principal_residence_gain",
-        params={"rounding": "ca/principal_residence_gain_rounding"},
+        name="ca/principal_residence_line_57",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
         consumes={"properties": "ca/principal_residence_properties"},
-        produces={"output": "ca/principal_residence_gain"},
+        produces={"output": "ca/principal_residence_line_57"},
     ),
     CapabilitySelection(
         name="core/sum",
@@ -746,7 +751,7 @@ COPIED_STEPS = {
         consumes={
             "parts": (
                 "ca/personal_use_property_gain_rows",
-                "ca/principal_residence_gain",
+                "ca/principal_residence_line_57",
             )
         },
         produces={"output": "ca/personal_use_property_gain"},
@@ -1494,13 +1499,13 @@ FORM_WIRING = {
         frozenset({PERSONAL_USE_PROPERTY_GAIN_ROWS}),
     ),
     (
-        PrincipalResidenceGain,
+        PrincipalResidencePart4Line57,
         frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
-        frozenset({PRINCIPAL_RESIDENCE_GAIN}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_57}),
     ),
     (
         Sum,
-        frozenset({PERSONAL_USE_PROPERTY_GAIN_ROWS, PRINCIPAL_RESIDENCE_GAIN}),
+        frozenset({PERSONAL_USE_PROPERTY_GAIN_ROWS, PRINCIPAL_RESIDENCE_LINE_57}),
         frozenset({PERSONAL_USE_PROPERTY_GAIN}),
     ),
     (

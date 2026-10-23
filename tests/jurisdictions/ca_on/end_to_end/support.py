@@ -1757,6 +1757,29 @@ def dispositions(kind: RecordListKind, *rows: Disposition) -> Artifact[RecordLis
 ResidenceProperty = (
     tuple[int, int, int, int, str, str, str, int]
     | tuple[int, int, int, int, str, str, str, int, int, str, str, str]
+    | tuple[
+        int,
+        int,
+        int,
+        int,
+        str,
+        str,
+        str,
+        int,
+        int,
+        str,
+        str,
+        str,
+        int,
+        int,
+        int,
+        str,
+        str,
+        str,
+        str,
+        int,
+        int,
+    ]
 )
 """One Form T2091(IND) property: the years designated after 1981 and from 1972 to 1981 (lines 1
 and 2), the years owned in the same periods (lines 5 and 6), the proceeds of disposition (line 8),
@@ -1765,7 +1788,14 @@ applies, else 0. A row of twelve adds the Part 2 figures: 1 if Part 2 applies, e
 property is one of two or more principal residences a family member owned on December 31, 1981),
 then line 11 (the adjusted cost base on that date), line 12 (the fair market value on that date) and
 line 13 (the adjustments to the cost base after 1981). A row of eight has Part 2 not applying, with
-lines 11 to 13 at 0."""
+lines 11 to 13 at 0. A row of twenty-one adds the Part 4 figures: 1 if Form T664 or T664(Seniors)
+was filed, else 0, then the Form T2091(IND)-WS inputs the caller takes from that election: the
+years designated after 1981 and before 1995 (worksheet line 1), the years owned in the same period
+(line 4), the designated proceeds of disposition (line 7), the adjusted cost base at the end of
+February 22, 1994 (line 8), the fair market value at that date (line 10), the elected capital gain
+(line 13), and the months owned after February 1992 and before March 1994 (line 60) and after 1971
+and before March 1994 (line 62), both not counting the months designated. A row of twelve or eight
+has these at 0."""
 
 
 def principal_residence_properties(*rows: ResidenceProperty) -> Artifact[RecordList]:
@@ -1789,7 +1819,18 @@ def _residence_record(row: ResidenceProperty) -> dict[ArtifactKind[Any], object]
         cost_base,
         plus_one,
     ) = row[:8]
-    part_2_applies, cost_base_1981, fmv_1981, adjustments = row[8:] or (0, "0", "0", "0")
+    part_2_applies, cost_base_1981, fmv_1981, adjustments = row[8:12] or (0, "0", "0", "0")
+    (
+        t664_filed,
+        ws_years_designated,
+        ws_years_owned,
+        ws_designated_proceeds,
+        ws_cost_base_feb_22_1994,
+        ws_fmv_feb_22_1994,
+        ws_elected_capital_gain,
+        ws_months_after_feb_1992,
+        ws_months_after_1971,
+    ) = row[12:] or (0, 0, 0, "0", "0", "0", "0", 0, 0)
     return {
         RESIDENCE_YEARS_DESIGNATED_AFTER_1981: designated_after,
         RESIDENCE_YEARS_DESIGNATED_1972_TO_1981: designated_before,
@@ -1803,15 +1844,15 @@ def _residence_record(row: ResidenceProperty) -> dict[ArtifactKind[Any], object]
         RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981: D(cost_base_1981),
         RESIDENCE_FMV_DEC_31_1981: D(fmv_1981),
         RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981: D(adjustments),
-        RESIDENCE_T664_FILED: 0,
-        RESIDENCE_WS_YEARS_DESIGNATED_AFTER_1981: 0,
-        RESIDENCE_WS_YEARS_OWNED_AFTER_1981: 0,
-        RESIDENCE_WS_DESIGNATED_PROCEEDS: D("0"),
-        RESIDENCE_WS_ADJUSTED_COST_BASE_FEB_22_1994: D("0"),
-        RESIDENCE_WS_FMV_FEB_22_1994: D("0"),
-        RESIDENCE_WS_ELECTED_CAPITAL_GAIN: D("0"),
-        RESIDENCE_WS_MONTHS_OWNED_AFTER_FEB_1992: 0,
-        RESIDENCE_WS_MONTHS_OWNED_AFTER_1971: 0,
+        RESIDENCE_T664_FILED: t664_filed,
+        RESIDENCE_WS_YEARS_DESIGNATED_AFTER_1981: ws_years_designated,
+        RESIDENCE_WS_YEARS_OWNED_AFTER_1981: ws_years_owned,
+        RESIDENCE_WS_DESIGNATED_PROCEEDS: D(ws_designated_proceeds),
+        RESIDENCE_WS_ADJUSTED_COST_BASE_FEB_22_1994: D(ws_cost_base_feb_22_1994),
+        RESIDENCE_WS_FMV_FEB_22_1994: D(ws_fmv_feb_22_1994),
+        RESIDENCE_WS_ELECTED_CAPITAL_GAIN: D(ws_elected_capital_gain),
+        RESIDENCE_WS_MONTHS_OWNED_AFTER_FEB_1992: ws_months_after_feb_1992,
+        RESIDENCE_WS_MONTHS_OWNED_AFTER_1971: ws_months_after_1971,
     }
 
 
