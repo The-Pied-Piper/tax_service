@@ -4489,7 +4489,8 @@ def test_the_closing_line_is_unchanged_when_column_9_is_0() -> None:
 
 def test_column_9_is_the_last_field_of_the_claim_and_closing_lines() -> None:
     assert [f.name for f in fields(CcaClaimLine)][-4:-2] == ["column_9", "half_year_rule_on_sale"]
-    assert [f.name for f in fields(ClosingUccLine)][-4:-2] == ["column_9", "half_year_rule_on_sale"]
+    # The closing line has one more trailing field, Note 9's personal part.
+    assert [f.name for f in fields(ClosingUccLine)][-5:-3] == ["column_9", "half_year_rule_on_sale"]
 
 
 def expensed_loss_line(column_7: str, column_9: str, result: str) -> TerminalLossLine:
@@ -5314,6 +5315,89 @@ def test_the_closing_line_is_unchanged_for_a_full_year() -> None:
     assert render(prorated_closing_line(365)) == (
         "closing_ucc: item 1 class 8: column 7 17500 less claim 2052.05 = 15447.95"
     )
+
+
+# T776 Area A Note 9: "you must subtract any remaining personal part of this property's cost from
+# the UCC at the end of the year". The closing line names the part after the claim, only when it is
+# above 0; the claim line is unchanged. Row P: Class 1 (4%), column 7 60,000, claim 2,400, part
+# 5,000: 60,000 - 2,400 - 5,000 = 52,600.
+
+
+def personal_part_line(
+    part: str = "5000", claim: str = "2400", result: str = "52600"
+) -> ClosingUccLine:
+    return ClosingUccLine(
+        CLOSING_UCC,
+        1,
+        class_rate("1", "0.04"),
+        0,
+        D("60000"),
+        CcaZeroReason.NONE,
+        D(claim),
+        D(result),
+        personal_part_remaining=D(part),
+    )
+
+
+def test_the_closing_line_names_the_remaining_personal_part_after_the_claim() -> None:
+    assert render(personal_part_line()) == (
+        "closing_ucc: item 1 class 1: column 7 60000 less claim 2400 less personal part 5000 "
+        "= 52600"
+    )
+
+
+def test_the_closing_line_names_a_part_with_cents() -> None:
+    assert render(personal_part_line("5000.50", "2400", "52599.50")) == (
+        "closing_ucc: item 1 class 1: column 7 60000 less claim 2400 less personal part 5000.5 "
+        "= 52599.5"
+    )
+
+
+def test_the_closing_line_is_unchanged_when_the_part_is_0() -> None:
+    assert render(personal_part_line("0", "2400", "57600")) == (
+        "closing_ucc: item 1 class 1: column 7 60000 less claim 2400 = 57600"
+    )
+
+
+def test_the_closing_line_without_a_part_reads_as_one_with_0() -> None:
+    without = ClosingUccLine(
+        CLOSING_UCC,
+        1,
+        class_rate("1", "0.04"),
+        0,
+        D("60000"),
+        CcaZeroReason.NONE,
+        D("2400"),
+        D("57600"),
+    )
+
+    assert without == personal_part_line("0", "2400", "57600")
+    assert without.personal_part_remaining == D("0")
+
+
+def test_the_closing_line_names_the_part_after_the_claims_notes() -> None:
+    line = replace(
+        personal_part_line("1000", "3400", "1600"),
+        class_rate=CLASS_8,
+        column_7=D("6000"),
+        column_9=D("3000"),
+        fiscal_period_days=214,
+    )
+
+    assert render(line) == (
+        "closing_ucc: item 1 class 8: column 7 6000 less claim 3400 (prorated 214/365) "
+        "(including column 9 3000) less personal part 1000 = 1600"
+    )
+
+
+def test_a_closing_line_at_zero_does_not_name_a_part() -> None:
+    line = replace(
+        personal_part_line("0", "0", "0"),
+        zero_reason=CcaZeroReason.NO_PROPERTY_LEFT,
+        claim=D("0"),
+    )
+
+    assert render(line) == "closing_ucc: item 1 class 1: column 7 60000 with no property left: 0"
 
 
 # A dataset whose full year is 366 days: the line carries it, and a line is prorated when its days

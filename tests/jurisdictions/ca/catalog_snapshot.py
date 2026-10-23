@@ -1542,6 +1542,7 @@ REGISTERED = frozenset(
         "ca/cca_immediate_expensing",
         "ca/cca_claimed",
         "ca/cca_no_property_left",
+        "ca/cca_personal_part_remaining",
         "ca/cca_ucc_at_end",
         "ca/cpp_base_contributions",
         "ca/cpp_base_contributions_on_self_employment",

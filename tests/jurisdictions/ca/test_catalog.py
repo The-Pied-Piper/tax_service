@@ -165,6 +165,7 @@ from app.jurisdictions.ca.catalog import (
     CCA_DIEP_PROCEEDS,
     CCA_IMMEDIATE_EXPENSING,
     CCA_NO_PROPERTY_LEFT,
+    CCA_PERSONAL_PART_REMAINING,
     CCA_PROCEEDS,
     CCA_RIIP_ADDITIONS,
     CCA_UCC_AT_END,
@@ -2122,6 +2123,10 @@ def test_the_principal_residence_gain_is_a_non_negative_decimal(registry: Artifa
         # T776 "Column 23: CCA claim for the year" (T2125 column 21): the amount claimed, an
         # election from 0 to the class's maximum.
         (CCA_CLAIMED, "ca/cca_claimed"),
+        # T776 Area A Note 9: "you must subtract any remaining personal part of this property's cost
+        # from the UCC at the end of the year": the caller's amount for the class, a field of each
+        # record of the rental list.
+        (CCA_PERSONAL_PART_REMAINING, "ca/cca_personal_part_remaining"),
         # T776 "Column 24: UCC at the end of the year (column 7 minus column 23)" (T2125 column
         # 22): a field of the closing list for next year.
         (CCA_UCC_AT_END, "ca/cca_ucc_at_end"),
@@ -2161,10 +2166,11 @@ def test_the_cca_table_fields_are_kinds_of_their_own() -> None:
         CCA_IMMEDIATE_EXPENSING,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_PERSONAL_PART_REMAINING,
         CCA_UCC_AT_END,
     )
 
-    assert len({kind.identifier for kind in kinds}) == 12
+    assert len({kind.identifier for kind in kinds}) == 13
     assert {kind.identifier for kind in kinds} <= REGISTERED
     assert not {kind.identifier for kind in kinds} & RECORD_LISTS
 
@@ -2387,8 +2393,8 @@ def test_the_rental_cca_classes_are_a_record_list_of_the_area_a_columns(
     assert RENTAL_CCA_CLASSES.identifier == "ca/rental_cca_classes"
     assert RENTAL_CCA_CLASSES.value_type is RecordList
     assert RENTAL_CCA_CLASSES.non_negative is False
-    # In the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 23) and the no-property-left
-    # question of Note 3.
+    # In the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 23), the no-property-left question
+    # of Note 3 and the remaining personal part of Note 9 (column 24), which only this list has.
     assert RENTAL_CCA_CLASSES.fields == (
         CCA_CLASS_NUMBER,
         CCA_UCC_AT_START,
@@ -2401,8 +2407,48 @@ def test_the_rental_cca_classes_are_a_record_list_of_the_area_a_columns(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_PERSONAL_PART_REMAINING,
     )
+    assert len(RENTAL_CCA_CLASSES.fields) == 12
     assert registry.get("ca/rental_cca_classes") is RENTAL_CCA_CLASSES
+
+
+def _cca_record(
+    fields: tuple[ArtifactKind[Any], ...],
+) -> dict[ArtifactKind[Any], Decimal | int]:
+    """A record of 0 for each of `fields`."""
+    return {field: 0 if field.value_type is int else Decimal(0) for field in fields}
+
+
+def test_a_rental_class_record_must_give_the_remaining_personal_part() -> None:
+    # Record fields are required: a rental record of the eleven earlier fields is refused.
+    earlier = tuple(f for f in RENTAL_CCA_CLASSES.fields if f is not CCA_PERSONAL_PART_REMAINING)
+
+    with pytest.raises(InvalidRecordError, match="item 1: missing field ca/cca_personal_part_rem"):
+        RecordList(RENTAL_CCA_CLASSES.fields, [_cca_record(earlier)])
+
+
+def test_a_rental_class_record_with_the_remaining_personal_part_is_accepted() -> None:
+    record = _cca_record(RENTAL_CCA_CLASSES.fields)
+    record[CCA_PERSONAL_PART_REMAINING] = Decimal("5000.00")
+
+    (kept,) = RecordList(RENTAL_CCA_CLASSES.fields, [record]).records
+    assert kept[CCA_PERSONAL_PART_REMAINING] == Decimal("5000.00")
+
+
+@pytest.mark.parametrize(
+    "kind", [BUSINESS_CCA_CLASSES, FARM_CCA_CLASSES, FISH_CCA_CLASSES], ids=lambda k: k.identifier
+)
+def test_the_other_forms_class_lists_do_not_take_the_remaining_personal_part(
+    kind: RecordListKind,
+) -> None:
+    # Note 9 is the T776's: a T2125, T2042 or T2121 record that carries it is refused (the
+    # other forms' lists are ticket #411).
+    record = _cca_record(kind.fields)
+    record[CCA_PERSONAL_PART_REMAINING] = Decimal("5000.00")
+
+    with pytest.raises(InvalidRecordError, match="item 1: unknown field ca/cca_personal_part_rem"):
+        RecordList(kind.fields, [record])
 
 
 def test_the_t776_statements_list_the_area_g_and_note_5_inputs_after_the_partner_lines() -> None:
@@ -2636,7 +2682,10 @@ def test_the_business_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_NO_PROPERTY_LEFT,
     )
     assert len(BUSINESS_CCA_CLASSES.fields) == 11
-    assert BUSINESS_CCA_CLASSES.fields == RENTAL_CCA_CLASSES.fields
+    # Note 9 is the T776's alone (the other forms' lists are ticket #411): the rental list is the
+    # business list and the remaining personal part.
+    assert (*BUSINESS_CCA_CLASSES.fields, CCA_PERSONAL_PART_REMAINING) == RENTAL_CCA_CLASSES.fields
+    assert CCA_PERSONAL_PART_REMAINING not in BUSINESS_CCA_CLASSES.fields
     assert BUSINESS_CCA_CLASSES is not RENTAL_CCA_CLASSES
     assert registry.get("ca/business_cca_classes") is BUSINESS_CCA_CLASSES
 
@@ -2949,6 +2998,7 @@ def test_the_farm_cca_classes_are_the_area_a_columns_the_caller_enters(
     assert len(FARM_CCA_CLASSES.fields) == 11
     assert FARM_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
     assert FARM_CCA_CLASSES is not BUSINESS_CCA_CLASSES
+    assert CCA_PERSONAL_PART_REMAINING not in FARM_CCA_CLASSES.fields
     assert registry.get("ca/farm_cca_classes") is FARM_CCA_CLASSES
 
 
@@ -3157,6 +3207,7 @@ def test_the_fish_cca_classes_are_the_area_a_columns_the_caller_enters(
     assert len(FISH_CCA_CLASSES.fields) == 11
     assert FISH_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
     assert FISH_CCA_CLASSES is not BUSINESS_CCA_CLASSES
+    assert CCA_PERSONAL_PART_REMAINING not in FISH_CCA_CLASSES.fields
     assert registry.get("ca/fish_cca_classes") is FISH_CCA_CLASSES
 
 

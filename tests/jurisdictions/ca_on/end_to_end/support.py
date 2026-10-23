@@ -177,6 +177,7 @@ from app.jurisdictions.ca.catalog import (
     CCA_DIEP_PROCEEDS,
     CCA_IMMEDIATE_EXPENSING,
     CCA_NO_PROPERTY_LEFT,
+    CCA_PERSONAL_PART_REMAINING,
     CCA_PROCEEDS,
     CCA_RIIP_ADDITIONS,
     CCA_UCC_AT_START,
@@ -943,13 +944,14 @@ def rental_properties_list(*rows: tuple[int, str, str]) -> Artifact[RecordList]:
 
 
 def rental_cca_classes(
-    *rows: tuple[str, str, str, str, str, str, str, int, str, str, str],
+    *rows: tuple[str, str, str, str, str, str, str, int, str, str, str, str],
 ) -> Artifact[RecordList]:
     """The Form T776 Area A rows, one record per class: column 1 (class number), column 2, column
     3, column 5, column 11, column 12, the CCA claimed (column 23) as decimal text, 1 if no
     property is left in the class, else 0 (Note 3), column 4 (the DIEP additions), column 6 (the
     proceeds of dispositions of DIEP) and column 9 (the immediate expensing amount), each "0"
-    when the class has no DIEP."""
+    when the class has no DIEP, and Note 9's remaining personal part of the property's cost
+    (subtracted from column 24), "0" when there is none."""
     records: list[dict[ArtifactKind[Any], object]] = [
         {
             CCA_CLASS_NUMBER: D(class_number),
@@ -963,6 +965,7 @@ def rental_cca_classes(
             CCA_DIEP_ADDITIONS: D(diep_additions),
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
+            CCA_PERSONAL_PART_REMAINING: D(personal_part_remaining),
         }
         for (
             class_number,
@@ -976,6 +979,7 @@ def rental_cca_classes(
             diep_additions,
             diep_proceeds,
             immediate_expensing,
+            personal_part_remaining,
         ) in rows
     ]
     return Artifact(RENTAL_CCA_CLASSES, RecordList(RENTAL_CCA_CLASSES.fields, records))
@@ -1101,7 +1105,7 @@ def t776_statement(
     rental_coowner_share: str = "0",
     rental_coowner_other_expenses: str = "0",
     rental_cca_classes_rows: tuple[
-        tuple[str, str, str, str, str, str, str, int, str, str, str], ...
+        tuple[str, str, str, str, str, str, str, int, str, str, str, str], ...
     ] = (),
     rental_coowner_recaptured_cca: str = "0",
     rental_coowner_terminal_loss: str = "0",

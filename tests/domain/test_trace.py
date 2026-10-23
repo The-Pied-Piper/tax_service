@@ -4855,6 +4855,7 @@ def test_closing_ucc_line_fields_in_order() -> None:
         "half_year_rule_on_sale",
         "fiscal_period_days",
         "full_year_days",
+        "personal_part_remaining",
     ]
     assert line == ClosingUccLine(
         output=CLOSING_UCC,
@@ -4867,6 +4868,17 @@ def test_closing_ucc_line_fields_in_order() -> None:
         result=D("4000.00"),
     )
     assert line.output is CLOSING_UCC
+
+
+def test_a_closing_ucc_line_has_no_remaining_personal_part_unless_it_says_so() -> None:
+    # T776 Area A Note 9: the part is subtracted from column 24; 0 by default, and the last field.
+    line = closing_ucc_line()
+
+    assert line.personal_part_remaining == D("0")
+    assert [f.name for f in fields(line)][-1] == "personal_part_remaining"
+    with_part = replace(line, personal_part_remaining=D("5000"), result=D("-1000"))
+    assert with_part.personal_part_remaining == D("5000")
+    assert with_part.amount == D("-1000")
 
 
 def test_a_closing_ucc_lines_amount_is_the_classs_ucc_at_the_end_of_the_year() -> None:
@@ -4889,6 +4901,7 @@ def test_a_closing_ucc_lines_amount_is_the_classs_ucc_at_the_end_of_the_year() -
         {"half_year_rule_on_sale": True},
         {"fiscal_period_days": 214},
         {"full_year_days": 366},
+        {"personal_part_remaining": D("5000")},
     ],
 )
 def test_closing_ucc_lines_differ_by_each_field(change: dict[str, Any]) -> None:

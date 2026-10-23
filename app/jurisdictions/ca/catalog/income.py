@@ -19,6 +19,7 @@ from app.jurisdictions.ca.catalog.personal_amounts import (
     CCA_DIEP_PROCEEDS,
     CCA_IMMEDIATE_EXPENSING,
     CCA_NO_PROPERTY_LEFT,
+    CCA_PERSONAL_PART_REMAINING,
     CCA_PROCEEDS,
     CCA_RIIP_ADDITIONS,
     CCA_UCC_AT_END,
@@ -1280,13 +1281,15 @@ RENTAL_CCA_CLASSES = RecordListKind.declare(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_PERSONAL_PART_REMAINING,
     ),
 )
 """Rental classes, Form T776 Area A "Calculation of capital cost allowance (CCA) claim": a
 starting list with one record for each class, holding the columns the filer enters (class
 number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
 proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
-CCA claimed) and whether any property is left in the class."""
+CCA claimed), whether any property is left in the class and the remaining personal part of a
+property used for both personal and rental use (Note 9), which only the T776 has."""
 
 RENTAL_CLOSING_UCC = RecordListKind.declare(
     CATALOG, "rental_closing_ucc", fields=(CCA_CLASS_NUMBER, CCA_UCC_AT_END)

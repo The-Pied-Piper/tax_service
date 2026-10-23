@@ -146,7 +146,9 @@ class ClosingUccLine(TraceLine):
     `no_property_left` (1 if no property is left in the class `class_rate`, else 0). The `claim`
     includes `column_9`, the immediate expensing amount of the class (0 unless it has a DIEP). A
     row that used the `half_year_rule_on_sale` does not close at 0 for no property left. A
-    `fiscal_period_days` below `full_year_days` (365 by default) says the claim was prorated.
+    `fiscal_period_days` below `full_year_days` (365 by default) says the claim was prorated. The
+    `personal_part_remaining` (T776 Area A Note 9, 0 unless the list lists it) is subtracted from
+    column 7 less the claim after it.
 
     Its own class, not a `RecordTotalLine`: each class gives a record of a list, not a part of a
     total.
@@ -164,6 +166,7 @@ class ClosingUccLine(TraceLine):
     half_year_rule_on_sale: bool = False
     fiscal_period_days: int = 365
     full_year_days: int = 365
+    personal_part_remaining: Decimal = Decimal(0)
 
     @property
     def amount(self) -> Decimal:

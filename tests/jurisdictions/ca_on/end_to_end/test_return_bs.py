@@ -45,8 +45,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import D, rental_return
 # 400.00, claimed in full) and class 8 with a UCC of 2000 and additions of 5000, all DIEPs
 # (column 4 5000), of which 3000 is expensed at once (column 9): column 21 is 3000.00 x 20% =
 # 600.00 plus 3000, so 3600.00, claimed in full.
-CLASS_1_ROW = ("1", "10000", "0", "0", "0", "0", "400.00", 0, "0", "0", "0")
-CLASS_8_ROW = ("8", "2000", "5000", "0", "0", "0", "3600.00", 0, "5000", "0", "3000")
+CLASS_1_ROW = ("1", "10000", "0", "0", "0", "0", "400.00", 0, "0", "0", "0", "0")
+CLASS_8_ROW = ("8", "2000", "5000", "0", "0", "0", "3600.00", 0, "5000", "0", "3000", "0")
 
 # Area G and Note 5: associated with one other EPOP (1) under an agreement that was filed (1), the
 # percentage assigned to the filer 40 and the total of column 3 100, so line iii is
@@ -87,9 +87,9 @@ def return_bs(
 
 def class_8_row(
     claim: str, expensed: str
-) -> tuple[str, str, str, str, str, str, str, int, str, str, str]:
+) -> tuple[str, str, str, str, str, str, str, int, str, str, str, str]:
     """Class 8 of Return BS with the given claim (column 23) and column 9."""
-    return ("8", "2000", "5000", "0", "0", "0", claim, 0, "5000", "0", expensed)
+    return ("8", "2000", "5000", "0", "0", "0", claim, 0, "5000", "0", expensed, "0")
 
 
 def test_return_bss_class_8_works_the_diep_columns_to_a_column_21_of_3600() -> None:
@@ -356,7 +356,20 @@ def test_a_column_9_total_above_the_income_before_cca_is_refused() -> None:
             {
                 "rental_cca_classes_rows": (
                     CLASS_1_ROW,
-                    ("8", "2000", "20000", "0", "0", "0", "13000.00", 0, "20000", "0", "13000"),
+                    (
+                        "8",
+                        "2000",
+                        "20000",
+                        "0",
+                        "0",
+                        "0",
+                        "13000.00",
+                        0,
+                        "20000",
+                        "0",
+                        "13000",
+                        "0",
+                    ),
                 ),
                 "rental_cca_personal_part": "1500",
             }
@@ -405,7 +418,7 @@ def test_a_return_with_no_diep_has_a_line_i_of_zero() -> None:
         {
             "rental_cca_classes_rows": (
                 CLASS_1_ROW,
-                ("8", "2000", "5000", "0", "0", "0", "900.00", 0, "0", "0", "0"),
+                ("8", "2000", "5000", "0", "0", "0", "900.00", 0, "0", "0", "0", "0"),
             )
         }
     )["ca/t776"][0]
