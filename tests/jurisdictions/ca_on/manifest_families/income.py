@@ -414,7 +414,7 @@ STEPS = {
         produces={"output": "ca/principal_residence_line_27"},
     ),
     # Form T2091(IND) Part 2 line 29 "Line 2 plus 1 (see note on page 4)": the total over the
-    # properties of that line of each one (0 where the form says to enter "0").
+    # properties of that line of each one (0 where the area is not completed).
     CapabilitySelection(
         name="ca/principal_residence_line_29",
         params={"rounding": "ca/principal_residence_gain_rounding"},
@@ -422,7 +422,7 @@ STEPS = {
         produces={"output": "ca/principal_residence_line_29"},
     ),
     # Form T2091(IND) Part 2 line 30 "Multiply line 28 by line 29.": the total over the properties
-    # of that line of each one (0 where the form says to enter "0").
+    # of that line of each one (0 where the area is not completed).
     CapabilitySelection(
         name="ca/principal_residence_line_30",
         params={"rounding": "ca/principal_residence_gain_rounding"},
@@ -430,7 +430,7 @@ STEPS = {
         produces={"output": "ca/principal_residence_line_30"},
     ),
     # Form T2091(IND) Part 2 line 32 "Divide line 30 by line 31.": the total over the properties of
-    # that line of each one (0 where the form says to enter "0").
+    # that line of each one (0 where the area is not completed).
     CapabilitySelection(
         name="ca/principal_residence_line_32",
         params={"rounding": "ca/principal_residence_gain_rounding"},
@@ -447,7 +447,7 @@ STEPS = {
         produces={"output": "ca/principal_residence_line_33"},
     ),
     # Form T2091(IND) Part 2 line 38 "Add lines 35 to 37.": the total over the properties of that
-    # line of each one (0 where the form says to enter "0").
+    # line of each one (0 where the area is not completed).
     CapabilitySelection(
         name="ca/principal_residence_line_38",
         params={"rounding": "ca/principal_residence_gain_rounding"},
@@ -464,7 +464,7 @@ STEPS = {
         produces={"output": "ca/principal_residence_line_39"},
     ),
     # Form T2091(IND) Part 2 line 42 "Multiply line 40 by line 41.": the total over the properties
-    # of that line of each one (0 where the form says to enter "0").
+    # of that line of each one (0 where the area is not completed).
     CapabilitySelection(
         name="ca/principal_residence_line_42",
         params={"rounding": "ca/principal_residence_gain_rounding"},
@@ -472,7 +472,7 @@ STEPS = {
         produces={"output": "ca/principal_residence_line_42"},
     ),
     # Form T2091(IND) Part 2 line 44 "Divide line 42 by line 43.": the total over the properties of
-    # that line of each one (0 where the form says to enter "0").
+    # that line of each one (0 where the area is not completed).
     CapabilitySelection(
         name="ca/principal_residence_line_44",
         params={"rounding": "ca/principal_residence_gain_rounding"},
@@ -498,7 +498,7 @@ STEPS = {
         produces={"output": "ca/principal_residence_line_48"},
     ),
     # Form T2091(IND) Part 2 line 51 "Line 49 plus line 50": the total over the properties of that
-    # line of each one (0 where the form says to enter "0").
+    # line of each one (0 where the area is not completed).
     CapabilitySelection(
         name="ca/principal_residence_line_51",
         params={"rounding": "ca/principal_residence_gain_rounding"},
