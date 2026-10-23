@@ -184,3 +184,7 @@ class AmbiguousManifestError(DomainError):
 
 class InvalidSurchargeTiersError(DomainError):
     """A tier's threshold or rate is invalid, tiers are missing, or thresholds do not increase."""
+
+
+class InvalidYearAmountsError(DomainError):
+    """A table of amounts by year is empty, out of order or has a bad figure."""

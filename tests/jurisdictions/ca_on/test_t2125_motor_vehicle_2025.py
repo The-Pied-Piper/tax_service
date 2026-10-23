@@ -19,8 +19,18 @@ t2125-25e.pdf):
   "Eligible leasing cost: Amount 26 or 27, whichever is less (enter in amount 8 of Chart A
   above)"; the sales tax rate is "Use a GST rate of 5% or HST rate applicable to your province."
 
-The printed constants are the 2025 figures in the chart body; the endnotes give the figures of
-leases entered into in earlier years, which are not modelled. Every product and quotient is a
+The printed constants are the 2025 figures in the chart body, and the footnote and endnotes give
+the figures of earlier years, which are modelled as rows of two `year_amounts` datasets
+(`ca/business_vehicle_interest_limits` and `ca/business_vehicle_lease_limits`) that the vehicle's
+`purchase_year` and `lease_year` choose among:
+
+- Chart B footnote "*** For passenger vehicles bought after 2023. For passenger vehicles bought
+  after 2000 and before 2024, the amount is $300.";
+- Chart C endnotes 11 to 13: leases entered into in 2024 (line 24 base 43,529, line 25 $1,050,
+  line 27 $37,000), 2023 (42,353, $950, $36,000), 2022 (40,000, $900, $34,000) and before 2022
+  (35,294, $800, $30,000); the 2025 set is 44,706, $1,100 and $38,000.
+
+Every product and quotient is a
 dollars-and-cents box and rounds half-up to the cent (the dataset `ca/business_vehicle_rounding`),
 the owner's decision, as the form states no rounding rule. Amount 26 is a subtraction the form
 prints without a floor; a vehicle whose amount 26 is below zero is refused.
@@ -28,7 +38,6 @@ prints without a floor; a vehicle whose amount 26 is below zero is refused.
 
 from __future__ import annotations
 
-from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +52,7 @@ from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
+from app.domain.parameters.year_amounts import YEAR_AMOUNTS, YearAmounts, YearAmountsRow
 from app.domain.trace import ItemsTotalLine
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
@@ -56,35 +66,137 @@ SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 T2125_PDF = "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2125/t2125-25e.pdf"
 
-# The printed constants, each a dataset of the same name (the charts' "$350***", "÷ 30",
-# "$44,706", "$1,100" and "$38,000").
-CONSTANTS = {
-    "ca/business_vehicle_interest_limit": D("350"),
-    "ca/business_vehicle_days_divisor": D("30"),
-    "ca/business_vehicle_list_price_limit": D("44706"),
-    "ca/business_vehicle_lease_charge_limit": D("1100"),
-    "ca/business_vehicle_lease_cost_limit": D("38000"),
-}
+# The printed 30 of Chart B line 18 and Chart C line 25, a dataset of the same name.
+DAYS_DIVISOR = "ca/business_vehicle_days_divisor"
+INTEREST_LIMITS = "ca/business_vehicle_interest_limits"
+LEASE_LIMITS = "ca/business_vehicle_lease_limits"
+FIGURES = (
+    INTEREST_LIMITS,
+    LEASE_LIMITS,
+    DAYS_DIVISOR,
+    "ca/business_vehicle_lease_price_rate",
+    "ca/business_vehicle_rounding",
+)
 
 
-@pytest.mark.parametrize(("family", "amount"), CONSTANTS.items())
-def test_2025_each_chart_constant_is_the_printed_figure(family: str, amount: Decimal) -> None:
-    data = SOURCE.get(family, 2025, CREDIT)
+def test_2025_the_days_divisor_is_the_printed_30() -> None:
+    data = SOURCE.get(DAYS_DIVISOR, 2025, CREDIT)
 
-    assert data.values == Credit(amount=amount)
+    assert data.values == Credit(amount=D("30"))
+    assert data.rounding == CENT
+
+
+def test_2025_the_interest_limits_are_the_350_and_300_of_chart_b() -> None:
+    # Footnote "***": "For passenger vehicles bought after 2023" the amount is $350 (line 18
+    # "($350*** ÷ 30)"); "For passenger vehicles bought after 2000 and before 2024, the amount is
+    # $300". Nothing is printed for a vehicle bought in 2000 or earlier.
+    data = SOURCE.get(INTEREST_LIMITS, 2025, YEAR_AMOUNTS)
+
+    assert data.values == YearAmounts(
+        (
+            YearAmountsRow(2024, {"interest_limit": D("350")}),
+            YearAmountsRow(2001, {"interest_limit": D("300")}),
+        )
+    )
     assert data.rounding == CENT
 
 
 @pytest.mark.parametrize(
-    "family", (*CONSTANTS, "ca/business_vehicle_lease_price_rate", "ca/business_vehicle_rounding")
+    ("year", "expected"),
+    [(2025, "350"), (2024, "350"), (2023, "300"), (2001, "300"), (2000, None), (0, None)],
 )
+def test_2025_the_interest_limit_for_the_year_the_vehicle_was_bought(
+    year: int, expected: str | None
+) -> None:
+    row = SOURCE.get(INTEREST_LIMITS, 2025, YEAR_AMOUNTS).values.row_for(year)
+
+    assert (None if row is None else row.amount("interest_limit")) == (
+        None if expected is None else D(expected)
+    )
+
+
+def test_2025_the_lease_limits_are_the_five_sets_of_chart_c() -> None:
+    # Line 23 "($44,706 + GST and PST, or $44,706 + HST)", line 25 "($1,100 + ...)" and line 27
+    # "($38,000 + ...)" for 2025 and endnotes 11 to 13 for leases entered into in 2024, 2023, 2022
+    # and before 2022.
+    data = SOURCE.get(LEASE_LIMITS, 2025, YEAR_AMOUNTS)
+
+    def entry(from_year: int | None, price: str, charge: str, cost: str) -> YearAmountsRow:
+        return YearAmountsRow(
+            from_year,
+            {
+                "list_price_limit": D(price),
+                "lease_charge_limit": D(charge),
+                "lease_cost_limit": D(cost),
+            },
+        )
+
+    assert data.values == YearAmounts(
+        (
+            entry(2025, "44706", "1100", "38000"),
+            entry(2024, "43529", "1050", "37000"),
+            entry(2023, "42353", "950", "36000"),
+            entry(2022, "40000", "900", "34000"),
+            entry(None, "35294", "800", "30000"),
+        )
+    )
+    assert data.rounding == CENT
+
+
+@pytest.mark.parametrize(
+    ("year", "figures"),
+    [
+        (2026, ("44706", "1100", "38000")),
+        (2025, ("44706", "1100", "38000")),
+        (2024, ("43529", "1050", "37000")),
+        (2023, ("42353", "950", "36000")),
+        (2022, ("40000", "900", "34000")),
+        (2021, ("35294", "800", "30000")),
+        (2000, ("35294", "800", "30000")),
+        (0, ("35294", "800", "30000")),
+    ],
+)
+def test_2025_the_lease_limits_for_the_year_the_lease_was_entered_into(
+    year: int, figures: tuple[str, str, str]
+) -> None:
+    row = SOURCE.get(LEASE_LIMITS, 2025, YEAR_AMOUNTS).values.row_for(year)
+
+    assert row is not None
+    assert (
+        row.amount("list_price_limit"),
+        row.amount("lease_charge_limit"),
+        row.amount("lease_cost_limit"),
+    ) == tuple(D(figure) for figure in figures)
+
+
+@pytest.mark.parametrize("family", FIGURES)
 def test_2025_each_chart_figure_cites_the_form(family: str) -> None:
     if family.endswith("_rate"):
         assert T2125_PDF in SOURCE.get(family, 2025, RATE).sources
     elif family.endswith("_rounding"):
         assert T2125_PDF in SOURCE.get(family, 2025, ROUNDING_ONLY).sources
+    elif family.endswith("_limits"):
+        assert T2125_PDF in SOURCE.get(family, 2025, YEAR_AMOUNTS).sources
     else:
         assert T2125_PDF in SOURCE.get(family, 2025, CREDIT).sources
+
+
+# The four single-figure datasets that the two year tables replace: deleted, so the forms read the
+# figure by year.
+CREDIT_LIMITS = (
+    "ca/business_vehicle_interest_limit",
+    "ca/business_vehicle_list_price_limit",
+    "ca/business_vehicle_lease_charge_limit",
+    "ca/business_vehicle_lease_cost_limit",
+)
+
+
+@pytest.mark.parametrize("family", CREDIT_LIMITS)
+def test_2025_the_four_credit_limit_datasets_are_deleted(family: str) -> None:
+    parameters = Path(app.jurisdictions.ca.__file__).parent / "parameters"
+
+    assert not (parameters / family.removeprefix("ca/") / "2025.yaml").exists()
+    assert not (parameters / family.removeprefix("ca/")).exists()
 
 
 def test_2025_the_leasing_price_rate_is_85_percent() -> None:
@@ -206,6 +318,25 @@ def test_chart_b_interest_is_capped_at_the_350_over_30_a_day_amount() -> None:
     (vehicle,) = vehicle_lines(statement({**LEASED, "interest_payable": "3000"}))
 
     assert vehicle.line_19 == D("2135.00")
+
+
+def test_chart_b_interest_of_a_vehicle_bought_in_2022_is_capped_at_the_300_a_day_amount() -> None:
+    # "For passenger vehicles bought after 2000 and before 2024, the amount is $300": line 18 is
+    # 300 ÷ 30 × 183 = 1830.00, less than the 3000 payable, so line 19 is 1830.00 (not 2135.00).
+    (vehicle,) = vehicle_lines(
+        statement({**LEASED, "interest_payable": "3000", "purchase_year": "2022"})
+    )
+
+    assert vehicle.line_19 == D("1830.00")
+
+
+def test_chart_c_leasing_cost_of_a_lease_entered_into_in_2023_uses_endnote_12() -> None:
+    # Endnote 12 (2023): 42353, $950 and $36,000. Line 23: 42353 + 13% (5505.89) = 47858.89 is
+    # below the list price of 60000, so line 24 is 51000.00; line 25 is (950 + 123.50 = 1073.50) ×
+    # 183 ÷ 30 = 6548.35; line 27 is (36000 + 4680.00 = 40680.00) × 2550 ÷ 51000.00 = 2034.00.
+    (vehicle,) = vehicle_lines(statement({**LEASED, "lease_year": "2023"}))
+
+    assert vehicle.line_28 == D("2034.00")
 
 
 def test_chart_c_takes_the_price_plus_tax_when_it_is_more_than_the_list_price() -> None:

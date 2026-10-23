@@ -119,20 +119,18 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_VEHICLE_FUEL_AND_OIL,
     BUSINESS_VEHICLE_INSURANCE,
     BUSINESS_VEHICLE_INTEREST_DAYS,
-    BUSINESS_VEHICLE_INTEREST_LIMIT,
     BUSINESS_VEHICLE_INTEREST_PAYABLE,
-    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT,
     BUSINESS_VEHICLE_LEASE_CHARGES,
-    BUSINESS_VEHICLE_LEASE_COST_LIMIT,
     BUSINESS_VEHICLE_LEASE_DAYS,
     BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    BUSINESS_VEHICLE_LEASE_YEAR,
     BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,
     BUSINESS_VEHICLE_LIST_PRICE,
-    BUSINESS_VEHICLE_LIST_PRICE_LIMIT,
     BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,
     BUSINESS_VEHICLE_OTHER_EXPENSES_10,
     BUSINESS_VEHICLE_OTHER_EXPENSES_11,
     BUSINESS_VEHICLE_PARKING_FEES,
+    BUSINESS_VEHICLE_PURCHASE_YEAR,
     BUSINESS_VEHICLE_SALES_TAX_RATE,
     BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,
     BUSINESS_VEHICLE_TOTAL_KILOMETRES,
@@ -2281,11 +2279,9 @@ T2125_KINDS: tuple[ArtifactKind[Any], ...] = (
     BUSINESS_VEHICLE_LEASE_DAYS,  # amount 22
     BUSINESS_VEHICLE_LIST_PRICE,  # amount 23
     BUSINESS_VEHICLE_SALES_TAX_RATE,  # GST or HST rate, in percent
-    BUSINESS_VEHICLE_INTEREST_LIMIT,  # computed or dataset
+    BUSINESS_VEHICLE_PURCHASE_YEAR,  # Chart B footnote: the year the vehicle was bought
+    BUSINESS_VEHICLE_LEASE_YEAR,  # Chart C endnotes 11 to 13: the year the lease was entered into
     BUSINESS_VEHICLE_DAYS_DIVISOR,  # computed or dataset
-    BUSINESS_VEHICLE_LIST_PRICE_LIMIT,  # computed or dataset
-    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT,  # computed or dataset
-    BUSINESS_VEHICLE_LEASE_COST_LIMIT,  # computed or dataset
     BUSINESS_CCA_PERSONAL_PART,  # cca_personal_part
     BUSINESS_OTHER_EXPENSES,  # other_expenses
     BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,  # journalism_labour_tax_credit
@@ -2364,6 +2360,30 @@ def test_the_t2125_amounts_are_decimals_that_cannot_be_negative_unless_the_form_
         assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier
 
 
+def test_the_vehicle_years_are_non_negative_int_counts_that_the_caller_enters() -> None:
+    # Chart B footnote "For passenger vehicles bought after 2000 and before 2024, the amount is
+    # $300": the year the vehicle was bought. Chart C endnotes 11 to 13 print other figures for a
+    # lease entered into in 2024, 2023, 2022 and before 2022: the year the lease was entered into.
+    # A year that does not apply is 0.
+    for kind, identifier in (
+        (BUSINESS_VEHICLE_PURCHASE_YEAR, "ca/business_vehicle_purchase_year"),
+        (BUSINESS_VEHICLE_LEASE_YEAR, "ca/business_vehicle_lease_year"),
+    ):
+        assert kind.identifier == identifier
+        assert kind.value_type is int
+        assert kind.non_negative is True
+        assert identifier in COUNTS
+        assert identifier in REGISTERED
+
+
+def test_the_four_credit_limit_kinds_are_gone() -> None:
+    # The figures $350, $44,706, $1,100 and $38,000 are rows of the `year_amounts` datasets
+    # `ca/business_vehicle_interest_limits` and `ca/business_vehicle_lease_limits`, not kinds.
+    for name in ("interest_limit", "list_price_limit", "lease_charge_limit", "lease_cost_limit"):
+        assert f"ca/business_vehicle_{name}" not in REGISTERED, name
+        assert f"BUSINESS_VEHICLE_{name.upper()}" not in vars(app.jurisdictions.ca.catalog), name
+
+
 def test_the_t2125_partner_count_is_a_non_negative_int_count() -> None:
     # Part 5 amount 5A "Your share of line 9369 or the amount from your T5013 slip": 1 for a
     # partner, else 0.
@@ -2389,8 +2409,9 @@ def test_the_business_vehicles_are_the_chart_amounts_the_caller_enters_for_each_
     registry: ArtifactRegistry,
 ) -> None:
     # Form T2125 Charts A to C are filled in for each vehicle: one record per vehicle, with the
-    # seventeen amounts of the charts the caller enters (the sales tax rate of the province stays a
-    # statement input).
+    # seventeen amounts of the charts the caller enters, then the year the vehicle was bought and
+    # the year the lease was entered into, which choose the printed figure set (the sales tax rate
+    # of the province stays a statement input).
     assert RECORD_LISTS <= REGISTERED
     assert isinstance(BUSINESS_VEHICLES, RecordListKind)
     assert BUSINESS_VEHICLES.identifier == "ca/business_vehicles"
@@ -2413,6 +2434,8 @@ def test_the_business_vehicles_are_the_chart_amounts_the_caller_enters_for_each_
         BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
         BUSINESS_VEHICLE_LEASE_DAYS,
         BUSINESS_VEHICLE_LIST_PRICE,
+        BUSINESS_VEHICLE_PURCHASE_YEAR,
+        BUSINESS_VEHICLE_LEASE_YEAR,
     )
     assert BUSINESS_VEHICLE_SALES_TAX_RATE not in BUSINESS_VEHICLES.fields
     assert registry.get("ca/business_vehicles") is BUSINESS_VEHICLES
