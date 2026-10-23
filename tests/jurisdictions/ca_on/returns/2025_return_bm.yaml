@@ -41,8 +41,9 @@ description: >-
   0.00, so amount J is 0.00 and K is 0.00. Form T691 Part 5 line 7 is 0.00, so the condition "greater
   than 0" does not apply and the claim is limited by I, 0.00. No claim is entered, so amount 15 is
   0.00, which line 41200 takes, and line 138 (41600), "Add lines 135 to 137.", is 0.00. The filer has
-  no income, so the rest of the return computes to zero except the printed constants of Form RC381 Part 2 (lines G to J) and the
-  CPP second additional earnings maximum of 9900.00, and Form T691 Part 8 line 17, "Total minimum
+  no income, so the rest of the return computes to zero except the printed constants of Form
+  RC381 Part 2 (lines G to J), the CPP second additional earnings maximum of 9900.00, and Form
+  T691 Part 8 line 17, "Total minimum
   tax carryover available for 2026", which is 2338.71 as the form prints it (no floor) for a
   filer with no income; each is stated in the expected values.
 sources:

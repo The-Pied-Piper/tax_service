@@ -75,7 +75,7 @@ AMT_APPLIES: dict[str, Any] = {
 
 
 def return_bm(**overrides: Any) -> Worksheet:
-    """Return BM's Parts A and B lines, as in `returns/2025_return_bm.yaml`, with overrides."""
+    """Return BM's Parts A, B and D lines, as in `returns/2025_return_bm.yaml`, with overrides."""
     inputs: dict[str, Any] = {
         **NO_OTHER_LINES,
         "itc_sred_expenditures": "40000",
@@ -259,6 +259,14 @@ def test_when_t691_part_5_line_7_is_positive_amount_k_limits_the_claim_not_amoun
     assert worksheet.get(ITC_AMOUNT_J).value == D("0")
     assert worksheet.get(ITC_AMOUNT_K).value == D("0")
     assert worksheet.get(ITC_CLAIM_LIMIT).value == D("0")
+
+
+def test_a_negative_amount_g_refuses_the_return_because_the_form_prints_no_floor() -> None:
+    # Form T2038 prints no floor on amount G (amount 5 less amount 6); here the graduated rate
+    # estate allocation of 2000 exceeds amount 5, 1000.00, so G and I are -1000.00. Form T691 Part
+    # 3 line 12 claim of 0 is then above I and refused.
+    with pytest.raises(InputAboveBoundError, match=r"ca/itc_amount_i -1000"):
+        compute(**{**ACCEPTANCE, "itc_graduated_rate_estate_allocation": "2000"})
 
 
 def test_a_claim_within_amount_i_but_above_amount_k_is_refused_when_t691_applies() -> None:
