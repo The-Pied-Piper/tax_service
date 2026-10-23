@@ -721,6 +721,7 @@ from app.jurisdictions.ca.catalog import (
     T657_T2017_LINE_13,
     T657_T2048_LINE_17217_FOR_2024,
     T776_STATEMENTS,
+    T2042_STATEMENTS,
     T2125_STATEMENTS,
     T5013_DIVIDEND_TAX_CREDIT,
     T5013_INVESTMENT_INCOME,
@@ -1372,6 +1373,27 @@ def farm_cca_classes(
     return Artifact(kind, RecordList(kind.fields, records))
 
 
+def t2042_statement(
+    *,
+    farm: Mapping[str, str] | None = None,
+    farm_partner: int = 0,
+    farm_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+) -> dict[ArtifactKind[Any], object]:
+    """One Form T2042 statement, a record of `ca/t2042_statements`: its inputs, as given or 0."""
+    artifacts: list[Artifact[Any]] = [
+        *farm_amount_artifacts(farm or {}),
+        Artifact(FARM_PARTNER, farm_partner),
+        farm_cca_classes(*farm_cca_classes_rows),
+    ]
+    return {artifact.kind: artifact.value for artifact in artifacts}
+
+
+def t2042_statements(statements: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
+    """The statements of Form T2042, one record for each mapping of `t2042_statement` arguments."""
+    records = [t2042_statement(**statement) for statement in statements]
+    return Artifact(T2042_STATEMENTS, RecordList(T2042_STATEMENTS.fields, records))
+
+
 # The Form T2121 amounts the caller enters, in the form's order: the income lines 3A to 3F and
 # line 9600, the expense lines, the repairs, the partnership amounts, the business-use-of-home
 # amounts and the carry forward.
@@ -1705,6 +1727,7 @@ def starting(
     business: Mapping[str, str] | None = None,
     business_partner: int = 0,
     business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    farm_statements: tuple[Mapping[str, Any], ...] | None = None,
     farm: Mapping[str, str] | None = None,
     farm_partner: int = 0,
     farm_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
@@ -2144,6 +2167,17 @@ def starting(
             },
         )
     )
+    farm_statement_list: tuple[Mapping[str, Any], ...] = (
+        farm_statements
+        if farm_statements is not None
+        else (
+            {
+                "farm": farm,
+                "farm_partner": farm_partner,
+                "farm_cca_classes_rows": farm_cca_classes_rows,
+            },
+        )
+    )
     return (
         Artifact(EMPLOYMENT_INCOME, D(employment_income)),
         dispositions(QSBCS_DISPOSITIONS, *qsbcs_dispositions),
@@ -2221,9 +2255,7 @@ def starting(
         Artifact(RDSP_INCOME, D(rdsp_income)),
         t776_statements(statements),
         t2125_statements(business_statement_list),
-        *farm_amount_artifacts(farm or {}),
-        Artifact(FARM_PARTNER, farm_partner),
-        farm_cca_classes(*farm_cca_classes_rows),
+        t2042_statements(farm_statement_list),
         *fish_amount_artifacts(fish or {}),
         Artifact(FISH_PARTNER, fish_partner),
         fish_cca_classes(*fish_cca_classes_rows),

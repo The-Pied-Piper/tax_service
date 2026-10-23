@@ -275,6 +275,14 @@ capabilities:
       records: ca/t2125.business_income
     produces:
       output: ca/business_income
+  # T1 line 25 and line 14100 "Net": Form T2042 line 9946 "Your net income (loss): Amount 5C minus
+  # line 9945 (enter this amount on line 14100 of your income tax and benefit return)", for each
+  # T2042 statement the return carries, added. With no statement the total is 0.
+  - name: core/record_total
+    consumes:
+      records: ca/t2042.farming_income
+    produces:
+      output: ca/farming_income
   # T1 line 33 and line 15000 "Line 28 plus line 32 Total income": every income line the
   # return lists, in line order (lines 1 to 20, line 13 being the net rental income, line
   # 12600 "Net"; here with the amount of dividends of line 9 (12000), the taxable capital

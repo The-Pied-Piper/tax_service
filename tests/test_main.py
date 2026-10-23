@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1232
+        == 1189
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1232
+        == 1189
     )
 
 
@@ -415,6 +415,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/farm_home_cca",
         "ca/farm_home_carried_forward",
         "ca/farm_cca_classes",
+        "ca/t2042_statements",
         "ca/farm_recaptured_cca",
         "ca/farm_other_income_with_recapture",
         "ca/farm_gross_income",
@@ -2189,7 +2190,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1232
+        == 1189
     )
     assert (
         len(
@@ -2197,7 +2198,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1232
+        == 1189
     )
 
 
@@ -2210,7 +2211,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1232
+        == 1189
     )
     assert (
         len(
@@ -2218,7 +2219,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1232
+        == 1189
     )
 
 

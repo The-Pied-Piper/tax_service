@@ -21,7 +21,7 @@ OPERATION_2: dict[str, Any] = {"rental_expenses": {"advertising": ("2000", "0", 
 
 def bi_inputs(statements: tuple[dict[str, Any], ...]) -> dict[str, Any]:
     """Return BI's inputs, as in `returns/2025_return_bi.yaml`: a landlord with the T776
-    `statements` given (none: no rental operation), no business and no other income."""
+    `statements` given (none: no rental operation), no business, no farm and no other income."""
     return {
         "employment_income": "0",
         "share_dispositions": (),
@@ -32,6 +32,7 @@ def bi_inputs(statements: tuple[dict[str, Any], ...]) -> dict[str, Any]:
         "union_dues": "0",
         "rental_statements": statements,
         "business_statements": (),
+        "farm_statements": (),
     }
 
 
