@@ -3,10 +3,10 @@
 A computation is a flat set of forms that together are the return; none is special. A form is a
 group of capabilities with the artifacts it exports, never a capability itself. A `FormComposition`
 is one form wired: an inner `Composition` whose outputs are the form's exports and whose inputs are
-derived. The inputs of a form with `instances` (a record-list kind, one record per instance) are
-the fields of that kind; a form without an `instances` list has exactly one implicit instance,
-fed from the starting artifacts it reads. The kinds a form reads that other forms export are its
-imports and are inputs too.
+derived. The inputs of a form are the starting artifacts it reads, plus the fields of its
+`instances` kind (a record-list kind, one record per instance) if it has one; a form without an
+`instances` list has exactly one implicit instance. The kinds a form reads that other forms export
+are its imports and are inputs too.
 
 For each export `X` of the form `B` the engine derives the kind `B.X`: a record list of one field,
 `X`, with a record per instance in instance order (one record for a form without an instances list).

@@ -2,8 +2,8 @@
 
 A computation is a flat set of forms; a form is a peer of the others, never a capability, and none
 is special. `FormComposition` is one form wired: an inner `Composition` whose outputs are its
-exports and whose inputs are derived: the fields of its instances kind, or, for a form without
-instances, the starting artifacts it reads, plus its imports. An export `X` of the form `B` is read
+exports and whose inputs are derived: the starting artifacts it reads, plus the fields of its
+instances kind if it has one, plus its imports. An export `X` of the form `B` is read
 by every form as the derived kind `B.X`, a record list of one field with a record per instance (one
 record for a form without an instances list: it has one instance). A form's imports are the
 dotted kinds it consumes and nothing in the form produces.
@@ -126,6 +126,17 @@ def audit(name: str = "ex/audit") -> FormComposition:
         [RecordTotal(SHOP_PROFIT, PROFIT_TOTAL), Subtract(PROFIT_TOTAL, FEE, AUDITED)],
         instances=AUDITS,
         exports=[AUDITED],
+    )
+
+
+def levy_each(starting: frozenset[ArtifactKind[Any]]) -> FormComposition:
+    """Each audit's fee less the starting sales: a form with instances reading a starting kind."""
+    return FormComposition(
+        "ex/levy",
+        [Subtract(SALES, FEE, AUDITED)],
+        instances=AUDITS,
+        exports=[AUDITED],
+        starting=starting,
     )
 
 
@@ -442,17 +453,6 @@ def test_a_forms_inputs_are_only_the_starting_artifacts_it_reads() -> None:
     inner.compute(Artifact(SALES, D(3)), Artifact(COSTS, D(1)))
     with pytest.raises(InvalidCompositionError, match="'audits' is not an input"):
         inner.compute(Artifact(SALES, D(3)), Artifact(COSTS, D(1)), audits("1"))
-
-
-def levy_each(starting: frozenset[ArtifactKind[Any]]) -> FormComposition:
-    """Each audit's fee less the starting sales: a form with instances reading a starting kind."""
-    return FormComposition(
-        "ex/levy",
-        [Subtract(SALES, FEE, AUDITED)],
-        instances=AUDITS,
-        exports=[AUDITED],
-        starting=starting,
-    )
 
 
 def test_a_form_with_instances_takes_the_starting_artifacts_it_reads_and_its_fields() -> None:
