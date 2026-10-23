@@ -121,6 +121,24 @@ from app.jurisdictions.ca.trace import (
     PrincipalResidenceLine48,
     PrincipalResidenceLine51,
     PrincipalResidenceLine53,
+    PrincipalResidenceLine56,
+    PrincipalResidenceLine57,
+    PrincipalResidenceWorksheetLine3,
+    PrincipalResidenceWorksheetLine6,
+    PrincipalResidenceWorksheetLine16,
+    PrincipalResidenceWorksheetLine17,
+    PrincipalResidenceWorksheetLine18,
+    PrincipalResidenceWorksheetLine19,
+    PrincipalResidenceWorksheetLine21,
+    PrincipalResidenceWorksheetLine23,
+    PrincipalResidenceWorksheetLine24,
+    PrincipalResidenceWorksheetLine26,
+    PrincipalResidenceWorksheetLine27,
+    PrincipalResidenceWorksheetLine59,
+    PrincipalResidenceWorksheetLine61,
+    PrincipalResidenceWorksheetLine63,
+    PrincipalResidenceWorksheetLine64,
+    PrincipalResidenceWorksheetLine66,
     RecapturedCcaLine,
     ShortTermRentalNonCompliantCcaByClassLine,
     ShortTermRentalNonCompliantCcaLine,
@@ -4941,6 +4959,258 @@ def test_renders_a_step_not_completed_as_zero_whatever_its_figures(line: object)
 
 def _line_number(line: object) -> int:
     return int(type(line).__name__.removeprefix("PrincipalResidenceLine"))
+
+
+# --- Form T2091(IND)-WS and Part 4: one sentence per worksheet line, and for lines 56 and 57 ------
+#
+# A worksheet line is named "worksheet line N" and the form's line by its number alone ("line 56",
+# "line 57", "T2091 line 2" for the form's line 2 read by the worksheet). A line not completed reads
+# "not completed, 0"; line 57 has no such flag.
+
+
+def worksheet_line_examples() -> list[tuple[object, str]]:
+    """Each worksheet and Part 4 line class with an example figure, and its English sentence."""
+    return [
+        (
+            PrincipalResidenceWorksheetLine3(
+                RESIDENCE_GAIN, 1, completed=True, line_1=5, line_2=0, result=D("5")
+            ),
+            "residence_gain: property 1: worksheet line 3 5 = worksheet line 1 5 "
+            "plus T2091 line 2 0",
+        ),
+        (
+            PrincipalResidenceWorksheetLine6(
+                RESIDENCE_GAIN, 1, completed=True, line_4=12, line_5=0, result=D("12")
+            ),
+            "residence_gain: property 1: worksheet line 6 12 = worksheet line 4 12 "
+            "plus T2091 line 6 0",
+        ),
+        (
+            PrincipalResidenceWorksheetLine16(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_14=D("200000.00"),
+                factor=D("1.1"),
+                rounding=CENT,
+                result=D("220000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 16 220000 = worksheet line 14 200000 times "
+            "1.1 (half-up to 0.01)",
+        ),
+        (
+            PrincipalResidenceWorksheetLine17(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_15=D("230000.00"),
+                line_16=D("220000.00"),
+                result=D("10000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 17 10000 = worksheet line 15 230000 less "
+            "worksheet line 16 220000, not below 0",
+        ),
+        (
+            PrincipalResidenceWorksheetLine18(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_14=D("200000.00"),
+                line_17=D("10000.00"),
+                result=D("190000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 18 190000 = worksheet line 14 200000 less "
+            "worksheet line 17 10000",
+        ),
+        (
+            PrincipalResidenceWorksheetLine18(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_14=D("200000.00"),
+                line_17=D("280000.00"),
+                result=D("-80000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 18 -80000 = worksheet line 14 200000 less "
+            "worksheet line 17 280000",
+        ),
+        (
+            PrincipalResidenceWorksheetLine19(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                chart_completed=True,
+                line_18=D("190000.00"),
+                line_10=D("200000.00"),
+                result=D("190000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 19 190000 = worksheet line 18 190000 "
+            "(Chart 1 completed)",
+        ),
+        (
+            PrincipalResidenceWorksheetLine19(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                chart_completed=False,
+                line_18=D("0"),
+                line_10=D("200000.00"),
+                result=D("200000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 19 200000 = worksheet line 10 200000 "
+            "(Chart 1 not completed)",
+        ),
+        (
+            PrincipalResidenceWorksheetLine21(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_19=D("190000.00"),
+                line_20=D("100000.00"),
+                result=D("90000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 21 90000 = worksheet line 19 190000 less "
+            "worksheet line 20 100000",
+        ),
+        (
+            PrincipalResidenceWorksheetLine23(
+                RESIDENCE_GAIN, 1, completed=True, line_3=5, plus_one=1, result=D("6")
+            ),
+            "residence_gain: property 1: worksheet line 23 6 = worksheet line 3 5 plus 1",
+        ),
+        (
+            PrincipalResidenceWorksheetLine24(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_22=D("90000.00"),
+                line_23=6,
+                result=D("540000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 24 540000 = worksheet line 22 90000 times "
+            "worksheet line 23 6",
+        ),
+        (
+            PrincipalResidenceWorksheetLine26(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_24=D("540000.00"),
+                line_25=12,
+                rounding=CENT,
+                result=D("45000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 26 45000 = worksheet line 24 "
+            "540000 divided by worksheet line 25 12 (half-up to 0.01)",
+        ),
+        (
+            PrincipalResidenceWorksheetLine27(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_21=D("90000.00"),
+                line_26=D("45000.00"),
+                result=D("45000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 27 45000 = worksheet line 21 90000 less "
+            "worksheet line 26 45000",
+        ),
+        (
+            PrincipalResidenceWorksheetLine59(
+                RESIDENCE_GAIN, 1, completed=True, line_27=D("45000.00"), result=D("45000.00")
+            ),
+            "residence_gain: property 1: worksheet line 59 45000 = worksheet line 27 45000",
+        ),
+        (
+            PrincipalResidenceWorksheetLine61(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_59=D("45000.00"),
+                line_60=24,
+                result=D("1080000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 61 1080000 = worksheet line 59 45000 times "
+            "worksheet line 60 24",
+        ),
+        (
+            PrincipalResidenceWorksheetLine63(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_61=D("1080000.00"),
+                line_62=74,
+                rounding=CENT,
+                result=D("14594.59"),
+            ),
+            "residence_gain: property 1: worksheet line 63 14594.59 = worksheet line 61 1080000 "
+            "divided by worksheet line 62 74 (half-up to 0.01)",
+        ),
+        (
+            PrincipalResidenceWorksheetLine64(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_59=D("45000.00"),
+                line_63=D("14594.59"),
+                result=D("30405.41"),
+            ),
+            "residence_gain: property 1: worksheet line 64 30405.41 = worksheet line 59 45000 less "
+            "worksheet line 63 14594.59",
+        ),
+        (
+            PrincipalResidenceWorksheetLine66(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_64=D("30405.41"),
+                line_65=D("100000.00"),
+                result=D("30405.41"),
+            ),
+            "residence_gain: property 1: worksheet line 66 30405.41 = lesser of worksheet line 64 "
+            "30405.41 and worksheet line 65 100000",
+        ),
+        (
+            PrincipalResidenceLine56(
+                RESIDENCE_GAIN, 1, completed=True, line_66=D("30405.41"), result=D("30405.41")
+            ),
+            "residence_gain: property 1: line 56 30405.41 = worksheet line 66 30405.41",
+        ),
+        (
+            PrincipalResidenceLine57(
+                RESIDENCE_GAIN,
+                1,
+                line_55=D("150000.00"),
+                line_56=D("30405.41"),
+                result=D("119594.59"),
+            ),
+            "residence_gain: property 1: line 57 119594.59 = line 55 150000 less line 56 30405.41, "
+            "not below 0",
+        ),
+    ]
+
+
+WORKSHEET_LINE_EXAMPLES = worksheet_line_examples()
+
+
+@pytest.mark.parametrize(("line", "text"), WORKSHEET_LINE_EXAMPLES)
+def test_renders_each_worksheet_and_part_4_line_in_its_form_words(line: object, text: str) -> None:
+    assert render(cast(TraceLine, line)) == text
+
+
+@pytest.mark.parametrize(
+    "line",
+    [example for example, _text in WORKSHEET_LINE_EXAMPLES if _has_completed_flag(example)],
+)
+def test_renders_a_worksheet_or_line_56_step_not_completed_as_zero(line: object) -> None:
+    skipped = replace(cast(Any, line), completed=False, result=D("0"), position=2)
+    name = type(line).__name__
+    if name.startswith("PrincipalResidenceWorksheetLine"):
+        label = f"worksheet line {name.removeprefix('PrincipalResidenceWorksheetLine')}"
+    else:
+        label = f"line {name.removeprefix('PrincipalResidenceLine')}"
+
+    assert render(skipped) == f"residence_gain: property 2: {label} not completed, 0"
 
 
 def test_renders_the_part_2_total_of_the_properties_by_position() -> None:

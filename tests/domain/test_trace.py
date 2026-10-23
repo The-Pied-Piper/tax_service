@@ -117,6 +117,24 @@ from app.jurisdictions.ca.trace import (
     PrincipalResidenceLine48,
     PrincipalResidenceLine51,
     PrincipalResidenceLine53,
+    PrincipalResidenceLine56,
+    PrincipalResidenceLine57,
+    PrincipalResidenceWorksheetLine3,
+    PrincipalResidenceWorksheetLine6,
+    PrincipalResidenceWorksheetLine16,
+    PrincipalResidenceWorksheetLine17,
+    PrincipalResidenceWorksheetLine18,
+    PrincipalResidenceWorksheetLine19,
+    PrincipalResidenceWorksheetLine21,
+    PrincipalResidenceWorksheetLine23,
+    PrincipalResidenceWorksheetLine24,
+    PrincipalResidenceWorksheetLine26,
+    PrincipalResidenceWorksheetLine27,
+    PrincipalResidenceWorksheetLine59,
+    PrincipalResidenceWorksheetLine61,
+    PrincipalResidenceWorksheetLine63,
+    PrincipalResidenceWorksheetLine64,
+    PrincipalResidenceWorksheetLine66,
     RecapturedCcaLine,
     ShortTermRentalNonCompliantCcaByClassLine,
     ShortTermRentalNonCompliantCcaLine,
@@ -3608,6 +3626,179 @@ def test_part_2_lines_are_not_each_other_nor_the_gain_line() -> None:
         for other in [*classes, PrincipalResidenceGainLine]:
             assert isinstance(made, other) is (other is cls), (cls.__name__, other.__name__)
         assert not isinstance(made, DisabilityTransferLine)
+
+
+# --- Form T2091(IND)-WS and Part 4: one line per worksheet line that Part 4 reads, and 56 and 57
+#
+# Each records one property's figures for its line, named after the form's lines (a worksheet
+# line is named `line_N` with N the worksheet's number, and a line of the form, T2091(IND), by its
+# own number), then `result`. A worksheet line is `completed` when the election was filed (lines 16
+# to 18 also need Chart 1); line 57 has no flag, since the form has none for it.
+
+WORKSHEET_LINES: list[tuple[type, list[str], list[Any]]] = [
+    (
+        PrincipalResidenceWorksheetLine3,
+        ["completed", "line_1", "line_2", "result"],
+        [True, 5, 0, D("5")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine6,
+        ["completed", "line_4", "line_5", "result"],
+        [True, 12, 0, D("12")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine16,
+        ["completed", "line_14", "factor", "rounding", "result"],
+        [True, D("200000.00"), D("1.1"), CENT, D("220000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine17,
+        ["completed", "line_15", "line_16", "result"],
+        [True, D("230000.00"), D("220000.00"), D("10000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine18,
+        ["completed", "line_14", "line_17", "result"],
+        [True, D("200000.00"), D("10000.00"), D("190000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine19,
+        ["completed", "chart_completed", "line_18", "line_10", "result"],
+        [True, True, D("190000.00"), D("200000.00"), D("190000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine21,
+        ["completed", "line_19", "line_20", "result"],
+        [True, D("190000.00"), D("100000.00"), D("90000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine23,
+        ["completed", "line_3", "plus_one", "result"],
+        [True, 5, 1, D("6")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine24,
+        ["completed", "line_22", "line_23", "result"],
+        [True, D("90000.00"), 6, D("540000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine26,
+        ["completed", "line_24", "line_25", "rounding", "result"],
+        [True, D("540000.00"), 12, CENT, D("45000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine27,
+        ["completed", "line_21", "line_26", "result"],
+        [True, D("90000.00"), D("45000.00"), D("45000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine59,
+        ["completed", "line_27", "result"],
+        [True, D("45000.00"), D("45000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine61,
+        ["completed", "line_59", "line_60", "result"],
+        [True, D("45000.00"), 24, D("1080000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine63,
+        ["completed", "line_61", "line_62", "rounding", "result"],
+        [True, D("1080000.00"), 74, CENT, D("14594.59")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine64,
+        ["completed", "line_59", "line_63", "result"],
+        [True, D("45000.00"), D("14594.59"), D("30405.41")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine66,
+        ["completed", "line_64", "line_65", "result"],
+        [True, D("30405.41"), D("100000.00"), D("30405.41")],
+    ),
+    (
+        PrincipalResidenceLine56,
+        ["completed", "line_66", "result"],
+        [True, D("30405.41"), D("30405.41")],
+    ),
+    (
+        PrincipalResidenceLine57,
+        ["line_55", "line_56", "result"],
+        [D("150000.00"), D("30405.41"), D("119594.59")],
+    ),
+]
+WORKSHEET_IDS = [cls.__name__ for cls, *_ in WORKSHEET_LINES]
+ALL_LINES.extend(partial(cls, RESIDENCE_GAIN, 2, *values) for cls, _, values in WORKSHEET_LINES)
+
+
+@pytest.mark.parametrize(("cls", "names", "values"), WORKSHEET_LINES, ids=WORKSHEET_IDS)
+def test_worksheet_lines_have_their_fields_in_order(
+    cls: type, names: list[str], values: list[Any]
+) -> None:
+    line = cls(RESIDENCE_GAIN, 2, *values)
+
+    assert [f.name for f in fields(line)] == ["output", "position", *names]
+    assert line.output is RESIDENCE_GAIN
+    assert line.position == 2
+    for name, value in zip(names, values, strict=True):
+        assert getattr(line, name) == value, name
+
+
+@pytest.mark.parametrize(("cls", "names", "values"), WORKSHEET_LINES, ids=WORKSHEET_IDS)
+def test_worksheet_line_amount_is_the_result(
+    cls: type, names: list[str], values: list[Any]
+) -> None:
+    line = cls(RESIDENCE_GAIN, 2, *values)
+
+    assert line.amount == values[-1]
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+@pytest.mark.parametrize(("cls", "names", "values"), WORKSHEET_LINES, ids=WORKSHEET_IDS)
+def test_worksheet_lines_differ_by_each_field(
+    cls: type, names: list[str], values: list[Any]
+) -> None:
+    line = cls(RESIDENCE_GAIN, 2, *values)
+    args = [RESIDENCE_GAIN, 2, *values]
+    for name, value in zip(["output", "position", *names], args, strict=True):
+        changed: Any
+        if name == "output":
+            changed = ArtifactKind("ex/other_residence_line", Decimal)
+        elif name == "position":
+            changed = 3
+        elif isinstance(value, bool):
+            changed = not value
+        elif value == CENT:
+            changed = NO_ROUNDING
+        elif isinstance(value, int):
+            changed = value + 1
+        else:
+            changed = value + D("1")
+        assert line != replace(line, **{name: changed}), name
+
+
+@pytest.mark.parametrize(("cls", "names", "values"), WORKSHEET_LINES, ids=WORKSHEET_IDS)
+def test_worksheet_lines_are_hashable(cls: type, names: list[str], values: list[Any]) -> None:
+    assert hash(cls(RESIDENCE_GAIN, 2, *values)) == hash(cls(RESIDENCE_GAIN, 2, *values))
+
+
+def test_worksheet_lines_are_not_each_other_nor_the_part_2_or_gain_lines() -> None:
+    classes = [cls for cls, *_ in WORKSHEET_LINES]
+    for cls, _names, values in WORKSHEET_LINES:
+        made = cls(RESIDENCE_GAIN, 2, *values)
+        for other in [*classes, PrincipalResidenceGainLine, PrincipalResidenceLine53]:
+            assert isinstance(made, other) is (other is cls), (cls.__name__, other.__name__)
+        assert not isinstance(made, DisabilityTransferLine)
+
+
+def test_line_57_has_no_completed_flag() -> None:
+    assert [f.name for f in fields(PrincipalResidenceLine57)] == [
+        "output",
+        "position",
+        "line_55",
+        "line_56",
+        "result",
+    ]
 
 
 def test_item_sum_line_fields_in_order() -> None:
