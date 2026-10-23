@@ -229,10 +229,10 @@ class FormSet:
         given: Mapping[ArtifactKind[Any], Artifact[Any]],
         store: Mapping[ArtifactKind[Any], Artifact[Any]],
     ) -> Iterable[Worksheet]:
-        imported = [store[kind] for kind in self._sorted(form.imports)]
+        imported = [store[kind] for kind in sorted(form.imports, key=Composition.sort_key)]
         instances = form.instances
         if instances is None:
-            starting = [given[kind] for kind in self._sorted(form.inputs)]
+            starting = [given[kind] for kind in sorted(form.inputs, key=Composition.sort_key)]
             yield self._run(form, None, [*starting, *imported])
             return
         for position, record in enumerate(given[instances].value.records, start=1):
@@ -253,42 +253,15 @@ class FormSet:
 
     def _check_given(self, given: Mapping[ArtifactKind[Any], Artifact[Any]]) -> None:
         self._check_not_derived(given.keys())
-        extra = given.keys() - self._inputs
-        if extra:
-            verb = "is not an input" if len(extra) == 1 else "are not inputs"
-            raise InvalidCompositionError(
-                f"{self._labels(extra)} {verb} of this composition{self._value_type_hints(extra)}"
-            )
-        missing = self._inputs - given.keys()
-        if missing:
-            noun = "input" if len(missing) == 1 else "inputs"
-            raise InvalidCompositionError(f"missing {noun} {self._labels(missing)}")
+        Composition.check_starting_kinds(given.keys(), self._inputs)
 
     def _check_not_derived(self, kinds: Iterable[ArtifactKind[Any]]) -> None:
         derived = set(kinds) & self._producers.keys()
         if derived:
             verb = "is" if len(derived) == 1 else "are"
             raise InvalidCompositionError(
-                f"{self._labels(derived)} {verb} exported by a form, not an input"
+                f"{Composition.labels(derived)} {verb} exported by a form, not an input"
             )
-
-    def _value_type_hints(self, extra: Iterable[ArtifactKind[Any]]) -> str:
-        """A hint for each extra kind that has an input's identifier but another value type."""
-        hints = ""
-        for kind in self._sorted(extra):
-            expected = ", ".join(
-                sorted(
-                    other.value_type.__name__
-                    for other in self._inputs
-                    if other.identifier == kind.identifier
-                )
-            )
-            if expected:
-                hints += (
-                    f"; {kind.label!r} was given as {kind.value_type.__name__} but the input "
-                    f"takes {expected}"
-                )
-        return hints
 
     @staticmethod
     def _check_names(forms: tuple[FormComposition, ...]) -> None:
@@ -310,7 +283,7 @@ class FormSet:
 
     def _check_imports(self, forms: tuple[FormComposition, ...]) -> None:
         for form in forms:
-            for kind in self._sorted(form.imports):
+            for kind in sorted(form.imports, key=Composition.sort_key):
                 if kind not in self._producers:
                     raise InvalidCompositionError(
                         f"form {form.name!r}: no form exports {kind.label!r}, which it imports"
@@ -323,7 +296,7 @@ class FormSet:
         read |= {form.instances for form in forms if form.instances is not None}
         unread = inputs - read
         if unread:
-            kind = self._sorted(unread)[0]
+            kind = min(unread, key=Composition.sort_key)
             raise InvalidCompositionError(f"input {kind.label!r} is consumed by nothing")
 
     def _order(self, forms: tuple[FormComposition, ...]) -> tuple[FormComposition, ...]:
@@ -354,11 +327,3 @@ class FormSet:
             if not sinks:
                 return remaining
             remaining -= sinks
-
-    @staticmethod
-    def _sorted(kinds: Iterable[ArtifactKind[Any]]) -> list[ArtifactKind[Any]]:
-        return sorted(kinds, key=lambda kind: kind.identifier)
-
-    @staticmethod
-    def _labels(kinds: Iterable[ArtifactKind[Any]]) -> str:
-        return ", ".join(repr(label) for label in sorted({kind.label for kind in kinds}))
