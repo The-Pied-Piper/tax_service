@@ -78,7 +78,7 @@ def test_the_manifest_has_the_form_t2121_beside_the_other_forms() -> None:
     assert found.exports == t2121.FORM_EXPORTS
 
 
-def test_the_form_holds_the_39_t2121_selections() -> None:
+def test_the_form_holds_the_40_t2121_selections() -> None:
     # The selections of Charts A to C of one vehicle and the five printed constants are now one
     # step over the statement's vehicles, the form's only selection for them.
     found = form()

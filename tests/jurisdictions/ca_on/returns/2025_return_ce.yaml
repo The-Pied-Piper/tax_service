@@ -5,8 +5,8 @@
 # period is less than 365 days, you have to prorate your CCA claim ... base your CCA claim on
 # the number of days in your fiscal period compared to 365 days"). The caller enters the 214
 # days; the CCA maximum of each class is prorated by 214 / 365. The business has gross sales of a
-# chosen $39,052.05, so that line 9369 is Return BB's $30,000.00, three expense lines
-# (advertising $1,500, insurance $1,200 and rent $4,300) of $7,000, no motor vehicle expenses
+# chosen $39,052.05, so that line 9369 is $30,000.00, as is Return BB's line 9946, three expense
+# lines (advertising $1,500, insurance $1,200 and rent $4,300) of $7,000, no motor vehicle expenses
 # (no Charts A to C) and no business-use-of-home expenses. Area A has one class, Class 8 (20%),
 # with additions (column 3) of $35,000.00 in the year and nothing else (column 2 is $0): column 7
 # is $35,000.00, column 13 is $35,000.00, the half-year rule makes column 18 50% of the net

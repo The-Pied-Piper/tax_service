@@ -36,11 +36,11 @@ from app.jurisdictions.ca.catalog import (
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
 from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
-# Return CE's T2125: gross sales of 39052.05 (a chosen figure, so that line 9369 is Return BB's
-# 30000.00) and the three expense lines 1500 + 1200 + 4300 = 7000, with no motor vehicle (no
-# Charts A to C) and no business-use-of-home expenses. The business started on June 1, 2025, so
-# its first fiscal period, June 1 to December 31, 2025, is 214 days (Guide T4002, "You were
-# asking?").
+# Return CE's T2125: gross sales of 39052.05 (a chosen figure, so that line 9369 is 30000.00, as is
+# Return BB's line 9946) and the three expense lines 1500 + 1200 + 4300 = 7000, with no motor
+# vehicle (no Charts A to C) and no business-use-of-home expenses. The business started on June 1,
+# 2025, so its first fiscal period, June 1 to December 31, 2025, is 214 days (Guide T4002, "You
+# were asking?").
 BUSINESS = {
     "gross_sales": "39052.05",
     "advertising": "1500",

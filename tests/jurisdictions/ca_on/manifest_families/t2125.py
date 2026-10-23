@@ -377,22 +377,21 @@ FORM_STEPS = {
         },
         produces={"output": "ca/business_gross_income_before_expenses"},
     ),
-    # T2125 Area A "Total CCA claim for the year: Total of column 21 (enter on line 9936 of
-    # Part 4 amount ii minus any personal part and any CCA for business-use-of-home
-    # expenses)" (amount ii): the CCA claimed on each class of the Area A list, at most its
-    # maximum (column 19 multiplied by column 20), totalled.
     # T2125 Area A, the days of the fiscal period (Guide T4002 "You were asking?": "Since your
-    # fiscal period is less than 365 days, you have to prorate your CCA claim ... base your CCA
-    # claim on the number of days in your fiscal period compared to 365 days."): the days the
-    # caller enters, or the 365 of a full year when none are.
+    # fiscal period is less than 365 days, you have to prorate your CCA claim. ... base your CCA
+    # claim on the number of days in your fiscal period compared to 365 days. In this case, your
+    # fiscal period is 214 days."): the days the caller enters, or the 365 of a full year when none
+    # are.
     CapabilitySelection(
         name="ca/fiscal_period_days",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={"entered": "ca/business_fiscal_period_days_entered"},
         produces={"output": "ca/business_fiscal_period_days"},
     ),
-    # T2125 Area A "Total CCA claim for the year: Total of column 21", for a fiscal period of the
-    # days above: each class's maximum prorated ($3,500 x 214 / 365), as the Guide prints.
+    # T2125 Area A "Total CCA claim for the year: Total of column 21 (enter on line 9936 of Part 4
+    # amount ii minus any personal part and any CCA for business-use-of-home expenses)" (amount ii):
+    # the CCA claimed on each class of the Area A list, at most its maximum (column 19 multiplied by
+    # column 20), totalled.
     CapabilitySelection(
         name="ca/cca_claim_prorated",
         params={"class_rates": "ca/cca_class_rates"},
