@@ -267,11 +267,7 @@ INPUTS = frozenset(
     }
 )
 
-OUTPUTS = frozenset(
-    {
-        "ca/amt_carryover_available_for_2026",
-    }
-)
+OUTPUTS = frozenset({"ca/amt_carryover_available_for_2026"})
 
 STEPS = {
     # Part 1 line 4 "Line 2 minus line 3 (if negative, enter "0")" and "67820 =", the film
@@ -940,7 +936,8 @@ STEPS = {
     ),
     # Part 8 line 12 "Claim an amount that is not more than line 1 or 11, whichever is less.": the
     # claim the filer enters (`ca/amt_minimum_tax_carryover_applied`, an input) is checked against
-    # the cap, and refused above it. The checked amount is a declared output; nothing else reads it.
+    # the cap, and refused above it. Part 8 line 13 reads the checked amount; the lines before it
+    # read the claim itself, because line 11 reads line 41600.
     CapabilitySelection(
         name="core/at_most",
         params={},
