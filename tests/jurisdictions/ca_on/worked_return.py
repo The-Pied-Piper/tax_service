@@ -20,7 +20,7 @@ expected line).
 Under `expected` a key that is not an artifact identifier but whose value is a list names a form:
 the list has one entry per instance, in order, each a mapping of artifact identifiers to figures
 (spelled as above) to check against that instance's own worksheet; `form_expected` keeps them, and
-`with_forms` checks each names a form with instances of the manifest and has an entry per
+`check_forms` checks each names a form with instances of the manifest and has an entry per
 instance. A form's instances go under `inputs` as a record list of its instances kind.
 """
 
@@ -132,40 +132,17 @@ class WorkedReturn:
             expected=self.expected + self._blanks(sorted(outputs - listed), "expected", artifacts),
         )
 
-    def with_forms(self, forms: Iterable[Form], artifacts: ArtifactRegistry) -> WorkedReturn:
-        """This return with the flat inputs of each form turned into its instances artifact.
+    def check_forms(self, forms: Iterable[Form], artifacts: ArtifactRegistry) -> None:
+        """Check each form expectation of this return against the forms of the manifest.
 
-        Temporary test support: a worked return gives a form's instance inputs flat at the top
-        level of `inputs:`, while the engine takes only the instances shape. The flat inputs that
-        are fields of the form's instances kind become the one record of that artifact, the fields
-        the file leaves out blank as in `with_blanks`; with none of them in the file the artifact
-        is an empty list. An instances artifact with records, given by the file, is kept as it is;
-        a blank one is replaced when flat inputs are present. Raises WorkedReturnError naming the
-        file for an instances identifier that is not a record list, for an expectation of a form
-        not in `forms` and for one with other than an entry per instance.
+        Raises WorkedReturnError naming the file for an expectation of a form without instances
+        or not in `forms`, for an instances identifier that is not a record list and for one
+        with other than an entry per instance.
         """
         forms = tuple(forms)
         named = {form.name: form for form in forms if form.instances is not None}
         once = {form.name for form in forms if form.instances is None}
-        inputs = self.inputs
-        for form in named.values():
-            kind = self._instances_kind(form, artifacts)
-            flat = [artifact for artifact in inputs if artifact.kind in kind.fields]
-            given = [artifact for artifact in inputs if artifact.kind == kind]
-            # An instances artifact with records is kept; a blank one (`with_blanks` ran first)
-            # gives way to the flat inputs.
-            if given and (given[0].value.records or not flat):
-                continue
-            inputs = tuple(a for a in inputs if a not in flat and a not in given)
-            record: dict[ArtifactKind[Any], object] = {a.kind: a.value for a in flat}
-            if flat:
-                missing = [field.identifier for field in kind.fields if field not in record]
-                record.update({a.kind: a.value for a in self._blanks(missing, "inputs", artifacts)})
-            instances = RecordList(kind.fields, [record] if flat else [])
-            inputs += (Artifact(kind, instances),)
-        converted = replace(self, inputs=inputs)
-        converted._check_expectations(named, once, artifacts)
-        return converted
+        self._check_expectations(named, once, artifacts)
 
     def _check_expectations(
         self, forms: dict[str, Form], once: set[str], artifacts: ArtifactRegistry
@@ -192,7 +169,7 @@ class WorkedReturn:
                 )
 
     def _instances_kind(self, form: Form, artifacts: ArtifactRegistry) -> RecordListKind:
-        assert form.instances is not None  # `with_forms` keeps only the forms with instances
+        assert form.instances is not None  # `check_forms` passes only the forms with instances
         try:
             kind = artifacts.kind(form.instances)
         except (UnknownRegistrationError, InvalidRegistrationError) as exc:
