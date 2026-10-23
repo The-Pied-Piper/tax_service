@@ -79,6 +79,7 @@ from app.domain.trace import (
     TraceLine,
 )
 from app.jurisdictions.ca.trace import (
+    ApprenticeWagesLine,
     CaregiverClaimLine,
     CcaClaimLine,
     CcaZeroReason,
@@ -1731,6 +1732,52 @@ def test_renders_the_caregiver_amount_total_of_two_dependants() -> None:
     line = ItemsTotalLine(CAREGIVER_AMOUNT, ((1, D("8601.00")), (2, D("3798.00"))), D("12399.00"))
 
     assert render(line) == "caregiver_amount: item 1 8601 + item 2 3798 = 12399"
+
+
+# --- an apprentice's salary and wages, the lesser of them and the maximum ----------------------
+#
+# One sentence: the output's label, then "apprentice <position>: the lesser of eligible salary and
+# wages <salary and wages> and the maximum <maximum> is <amount>", then the rounding rule in
+# brackets. Every money figure prints without trailing zeros.
+
+APPRENTICESHIP_WAGES_TOTAL = ArtifactKind("ex/apprenticeship_wages_total", Decimal)
+
+
+def apprentice_wages(
+    position: int,
+    salary: str,
+    result: str,
+    rounding: RoundingRule = CENT,
+) -> TraceLine:
+    return ApprenticeWagesLine(
+        APPRENTICESHIP_WAGES_TOTAL,
+        position,
+        D(salary),
+        Amount(D("20000")),
+        rounding,
+        D(result),
+    )
+
+
+def test_renders_one_apprentices_amount_by_position() -> None:
+    assert render(apprentice_wages(1, "25000.00", "20000.00")) == (
+        "apprenticeship_wages_total: apprentice 1: the lesser of eligible salary and wages 25000 "
+        "and the maximum 20000 is 20000 (half-up to 0.01)"
+    )
+
+
+def test_renders_an_apprentice_under_the_maximum_with_its_cents() -> None:
+    assert render(apprentice_wages(2, "15000.005", "15000.01")) == (
+        "apprenticeship_wages_total: apprentice 2: the lesser of eligible salary and wages "
+        "15000.005 and the maximum 20000 is 15000.01 (half-up to 0.01)"
+    )
+
+
+def test_renders_an_apprentice_without_rounding() -> None:
+    assert render(apprentice_wages(3, "15000.5", "15000.5", NO_ROUNDING)) == (
+        "apprenticeship_wages_total: apprentice 3: the lesser of eligible salary and wages "
+        "15000.5 and the maximum 20000 is 15000.5 (no rounding)"
+    )
 
 
 # --- a medical claim per dependant ----------------------------
