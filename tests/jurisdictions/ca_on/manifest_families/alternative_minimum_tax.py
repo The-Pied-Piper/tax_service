@@ -163,8 +163,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
-    AMT_T2038_AMOUNT_I,
-    AMT_T2038_PART_D_AMOUNT_15,
     AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
@@ -190,6 +188,8 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
+    INVESTMENT_TAX_CREDIT,
+    ITC_AMOUNT_I,
     ITC_RECAPTURE,
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
@@ -256,13 +256,11 @@ INPUTS = frozenset(
         "ca/amt_t2203_column_5_percentage",
         "ca/amt_non_resident_or_deemed_resident",
         "ca/amt_investment_tax_credit_claim",
-        "ca/amt_t2038_amount_i",
         "ca/amt_foreign_business_income",
         "ca/amt_foreign_non_business_income",
         "ca/amt_foreign_capital_gains_non_taxable_claim",
         "ca/amt_foreign_non_business_tax_paid",
         "ca/amt_foreign_business_tax_paid",
-        "ca/amt_t2038_part_d_amount_15",
         "ca/amt_unapplied_2018_carryover",
     }
 )
@@ -1049,7 +1047,7 @@ STEPS = {
         params={},
         consumes={
             "amount": "ca/amt_investment_tax_credit_claim",
-            "bound": "ca/amt_t2038_amount_i",
+            "bound": "ca/itc_amount_i",
         },
         produces={"output": "ca/amt_investment_tax_credit"},
     ),
@@ -1208,14 +1206,14 @@ STEPS = {
         produces={"output": "ca/amt_minimum_tax_after_regular_tax"},
     ),
     # Part 5 line 10 "Line 8 minus line 9 (if negative, enter "0")": line 8, the investment tax
-    # credit of Part 3 line 12, less line 9, amount 15 of Part D of Form T2038(IND) (the caller's
-    # figure), and never below zero.
+    # credit of Part 3 line 12, less line 9, amount 15 of Part D of Form T2038(IND) (line 41200,
+    # read from the investment tax credit family), and never below zero.
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
         consumes={
             "amount": "ca/amt_investment_tax_credit",
-            "less": "ca/amt_t2038_part_d_amount_15",
+            "less": "ca/investment_tax_credit",
         },
         produces={"output": "ca/amt_investment_tax_credit_less_part_d"},
     ),
@@ -1959,7 +1957,7 @@ WIRING = {
     ),
     (
         AtMost,
-        frozenset({AMT_INVESTMENT_TAX_CREDIT_CLAIM, AMT_T2038_AMOUNT_I}),
+        frozenset({AMT_INVESTMENT_TAX_CREDIT_CLAIM, ITC_AMOUNT_I}),
         frozenset({AMT_INVESTMENT_TAX_CREDIT}),
     ),
     (
@@ -2037,7 +2035,7 @@ WIRING = {
     ),
     (
         SubtractNotBelowZero,
-        frozenset({AMT_INVESTMENT_TAX_CREDIT, AMT_T2038_PART_D_AMOUNT_15}),
+        frozenset({AMT_INVESTMENT_TAX_CREDIT, INVESTMENT_TAX_CREDIT}),
         frozenset({AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D}),
     ),
     (

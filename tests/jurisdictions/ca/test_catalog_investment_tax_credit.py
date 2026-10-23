@@ -1,8 +1,9 @@
 """Registered and money kinds of the federal catalog family `investment_tax_credit`.
 
-Form T2038(IND) Parts A and B: the caller's lines (67120, 67130, 67135, 67140, 67170, 67175, the
-T3 box 40 amount of line 67180, and 67184 and 67185), the credit each one produces, and the two
-declared outputs, amount A and amount F. The apprentices and their total are the kinds of
+Form T2038(IND) Parts A, B and D: the caller's lines (67120, 67130, 67135, 67140, 67170, 67175, the
+T3 box 40 amount of line 67180, lines 67184 and 67185, and the Part D amounts 1 and 6 and the claim
+on amount 15), the credit each one produces, the totals of Parts A and B that Part D reads, and the
+amounts of Part D that give line 41200. The apprentices and their total are the kinds of
 `credits_against_federal_tax`, which the family reads.
 """
 
@@ -15,16 +16,31 @@ import pytest
 from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
 from app.domain.errors import NegativeArtifactError
 from app.jurisdictions.ca.catalog import (
+    INVESTMENT_TAX_CREDIT,
     ITC_AGRICULTURAL_SRED_CONTRIBUTIONS,
     ITC_AGRICULTURAL_SRED_CREDIT,
+    ITC_AMOUNT_H,
+    ITC_AMOUNT_I,
+    ITC_AMOUNT_J,
+    ITC_AMOUNT_K,
     ITC_APPRENTICESHIP_CREDIT,
     ITC_APPRENTICESHIP_T3_BOX_40,
     ITC_APPRENTICESHIP_WAGES_WITH_T3,
+    ITC_AVAILABLE,
+    ITC_CLAIM,
+    ITC_CLAIM_LIMIT,
     ITC_CRITICAL_MINERAL_CREDIT,
     ITC_CRITICAL_MINERAL_EXPENDITURES,
+    ITC_GRADUATED_RATE_ESTATE_ALLOCATION,
     ITC_MINERAL_EXPLORATION_CREDIT,
     ITC_MINERAL_EXPLORATION_EXPENDITURES,
     ITC_NONREFUNDABLE_CREDITS,
+    ITC_OPENING_BALANCE,
+    ITC_PART_D_AMOUNT_5,
+    ITC_PART_D_AMOUNT_9,
+    ITC_PART_D_AMOUNT_11_APPLIES,
+    ITC_PART_D_AMOUNT_13,
+    ITC_PART_D_SUBTOTAL,
     ITC_QUALIFIED_PROPERTY,
     ITC_QUALIFIED_PROPERTY_CREDIT,
     ITC_REFUNDABLE_CREDITS,
@@ -54,8 +70,7 @@ CALLER_LINES: tuple[tuple[str, ArtifactKind[Decimal]], ...] = (
 )
 
 # The credits each line produces at its rate (amounts 1, 2, 4, B, C, D, the two repayments and
-# E), the sums that are not outputs (the total of line 67180 with the T3 box 40 amount, and E),
-# and the credits that go into the two declared outputs.
+# E), and the sums that are not outputs (the total of line 67180 with the T3 box 40 amount, and E).
 CREDITS: tuple[tuple[str, ArtifactKind[Decimal]], ...] = (
     ("ca/itc_sred_credit", ITC_SRED_CREDIT),
     ("ca/itc_agricultural_sred_credit", ITC_AGRICULTURAL_SRED_CREDIT),
@@ -69,12 +84,55 @@ CREDITS: tuple[tuple[str, ArtifactKind[Decimal]], ...] = (
     ("ca/itc_sred_repayment_credit", ITC_SRED_REPAYMENT_CREDIT),
 )
 
-# The two declared outputs: Part A amount A "Total current-year refundable credits (add amounts 1
-# to 4)" and Part B amount F "Total current-year non-refundable tax credits (add amounts B, C, D
-# and E)".
-DECLARED_OUTPUTS: tuple[tuple[str, ArtifactKind[Decimal]], ...] = (
+# The two totals of Parts A and B: Part A amount A "Total current-year refundable credits (add
+# amounts 1 to 4)" and Part B amount F "Total current-year non-refundable tax credits (add amounts
+# B, C, D and E)". They are not declared outputs: Part D reads them ("Current-year refundable tax
+# credit (amount A in Part A)" at amount 2, and "Current-year non-refundable tax credit (amount F in
+# Part B)" at amount 3).
+TOTALS: tuple[tuple[str, ArtifactKind[Decimal]], ...] = (
     ("ca/itc_refundable_credits", ITC_REFUNDABLE_CREDITS),
     ("ca/itc_nonrefundable_credits", ITC_NONREFUNDABLE_CREDITS),
+)
+
+# The Part D caller's lines, from Form T2038(IND) Part D (`docs/cra-forms-2025/t2038-ind-25e.pdf`,
+# confirmed from the PDF; no .txt published): amount 1, "ITC opening balance and carry forward
+# from prior years (net of expired amounts)"; amount 6, "Adjustment for a graduated rate estate,
+# enter the amount of ITC allocated to beneficiaries from box 40 of your T3 slip."; and amount 15,
+# "Enter your claim on this line:", the claim the filer chooses (an election, never negative).
+PART_D_CALLER_LINES: tuple[tuple[str, ArtifactKind[Decimal]], ...] = (
+    ("ca/itc_opening_balance", ITC_OPENING_BALANCE),
+    ("ca/itc_graduated_rate_estate_allocation", ITC_GRADUATED_RATE_ESTATE_ALLOCATION),
+    ("ca/itc_claim", ITC_CLAIM),
+)
+
+# The Part D amounts that are never negative: amount 4 "Subtotal (add amounts 2 and 3)", amount 5
+# "Amount 1 plus amount 4", amount 9 and H (each "Subtotal ... if negative, enter "0""), amount 13
+# "Subtotal (add amounts 11 and 12)", amount J ("if negative, enter "0""), and amount 15, the
+# claim up to the limit, which is the line 41200 figure of the return.
+PART_D_AMOUNTS: tuple[tuple[str, ArtifactKind[Decimal]], ...] = (
+    ("ca/itc_part_d_subtotal", ITC_PART_D_SUBTOTAL),
+    ("ca/itc_part_d_amount_5", ITC_PART_D_AMOUNT_5),
+    ("ca/itc_part_d_amount_9", ITC_PART_D_AMOUNT_9),
+    ("ca/itc_amount_h", ITC_AMOUNT_H),
+    ("ca/itc_part_d_amount_13", ITC_PART_D_AMOUNT_13),
+    ("ca/itc_amount_j", ITC_AMOUNT_J),
+    ("ca/investment_tax_credit", INVESTMENT_TAX_CREDIT),
+)
+
+# The Part D amounts that take the sign of their inputs: G, "Total available investment tax credit
+# (amount 5 minus amount 6)", has no floor printed on the form; I and K are the lesser of G and
+# another amount, and the claim limit is one of them, so they take its sign too.
+PART_D_SIGNED: tuple[tuple[str, ArtifactKind[Decimal]], ...] = (
+    ("ca/itc_available", ITC_AVAILABLE),
+    ("ca/itc_amount_i", ITC_AMOUNT_I),
+    ("ca/itc_amount_k", ITC_AMOUNT_K),
+    ("ca/itc_claim_limit", ITC_CLAIM_LIMIT),
+)
+
+# The count of the condition "T691 Part 5 line 7 is greater than 0", which decides whether Part D
+# continues at amount 11 (1) or at amount 15 (0).
+PART_D_COUNT: tuple[tuple[str, ArtifactKind[int]], ...] = (
+    ("ca/itc_part_d_amount_11_applies", ITC_PART_D_AMOUNT_11_APPLIES),
 )
 
 
@@ -88,30 +146,98 @@ def test_the_credits_are_the_registered_kinds(registry: ArtifactRegistry) -> Non
         assert registry.get(identifier) is kind, identifier
 
 
-def test_the_declared_outputs_are_the_registered_kinds(registry: ArtifactRegistry) -> None:
-    for identifier, kind in DECLARED_OUTPUTS:
+def test_the_totals_are_the_registered_kinds(registry: ArtifactRegistry) -> None:
+    for identifier, kind in TOTALS:
         assert registry.get(identifier) is kind, identifier
+
+
+def test_the_part_d_caller_lines_are_the_registered_kinds(registry: ArtifactRegistry) -> None:
+    for identifier, kind in PART_D_CALLER_LINES:
+        assert registry.get(identifier) is kind, identifier
+
+
+def test_the_part_d_amounts_are_the_registered_kinds(registry: ArtifactRegistry) -> None:
+    for identifier, kind in PART_D_AMOUNTS:
+        assert registry.get(identifier) is kind, identifier
+
+
+def test_the_part_d_signed_amounts_are_the_registered_kinds(registry: ArtifactRegistry) -> None:
+    for identifier, kind in PART_D_SIGNED:
+        assert registry.get(identifier) is kind, identifier
+
+
+def test_the_part_d_count_is_the_registered_int_kind(registry: ArtifactRegistry) -> None:
+    for identifier, kind in PART_D_COUNT:
+        assert registry.get(identifier) is kind, identifier
+        assert kind.value_type is int, identifier
+        assert kind.non_negative is True, identifier
+
+
+def test_the_investment_tax_credit_is_the_line_136_kind() -> None:
+    # T1 line 136 (line 41200) "Investment tax credit (complete Form T2038(IND))": amount 15 of Part
+    # D, the claim up to the limit, is the figure of the return's line 136.
+    assert INVESTMENT_TAX_CREDIT.identifier == "ca/investment_tax_credit"
+    assert INVESTMENT_TAX_CREDIT.value_type is Decimal
 
 
 @pytest.mark.parametrize(
     ("identifier", "kind"),
-    CALLER_LINES + CREDITS + DECLARED_OUTPUTS,
-    ids=[identifier for identifier, _ in CALLER_LINES + CREDITS + DECLARED_OUTPUTS],
+    CALLER_LINES + CREDITS + TOTALS + PART_D_CALLER_LINES + PART_D_AMOUNTS,
+    ids=[
+        identifier
+        for identifier, _ in CALLER_LINES + CREDITS + TOTALS + PART_D_CALLER_LINES + PART_D_AMOUNTS
+    ],
 )
 def test_every_kind_is_a_non_negative_money_kind(
     identifier: str, kind: ArtifactKind[Decimal]
 ) -> None:
-    # No line of Part A or Part B can be negative on the form as modelled: each is an amount
-    # the caller enters or a credit at a rate, and the form prints no floor to subtract from.
+    # No line of Parts A, B and D can be negative on the form as modelled: each is an amount the
+    # caller enters, a credit at a rate, a sum of such amounts, or a subtotal the form floors at 0.
     assert kind.identifier == identifier
     assert kind.value_type is Decimal
     assert kind.non_negative is True
+
+
+@pytest.mark.parametrize(
+    ("identifier", "kind"),
+    PART_D_SIGNED,
+    ids=[identifier for identifier, _ in PART_D_SIGNED],
+)
+def test_the_signed_part_d_amounts_are_money_not_declared_non_negative(
+    identifier: str, kind: ArtifactKind[Decimal]
+) -> None:
+    # Amount G is "amount 5 minus amount 6" with no floor printed on the form, so it is not floored
+    # and the kinds that take its sign (I, K and the claim limit) are not declared non-negative.
+    assert kind.identifier == identifier
+    assert kind.value_type is Decimal
+    assert kind.non_negative is False
+
+
+def test_the_total_available_credit_is_not_floored_at_zero(registry: ArtifactRegistry) -> None:
+    # G "Total available investment tax credit (amount 5 minus amount 6)": a negative figure is held
+    # as it is, not taken as 0.
+    assert Artifact(ITC_AVAILABLE, Decimal("-1")).value == Decimal("-1")
+    assert registry.get("ca/itc_available") is ITC_AVAILABLE
 
 
 def test_a_negative_caller_line_is_refused() -> None:
     # Line 67120 "ITC for qualified expenditures for SR&ED": an amount, never negative.
     with pytest.raises(NegativeArtifactError):
         Artifact(ITC_SRED_EXPENDITURES, Decimal("-1"))
+
+
+def test_a_negative_part_d_opening_balance_is_refused() -> None:
+    # Part D amount 1, "ITC opening balance and carry forward from prior years (net of expired
+    # amounts)": a balance carried forward, never negative.
+    with pytest.raises(NegativeArtifactError, match="ca/itc_opening_balance cannot be negative"):
+        Artifact(ITC_OPENING_BALANCE, Decimal("-1"))
+
+
+def test_a_negative_claim_is_refused() -> None:
+    # Part D amount 15, "Enter your claim on this line:": the credit the filer claims, never
+    # negative, so a negative figure is an input error and not taken as 0.
+    with pytest.raises(NegativeArtifactError, match="ca/itc_claim cannot be negative"):
+        Artifact(ITC_CLAIM, Decimal("-1"))
 
 
 def test_a_credit_holds_its_amount_to_the_cent() -> None:

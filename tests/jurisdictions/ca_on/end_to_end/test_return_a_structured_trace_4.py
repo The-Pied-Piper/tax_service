@@ -120,8 +120,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
     AMT_SPECIAL_FOREIGN_TAX_CREDIT,
-    AMT_T2038_AMOUNT_I,
-    AMT_T2038_PART_D_AMOUNT_15,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TOTAL_FOREIGN_INCOME,
     ANNUAL_GAINS_LIMIT_2025,
@@ -579,6 +577,18 @@ from app.jurisdictions.ca.catalog import (
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
+    INVESTMENT_TAX_CREDIT,
+    ITC_AMOUNT_H,
+    ITC_AMOUNT_I,
+    ITC_AMOUNT_J,
+    ITC_AMOUNT_K,
+    ITC_AVAILABLE,
+    ITC_CLAIM,
+    ITC_CLAIM_LIMIT,
+    ITC_PART_D_AMOUNT_9,
+    ITC_PART_D_AMOUNT_11_APPLIES,
+    ITC_PART_D_AMOUNT_13,
+    LABOUR_SPONSORED_FUNDS_CREDIT,
     LISTED_PERSONAL_PROPERTY_GAIN_OR_LOSS,
     LISTED_PERSONAL_PROPERTY_NET_GAIN,
     MEDICAL_EXPENSES,
@@ -617,6 +627,7 @@ from app.jurisdictions.ca.catalog import (
     PARTNERSHIP_GAINS_AT_FULL_INCLUSION,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CONTRIBUTIONS,
+    POLITICAL_CREDIT,
     POLITICAL_CREDIT_COLUMN_1_LINE_2,
     POLITICAL_CREDIT_COLUMN_1_LINE_3,
     POLITICAL_CREDIT_COLUMN_2_LINE_2,
@@ -995,6 +1006,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form T2038(IND) Part D amount I "Enter the lesser of amount G or H": amount G (0.00) and
+        # amount H (16951.38): 0.00. Amount K "Enter the lesser of amount G or J": amount G (0.00)
+        # and amount J (16951.38): 0.00.
+        ITC_AMOUNT_I: LesserOfLine(
+            output=ITC_AMOUNT_I,
+            parts=((ITC_AVAILABLE, D("0.00")), (ITC_AMOUNT_H, D("16951.38"))),
+            result=D("0.00"),
+        ),
+        ITC_AMOUNT_K: LesserOfLine(
+            output=ITC_AMOUNT_K,
+            parts=((ITC_AVAILABLE, D("0.00")), (ITC_AMOUNT_J, D("16951.38"))),
+            result=D("0.00"),
+        ),
         # Form RC381 Part 4 the amount lettered A, "Enter whichever is less: amount from line 113 or
         # line 114.": both are 0 for Return A.
         RC381_PART_4_LINE_116_LESSER: LesserOfLine(
@@ -1989,6 +2013,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert at_most == {
+        # Form T2038(IND) Part D amount 15, the claim (0, the caller's election) at most the claim
+        # limit (0.00): 0, entered on line 41200 of the return.
+        INVESTMENT_TAX_CREDIT: AtMostLine(
+            output=INVESTMENT_TAX_CREDIT,
+            amount_kind=ITC_CLAIM,
+            amount_value=D("0"),
+            bound=ITC_CLAIM_LIMIT,
+            bound_value=D("0.00"),
+        ),
         # Form T691 Part 4 line 3 "Non-taxable part of foreign capital gains included in adjusted
         # taxable income (cannot be more than line 23 of Part 1)": the claim, 0 for Return A, at
         # most line 23 of Part 1, 10000.00: 0.
@@ -2005,7 +2038,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             output=AMT_INVESTMENT_TAX_CREDIT,
             amount_kind=AMT_INVESTMENT_TAX_CREDIT_CLAIM,
             amount_value=D("0"),
-            bound=AMT_T2038_AMOUNT_I,
+            bound=ITC_AMOUNT_I,
             bound_value=D("0"),
         ),
         # Form T691 Part 8 line 12, the claim (0, the caller's election) at most the cap (0): 0.
@@ -2432,6 +2465,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T2038(IND) Part D amount 9 "Subtotal (amount 7 minus amount 8, if negative, enter
+        # "0")": the federal tax of line 40600 (16951.38) less the political contribution tax credit
+        # of line 41000 (0.00): 16951.38. Amount H "Subtotal (amount 9 minus amount 10, if negative,
+        # enter "0")": amount 9 (16951.38) less the labour-sponsored funds tax credit of line 41400
+        # (0.00): 16951.38. Amount J "Subtotal (amount 13 minus amount 14, if negative, enter "0")":
+        # amount 13 (16951.38) less the minimum amount from line 103 of Form T691 (0): 16951.38.
+        ITC_PART_D_AMOUNT_9: SubtractedNotBelowZeroLine(
+            output=ITC_PART_D_AMOUNT_9,
+            minuend=FEDERAL_TAX_WITH_ITC_RECAPTURE,
+            minuend_amount=D("16951.38"),
+            subtrahend=POLITICAL_CREDIT,
+            subtrahend_amount=D("0.00"),
+            result=D("16951.38"),
+        ),
+        ITC_AMOUNT_H: SubtractedNotBelowZeroLine(
+            output=ITC_AMOUNT_H,
+            minuend=ITC_PART_D_AMOUNT_9,
+            minuend_amount=D("16951.38"),
+            subtrahend=LABOUR_SPONSORED_FUNDS_CREDIT,
+            subtrahend_amount=D("0.00"),
+            result=D("16951.38"),
+        ),
+        ITC_AMOUNT_J: SubtractedNotBelowZeroLine(
+            output=ITC_AMOUNT_J,
+            minuend=ITC_PART_D_AMOUNT_13,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_MINIMUM_AMOUNT,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Form RC381 Part 4 line 128 "Line 126 minus line 127 (if negative, enter "0")", line 126
         # being the amount from line 125: both are 0 for Return A.
         RC381_PART_4_LINE_128: SubtractedNotBelowZeroLine(
@@ -2622,7 +2685,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             output=AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
             minuend=AMT_INVESTMENT_TAX_CREDIT,
             minuend_amount=D("0"),
-            subtrahend=AMT_T2038_PART_D_AMOUNT_15,
+            subtrahend=INVESTMENT_TAX_CREDIT,
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
@@ -5169,6 +5232,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         for line in trace
         if isinstance(line, ConditionsCountLine) and line.output is AMT_PART_5_LINE_11_IS_POSITIVE
     }
+    part_d_amount_11_conditions = {
+        (line.output, line.position): line
+        for line in trace
+        if isinstance(line, ConditionLine) and line.output is ITC_PART_D_AMOUNT_11_APPLIES
+    }
+    part_d_amount_11_count = {
+        line.output: line
+        for line in trace
+        if isinstance(line, ConditionsCountLine) and line.output is ITC_PART_D_AMOUNT_11_APPLIES
+    }
+    assert part_d_amount_11_conditions == {
+        # Form T2038(IND) Part D "If you have to complete Form T691 ... and the amount you
+        # calculate on line 7 of Part 5 in Form T691 is greater than "0", continue at amount 11.":
+        # the condition reads line 7 (0): it does not apply.
+        (ITC_PART_D_AMOUNT_11_APPLIES, 1): ConditionLine(
+            output=ITC_PART_D_AMOUNT_11_APPLIES,
+            position=1,
+            text="T691 Part 5 line 7 is greater than 0",
+            reads=((AMT_MINIMUM_TAX_AFTER_REGULAR_TAX, D("0")),),
+            applies=False,
+        ),
+    }
+    assert part_d_amount_11_count == {
+        # Form T2038(IND) Part D amount 11: no condition applies, so the count is 0.
+        ITC_PART_D_AMOUNT_11_APPLIES: ConditionsCountLine(
+            output=ITC_PART_D_AMOUNT_11_APPLIES,
+            applied=(),
+            count=0,
+        ),
+    }
     assert part_5_line_11_conditions == {
         # Form T691 Part 5 line 11 "If line 11 is positive, complete parts 6 and 7.": the condition
         # "line 11 is positive" reads line 11 (0): it does not apply.
@@ -5189,6 +5282,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert chosen == {
+        # Form T2038(IND) Part D amount 15 "You can claim an ITC up to, but not more than I or K,
+        # whichever applies", chosen by the count of "T691 Part 5 line 7 is greater than 0": the
+        # count is 0, so amount I, 0.00.
+        ITC_CLAIM_LIMIT: ChosenByCountLine(
+            output=ITC_CLAIM_LIMIT,
+            count_kind=ITC_PART_D_AMOUNT_11_APPLIES,
+            count=0,
+            chosen_kind=ITC_AMOUNT_I,
+            chosen_value=D("0.00"),
+        ),
         # T1 line 139 and line 41700 "Line 134 minus line 138 (if negative, enter "0")", chosen by
         # the count of "line 11 is positive": the count is 0, so the figure of line 139, 16951.38.
         FEDERAL_TAX_LINE_41700: ChosenByCountLine(

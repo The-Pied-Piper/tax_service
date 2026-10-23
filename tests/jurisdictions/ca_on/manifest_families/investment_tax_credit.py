@@ -3,22 +3,47 @@
 from __future__ import annotations
 
 from app.domain.capabilities.apply_rate import ApplyRate
+from app.domain.capabilities.at_most import AtMost
+from app.domain.capabilities.choose_by_count import ChooseByCount
+from app.domain.capabilities.lesser_of import LesserOf
+from app.domain.capabilities.subtract import Subtract
+from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.apprenticeship_wages_total import ApprenticeshipWagesTotal
+from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.catalog import (
+    AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
+    FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_TAX_WITH_ITC_RECAPTURE,
+    INVESTMENT_TAX_CREDIT,
     ITC_AGRICULTURAL_SRED_CONTRIBUTIONS,
     ITC_AGRICULTURAL_SRED_CREDIT,
+    ITC_AMOUNT_H,
+    ITC_AMOUNT_I,
+    ITC_AMOUNT_J,
+    ITC_AMOUNT_K,
     ITC_APPRENTICES,
     ITC_APPRENTICESHIP_CREDIT,
     ITC_APPRENTICESHIP_T3_BOX_40,
     ITC_APPRENTICESHIP_WAGES_TOTAL,
     ITC_APPRENTICESHIP_WAGES_WITH_T3,
+    ITC_AVAILABLE,
+    ITC_CLAIM,
+    ITC_CLAIM_LIMIT,
     ITC_CRITICAL_MINERAL_CREDIT,
     ITC_CRITICAL_MINERAL_EXPENDITURES,
+    ITC_GRADUATED_RATE_ESTATE_ALLOCATION,
     ITC_MINERAL_EXPLORATION_CREDIT,
     ITC_MINERAL_EXPLORATION_EXPENDITURES,
     ITC_NONREFUNDABLE_CREDITS,
+    ITC_OPENING_BALANCE,
+    ITC_PART_D_AMOUNT_5,
+    ITC_PART_D_AMOUNT_9,
+    ITC_PART_D_AMOUNT_11_APPLIES,
+    ITC_PART_D_AMOUNT_13,
+    ITC_PART_D_SUBTOTAL,
     ITC_QUALIFIED_PROPERTY,
     ITC_QUALIFIED_PROPERTY_CREDIT,
     ITC_REFUNDABLE_CREDITS,
@@ -30,12 +55,15 @@ from app.jurisdictions.ca.catalog import (
     ITC_SRED_REPAYMENT_CREDIT,
     ITC_SRED_REPAYMENT_CREDIT_2014_AND_PRIOR,
     ITC_SRED_REPAYMENT_CREDIT_2015_AND_AFTER,
+    LABOUR_SPONSORED_FUNDS_CREDIT,
+    POLITICAL_CREDIT,
 )
 
-# The caller's lines of Form T2038(IND) Parts A and B, as the form takes them (manifest part
+# The caller's lines of Form T2038(IND) Parts A, B and D, as the form takes them (manifest parts
 # 01b_investment_tax_credit.yaml): Part A lines 67120, 67130, 67135 and 67140, Part B lines 67170
-# and 67175, the apprentices of Table 1, the T3 box 40 amount on line 67180, and lines 67184 and
-# 67185.
+# and 67175, the apprentices of Table 1, the T3 box 40 amount on line 67180, lines 67184 and 67185,
+# and the Part D amount 1 (the opening balance), amount 6 (the graduated rate estate allocation) and
+# the claim on amount 15.
 INPUTS = frozenset(
     {
         "ca/itc_sred_expenditures",
@@ -48,13 +76,18 @@ INPUTS = frozenset(
         "ca/itc_apprenticeship_t3_box_40",
         "ca/itc_sred_repayment_2014_and_prior",
         "ca/itc_sred_repayment_2015_and_after",
+        "ca/itc_opening_balance",
+        "ca/itc_graduated_rate_estate_allocation",
+        "ca/itc_claim",
     }
 )
 
-# Form T2038(IND) Part A "Total current-year refundable credits (add amounts 1 to 4)" and Part B
-# "Total current-year non-refundable tax credits (add amounts B, C, D and E)", which Part D of the
-# form reads ("Enter amount A at amount 2 in Part D" and "Enter amount F at amount 3 in Part D").
-OUTPUTS = frozenset({"ca/itc_refundable_credits", "ca/itc_nonrefundable_credits"})
+# No declared outputs: Form T2038(IND) Part A "Total current-year refundable credits (add amounts 1
+# to 4)" and Part B "Total current-year non-refundable tax credits (add amounts B, C, D and E)" are
+# read by Part D ("Current-year refundable tax credit (amount A in Part A)" at amount 2 and
+# "Current-year non-refundable tax credit (amount F in Part B)" at amount 3), and the claim on
+# amount 15 is read by T1 line 138 and by Form T691 Part 5 line 9.
+OUTPUTS: frozenset[str] = frozenset()
 
 STEPS = {
     # Form T2038(IND) Part A line 1, "ITC for qualified expenditures for SR&ED (amount from line 559
@@ -193,6 +226,151 @@ STEPS = {
         },
         produces={"output": "ca/itc_nonrefundable_credits"},
     ),
+    # Form T2038(IND) Part D amount 4, "Subtotal (add amounts 2 and 3)": amount A, "Current-year
+    # refundable tax credit (amount A in Part A)", and amount F, "Current-year non-refundable tax
+    # credit (amount F in Part B)", in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/itc_refundable_credits",
+                "ca/itc_nonrefundable_credits",
+            )
+        },
+        produces={"output": "ca/itc_part_d_subtotal"},
+    ),
+    # Form T2038(IND) Part D amount 5, "Amount 1 plus amount 4": the opening balance and carry
+    # forward from prior years, "ITC opening balance and carry forward from prior years (net of
+    # expired amounts)", and amount 4.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/itc_opening_balance",
+                "ca/itc_part_d_subtotal",
+            )
+        },
+        produces={"output": "ca/itc_part_d_amount_5"},
+    ),
+    # Form T2038(IND) Part D "Total available investment tax credit (amount 5 minus amount 6)", G:
+    # amount 6, "Adjustment for a graduated rate estate, enter the amount of ITC allocated to
+    # beneficiaries from box 40 of your T3 slip". No floor is printed, so G is not floored at 0.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/itc_part_d_amount_5",
+            "less": "ca/itc_graduated_rate_estate_allocation",
+        },
+        produces={"output": "ca/itc_available"},
+    ),
+    # Form T2038(IND) Part D amount 9, "Subtotal (amount 7 minus amount 8, if negative, enter "0")":
+    # amount 7, "Federal tax (amount from line 40600 of your income tax and benefit return)", less
+    # amount 8, "Federal political contribution tax credit (amount from line 41000 of your income
+    # tax and benefit return)", and never below zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/federal_tax_with_itc_recapture",
+            "less": "ca/political_credit",
+        },
+        produces={"output": "ca/itc_part_d_amount_9"},
+    ),
+    # Form T2038(IND) Part D amount H, "Subtotal (amount 9 minus amount 10, if negative, enter
+    # "0")": amount 10, "Labour-sponsored funds tax credit (amount from line 41400 of your income
+    # tax and benefit return)", and never below zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/itc_part_d_amount_9",
+            "less": "ca/labour_sponsored_funds_credit",
+        },
+        produces={"output": "ca/itc_amount_h"},
+    ),
+    # Form T2038(IND) Part D amount I, "Enter the lesser of amount G or H".
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={"amounts": ("ca/itc_available", "ca/itc_amount_h")},
+        produces={"output": "ca/itc_amount_i"},
+    ),
+    # Form T2038(IND) Part D amount 13, "Subtotal (add amounts 11 and 12)": amount 11, "Enter amount
+    # H", and amount 12, "Federal foreign tax credit (amount from line 40500 of your income tax and
+    # benefit return)". Amount 11 is read as H. The form continues at amount 11 only when Form T691
+    # Part 5 line 7 is greater than 0, so the claim limit uses amount J (through K) only then.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/itc_amount_h",
+                "ca/federal_foreign_tax_credit",
+            )
+        },
+        produces={"output": "ca/itc_part_d_amount_13"},
+    ),
+    # Form T2038(IND) Part D amount J, "Subtotal (amount 13 minus amount 14, if negative, enter
+    # "0")": amount 14, "The minimum amount from line 103 on Part 1 of Form T691", and never below
+    # zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/itc_part_d_amount_13",
+            "less": "ca/amt_minimum_amount",
+        },
+        produces={"output": "ca/itc_amount_j"},
+    ),
+    # Form T2038(IND) Part D amount K, "Enter the lesser of amount G or J".
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={"amounts": ("ca/itc_available", "ca/itc_amount_j")},
+        produces={"output": "ca/itc_amount_k"},
+    ),
+    # Form T2038(IND) Part D "If you have to complete Form T691, Alternative Minimum Tax and the
+    # amount you calculate on line 7 of Part 5 in Form T691 is greater than "0", continue at
+    # amount 11." The condition "T691 Part 5 line 7 is greater than 0" counts 1 when line 7 (the
+    # minimum tax after the regular tax) is more than 0, and 0 otherwise.
+    CapabilitySelection(
+        name="ca/count_by_conditions",
+        params={"conditions": "ca/itc_part_d_amount_11_conditions"},
+        consumes={
+            "counts": (),
+            "amounts": ("ca/amt_minimum_tax_after_regular_tax",),
+        },
+        produces={"output": "ca/itc_part_d_amount_11_applies"},
+    ),
+    # Form T2038(IND) Part D: "If alternative minimum tax (AMT) does not apply to you, continue at
+    # amount 15." so the claim is limited by amount I when the condition does not apply, and by
+    # amount K when it does (continue at amount 11).
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/itc_part_d_amount_11_applies",
+            "when_none": "ca/itc_amount_i",
+            "when_any": "ca/itc_amount_k",
+        },
+        produces={"output": "ca/itc_claim_limit"},
+    ),
+    # Form T2038(IND) Part D amount 15, "Enter your claim on this line:" and "You can claim an ITC
+    # up to, but not more than I or K, whichever applies": the claim the filer chooses, up to the
+    # limit and refused above it (as Form T691 Part 3 line 12 is), which is line 41200 of the
+    # return, "Enter amount 15 on line 41200 of your income tax and benefit return".
+    CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={
+            "amount": "ca/itc_claim",
+            "bound": "ca/itc_claim_limit",
+        },
+        produces={"output": "ca/investment_tax_credit"},
+    ),
 }
 
 WIRING = {
@@ -276,5 +454,65 @@ WIRING = {
             }
         ),
         frozenset({ITC_NONREFUNDABLE_CREDITS}),
+    ),
+    (
+        Sum,
+        frozenset({ITC_REFUNDABLE_CREDITS, ITC_NONREFUNDABLE_CREDITS}),
+        frozenset({ITC_PART_D_SUBTOTAL}),
+    ),
+    (
+        Sum,
+        frozenset({ITC_OPENING_BALANCE, ITC_PART_D_SUBTOTAL}),
+        frozenset({ITC_PART_D_AMOUNT_5}),
+    ),
+    (
+        Subtract,
+        frozenset({ITC_PART_D_AMOUNT_5, ITC_GRADUATED_RATE_ESTATE_ALLOCATION}),
+        frozenset({ITC_AVAILABLE}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({FEDERAL_TAX_WITH_ITC_RECAPTURE, POLITICAL_CREDIT}),
+        frozenset({ITC_PART_D_AMOUNT_9}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({ITC_PART_D_AMOUNT_9, LABOUR_SPONSORED_FUNDS_CREDIT}),
+        frozenset({ITC_AMOUNT_H}),
+    ),
+    (
+        LesserOf,
+        frozenset({ITC_AVAILABLE, ITC_AMOUNT_H}),
+        frozenset({ITC_AMOUNT_I}),
+    ),
+    (
+        Sum,
+        frozenset({ITC_AMOUNT_H, FEDERAL_FOREIGN_TAX_CREDIT}),
+        frozenset({ITC_PART_D_AMOUNT_13}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({ITC_PART_D_AMOUNT_13, AMT_MINIMUM_AMOUNT}),
+        frozenset({ITC_AMOUNT_J}),
+    ),
+    (
+        LesserOf,
+        frozenset({ITC_AVAILABLE, ITC_AMOUNT_J}),
+        frozenset({ITC_AMOUNT_K}),
+    ),
+    (
+        CountByConditions,
+        frozenset({AMT_MINIMUM_TAX_AFTER_REGULAR_TAX}),
+        frozenset({ITC_PART_D_AMOUNT_11_APPLIES}),
+    ),
+    (
+        ChooseByCount,
+        frozenset({ITC_PART_D_AMOUNT_11_APPLIES, ITC_AMOUNT_I, ITC_AMOUNT_K}),
+        frozenset({ITC_CLAIM_LIMIT}),
+    ),
+    (
+        AtMost,
+        frozenset({ITC_CLAIM, ITC_CLAIM_LIMIT}),
+        frozenset({INVESTMENT_TAX_CREDIT}),
     ),
 }

@@ -190,12 +190,13 @@ capabilities:
     produces:
       output: ca/labour_sponsored_funds_credit
   # T1 line 138 (line 41600) "Add lines 135 to 137.": line 135 (41000, the federal political
-  # contribution tax credit) and line 137 (41400), in line order, as line 136 (41200, the
-  # investment tax credit) is not yet wired.
+  # contribution tax credit), line 136 (41200, the investment tax credit of Form T2038(IND) Part D
+  # amount 15) and line 137 (41400), in line order.
   - name: core/sum
     consumes:
       parts:
         - ca/political_credit
+        - ca/investment_tax_credit
         - ca/labour_sponsored_funds_credit
     produces:
       output: ca/credits_against_federal_tax

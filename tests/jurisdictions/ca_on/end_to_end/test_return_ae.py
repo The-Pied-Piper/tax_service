@@ -117,7 +117,7 @@ def test_return_aes_federal_political_contribution_credit_is_558_33_and_lowers_t
     ) in rendered
     assert (
         "credits_against_federal_tax: political_credit 558.33 "
-        "+ labour_sponsored_funds_credit 0 = 558.33"
+        "+ investment_tax_credit 0 + labour_sponsored_funds_credit 0 = 558.33"
     ) in rendered
     assert (
         "federal_tax_less_credits: federal_tax_with_itc_recapture 3909.94 "
@@ -189,7 +189,7 @@ def test_line_138_adds_the_political_credit_and_the_labour_sponsored_funds_credi
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "credits_against_federal_tax: political_credit 558.33 "
-        "+ labour_sponsored_funds_credit 600 = 1158.33"
+        "+ investment_tax_credit 0 + labour_sponsored_funds_credit 600 = 1158.33"
     ) in rendered
 
 

@@ -153,8 +153,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
-    AMT_T2038_AMOUNT_I,
-    AMT_T2038_PART_D_AMOUNT_15,
     AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
@@ -286,7 +284,6 @@ PART_3_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
     AMT_FEDERAL_TAX_PAYABLE,
     AMT_INVESTMENT_TAX_CREDIT_CLAIM,
-    AMT_T2038_AMOUNT_I,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
@@ -317,12 +314,12 @@ PART_4_KINDS: tuple[ArtifactKind[Decimal], ...] = (
 
 # Part 5 lines 1 to 11: the net minimum tax payable, the regular net tax less the surtax, the
 # minimum tax after the regular tax, the investment tax credit less amount 15 of Part D of Form
-# T2038(IND), and the alternative minimum tax payable; line 9 is the caller's figure.
+# T2038(IND), and the alternative minimum tax payable; line 9 is the investment tax credit of Part
+# D, which the investment tax credit family computes and this family reads.
 PART_5_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_NET_MINIMUM_TAX_PAYABLE,
     AMT_REGULAR_NET_TAX_LESS_SURTAX,
     AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
-    AMT_T2038_PART_D_AMOUNT_15,
     AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
     AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
 )
@@ -691,7 +688,6 @@ def test_the_part_3_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     )
     assert registry.get("ca/amt_federal_tax_payable") is AMT_FEDERAL_TAX_PAYABLE
     assert registry.get("ca/amt_investment_tax_credit_claim") is AMT_INVESTMENT_TAX_CREDIT_CLAIM
-    assert registry.get("ca/amt_t2038_amount_i") is AMT_T2038_AMOUNT_I
     assert registry.get("ca/amt_investment_tax_credit") is AMT_INVESTMENT_TAX_CREDIT
     assert registry.get("ca/amt_regular_tax_credits_total") is AMT_REGULAR_TAX_CREDITS_TOTAL
     assert (
@@ -737,7 +733,6 @@ def test_the_part_5_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert registry.get("ca/amt_net_minimum_tax_payable") is AMT_NET_MINIMUM_TAX_PAYABLE
     assert registry.get("ca/amt_regular_net_tax_less_surtax") is AMT_REGULAR_NET_TAX_LESS_SURTAX
     assert registry.get("ca/amt_minimum_tax_after_regular_tax") is AMT_MINIMUM_TAX_AFTER_REGULAR_TAX
-    assert registry.get("ca/amt_t2038_part_d_amount_15") is AMT_T2038_PART_D_AMOUNT_15
     assert (
         registry.get("ca/amt_investment_tax_credit_less_part_d")
         is AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D
@@ -934,13 +929,3 @@ def test_the_part_7_foreign_credit_share_refuses_a_negative_amount() -> None:
         NegativeArtifactError, match="ca/amt_part_7_foreign_credit_share cannot be negative"
     ):
         Artifact(AMT_PART_7_FOREIGN_CREDIT_SHARE, Decimal("-1"))
-
-
-def test_the_part_d_amount_15_refuses_a_negative_amount() -> None:
-    # Part 5 line 9, "Amount from line 15 of Part D of Form T2038(IND)": the credit claimed on Part
-    # D line 15 is never negative, so a negative figure is an input error, refused and not taken as
-    # 0.
-    with pytest.raises(
-        NegativeArtifactError, match="ca/amt_t2038_part_d_amount_15 cannot be negative"
-    ):
-        Artifact(AMT_T2038_PART_D_AMOUNT_15, Decimal("-1"))

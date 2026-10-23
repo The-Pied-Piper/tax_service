@@ -26,12 +26,12 @@ capabilities:
     produces:
       output: ca/amt_minimum_tax_after_regular_tax
   # Part 5 line 10 "Line 8 minus line 9 (if negative, enter "0")": line 8, the investment tax credit
-  # of Part 3 line 12, less line 9, amount 15 of Part D of Form T2038(IND) (the caller's figure),
-  # and never below zero.
+  # of Part 3 line 12, less line 9, amount 15 of Part D of Form T2038(IND) (line 41200, read from the
+  # investment tax credit family), and never below zero.
   - name: core/subtract_not_below_zero
     consumes:
       amount: ca/amt_investment_tax_credit
-      less: ca/amt_t2038_part_d_amount_15
+      less: ca/investment_tax_credit
     produces:
       output: ca/amt_investment_tax_credit_less_part_d
   # Part 5 line 11 "Line 7 minus line 10 (if negative, enter "0")": line 7 less line 10, never

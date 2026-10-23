@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1320
+        == 1332
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1320
+        == 1332
     )
 
 
@@ -1270,6 +1270,21 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/itc_sred_repayment_credit",
         "ca/itc_refundable_credits",
         "ca/itc_nonrefundable_credits",
+        "ca/itc_opening_balance",
+        "ca/itc_graduated_rate_estate_allocation",
+        "ca/itc_claim",
+        "ca/itc_part_d_subtotal",
+        "ca/itc_part_d_amount_5",
+        "ca/itc_available",
+        "ca/itc_part_d_amount_9",
+        "ca/itc_amount_h",
+        "ca/itc_amount_i",
+        "ca/itc_part_d_amount_13",
+        "ca/itc_amount_j",
+        "ca/itc_amount_k",
+        "ca/itc_part_d_amount_11_applies",
+        "ca/itc_claim_limit",
+        "ca/investment_tax_credit",
         "ca/spouses_claimed",
         "ca/spouse_caregiver_eligible",
         "ca/spouse_net_income",
@@ -1775,7 +1790,6 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/amt_foreign_and_logging_credits_total",
         "ca/amt_federal_tax_payable",
         "ca/amt_investment_tax_credit_claim",
-        "ca/amt_t2038_amount_i",
         "ca/amt_investment_tax_credit",
         "ca/amt_regular_tax_credits_total",
         "ca/amt_regular_net_federal_tax_payable",
@@ -1794,7 +1808,6 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/amt_net_minimum_tax_payable",
         "ca/amt_regular_net_tax_less_surtax",
         "ca/amt_minimum_tax_after_regular_tax",
-        "ca/amt_t2038_part_d_amount_15",
         "ca/amt_investment_tax_credit_less_part_d",
         "ca/amt_alternative_minimum_tax_payable",
         "ca/amt_part_5_line_11_is_positive",
@@ -2301,7 +2314,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1320
+        == 1332
     )
     assert (
         len(
@@ -2309,7 +2322,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1320
+        == 1332
     )
 
 
@@ -2322,7 +2335,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1320
+        == 1332
     )
     assert (
         len(
@@ -2330,7 +2343,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1320
+        == 1332
     )
 
 
