@@ -58,8 +58,8 @@ class FormComposition:
     `starting` (the starting artifacts of the computation) that the form's capabilities consume or
     export, plus the fields of `instances` if it has any, plus, always, its imports. A form that
     reads its own `<form>.<export>` gets, in each run, a record list of that export over the runs
-    before it, in run order (empty in the first). A field of
-    `instances` that is also among `starting` is an InvalidCompositionError: one kind, two values.
+    before it, in run order (empty in the first). A field of `instances` that is also among
+    `starting` is an InvalidCompositionError: one kind, two values.
     An export of a `Decimal` or `int` kind or a record-list kind is also readable by every form as
     `<form>.<export>`; one of another kind (a rate, digits) is only on the form's worksheets.
     Any breach of the rules of `Composition`, an empty `exports`, an export that is another form's,
@@ -215,9 +215,9 @@ class FormSet:
 
     Construction fails with InvalidCompositionError naming the forms for a form listed twice, an
     instances kind that is not among `inputs`, an exclusive group naming one form or two forms that
-    always have instances, an input that is
-    a form's derived `<form>.<export>` kind, an import that no form exports, a cycle of imports, or
-    an input that no form reads (an instances kind is read by its form).
+    always have instances, an input that is a form's derived `<form>.<export>` kind, an import that
+    no form exports, a cycle of imports, or an input that no form reads (an instances kind is read
+    by its form). A form's read of its own derived export is not a cycle: see `FormComposition`.
     """
 
     def __init__(
@@ -278,9 +278,7 @@ class FormSet:
             ran = tuple(self._runs(form, given, store))
             worksheets[form.name] = ran
             for derived in form.derived:
-                (export,) = derived.fields
-                listed = [{export: worksheet.get(export).value} for worksheet in ran]
-                store[derived] = Artifact(derived, RecordList(derived.fields, listed))
+                store[derived] = self._export_of(derived, ran)
         return worksheets
 
     def trace(self, worksheets: Mapping[str, Sequence[Worksheet]]) -> tuple[TraceLine, ...]:
@@ -323,10 +321,15 @@ class FormSet:
         """The form's own derived kinds it reads, over the runs before this one."""
         earlier: list[Artifact[Any]] = []
         for derived in sorted(form.earlier, key=Composition.sort_key):
-            (export,) = derived.fields
-            listed = [{export: worksheet.get(export).value} for worksheet in done]
-            earlier.append(Artifact(derived, RecordList(derived.fields, listed)))
+            earlier.append(FormSet._export_of(derived, done))
         return earlier
+
+    @staticmethod
+    def _export_of(derived: RecordListKind, ran: Sequence[Worksheet]) -> Artifact[Any]:
+        """The derived kind as a record list of its export over the worksheets `ran`, in order."""
+        (export,) = derived.fields
+        listed = [{export: worksheet.get(export).value} for worksheet in ran]
+        return Artifact(derived, RecordList(derived.fields, listed))
 
     @staticmethod
     def _run(form: FormComposition, position: int, starting: list[Artifact[Any]]) -> Worksheet:
