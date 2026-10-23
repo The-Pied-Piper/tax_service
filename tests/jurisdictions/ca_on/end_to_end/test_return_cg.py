@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.capabilities.principal_residence_line_56 import (
     PrincipalResidencePart4Line56,
@@ -330,3 +331,19 @@ def test_no_properties_sold_add_nothing_to_the_part_4_lines() -> None:
     assert worksheet.get(PRINCIPAL_RESIDENCE_LINE_56).value == D("0")
     assert worksheet.get(PRINCIPAL_RESIDENCE_LINE_57).value == D("0")
     assert worksheet.get(PRINCIPAL_RESIDENCE_GAIN).value == D("0")
+
+
+def test_return_cgs_trace_names_line_57_of_each_property_in_english() -> None:
+    rendered = EnglishTraceRenderer().render_all(return_cg().trace)
+
+    first = rendered.index(
+        "principal_residence_line_57: property 1: line 57 336216.22 = line 55 370000 less "
+        "line 56 33783.78, not below 0"
+    )
+    assert rendered[first : first + 3] == (
+        "principal_residence_line_57: property 1: line 57 336216.22 = line 55 370000 less "
+        "line 56 33783.78, not below 0",
+        "principal_residence_line_57: property 2: line 57 128000 = line 55 148000 less "
+        "line 56 20000, not below 0",
+        "principal_residence_line_57: item 1 336216.22 + item 2 128000 = 464216.22",
+    )
