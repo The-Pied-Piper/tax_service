@@ -15,8 +15,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_CREDITS,
     ONTARIO_CREDITS_SUBTOTAL,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D
-from tests.jurisdictions.ca_on.end_to_end.test_return_ak import return_ak
+from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 
 
 def return_bu(**overrides: Any) -> Worksheet:
@@ -24,7 +23,23 @@ def return_bu(**overrides: Any) -> Worksheet:
 
     The filer was not a resident of Ontario on December 31, 2025 (the count is 1, a chosen input).
     """
-    return return_ak(**{"not_resident_of_ontario_at_year_end": 1, **overrides})
+    inputs: dict[str, Any] = {
+        "dependent_children": 1,
+        "eligible_dependants": 1,
+        "cwb_eligible_dependants": 1,
+        "child_care_expenses_paid": "6000",
+        "children_seven_to_sixteen": 1,
+        "income_tax_deducted": "8000",
+        "fertility_expenses": "24000",
+        "seniors_transit_paid": "1200",
+        "flow_through_share_slips": ("6000", "4000"),
+        "coop_education_payroll": "500000",
+        "coop_education_placements": ("8000", "15000"),
+        "coop_claimed_as_partnership_member": 1,
+        "coop_partnership_business_number": "123456789",
+        "not_resident_of_ontario_at_year_end": 1,
+    }
+    return compute("60000", (), "0", "0", "10800", "0", "0", **{**inputs, **overrides})
 
 
 def test_return_bus_slips_total_10000_but_the_credit_is_not_claimable() -> None:

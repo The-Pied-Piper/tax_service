@@ -861,6 +861,12 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     flow_through_expenses = position("flow_through_share_expenses: no items = 0", "0")
+    position(
+        'flow_through_share_claimable: condition 1 "You were not a resident of Ontario on the '
+        'last day of the tax year": not_resident_of_ontario_at_year_end 0, does not apply',
+        "0",
+    )
+    position("flow_through_share_claimable: no condition applies, so 1", "1")
     flow_through = position(
         "flow_through_share_credit: 5% of flow_through_share_expenses_claimed 0 (half-up to 0.01)",
         "0",

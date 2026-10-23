@@ -1414,6 +1414,16 @@ def test_whether_the_tax_reduction_is_claimable_with_zero_on_line_72_is_a_non_ne
     assert TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE.non_negative is True
 
 
+def test_the_flow_through_share_claimable_is_a_non_negative_count() -> None:
+    assert FLOW_THROUGH_SHARE_CLAIMABLE.value_type is int
+    assert FLOW_THROUGH_SHARE_CLAIMABLE.non_negative is True
+
+
+def test_the_flow_through_share_expenses_claimed_are_non_negative_money() -> None:
+    assert FLOW_THROUGH_SHARE_EXPENSES_CLAIMED.value_type is Decimal
+    assert FLOW_THROUGH_SHARE_EXPENSES_CLAIMED.non_negative is True
+
+
 def test_the_co_operative_education_partnership_lines_are_a_yes_no_count_and_nine_digits(
     registry: ArtifactRegistry,
 ) -> None:

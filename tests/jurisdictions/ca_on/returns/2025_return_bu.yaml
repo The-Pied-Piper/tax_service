@@ -7,9 +7,11 @@
 # $12,930.00 ($13,430.00 less $500.00). The same count is also a condition of the Ontario tax
 # reduction (ON428 line 80), so that reduction is $0 and the Ontario tax after reduction rises
 # from $1,186.52 to $1,431.26 (every line from it on follows). Every other figure is Return AK's.
-# The text below is Return AK's, in which the filer is an Ontario resident for all of 2025.
+# The filer's residence is a chosen input here: the Ontario return is computed in full for it. The
+# text below is Return AK's, in which the filer was a resident of Ontario on December 31, 2025;
+# where it differs for BU the passage says so.
 # Return AK (Return R's filer and figures, claiming the co-operative education credit as a
-# member of a partnership): a single parent, a 2025 Ontario resident, with one dependent child
+# member of a partnership): a single parent, with one dependent child
 # and employment income below the EI maximum insurable earnings ($65,700) and the CPP first
 # earnings ceiling ($71,300), so the CPP contributions and EI premiums are the rates'
 # arithmetic and there is no second additional CPP contribution. The child is an eligible
@@ -124,7 +126,7 @@ tax_year: 2025
 description: >-
   Return AK's filer, not a resident of Ontario on the last day of 2025, so the focused
   flow-through share credit (T1221, ON479 line 17) is $0 although the slips total $10,000; a
-  single parent, a resident of Ontario for part of 2025, with no spouse or common-law partner
+  single parent, with no spouse or common-law partner
   at any time in 2025, and one dependent child, born in 2015, who lived with the parent all
   year, has no impairment and had no net income; with 2025 employment income (T1 line 10100)
   of $60,000 and no other income: no capital gain, so taxable capital gains (line 12700) of
@@ -177,19 +179,21 @@ description: >-
   tax reduction amounts (line 77) are the basic reduction of $294.00 (line 74) plus $544 for
   the child (line 75), $838.00; twice them, $1,676.00 (line 78), less the Ontario tax after
   the dividend credit (line 79, from line 73, which is line 71 as line 72 is not triggered)
-  is $244.74, the Ontario tax reduction (line 80), so the Ontario tax after the reduction
-  (line 81) is $1,431.26 - $244.74 = $1,186.52. The LIFT credit (ON428 line 85, Schedule
+  is $244.74 before the conditions on line 80; the filer was not a resident of Ontario on
+  December 31, 2025, one of the conditions on which line 80 is "0", so the Ontario tax
+  reduction (line 80) is $0 and the Ontario tax after the reduction (line 81) is $1,431.26 -
+  $0 = $1,431.26. The LIFT credit (ON428 line 85, Schedule
   ON428-A) is 5.05% of employment income, $3,030, at most $875, less 5% of net income over
   $32,500, $1,096.75; the reduction is more than the $875, so the credit is $0, and the
-  Ontario tax after it (ON428 line 86) is that same $1,186.52. With chosen qualifying
+  Ontario tax after it (ON428 line 86) is that same $1,431.26. With chosen qualifying
   donations of $0, the community food program donation tax credit for farmers (ON428 line
-  87) is 25% x $0 = $0 and the Ontario tax after it (line 88) is that same $1,186.52. The
+  87) is 25% x $0 = $0 and the Ontario tax after it (line 88) is that same $1,431.26. The
   Ontario health premium (ON428 line 89) is read from its chart on taxable income:
   $54,435.00 is more than $48,600 but not more than $72,000, so the premium is $600, and the
   Ontario tax (ON428 line 90) is the Ontario tax after the food credit plus the premium,
-  $1,786.52. On the T1, the net federal tax (line 42000) is the federal tax after credits,
+  $2,031.26. On the T1, the net federal tax (line 42000) is the federal tax after credits,
   $2,454.17, and the total payable (line 43500) is it plus the Ontario tax (line 42800),
-  $4,240.69. The Canada workers benefit (line 45300, Schedule 6) is $0: with an eligible
+  $4,485.43. The Canada workers benefit (line 45300, Schedule 6) is $0: with an eligible
   dependant, 27% of the working income over $3,000, $15,390, at most $2,813, less 15% of the
   adjusted family net income, the net income, over $30,639, $3,569.40. With no eligible
   spouse or dependant, at most $1,633 less 15% over $26,855, $4,137.00, the benefit would be
@@ -202,8 +206,10 @@ description: >-
   14), at most $3,000: $1,200, multiplied by 15%: $180.00. Two lines of Form T1221 list the
   qualifying expenses of two corporations, $6,000 and $4,000 (chosen figures, from the boxes
   of their T101 slips), so T1221 line 4 is $6,000 + $4,000 = $10,000, entered on ON479 line
-  17 and line 63220 (the focused flow-through share tax credit) and multiplied by 5%:
-  $500.00. Line 2 is the Ontario childcare access and relief from expenses (CARE) tax
+  17 and line 63220 (the focused flow-through share tax credit) only by a filer who was a
+  resident of Ontario on the last day of the tax year; for this filer, who was not (the chosen
+  count of "not a resident of Ontario on December 31, 2025" is 1), nothing is entered, so
+  line 17 is $0 x 5% = $0.00 (in Return AK it is $10,000 x 5% = $500.00). Line 2 is the Ontario childcare access and relief from expenses (CARE) tax
   credit (Schedule ON479-A, Form ON479 line 2 and line 63050): the net income before
   adjustments of $54,435.00 (line 1; line 23500 is 0, the chart not applying, so line 23600 equals line 23400) plus the child care
   expenses deduction of $5,000 (line 2; line 3, the social benefits repayment from line 23500, is 0) is $59,435.00, the adjusted
@@ -212,7 +218,7 @@ description: >-
   $55,000 but not more than $60,000: 51%", so the rate (line 7) is 51%, and line 8 is the
   child care expenses deduction (line 6) of $5,000 multiplied by 51%: $2,550.00. Line 13
   is not triggered and line 16 is $0, so line 18 (lines 1, 2, 14, 16 and 17) is $5,000.00
-  + $2,550.00 + $180.00 + $0 + $500.00 = $8,230.00 and line 19 carries it. The taxpayer's business
+  + $2,550.00 + $180.00 + $0 + $0.00 = $7,730.00 and line 19 carries it. The taxpayer's business
   or partnership claims two eligible work placements under the Ontario co-operative
   education tax credit (line 63260: 2), with eligible expenditures of $8,000 and $15,000
   (chosen figures, already net of government assistance) and total salaries and wages paid
@@ -225,17 +231,17 @@ description: >-
   $750.00, line 12 is $375.00 and line 13 is $4,125.00, capped at the maximum of $3,000 per
   student. Line 20 (and line 63300), the total amount claimed for all qualifying work
   placements, is $2,200.00 + $3,000.00 = $5,200.00, and line 21, the Ontario credits, is
-  line 19 plus line 20, $8,230.00 + $5,200.00 = $13,430.00, entered on T1 line 47900 (line
+  line 19 plus line 20, $7,730.00 + $5,200.00 = $12,930.00, entered on T1 line 47900 (line
   165), the provincial credits. The credit is claimed as a member of a partnership (line
   63265: 1, yes, a chosen count) and the nine-digit business number (line 63270) is
   123456789, a chosen figure; the form computes nothing from either, so each is carried onto
-  the return as entered. The taxpayer is an Ontario resident on the last day of 2025; the
+  the return as entered. The taxpayer was not a resident of Ontario on the last day of 2025; the
   taxpayer's eligibility for these credits, and that the taxpayer holds the credit
   certification documents from the corporations, are to be confirmed. The income tax deducted (line 43700) is
   a chosen $8,000, so the total credits (line 48200) are it plus the benefit plus the
-  provincial credits, $8,000 + $0 + $13,430.00 = $21,430.00, and the refund or balance owing
-  (line 167) is the total payable less the total credits, $4,240.69 - $21,430.00 =
-  -$17,189.31: negative, so a refund (line 48400). Every amount computed from a rate,
+  provincial credits, $8,000 + $0 + $12,930.00 = $20,930.00, and the refund or balance owing
+  (line 167) is the total payable less the total credits, $4,485.43 - $20,930.00 =
+  -$16,444.57: negative, so a refund (line 48400). Every amount computed from a rate,
   fraction, amount or chart on the forms is rounded half-up to the cent, each line being a
   dollars-and-cents box; here that changes the federal tax on taxable income, the Ontario
   tax on taxable income and both forms' non-refundable tax credits, and the lines that
@@ -647,16 +653,16 @@ sources:
     child (line 75, the children "born in 2007 or later"), and has no impairment, so is not
     a dependant (line 76, the dependants "with a mental or physical impairment"): line 75 is
     1 x 544 = 544 and line 76 is 0 x 544 = 0, so line 77 is 294.00 + 544 + 0 = 838.00; line
-    78 is 838.00 x 2 = 1,676.00; line 79 is 1,431.26; line 80 is 1,676.00 - 1,431.26 =
-    244.74, the Ontario tax reduction; lines 74 to 76 and 80 are rounded half-up to the
-    cent, which changes none of them, and line 81 is 1,431.26 - 244.74 = 1,186.52; lines 77,
-    79 and 81 take amounts already in cents. Not modelled: "Enter "0" on line 80 if any of
-    the following applies to you: You were not a resident of Canada at the beginning of the
-    year; You were not a resident of Ontario on December 31, 2025; There is an amount on
-    line 72; You were bankrupt at any time in 2025; Your return is filed for you by a
-    trustee in bankruptcy; You are choosing not to claim an Ontario tax reduction", none of
-    which applies to this taxpayer, a resident of Ontario for all of 2025, on the facts
-    given (the bankruptcy and trustee conditions to be confirmed); and "If you had a spouse
+    78 is 838.00 x 2 = 1,676.00; line 79 is 1,431.26; line 80 would be 1,676.00 - 1,431.26 =
+    244.74, the Ontario tax reduction, but "Enter "0" on line 80 if any of the following
+    applies to you: You were not a resident of Canada at the beginning of the year; You were
+    not a resident of Ontario on December 31, 2025; There is an amount on line 72; You were
+    bankrupt at any time in 2025; Your return is filed for you by a trustee in bankruptcy;
+    You are choosing not to claim an Ontario tax reduction" applies to this taxpayer on the
+    second condition (the chosen count is 1), so line 80 is 0 and line 81 is 1,431.26 - 0 =
+    1,431.26; lines 74 to 76 are rounded half-up to the cent, which changes none of them, and
+    lines 77, 79 and 81 take amounts already in cents (the bankruptcy and trustee conditions
+    are taken as not applying, to be confirmed). Not modelled: "If you had a spouse
     or common-law partner on December 31, 2025, only the individual with the higher net
     income can claim the amounts on lines 75 and 76.", which does not apply, as the taxpayer
     has no spouse or common-law partner.
@@ -695,11 +701,11 @@ sources:
     tax after the reduction, unchanged, and line 84 is "Amount from line 83 of the previous
     page"; line 85 (line 62140) "Low-income individuals and families tax (LIFT) credit
     (complete Schedule ON428-A)", here 0 (Schedule ON428-A line 20); line 86 "Line 84 minus
-    line 85 (if negative, enter "0")", 1,186.52 - 0 = 1,186.52; line 87 and line 62150
+    line 85 (if negative, enter "0")", 1,431.26 - 0 = 1,431.26; line 87 and line 62150
     "Enter the amount of qualifying donations that have also been claimed as a charitable
     donation." "multiplied by 25%", under "Community food program donation tax credit for
     farmers:", is 25% of the qualifying donations, a chosen 0 (to be confirmed), so 0; line
-    88 "Line 86 minus line 87 (if negative, enter "0")", 1,186.52 - 0 = 1,186.52; line 89
+    88 "Line 86 minus line 87 (if negative, enter "0")", 1,431.26 - 0 = 1,431.26; line 89
     "Ontario health premium (complete the chart below)"; line 90 "Line 88 plus line 89 Enter
     this amount on line 42800 of your return. Ontario tax". The chart's line 1 is "Enter
     your taxable income from line 26000 of your return", here 54,435.00, which is "more than
@@ -710,7 +716,7 @@ sources:
     1,106.10, more than 150, so 150; (54,435.00 - 48,000) x 25% = 6,435.00 x 25% = 1,608.75,
     more than 150, so 150; 54,435.00 - 72,000 is negative, so 0; 54,435.00 - 200,000 is
     negative, so 0; each tier is rounded half-up to the cent, which changes none of them, so
-    line 89 is 300 + 150 + 150 + 0 + 0 = 600, and line 90 is 1,186.52 + 600 = 1,786.52;
+    line 89 is 300 + 150 + 150 + 0 + 0 = 600, and line 90 is 1,431.26 + 600 = 2,031.26;
     lines 86 and 90 take amounts already in cents.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
@@ -775,8 +781,7 @@ sources:
     member who resided with such a person or an employee of such a person, at any time in
     the year"; and under line 6: "You can claim the basic CWB in Step 2 if the family
     working income on line 6 is more than $3,000." The family working income of 60,000 is
-    more than $3,000. The taxpayer meets the three conditions: a resident of Ontario, so of
-    Canada, throughout 2025, with working income of 60,000, and residing with their child at
+    more than $3,000. The taxpayer meets the three conditions: a resident of Canada throughout 2025 (a chosen input), with working income of 60,000, and residing with their child at
     the end of the year; the three exclusions are taken as not applying (to be confirmed).
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s6/5000-s6-25e.txt
   - >-
@@ -800,20 +805,20 @@ sources:
     42000"; lines 144 (line 42100), 145 (line 42120) and 146 (line 42200) are not triggered
     by this return; line 147 (line 42800) "Provincial or territorial tax (complete and
     attach your provincial or territorial Form 428, even if the result is "0")" is the
-    Ontario tax of ON428 line 90, 1,786.52; line 148 (line 43500) "Add lines 143 to 147.
-    Total payable": 2,454.17 + 1,786.52 = 4,240.69. Line 149 "Enter the amount from line 148
+    Ontario tax of ON428 line 90, 2,031.26; line 148 (line 43500) "Add lines 143 to 147.
+    Total payable": 2,454.17 + 2,031.26 = 4,485.43. Line 149 "Enter the amount from line 148
     of the previous page."; line 150 (line 43700) "Total income tax deducted (amounts from
     all Canadian slips)": 8,000, a chosen figure: it is the tax withheld on the taxpayer's
     slips, which nothing on this return determines. Line 155 (line 45300) "Canada workers
     benefit (CWB) (complete Schedule 6)" is the benefit of Schedule 6 line 28, 0; the other
     lines 151 to 164 (lines 44000 to 47600) are not triggered by this return or not yet
     computed; line 165 (line 47900) "Provincial or territorial credits (complete Form 479,
-    if it applies)" is the Ontario credits of ON479 line 21, 13,430.00 (see the ON479 source
+    if it applies)" is the Ontario credits of ON479 line 21, 12,930.00 (see the ON479 source
     below), so line 166 (line 48200) "Add lines 150 to 165. Total credits" is 8,000 + 0 +
-    13,430.00 = 21,430.00.
+    12,930.00 = 20,930.00.
     Line 167 "Line 149 minus line 166 If the amount is negative, enter it on line 48400
     below. If the amount is positive, enter it on line 48500 below. Refund or balance
-    owing": 4,240.69 - 21,430.00 = -17,189.31, negative, so line 48400 "Refund", not line 48500
+    owing": 4,485.43 - 20,930.00 = -16,444.57, negative, so line 48400 "Refund", not line 48500
     "Balance owing". These lines add and subtract amounts already in cents, so each is in
     cents too.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
@@ -836,12 +841,13 @@ sources:
     $3,000 is printed before the percentage, so it caps the amount paid: the lesser of 1,200
     and 3,000 is 1,200, x 15% = 180.00 (an amount paid of 3,500 would be capped at 3,000 and
     give 450.00). Line 17: the total expenses of Form T1221 line 4, 10,000 (see the T1221
-    source below), x 5% = 500.00. Line 2 is the CARE credit of Schedule ON479-A line 8,
+    source below), x 5% = 500.00 for a resident of Ontario on the last day of the tax year, but this
+    filer was not, so line 17 is 0.00. Line 2 is the CARE credit of Schedule ON479-A line 8,
     2,550.00 (see the ON479-A source below); lines 13 and 16 are not triggered, so line 18
-    is 5,000.00 + 2,550.00 + 180.00 + 0 + 500.00 = 8,230.00; line 19 carries it; line 20
-    is 5,200.00 (see the co-operative education source below); line 21 is 8,230.00 +
-    5,200.00 = 13,430.00. The T1 (form 5000-R) line 165 and line 47900: "Provincial or
-    territorial credits (complete Form 479, if it applies)" is that 13,430.00. Lines 1, 14 and 17 are dollars-and-cents
+    is 5,000.00 + 2,550.00 + 180.00 + 0 + 0.00 = 7,730.00; line 19 carries it; line 20
+    is 5,200.00 (see the co-operative education source below); line 21 is 7,730.00 +
+    5,200.00 = 12,930.00. The T1 (form 5000-R) line 165 and line 47900: "Provincial or
+    territorial credits (complete Form 479, if it applies)" is that 12,930.00. Lines 1, 14 and 17 are dollars-and-cents
     boxes, rounded half-up to the cent, which changes nothing here; lines 18 and 21 add
     amounts already in cents.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-tc/5006-tc-25e.txt
@@ -882,15 +888,16 @@ sources:
     attach a separate list and enter only your total on line 4."; lines 1 to 3, each
     "Identification number Enter the amount of qualifying expenses."; line 4 "Add lines 1 to
     3. Enter this amount on line 63220 of your Form ON479." under "Ontario focused
-    flow-through share tax credit". The taxpayer was a resident of Ontario on December 31,
-    2025. Line 1 is 6,000 and line 2 is 4,000, chosen figures: they are the qualifying
+    flow-through share tax credit". The taxpayer was not a resident of Ontario on December 31,
+    2025 (a chosen input), so the credit cannot be claimed and nothing is entered on ON479
+    line 63220. Line 1 is 6,000 and line 2 is 4,000, chosen figures: they are the qualifying
     expenses of two corporations, from the boxes of their T101 slips (or T5013 slips), which
     nothing on this return determines; the identification numbers feed no calculation and
-    are not entered. Line 3 is blank, so line 4 is 6,000 + 4,000 + 0 = 10,000, entered on
-    ON479 line 63220. The form's text that any credit claimed reduces the balance of the
+    are not entered. Line 3 is blank, so line 4 is 6,000 + 4,000 + 0 = 10,000, which is not
+    entered on ON479 line 63220. The form's text that any credit claimed reduces the balance of the
     Cumulative Canadian Exploration Expense (CCEE) pool in the following year, and that a
-    negative balance is reported as income on line 13000, is to be confirmed as to its
-    effect on this return; the credit certification documents (Form T101 or T5013) are taken
+    negative balance is reported as income on line 13000, is the
+    following year's matter and the pool is not modelled here; the credit certification documents (Form T101 or T5013) are taken
     as received.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t1221/t1221-25e.pdf
   - >-
@@ -908,8 +915,8 @@ sources:
     2024 taxation year of 500,000, are chosen figures, which nothing on this return
     determines. 500,000 is more than 400,000 but less than 600,000, so the Worksheet is used,
     and line 20 is the total of its line 13 for the two placements, 2,200.00 + 3,000.00 =
-    5,200.00 (see the Worksheet source below); line 63260 is 2; line 21 is 8,230.00 +
-    5,200.00 = 13,430.00. Form ON479 "Line 63265: Are you claiming this credit as a member of a
+    5,200.00 (see the Worksheet source below); line 63260 is 2; line 21 is 7,730.00 +
+    5,200.00 = 12,930.00. Form ON479 "Line 63265: Are you claiming this credit as a member of a
     partnership? 1 Yes or 2 No" and "Line 63270: If yes, enter your nine-digit business
     number. (enter 9 digits)" (confirmed 2026-10-19): yes is taken as the count 1 and no as 0,
     so line 63265 is 1 and line 63270 is 123456789, both chosen figures, carried onto the

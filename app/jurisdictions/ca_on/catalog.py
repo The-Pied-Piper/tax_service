@@ -674,7 +674,8 @@ NOT_RESIDENT_OF_ONTARIO_AT_YEAR_END = CATALOG.declare(
 )
 """Not a resident of Ontario on December 31, 2025, ON428 "Enter "0" on line 80 if any of the
 following applies to you" "You were not a resident of Ontario on December 31, 2025": the caller's
-count, 1 when it applies and 0 when it does not."""
+count, 1 when it applies and 0 when it does not. Form T1221 "You must be a resident of Ontario on
+the last day of the tax year to claim this credit." reads the same count."""
 
 BANKRUPT_IN_YEAR = CATALOG.declare("bankrupt_in_year", int, non_negative=True)
 """Bankrupt at any time in 2025, ON428 "Enter "0" on line 80 if any of the following applies to

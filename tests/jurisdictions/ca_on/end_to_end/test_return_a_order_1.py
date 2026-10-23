@@ -1384,6 +1384,11 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < (position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION])
     )
     assert (
+        position[ontario.FLOW_THROUGH_SHARE_CLAIMABLE]
+        < position[ontario.FLOW_THROUGH_SHARE_EXPENSES_CLAIMED]
+        < position[ontario.FLOW_THROUGH_SHARE_CREDIT]
+    )
+    assert (
         position[FOREIGN_TAX_CREDIT_SHEETS]
         < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT]
     )
