@@ -7,7 +7,10 @@ column 1 the class number, column 2 the UCC at the start, column 3 the additions
 proceeds, column 11 the AIIP additions, column 12 the RIIP additions, the CCA claimed and whether
 no property is left in the class (Note 3). When the consumed list kind lists them, a row also holds
 column 4 the cost of additions that are DIEPs, column 6 the proceeds of dispositions of DIEP and
-column 9 the immediate expensing amount; a kind that does not list them leaves them as 0. Column 8
+column 9 the immediate expensing amount; a kind that does not list them leaves them as 0. T776
+Area A Note 9: "you must subtract any remaining personal part of this property's cost from the UCC
+at the end of the year"; a row also holds that part when the kind lists it, else 0, for the closing
+UCC alone. Column 8
 is column 4 minus column 6, at most column 7 and at least 0 (Note 4); column 10 is column 3 minus
 column 9 and column 13 is column 7 minus column 9. A row whose column 4 is above its column 3,
 whose column 6 is above its column 5 or whose column 9 is above its column 8 is refused. Columns 11
@@ -102,6 +105,7 @@ from app.jurisdictions.ca.catalog import (
     CCA_DIEP_PROCEEDS,
     CCA_IMMEDIATE_EXPENSING,
     CCA_NO_PROPERTY_LEFT,
+    CCA_PERSONAL_PART_REMAINING,
     CCA_PROCEEDS,
     CCA_RIIP_ADDITIONS,
     CCA_UCC_AT_START,
@@ -120,8 +124,8 @@ class CcaRow:
     `diep_proceeds` (column 6) and `immediate_expensing` (column 9), each 0 unless the list lists
     it; `column_22` (0 unless the table consumes it); `fiscal_period_days` (the days of the fiscal
     period, the dataset's full year unless the table consumes it) and whether the row is
-    `prorated` (the table consumes it); and `column_7`, `column_8`, `column_10` and
-    `column_13`."""
+    `prorated` (the table consumes it); `personal_part_remaining` (Note 9, 0 unless the list lists
+    it); and `column_7`, `column_8`, `column_10` and `column_13`."""
 
     position: int
     class_number: Decimal
@@ -139,6 +143,7 @@ class CcaRow:
     immediate_expensing: Decimal = _ZERO
     fiscal_period_days: int = 365
     prorated: bool = False
+    personal_part_remaining: Decimal = _ZERO
 
     @property
     def column_7(self) -> Decimal:
@@ -293,6 +298,7 @@ class CcaTable(Capability):
             raise InvalidRecordError(
                 f"{item}: column 6 ({diep_proceeds}) is above column 5 ({proceeds})"
             )
+        personal_part_remaining = self._optional(record, CCA_PERSONAL_PART_REMAINING)
         ucc_at_start = Decimal(record[CCA_UCC_AT_START])
         column_8 = max(
             _ZERO, min(diep_additions - diep_proceeds, ucc_at_start + additions - proceeds)
@@ -325,6 +331,7 @@ class CcaTable(Capability):
             immediate_expensing=immediate_expensing,
             fiscal_period_days=self._class_rates.values.full_year_days if days is None else days,
             prorated=days is not None,
+            personal_part_remaining=personal_part_remaining,
         )
 
     @staticmethod

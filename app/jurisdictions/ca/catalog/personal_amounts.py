@@ -807,6 +807,16 @@ positive amount in this column, deduct the amount from your income as a terminal
 property is left in the class at the end of the year, else 0, taken as a count like the forms'
 other yes or no questions; a field of each record of a list of capital cost allowance classes."""
 
+CCA_PERSONAL_PART_REMAINING = CATALOG.declare(
+    "cca_personal_part_remaining", Decimal, non_negative=True
+)
+"""Remaining personal part, T776 Area A Note 9 (Column 24): "If, in the year, you disposed of a
+property that you used for both personal and rental use, and your rental use of that property
+changed from year to year, you must subtract any remaining personal part of this property's cost
+from the UCC at the end of the year": the caller's amount for the class, a field of each record of
+the rental list of capital cost allowance classes. Not the personal part of line 9936, which is
+`rental_cca_personal_part`."""
+
 CCA_UCC_AT_END = CATALOG.declare("cca_ucc_at_end", Decimal, non_negative=True)
 """UCC at the end of the year, T776 Area A "Column 24: UCC at the end of the year (column 7 minus
 column 23)" (T2125 column 22): a field of each record of the closing list of capital cost

@@ -193,9 +193,14 @@ class ClosingUccRenderer:
                 if line.fiscal_period_days != line.full_year_days
                 else ""
             )
+            part = (
+                f" less personal part {EnglishFigures.money(line.personal_part_remaining)}"
+                if line.personal_part_remaining > 0
+                else ""
+            )
             found = (
                 f"column 7 {EnglishFigures.money(column_7)} less claim "
-                f"{EnglishFigures.money(claim)}{on_sale}{prorated}{including} ="
+                f"{EnglishFigures.money(claim)}{on_sale}{prorated}{including}{part} ="
             )
         return (
             f"{EnglishFigures.cca_class(output.label, position, class_rate)}: {found} "

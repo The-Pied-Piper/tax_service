@@ -7,8 +7,17 @@ either case, enter "0" in column 24". Each class of the consumed record list is 
 table, worked on its own as `CcaTable` works it, its claim refused above its maximum as
 `ca/cca_claim` refuses it. The output is a record list of the class number and the UCC at the end
 of the year, one record per class in the caller's order: column 7 less the claim, or 0 when column
-7 is negative or is positive with no property left. It records one `ClosingUccLine` for each
-class, by position from 1, which names why column 24 is 0 when it is, and no total.
+7 is negative or is positive with no property left.
+
+T776 Area A Note 9: "If, in the year, you disposed of a property that you used for both personal
+and rental use, and your rental use of that property changed from year to year, you must subtract
+any remaining personal part of this property's cost from the UCC at the end of the year." When the
+consumed list lists the remaining personal part, column 24 of a row that does not close at 0 is
+column 7 less the claim less that part; a part above column 7 less the claim is refused
+(`InvalidRecordError`, naming the item and both figures), after the claim's own bound. A row that
+closes at 0 is unaffected; a list that does not list the part leaves column 24 as before. It
+records one `ClosingUccLine` for each class, by position from 1, which names why column 24 is 0
+when it is, and no total.
 """
 
 from __future__ import annotations
@@ -19,6 +28,7 @@ from typing import Any, ClassVar
 
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capability import CapabilityResult, capability
+from app.domain.errors import InvalidRecordError
 from app.domain.parameters.class_rates import ClassRates
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.record_list import RecordList
@@ -53,7 +63,13 @@ class ClosingUcc(CcaTable):
         for row in self._rows(inputs):
             self._columns(row)
             closes_at_zero = row.zero_reason is not CcaZeroReason.NONE
-            result = Decimal(0) if closes_at_zero else row.column_7 - row.claimed
+            part = row.personal_part_remaining
+            if not closes_at_zero and part > row.column_7 - row.claimed:
+                raise InvalidRecordError(
+                    f"item {row.position}: personal part ({part}) is above column 7 less the "
+                    f"claim ({row.column_7 - row.claimed})"
+                )
+            result = Decimal(0) if closes_at_zero else row.column_7 - row.claimed - part
             lines.append(
                 ClosingUccLine(
                     self._output,
@@ -68,6 +84,7 @@ class ClosingUcc(CcaTable):
                     row.half_year_rule_on_sale,
                     row.fiscal_period_days,
                     self._class_rates.values.full_year_days,
+                    part,
                 )
             )
             records.append({CCA_CLASS_NUMBER: row.class_number, CCA_UCC_AT_END: result})
