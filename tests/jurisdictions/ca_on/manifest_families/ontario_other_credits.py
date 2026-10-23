@@ -14,6 +14,7 @@ from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
+from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.catalog import (
     CHILD_CARE_EXPENSES,
     REFUND,
@@ -55,8 +56,10 @@ from app.jurisdictions.ca_on.catalog import (
     FERTILITY_CREDIT,
     FERTILITY_CREDIT_BEFORE_MAXIMUM,
     FERTILITY_EXPENSES,
+    FLOW_THROUGH_SHARE_CLAIMABLE,
     FLOW_THROUGH_SHARE_CREDIT,
     FLOW_THROUGH_SHARE_EXPENSES,
+    FLOW_THROUGH_SHARE_EXPENSES_CLAIMED,
     FLOW_THROUGH_SHARE_SLIPS,
     ONTARIO_CREDITS,
     ONTARIO_CREDITS_SUBTOTAL,
@@ -506,12 +509,36 @@ STEPS = {
         consumes={"slips": "ca-on/flow_through_share_slips"},
         produces={"output": "ca-on/flow_through_share_expenses"},
     ),
+    # Form T1221 "You must be a resident of Ontario on the last day of the tax year to claim this
+    # credit.": 0 when the filer was not a resident of Ontario on the last day of the tax year
+    # (the count ON428 reads for "You were not a resident of Ontario on December 31, 2025"), else
+    # 1.
+    CapabilitySelection(
+        name="ca/count_by_conditions",
+        params={"conditions": "ca-on/flow_through_share_conditions"},
+        consumes={
+            "counts": ("ca-on/not_resident_of_ontario_at_year_end",),
+            "amounts": (),
+        },
+        produces={"output": "ca-on/flow_through_share_claimable"},
+    ),
+    # Form T1221 line 4, entered on ON479 line 17 and line 63220 only by a filer who may claim the
+    # credit, so line 4 once, else "0".
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca-on/flow_through_share_expenses",
+            "count": "ca-on/flow_through_share_claimable",
+        },
+        produces={"output": "ca-on/flow_through_share_expenses_claimed"},
+    ),
     # Form ON479 line 17 and line 63220 "Enter your total expenses from your Form T1221.
     # multiplied by 5% =": the 5% on T1221 line 4.
     CapabilitySelection(
         name="core/apply_rate",
         params={"rate": "ca-on/flow_through_share_rate"},
-        consumes={"base": "ca-on/flow_through_share_expenses"},
+        consumes={"base": "ca-on/flow_through_share_expenses_claimed"},
         produces={"output": "ca-on/flow_through_share_credit"},
     ),
     # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 2 (line 63050, Schedule
@@ -749,8 +776,18 @@ WIRING = {
         frozenset({FLOW_THROUGH_SHARE_EXPENSES}),
     ),
     (
+        CountByConditions,
+        frozenset({ontario.NOT_RESIDENT_OF_ONTARIO_AT_YEAR_END}),
+        frozenset({FLOW_THROUGH_SHARE_CLAIMABLE}),
+    ),
+    (
+        TimesCount,
+        frozenset({FLOW_THROUGH_SHARE_EXPENSES, FLOW_THROUGH_SHARE_CLAIMABLE}),
+        frozenset({FLOW_THROUGH_SHARE_EXPENSES_CLAIMED}),
+    ),
+    (
         ApplyRate,
-        frozenset({FLOW_THROUGH_SHARE_EXPENSES}),
+        frozenset({FLOW_THROUGH_SHARE_EXPENSES_CLAIMED}),
         frozenset({FLOW_THROUGH_SHARE_CREDIT}),
     ),
     (

@@ -626,8 +626,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1004
-    assert len(order) == 1004
+    assert len(order) == 1006
+    assert len(order) == 1006
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     # Part 8 line 12: the check is ordered after the cap it is made against. The claim is an input,
@@ -1382,6 +1382,11 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert (
         position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE]
         < (position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION])
+    )
+    assert (
+        position[ontario.FLOW_THROUGH_SHARE_CLAIMABLE]
+        < position[ontario.FLOW_THROUGH_SHARE_EXPENSES_CLAIMED]
+        < position[ontario.FLOW_THROUGH_SHARE_CREDIT]
     )
     assert (
         position[FOREIGN_TAX_CREDIT_SHEETS]
