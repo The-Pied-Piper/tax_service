@@ -106,11 +106,11 @@ def run_bb(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
     9368), so line 9369 is 32000; business-use-of-home
     expenses of 2000, so line 9945 is 2000 and line 9946 and T1 line 13500 are 30000.
     """
-    inputs: dict[str, Any] = {
+    statement: dict[str, Any] = {
         "business": BUSINESS,
         "business_cca_classes_rows": (FURNITURE,),
     }
-    return run("0", (), "0", "0", "0", "0", "0", **{**inputs, **overrides})
+    return run("0", (), "0", "0", "0", "0", "0", business_statements=(statement,), **overrides)
 
 
 def return_bb(**overrides: Any) -> Worksheet:

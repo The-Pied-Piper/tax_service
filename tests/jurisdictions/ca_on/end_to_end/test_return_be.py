@@ -206,8 +206,12 @@ def test_a_net_rental_loss_is_chart_a_line_2_and_not_line_12() -> None:
     # line 19 is still 25500.00, so line 20 is 8000.00. Line 25 is 10000.00 + 4000.00 + 8000.00 =
     # 22000.00 and line 26 is 80000.00 - 22000.00 = 58000.00; the filer claims 58000.
     worksheet = return_be(
-        rental_properties=((1, "0", "1000"),),
-        rental_expenses={"insurance": ("3500", "0", "0")},
+        rental_statements=(
+            {
+                "rental_properties": ((1, "0", "1000"),),
+                "rental_expenses": {"insurance": ("3500", "0", "0")},
+            },
+        ),
         qbt_deduction_claimed="58000",
     )
 
@@ -227,7 +231,7 @@ def test_net_rental_income_is_chart_a_line_12_and_not_line_2() -> None:
     # 28500.00 = 2500.00. Line 25 is 10000.00 + 4000.00 + 2500.00 = 16500.00 and line 26 is
     # 80000.00 - 16500.00 = 63500.00; the filer claims 63500.
     worksheet = return_be(
-        rental_properties=((1, "0", "3000"),),
+        rental_statements=({"rental_properties": ((1, "0", "3000"),)},),
         qbt_deduction_claimed="63500",
     )
 

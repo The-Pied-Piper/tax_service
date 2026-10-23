@@ -55,7 +55,9 @@ def return_ax(**changes: Any) -> Worksheet:
     `business_income` is the net business income the T2125 is entered to give."""
     inputs = {**RETURN_AX, **changes}
     business = business_statement(inputs.pop("business_income"))
-    return compute("0", (), "0", "0", "0", "0", "0", business=business, **inputs)
+    return compute(
+        "0", (), "0", "0", "0", "0", "0", business_statements=({"business": business},), **inputs
+    )
 
 
 def test_return_axs_schedule_13_line_1_leaves_out_the_slips_net_income() -> None:

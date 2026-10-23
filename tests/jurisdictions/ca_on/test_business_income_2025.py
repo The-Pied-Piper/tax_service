@@ -110,7 +110,22 @@ def statement(business: dict[str, str] | None = None, **overrides: Any) -> Works
     """A T2125 of gross sales of 50000 and office expenses of 20000, so line 9369 is 30000,
     with `business` changing or adding its amounts and `overrides` the other inputs."""
     amounts = {"gross_sales": "50000", "office_expenses": "20000", **(business or {})}
-    result = run("0", (), "0", "0", "0", "0", "0", business=amounts, **overrides)
+    parts: dict[str, Any] = {
+        k: overrides.pop(k)
+        for k in ("business_partner", "business_cca_classes_rows")
+        if k in overrides
+    }
+    result = run(
+        "0",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        business_statements=({"business": amounts, **parts},),
+        **overrides,
+    )
     return result["ca/t2125"][0]
 
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
@@ -38,7 +39,9 @@ BUILDING = ("1", "200000", "0", "0", "0", "0", "8000", 0)
 FURNITURE = ("8", "5000", "2000", "0", "0", "0", "1200", 0)
 
 
-def return_ap(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
+def return_ap(
+    changes: Mapping[str, Any] | None = None, **overrides: Any
+) -> dict[str, tuple[Worksheet, ...]]:
     """Return AP's inputs, as in `returns/2025_return_ap.yaml`: Return AD's landlord with two
     capital cost allowance classes.
 
@@ -56,6 +59,8 @@ def return_ap(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
         "rrsp_deduction_limit": "0",
         "rrsp_amount_deducted": "0",
         "union_dues": "0",
+    }
+    statement: dict[str, Any] = {
         "rental_properties": ((2, "0", "24000"),),
         "rental_expenses": {
             "insurance": ("1200", "0", "0"),
@@ -65,7 +70,7 @@ def return_ap(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
         },
         "rental_cca_classes_rows": (BUILDING, FURNITURE),
     }
-    return run(**{**inputs, **overrides})
+    return run(**{**inputs, "rental_statements": ({**statement, **(changes or {})},), **overrides})
 
 
 def test_return_aps_area_a_claims_9200_on_line_9936() -> None:
@@ -185,7 +190,7 @@ def test_a_co_owners_share_of_amount_ii_replaces_the_table_total_on_line_9936() 
     # the 9200, and their share of line 2 is 6000 (amount 2, so amount 5, 6000). Line 9936 is
     # 3000, within the 6000 of amount 5, so amount 6 is 6000 - 3000 = 3000.
     result = return_ap(
-        rental_coowner=1, rental_coowner_share="6000", rental_coowner_cca_claim="3000"
+        {"rental_coowner": 1, "rental_coowner_share": "6000", "rental_coowner_cca_claim": "3000"}
     )
     worksheet = result["ca-on/return"][0]
     statement = result["ca/t776"][0]
@@ -208,11 +213,13 @@ def test_a_co_owners_shares_of_lines_9947_and_9948_replace_the_tables() -> None:
     # the table gives 0 for each: amount 3 is 6000 - 0 = 6000, amount 4 is 6200 and amount 5 is
     # 6100; the claim of 3000 is within it, so amount 6 is 3100.
     result = return_ap(
-        rental_coowner=1,
-        rental_coowner_share="6000",
-        rental_coowner_recaptured_cca="200",
-        rental_coowner_terminal_loss="100",
-        rental_coowner_cca_claim="3000",
+        {
+            "rental_coowner": 1,
+            "rental_coowner_share": "6000",
+            "rental_coowner_recaptured_cca": "200",
+            "rental_coowner_terminal_loss": "100",
+            "rental_coowner_cca_claim": "3000",
+        }
     )
     statement = result["ca/t776"][0]
 
@@ -225,7 +232,7 @@ def test_a_co_owners_shares_of_lines_9947_and_9948_replace_the_tables() -> None:
 
 
 def test_a_sole_proprietor_ignores_the_co_owners_share_of_amount_ii() -> None:
-    result = return_ap(rental_coowner=0, rental_coowner_cca_claim="3000")
+    result = return_ap({"rental_coowner": 0, "rental_coowner_cca_claim": "3000"})
     worksheet = result["ca-on/return"][0]
     statement = result["ca/t776"][0]
 
@@ -236,7 +243,9 @@ def test_a_sole_proprietor_ignores_the_co_owners_share_of_amount_ii() -> None:
 def test_the_personal_part_and_the_business_use_of_home_cca_come_off_line_9936() -> None:
     # Line 9936 is "amount ii from Area A minus any personal part of CCA, and any CCA for
     # business-use-of home expenses": 9200 - 700 - 300 = 8200, so amount 6 is 12000 - 8200 = 3800.
-    result = return_ap(rental_cca_personal_part="700", rental_cca_business_use_of_home="300")
+    result = return_ap(
+        {"rental_cca_personal_part": "700", "rental_cca_business_use_of_home": "300"}
+    )
     worksheet = result["ca-on/return"][0]
     statement = result["ca/t776"][0]
 

@@ -79,7 +79,7 @@ def run_bd() -> dict[str, tuple[Worksheet, ...]]:
     line 14299), expenses of 25000 (4Q), so line 9369 is 15000, which is line 9946 and T1 line
     14300.
     """
-    return run("0", (), "0", "0", "0", "0", "0", fish=FISH)
+    return run("0", (), "0", "0", "0", "0", "0", fish_statements=({"fish": FISH},))
 
 
 def return_bd() -> Worksheet:

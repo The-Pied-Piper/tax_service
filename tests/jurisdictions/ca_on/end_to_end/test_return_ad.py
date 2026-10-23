@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 import pytest
@@ -40,7 +41,9 @@ from app.jurisdictions.ca.catalog import (
 from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
 
-def return_ad(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
+def return_ad(
+    changes: Mapping[str, Any] | None = None, **overrides: Any
+) -> dict[str, tuple[Worksheet, ...]]:
     """Return AD's inputs, as in `returns/2025_return_ad.yaml`: a landlord with two rental units.
 
     Gross rents of 24000 (one property, two units) are the only income; the expenses are the
@@ -55,6 +58,8 @@ def return_ad(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
         "rrsp_deduction_limit": "0",
         "rrsp_amount_deducted": "0",
         "union_dues": "0",
+    }
+    statement: dict[str, Any] = {
         "rental_properties": ((2, "0", "24000"),),
         "rental_expenses": {
             "insurance": ("1200", "0", "0"),
@@ -63,7 +68,7 @@ def return_ad(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
             "property_taxes": ("3500", "0", "0"),
         },
     }
-    return run(**{**inputs, **overrides})
+    return run(**{**inputs, "rental_statements": ({**statement, **(changes or {})},), **overrides})
 
 
 def test_return_ads_gross_rents_are_24000_on_line_12599() -> None:
@@ -165,8 +170,10 @@ def test_a_short_term_rental_of_900_with_30_of_90_days_non_compliant_is_300_on_l
     # column 3; line 1 is the total expenses of 1200 less line 9949 (0) less line 9366 (300.00),
     # 900.00, so line 9369 is 24000 - 900.00 = 23100.00.
     result = return_ad(
-        rental_expenses={"insurance": ("1200", "0", "900")},
-        short_term_rental_units_rows=(("900", 30, 90),),
+        {
+            "rental_expenses": {"insurance": ("1200", "0", "900")},
+            "short_term_rental_units_rows": (("900", 30, 90),),
+        }
     )
     worksheet = result["ca-on/return"][0]
     statement = result["ca/t776"][0]
@@ -186,8 +193,10 @@ def test_a_short_term_rental_of_900_with_30_of_90_days_non_compliant_is_300_on_l
 
 def test_each_chart_a_row_is_worked_on_its_own_and_added_into_line_9366() -> None:
     result = return_ad(
-        rental_expenses={"insurance": ("1200", "0", "1000")},
-        short_term_rental_units_rows=(("900", 30, 90), ("100", 2, 3)),
+        {
+            "rental_expenses": {"insurance": ("1200", "0", "1000")},
+            "short_term_rental_units_rows": (("900", 30, 90), ("100", 2, 3)),
+        }
     )
     statement = result["ca/t776"][0]
 
@@ -199,7 +208,7 @@ def test_each_chart_a_row_is_worked_on_its_own_and_added_into_line_9366() -> Non
 
 def test_a_personal_portion_comes_off_the_expenses_before_line_9366() -> None:
     # Line 1 is amount A minus line 9949 minus line 9366: 1200 - 200 = 1000, then 1000 - 0.
-    result = return_ad(rental_expenses={"insurance": ("1200", "200", "0")})
+    result = return_ad({"rental_expenses": {"insurance": ("1200", "200", "0")}})
     statement = result["ca/t776"][0]
 
     assert statement.get(RENTAL_PERSONAL_PORTION).value == D("200")
@@ -208,7 +217,7 @@ def test_a_personal_portion_comes_off_the_expenses_before_line_9366() -> None:
 
 
 def test_other_income_on_line_8230_adds_to_line_8299_but_not_to_line_8141() -> None:
-    result = return_ad(rental_other_income="500")
+    result = return_ad({"rental_other_income": "500"})
     worksheet = result["ca-on/return"][0]
     statement = result["ca/t776"][0]
 
@@ -220,7 +229,7 @@ def test_other_income_on_line_8230_adds_to_line_8299_but_not_to_line_8141() -> N
 
 def test_short_term_rents_are_not_added_to_line_8141() -> None:
     # Line 8141 adds the "Gross rents for all units" column; line 8140 the short-term column.
-    result = return_ad(rental_properties=((2, "8000", "24000"), (1, "0", "6000")))
+    result = return_ad({"rental_properties": ((2, "8000", "24000"), (1, "0", "6000"))})
     statement = result["ca/t776"][0]
 
     assert statement.get(SHORT_TERM_RENTAL_GROSS_RENTS).value == D("8000")
@@ -233,9 +242,11 @@ def test_a_rental_loss_of_2000_is_line_12600_of_minus_2000_and_lowers_total_inco
     # sign through amounts 2 to 6 and line 9946 (T1 line 12600), and added to the 50000 of
     # employment income on line 15000.
     result = return_ad(
+        {
+            "rental_properties": ((1, "0", "10000"),),
+            "rental_expenses": {"insurance": ("12000", "0", "0")},
+        },
         employment_income="50000",
-        rental_properties=((1, "0", "10000"),),
-        rental_expenses={"insurance": ("12000", "0", "0")},
     )
     worksheet = result["ca-on/return"][0]
     statement = result["ca/t776"][0]
@@ -255,8 +266,10 @@ def test_a_rental_loss_with_no_other_income_is_a_negative_total_income() -> None
     # Total income (line 15000) is not floored, as the form prints it: with no other income the
     # loss of 10000 - 12000 = -2000 on line 12600 is the whole of total income.
     result = return_ad(
-        rental_properties=((1, "0", "10000"),),
-        rental_expenses={"insurance": ("12000", "0", "0")},
+        {
+            "rental_properties": ((1, "0", "10000"),),
+            "rental_expenses": {"insurance": ("12000", "0", "0")},
+        }
     )
     worksheet = result["ca-on/return"][0]
 
@@ -269,12 +282,14 @@ def test_a_co_owners_share_replaces_line_9369_on_amount_2_and_runs_through_amoun
     # 3 is 5500), line 9947 adds 200 (amount 4, 5700), line 9948 takes 100 off (amount 5, 5600)
     # and line 9936 takes 300 off (amount 6, 5300): line 9946 and T1 line 12600 are 5300.
     result = return_ad(
-        rental_coowner=1,
-        rental_coowner_share="6000",
-        rental_coowner_other_expenses="500",
-        rental_coowner_recaptured_cca="200",
-        rental_coowner_terminal_loss="100",
-        rental_coowner_cca_claim="300",
+        {
+            "rental_coowner": 1,
+            "rental_coowner_share": "6000",
+            "rental_coowner_other_expenses": "500",
+            "rental_coowner_recaptured_cca": "200",
+            "rental_coowner_terminal_loss": "100",
+            "rental_coowner_cca_claim": "300",
+        }
     )
     worksheet = result["ca-on/return"][0]
     statement = result["ca/t776"][0]
@@ -302,12 +317,14 @@ def test_a_sole_proprietor_ignores_the_co_owners_share_and_carries_line_9369() -
     # 9948 and 9936 (200, 100 and 300) are not used, and with no Area A classes those three lines
     # are 0, so amount 6 is 11500.
     result = return_ad(
-        rental_coowner=0,
-        rental_coowner_share="6000",
-        rental_coowner_other_expenses="500",
-        rental_coowner_recaptured_cca="200",
-        rental_coowner_terminal_loss="100",
-        rental_coowner_cca_claim="300",
+        {
+            "rental_coowner": 0,
+            "rental_coowner_share": "6000",
+            "rental_coowner_other_expenses": "500",
+            "rental_coowner_recaptured_cca": "200",
+            "rental_coowner_terminal_loss": "100",
+            "rental_coowner_cca_claim": "300",
+        }
     )
     worksheet = result["ca-on/return"][0]
     statement = result["ca/t776"][0]
@@ -324,10 +341,12 @@ def test_a_partners_line_9946_is_amount_7_plus_line_9974_minus_line_9943() -> No
     # Amount 7 is 4000 (the T5013 amount), line 9974 adds 50 and line 9943 takes 30 off:
     # 4000 + 50 - 30 = 4020, which replaces amount 6 (12000) on line 9946.
     result = return_ad(
-        rental_partner=1,
-        rental_partner_share="4000",
-        rental_partner_gst_hst_rebate="50",
-        rental_partner_other_expenses="30",
+        {
+            "rental_partner": 1,
+            "rental_partner_share": "4000",
+            "rental_partner_gst_hst_rebate": "50",
+            "rental_partner_other_expenses": "30",
+        }
     )
     worksheet = result["ca-on/return"][0]
     statement = result["ca/t776"][0]
@@ -345,10 +364,12 @@ def test_a_partners_line_9946_is_amount_7_plus_line_9974_minus_line_9943() -> No
 
 def test_a_sole_proprietor_ignores_the_partners_figures() -> None:
     result = return_ad(
-        rental_partner=0,
-        rental_partner_share="4000",
-        rental_partner_gst_hst_rebate="50",
-        rental_partner_other_expenses="30",
+        {
+            "rental_partner": 0,
+            "rental_partner_share": "4000",
+            "rental_partner_gst_hst_rebate": "50",
+            "rental_partner_other_expenses": "30",
+        }
     )
     worksheet = result["ca-on/return"][0]
     statement = result["ca/t776"][0]
@@ -359,10 +380,12 @@ def test_a_sole_proprietor_ignores_the_partners_figures() -> None:
 
 def test_a_partners_loss_is_negative_on_line_9946() -> None:
     result = return_ad(
+        {
+            "rental_partner": 1,
+            "rental_partner_share": "-1000",
+            "rental_partner_other_expenses": "20",
+        },
         employment_income="50000",
-        rental_partner=1,
-        rental_partner_share="-1000",
-        rental_partner_other_expenses="20",
     )
     worksheet = result["ca-on/return"][0]
     statement = result["ca/t776"][0]
@@ -373,7 +396,9 @@ def test_a_partners_loss_is_negative_on_line_9946() -> None:
 
 
 def test_a_co_owners_loss_is_negative_on_amount_2() -> None:
-    result = return_ad(employment_income="50000", rental_coowner=1, rental_coowner_share="-3000")
+    result = return_ad(
+        {"rental_coowner": 1, "rental_coowner_share": "-3000"}, employment_income="50000"
+    )
     worksheet = result["ca-on/return"][0]
     statement = result["ca/t776"][0]
 
@@ -384,9 +409,9 @@ def test_a_co_owners_loss_is_negative_on_amount_2() -> None:
 
 def test_a_chart_a_row_with_no_short_term_days_is_refused_naming_the_row() -> None:
     with pytest.raises(ValidationError, match="row 1: ca/short_term_rental_days cannot be 0"):
-        return_ad(short_term_rental_units_rows=(("900", 0, 0),))
+        return_ad({"short_term_rental_units_rows": (("900", 0, 0),)})
 
 
 def test_a_negative_expense_box_is_refused() -> None:
     with pytest.raises(NegativeArtifactError):
-        return_ad(rental_expenses={"insurance": ("-1", "0", "0")})
+        return_ad({"rental_expenses": {"insurance": ("-1", "0", "0")}})

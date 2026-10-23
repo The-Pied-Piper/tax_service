@@ -1729,37 +1729,10 @@ def starting(
     investment_income_reported_in_previous_years: str = "0",
     net_partnership_income: str = "0",
     rdsp_income: str = "0",
-    rental_properties: tuple[tuple[int, str, str], ...] = (),
-    rental_other_income: str = "0",
-    rental_expenses: Mapping[str, tuple[str, str, str]] | None = None,
-    short_term_rental_units_rows: tuple[tuple[str, int, int], ...] = (),
-    short_term_rental_cca_units_rows: tuple[tuple[str, str, int, int], ...] = (),
-    rental_coowner: int = 0,
-    rental_coowner_share: str = "0",
-    rental_coowner_other_expenses: str = "0",
-    rental_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
-    rental_coowner_recaptured_cca: str = "0",
-    rental_coowner_terminal_loss: str = "0",
-    rental_coowner_cca_claim: str = "0",
-    rental_cca_personal_part: str = "0",
-    rental_cca_business_use_of_home: str = "0",
-    rental_partner: int = 0,
-    rental_partner_share: str = "0",
-    rental_partner_gst_hst_rebate: str = "0",
-    rental_partner_other_expenses: str = "0",
     rental_statements: tuple[Mapping[str, Any], ...] | None = None,
     business_statements: tuple[Mapping[str, Any], ...] | None = None,
-    business: Mapping[str, str] | None = None,
-    business_partner: int = 0,
-    business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
     farm_statements: tuple[Mapping[str, Any], ...] | None = None,
-    farm: Mapping[str, str] | None = None,
-    farm_partner: int = 0,
-    farm_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
     fish_statements: tuple[Mapping[str, Any], ...] | None = None,
-    fish: Mapping[str, str] | None = None,
-    fish_partner: int = 0,
-    fish_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
     taxable_support_payments: str = "0",
     rrsp_income: str = "0",
     fhsa_income: str = "0",
@@ -2159,65 +2132,11 @@ def starting(
         if cpp_t4_second_additional_contributions is None
         else D(cpp_t4_second_additional_contributions)
     )
-    statements: tuple[Mapping[str, Any], ...] = (
-        rental_statements
-        if rental_statements is not None
-        else (
-            {
-                "rental_properties": rental_properties,
-                "rental_other_income": rental_other_income,
-                "rental_expenses": rental_expenses,
-                "short_term_rental_units_rows": short_term_rental_units_rows,
-                "short_term_rental_cca_units_rows": short_term_rental_cca_units_rows,
-                "rental_coowner": rental_coowner,
-                "rental_coowner_share": rental_coowner_share,
-                "rental_coowner_other_expenses": rental_coowner_other_expenses,
-                "rental_cca_classes_rows": rental_cca_classes_rows,
-                "rental_coowner_recaptured_cca": rental_coowner_recaptured_cca,
-                "rental_coowner_terminal_loss": rental_coowner_terminal_loss,
-                "rental_coowner_cca_claim": rental_coowner_cca_claim,
-                "rental_cca_personal_part": rental_cca_personal_part,
-                "rental_cca_business_use_of_home": rental_cca_business_use_of_home,
-                "rental_partner": rental_partner,
-                "rental_partner_share": rental_partner_share,
-                "rental_partner_gst_hst_rebate": rental_partner_gst_hst_rebate,
-                "rental_partner_other_expenses": rental_partner_other_expenses,
-            },
-        )
-    )
-    business_statement_list: tuple[Mapping[str, Any], ...] = (
-        business_statements
-        if business_statements is not None
-        else (
-            {
-                "business": business,
-                "business_partner": business_partner,
-                "business_cca_classes_rows": business_cca_classes_rows,
-            },
-        )
-    )
-    farm_statement_list: tuple[Mapping[str, Any], ...] = (
-        farm_statements
-        if farm_statements is not None
-        else (
-            {
-                "farm": farm,
-                "farm_partner": farm_partner,
-                "farm_cca_classes_rows": farm_cca_classes_rows,
-            },
-        )
-    )
-    fish_statement_list: tuple[Mapping[str, Any], ...] = (
-        fish_statements
-        if fish_statements is not None
-        else (
-            {
-                "fish": fish,
-                "fish_partner": fish_partner,
-                "fish_cca_classes_rows": fish_cca_classes_rows,
-            },
-        )
-    )
+    blank: tuple[Mapping[str, Any], ...] = ({},)
+    rental_statement_list = blank if rental_statements is None else rental_statements
+    business_statement_list = blank if business_statements is None else business_statements
+    farm_statement_list = blank if farm_statements is None else farm_statements
+    fish_statement_list = blank if fish_statements is None else fish_statements
     return (
         Artifact(EMPLOYMENT_INCOME, D(employment_income)),
         dispositions(QSBCS_DISPOSITIONS, *qsbcs_dispositions),
@@ -2293,7 +2212,7 @@ def starting(
         ),
         Artifact(NET_PARTNERSHIP_INCOME, D(net_partnership_income)),
         Artifact(RDSP_INCOME, D(rdsp_income)),
-        t776_statements(statements),
+        t776_statements(rental_statement_list),
         t2125_statements(business_statement_list),
         t2042_statements(farm_statement_list),
         t2121_statements(fish_statement_list),
