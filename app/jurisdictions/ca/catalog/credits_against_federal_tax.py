@@ -176,6 +176,12 @@ FEDERAL_TAX_LESS_CREDITS = CATALOG.declare("federal_tax_less_credits", Decimal, 
 "0")": line 134 (40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax", here line
 132 (`federal_tax_with_itc_recapture`) as line 133 is not wired, less line 138, not below zero."""
 
+FEDERAL_TAX_LINE_41700 = CATALOG.declare("federal_tax_line_41700", Decimal, non_negative=True)
+"""Federal tax, T1 line 139 and line 41700 "Line 134 minus line 138 (if negative, enter "0")", or,
+when Part 5 line 11 of Form T691 is positive, Part 6 line 14 "Enter this amount on line 41700 of
+your return.": the figure entered on line 41700, the federal tax less credits when the count of
+"line 11 is positive" is 0, else the Part 6 line 14 amount, never below zero."""
+
 FOREIGN_NON_BUSINESS_TAX_PAID = CATALOG.declare(
     "foreign_non_business_tax_paid", Decimal, non_negative=True
 )
@@ -220,3 +226,26 @@ FOREIGN_TAX_CREDIT_SHEETS = RecordListKind.declare(
 """Foreign tax credit sheets, Form T2209 "on a separate sheet": one record for each sheet worked, in
 order, holding line 1 (43100), the net foreign income used on line 2 (43300, after the cap at net
 income) and line 3. The list may be empty."""
+
+ITC_APPRENTICE_SALARY_AND_WAGES = CATALOG.declare(
+    "itc_apprentice_salary_and_wages", Decimal, non_negative=True
+)
+"""Apprentice's eligible salary and wages, Form T2038(IND) Part B Table 1 "The lesser of eligible
+salary and wages** payable in the year or $20,000.": each apprentice's eligible salary and wages
+payable in the year, net of any assistance; a field of each record of the apprentices, not an
+artifact of its own."""
+
+ITC_APPRENTICES = RecordListKind.declare(
+    CATALOG, "itc_apprentices", fields=(ITC_APPRENTICE_SALARY_AND_WAGES,)
+)
+"""Apprentices, Form T2038(IND) Part B Table 1 "Calculation of total Apprenticeship job creation tax
+credit": a starting list with one record for each apprentice, holding the eligible salary and wages
+(column 3). The list may be empty."""
+
+ITC_APPRENTICESHIP_WAGES_TOTAL = CATALOG.declare(
+    "itc_apprenticeship_wages_total", Decimal, non_negative=True
+)
+"""Apprenticeship wages total, Form T2038(IND) Part B Table 1 "Total apprenticeship job creation tax
+credit (Total of amounts in column 3 plus applicable amount from box 40* of your T3 slip)": the
+total of the column 3 amounts, before the 10% and before the box 40 amount, which are not part of
+this figure."""

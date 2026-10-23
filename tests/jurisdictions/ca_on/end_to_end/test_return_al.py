@@ -232,7 +232,7 @@ def test_return_als_trace_follows_form_t1206_line_by_line() -> None:
         "split_income_line_22: split_income_line_15 3795 less split_income_line_21 1038.46 "
         "= 2756.54",
         "split_income_line_24: split_income_line_22 2756.54, not below 0 = 2756.54",
-        "split_income_line_29: federal_tax_less_credits 417.83 "
+        "split_income_line_29: federal_tax_line_41700 417.83 "
         "+ advanced_canada_workers_benefit 0 = 417.83",
         "split_income_line_30: greater of split_income_line_24 2756.54 "
         "and split_income_line_29 417.83 = 2756.54",
@@ -571,6 +571,11 @@ def test_return_al_pays_the_ontario_tax_on_split_income_on_form_t1206_part_3() -
     # is 0 and the surtax is 0; line 69 is 2360.95, less the dividend tax credit of 343.42 (line
     # 70): 2017.53, which is more than twice the basic reduction (588), so the reduction is 0.
     assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("2360.95")
+    # No minimum tax carryover is applied (line 59 is 24.63% of 0.00), so line 60 is 0 and line 61
+    # is line 55, 2360.95, which lines 62 and 63 carry.
+    assert worksheet.get(ontario.MINIMUM_TAX_CARRYOVER_CREDIT).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("0")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER).value == D("2360.95")
     assert worksheet.get(ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX).value == D("2360.95")
     assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("0")
     assert worksheet.get(ONTARIO_SURTAX).value == D("0")
@@ -632,9 +637,14 @@ def test_return_als_trace_follows_form_t1206_part_3_line_by_line() -> None:
         "ontario_tax_with_split_income: ontario_tax_after_credits 0 "
         "+ ontario_tax_on_split_income 2360.95 = 2360.95",
         "ontario_tax_on_split_income_for_surtax: ontario_tax_on_split_income 2360.95 = 2360.95",
-        "ontario_surtax_base: ontario_tax_with_split_income 2360.95 "
+        "ontario_minimum_tax_carryover_applied: lesser of ontario_tax_less_dividend_credit 0 "
+        "and minimum_tax_carryover_credit 0 = 0",
+        "ontario_tax_after_minimum_tax_carryover: ontario_tax_with_split_income 2360.95 "
+        "less ontario_minimum_tax_carryover_applied 0, not below 0 = 2360.95",
+        "ontario_surtax_base: ontario_tax_after_minimum_tax_carryover 2360.95 "
         "less ontario_tax_on_split_income_for_surtax 2360.95, not below 0 = 0",
-        "ontario_tax_with_surtax: ontario_tax_with_split_income 2360.95 + ontario_surtax 0 "
+        "ontario_tax_with_surtax: ontario_tax_after_minimum_tax_carryover 2360.95 "
+        "+ ontario_surtax 0 "
         "= 2360.95",
         "split_income_line_52: greater of split_income_line_50 2017.53 "
         "and ontario_tax_after_food_credit 2017.53 = 2017.53",
@@ -683,7 +693,7 @@ def test_return_al_records_the_ontario_split_income_lines_as_structured_lines() 
     assert (
         SubtractedNotBelowZeroLine(
             output=ontario.ONTARIO_SURTAX_BASE,
-            minuend=ontario.ONTARIO_TAX_WITH_SPLIT_INCOME,
+            minuend=ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER,
             minuend_amount=D("2360.95"),
             subtrahend=ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
             subtrahend_amount=D("2360.95"),
@@ -796,6 +806,7 @@ def test_the_ontario_surtax_applies_to_the_non_split_part_of_the_tax_only() -> N
     assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("7671.98")
     assert worksheet.get(ontario.ONTARIO_TAX_ON_SPLIT_INCOME).value == D("4106.00")
     assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("11777.98")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER).value == D("11777.98")
     assert worksheet.get(ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX).value == D("4106.00")
     assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("7671.98")
     assert worksheet.get(ONTARIO_SURTAX).value == D("523.79")

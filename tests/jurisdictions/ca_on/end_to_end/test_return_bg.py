@@ -7,20 +7,26 @@ import pytest
 from app.domain.errors import InputAboveBoundError
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
+    AMT_ADDITIONAL_TAXES_FOR_CARRYOVER,
     AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
     AMT_ADJUSTED_TAXABLE_INCOME,
     AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
     AMT_BASIC_FEDERAL_TAX,
+    AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CARRYOVER_AVAILABLE_FOR_2026,
+    AMT_CARRYOVER_BALANCE,
+    AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
     AMT_CREDITS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
@@ -31,6 +37,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_FEDERAL_SURTAX,
     AMT_FEDERAL_SURTAX_AT_48_PERCENT,
     AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
+    AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
@@ -38,8 +46,10 @@ from app.jurisdictions.ca.catalog import (
     AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
     AMT_FOREIGN_TAX_CREDIT_LESSER,
     AMT_FOREIGN_TAXES_PAID,
+    AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_TAX_CREDIT,
+    AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
@@ -48,10 +58,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
+    AMT_NET_MINIMUM_TAX_PAYABLE,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
@@ -59,11 +71,26 @@ from app.jurisdictions.ca.catalog import (
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
+    AMT_PART_5_LINE_11_IS_POSITIVE,
+    AMT_PART_6_FEDERAL_SURTAX,
+    AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+    AMT_PART_6_SURTAX_AT_48_PERCENT,
+    AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+    AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_PART_6_TAX_WITH_SURTAX,
+    AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+    AMT_PART_7_CREDITS_TOTAL,
+    AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE,
+    AMT_PART_7_FOREIGN_CREDIT_SHARE,
+    AMT_PART_7_FOREIGN_TAXES_PAID,
+    AMT_PART_7_TAX_LESS_CREDITS,
+    AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_NET_TAX_LESS_SURTAX,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RESOURCE_INCOME_TOTAL,
@@ -84,9 +111,18 @@ from app.jurisdictions.ca.catalog import (
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
+    FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LINE_41700,
+    NET_FEDERAL_TAX,
+    REFUND_OR_BALANCE_OWING,
+    SPLIT_INCOME_LINE_22,
+    SPLIT_INCOME_LINE_24,
+    SPLIT_INCOME_LINE_29,
+    SPLIT_INCOME_LINE_30,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
 )
+from app.jurisdictions.ca_on import catalog as ontario
 from tests.jurisdictions.ca_on.end_to_end.support import D, Disposition, compute
 
 
@@ -136,6 +172,12 @@ def return_bg(
     foreign_non_business_tax: str = "0",
     foreign_business_tax: str = "0",
     foreign_tax_countries: tuple[tuple[str, str], ...] = (),
+    part_d_amount_15: str = "0",
+    split_income_dividends: str = "0",
+    split_income_dividends_other_than_eligible: str = "0",
+    unapplied_2018_carryover: str = "0",
+    t5_taxable_dividends: str = "0",
+    t5_dividend_tax_credit: str = "0",
 ) -> Worksheet:
     """Return BG's inputs (`returns/2025_return_bg.yaml`), with the Part 1 amounts given."""
     return compute(
@@ -182,12 +224,18 @@ def return_bg(
         amt_non_resident_or_deemed_resident=non_resident,
         amt_investment_tax_credit_claim=itc_claim,
         amt_t2038_amount_i=amount_i,
+        amt_t2038_part_d_amount_15=part_d_amount_15,
         amt_foreign_business_income=foreign_business_income,
         amt_foreign_non_business_income=foreign_non_business_income,
         amt_foreign_capital_gains_non_taxable_claim=foreign_capital_gains_claim,
         amt_foreign_non_business_tax_paid=foreign_non_business_tax,
         amt_foreign_business_tax_paid=foreign_business_tax,
         foreign_tax_countries_rows=foreign_tax_countries,
+        split_income_dividends=split_income_dividends,
+        split_income_dividends_other_than_eligible=split_income_dividends_other_than_eligible,
+        amt_unapplied_2018_carryover=unapplied_2018_carryover,
+        t5_taxable_dividends=t5_taxable_dividends,
+        t5_dividend_tax_credit=t5_dividend_tax_credit,
     )
 
 
@@ -804,6 +852,7 @@ def test_a_carryover_claim_above_line_1_is_refused_naming_both_kinds() -> None:
         )
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/amt_minimum_tax_carryover_claim 1000.01 is above ca/amt_maximum_carryover_claim 1000"
     )
 
@@ -819,7 +868,7 @@ def test_a_carryover_claim_above_line_11_is_refused_when_line_11_is_the_lesser()
         )
 
     assert str(raised.value).startswith(
-        "ca/amt_minimum_tax_carryover_claim 34266.21 is above "
+        "ca-on/return, instance 1: ca/amt_minimum_tax_carryover_claim 34266.21 is above "
         "ca/amt_maximum_carryover_claim 34266.2"
     )
 
@@ -831,6 +880,7 @@ def test_a_claim_is_refused_when_no_carryover_is_available() -> None:
         return_bg(carryover_claim="0.01")
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/amt_minimum_tax_carryover_claim 0.01 is above ca/amt_maximum_carryover_claim 0"
     )
 
@@ -914,6 +964,7 @@ def test_an_investment_tax_credit_claim_above_t2038_amount_i_is_refused() -> Non
         return_bg(itc_claim="200", amount_i="150")
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/amt_investment_tax_credit_claim 200 is above ca/amt_t2038_amount_i 150"
     )
 
@@ -970,7 +1021,7 @@ def test_return_bg_line_3_refuses_a_claim_above_line_23_and_does_not_cap_it() ->
         return_bg(foreign_capital_gains_claim="800")
 
     assert str(raised.value).startswith(
-        "ca/amt_foreign_capital_gains_non_taxable_claim 800 is above "
+        "ca-on/return, instance 1: ca/amt_foreign_capital_gains_non_taxable_claim 800 is above "
         "ca/amt_capital_gains_added_not_below_zero 700.00"
     )
 
@@ -983,7 +1034,7 @@ def test_return_bg_line_3_refuses_a_claim_when_line_23_is_negative() -> None:
         return_bg(graduated_rate_estate="3000.00", foreign_capital_gains_claim="100")
 
     assert str(raised.value).startswith(
-        "ca/amt_foreign_capital_gains_non_taxable_claim 100 is above "
+        "ca-on/return, instance 1: ca/amt_foreign_capital_gains_non_taxable_claim 100 is above "
         "ca/amt_capital_gains_added_not_below_zero 0"
     )
 
@@ -1049,3 +1100,573 @@ def test_return_bg_line_11_is_the_t2209_credit_when_it_is_more_than_line_10() ->
     assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT).value == D("96.74")
     assert worksheet.get(AMT_FOREIGN_TAX_CREDIT_LESSER).value == D("20.00")
     assert worksheet.get(AMT_SPECIAL_FOREIGN_TAX_CREDIT).value == D("96.74")
+
+
+def test_return_bg_part_5_is_zero_by_default() -> None:
+    # Line 1 is 0.00 (line 103 of Part 1) and line 2 is 0.00, so line 3 is 0.00. Line 4 is the
+    # regular net federal tax payable of 5846.47 and line 5 is the surtax of 0.00, so line 6 is
+    # 5846.47. Line 7 is 0.00 less 5846.47, below zero, so 0.00. Lines 8 to 11 are 0.00: the filer
+    # is not subject to alternative minimum tax.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_NET_MINIMUM_TAX_PAYABLE).value == D("0")
+    assert worksheet.get(AMT_REGULAR_NET_TAX_LESS_SURTAX).value == D("5846.47")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("0")
+    assert worksheet.get(AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D).value == D("0")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
+
+
+def test_return_bg_part_5_line_3_is_line_1_less_the_special_foreign_tax_credit() -> None:
+    # The security options of boxes 39 and 91 at 150000.00 (in place of 1000.00) add 149000.00 to
+    # line 93 of Part 1, to 221567.50, so line 95 is 43685.50 and line 97 is 20.5% of it, 8955.5275,
+    # rounded to 8955.53; less line 102 of 1550.11, line 103 (line 1 of Part 5) is 7405.42. The
+    # foreign figures of the Part 4 case above give line 2, the special foreign tax credit, of
+    # 471.50, so line 3 is 7405.42 less 471.50, 6933.92. Line 6 is 5846.47 and line 7 is 6933.92
+    # less 5846.47, 1087.45, which is then line 11 as no investment tax credit is claimed.
+    worksheet = return_bg(
+        security_t4_39_and_91="150000",
+        foreign_business_income="1500",
+        foreign_non_business_income="500",
+        foreign_capital_gains_claim="300",
+        foreign_non_business_tax="600",
+        foreign_business_tax="100",
+    )
+
+    assert worksheet.get(AMT_MINIMUM_AMOUNT).value == D("7405.42")
+    assert worksheet.get(AMT_SPECIAL_FOREIGN_TAX_CREDIT).value == D("471.50")
+    assert worksheet.get(AMT_NET_MINIMUM_TAX_PAYABLE).value == D("6933.92")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("1087.45")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1087.45")
+
+
+def test_return_bg_part_5_line_7_is_line_3_less_line_6_when_it_is_positive() -> None:
+    # With the security options at 150000.00, line 1 of Part 5 is 7405.42 and line 3 is the same,
+    # with no foreign tax credit. Line 6 is the regular net federal tax payable of 5846.47 less a
+    # surtax of 0.00, 5846.47, so line 7 is 7405.42 less 5846.47, 1558.95, and line 11 is the same.
+    worksheet = return_bg(security_t4_39_and_91="150000")
+
+    assert worksheet.get(AMT_NET_MINIMUM_TAX_PAYABLE).value == D("7405.42")
+    assert worksheet.get(AMT_REGULAR_NET_TAX_LESS_SURTAX).value == D("5846.47")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("1558.95")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1558.95")
+
+
+def test_return_bg_part_5_line_7_is_zero_when_the_regular_net_tax_is_more() -> None:
+    # With employment income of 200000.00, line 1 of Part 5 is the minimum amount of 5494.59 and
+    # line 6 is the regular net federal tax payable of 39760.79 (line 5, the surtax, is 0.00). Line
+    # 7 is 5494.59 less 39760.79, below zero, so 0.00, and line 11 is 0.00.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(AMT_NET_MINIMUM_TAX_PAYABLE).value == D("5494.59")
+    assert worksheet.get(AMT_REGULAR_NET_TAX_LESS_SURTAX).value == D("39760.79")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("0")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
+
+
+def test_return_bg_part_5_line_6_adds_back_a_negative_surtax() -> None:
+    # A non-resident with employment income of 8000.00: taxable income is 8955.00 (8000.00, plus the
+    # taxable capital gain of 1000.00, less the enhanced CPP contributions of 45.00, 1% of 4500.00).
+    # The federal tax at 14.5% is 1298.48, rounded half-up from 1298.475. The credit amounts are
+    # 17953.95 (the basic personal amount of 16129.00, the CPP base contributions of 222.75, the EI
+    # premiums of 131.20 and the Canada employment amount of 1471.00), at 14.5% 2603.32, so the
+    # basic federal tax is 1298.48 less 2603.32, -1304.84. Line 5, the surtax, is 48% of that,
+    # -626.32, a negative amount. Line 4 is floored at 0.00 because the federal tax with the
+    # surtax is negative, so line 6 is 0.00 less -626.32, 626.32, and line 7 is 0.00 with no
+    # minimum amount.
+    worksheet = return_bg(employment_income="8000", non_resident=1)
+
+    assert worksheet.get(AMT_FEDERAL_SURTAX).value == D("-626.32")
+    assert worksheet.get(AMT_REGULAR_NET_TAX_LESS_SURTAX).value == D("626.32")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("0")
+
+
+def test_return_bg_part_5_line_10_is_line_8_less_amount_15_of_part_d() -> None:
+    # With the security options at 150000.00 and an investment tax credit claim of 100.00 (within
+    # amount I of 150.00), the claim is line 12 of Part 3 and reduces line 15 to 5746.47, so line 6
+    # is 5746.47 and line 7 is 7405.42 less 5746.47, 1658.95. Line 8 is the claim, 100.00, and line
+    # 9, amount 15 of Part D of Form T2038(IND), is 60.00: line 10 is 40.00 and line 11 is 1658.95
+    # less 40.00, 1618.95.
+    worksheet = return_bg(
+        security_t4_39_and_91="150000",
+        itc_claim="100",
+        amount_i="150",
+        part_d_amount_15="60",
+    )
+
+    assert worksheet.get(AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE).value == D("5746.47")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("1658.95")
+    assert worksheet.get(AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D).value == D("40.00")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1618.95")
+
+
+def test_return_bg_part_5_line_10_is_zero_when_amount_15_of_part_d_is_more_than_the_claim() -> None:
+    # The same return with amount 15 of Part D at 150.00, above the claim of 100.00: line 10 is
+    # 0.00, and line 11 is line 7, 1658.95.
+    worksheet = return_bg(
+        security_t4_39_and_91="150000",
+        itc_claim="100",
+        amount_i="150",
+        part_d_amount_15="150",
+    )
+
+    assert worksheet.get(AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D).value == D("0")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1658.95")
+
+
+def test_return_bg_part_6_line_9_is_the_surtax_on_line_7_and_line_14_is_zero_by_default() -> None:
+    # Line 1 is the basic federal tax of 5846.47 and line 2 is 0.00 (no split income), so line 3 is
+    # 5846.47. Line 4 is 0.00, so line 5 is 5846.47, and line 7 is 5846.47 plus 0.00. Line 8 is
+    # 0.00. Line 9 is 48% of line 7: 5846.47 times 0.48 is 2806.3056, rounded half-up to 2806.31.
+    # Line 10 is 0.00 (a chosen percentage of 0, as no tax is payable to multiple jurisdictions).
+    # Line 11 is 0.00: no amount is on line 10, and the filer is not a non-resident. Line 12 is 0.00
+    # and line 13 is 0.00, so line 14 is 0.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX).value == D("5846.47")
+    assert worksheet.get(AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT).value == D("5846.47")
+    assert worksheet.get(AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX).value == D("5846.47")
+    assert worksheet.get(AMT_PART_6_SURTAX_AT_48_PERCENT).value == D("2806.31")
+    assert worksheet.get(AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS).value == D("0")
+    assert worksheet.get(AMT_PART_6_HAS_AMOUNT_ON_LINE_10).value == 0
+    assert worksheet.get(AMT_PART_6_FEDERAL_SURTAX).value == D("0")
+    assert worksheet.get(AMT_PART_6_TAX_WITH_SURTAX).value == D("0")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("0")
+
+
+def test_return_bg_part_6_line_5_is_the_minimum_amount_when_it_is_more_than_line_3() -> None:
+    # With the security options of boxes 39 and 91 at 150000.00 and no foreign figures, line 3 is
+    # 5846.47 less 0.00, and line 4, the minimum amount, is 7405.42, so line 5 is 7405.42 and line 7
+    # is 7405.42 plus 0.00. Line 9 is 48% of 7405.42, 3554.6016, rounded to 3554.60. Line 8 is
+    # 7405.42 (no special foreign tax credit), so line 12 is 7405.42 with no amount on line 11, and
+    # line 14 is 7405.42.
+    worksheet = return_bg(security_t4_39_and_91="150000")
+
+    assert worksheet.get(AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX).value == D("5846.47")
+    assert worksheet.get(AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT).value == D("7405.42")
+    assert worksheet.get(AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX).value == D("7405.42")
+    assert worksheet.get(AMT_PART_6_SURTAX_AT_48_PERCENT).value == D("3554.60")
+    assert worksheet.get(AMT_NET_MINIMUM_TAX_PAYABLE).value == D("7405.42")
+    assert worksheet.get(AMT_PART_6_TAX_WITH_SURTAX).value == D("7405.42")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("7405.42")
+
+
+def test_return_bg_part_6_line_12_is_line_8_when_line_11_is_zero() -> None:
+    # The security options of 150000.00 with the foreign figures of the Part 5 case above: line 5 is
+    # the minimum amount of 7405.42 and line 7 is the same. Line 8 is the net minimum tax payable of
+    # 6933.92 (7405.42 less the special foreign tax credit of 471.50), line 9 is 3554.60, and line
+    # 10 and line 11 are 0.00, so line 12 is 6933.92 and line 14 is 6933.92.
+    worksheet = return_bg(
+        security_t4_39_and_91="150000",
+        foreign_business_income="1500",
+        foreign_non_business_income="500",
+        foreign_capital_gains_claim="300",
+        foreign_non_business_tax="600",
+        foreign_business_tax="100",
+    )
+
+    assert worksheet.get(AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX).value == D("7405.42")
+    assert worksheet.get(AMT_NET_MINIMUM_TAX_PAYABLE).value == D("6933.92")
+    assert worksheet.get(AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS).value == D("0")
+    assert worksheet.get(AMT_PART_6_FEDERAL_SURTAX).value == D("0")
+    assert worksheet.get(AMT_PART_6_TAX_WITH_SURTAX).value == D("6933.92")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("6933.92")
+
+
+def test_return_bg_part_6_line_11_is_line_9_for_a_non_resident_with_no_amount_on_line_10() -> None:
+    # With the security options at 150000.00 and a non-resident (a count of 1), line 10 is 0.00, so
+    # the condition on line 10 does not apply, and line 11 is line 9, 3554.60, times the count. Line
+    # 12 is 7405.42 plus 3554.60, 10960.02, and line 14 is the same. Line 9 is the surtax on line 7
+    # of Part 6, 3554.60, not the surtax on line 2 of Part 3 (2806.31) that Part 3 takes for a
+    # non-resident.
+    worksheet = return_bg(security_t4_39_and_91="150000", non_resident=1)
+
+    assert worksheet.get(AMT_PART_6_SURTAX_AT_48_PERCENT).value == D("3554.60")
+    assert worksheet.get(AMT_PART_6_HAS_AMOUNT_ON_LINE_10).value == 0
+    assert worksheet.get(AMT_PART_6_SURTAX_IF_NON_RESIDENT).value == D("3554.60")
+    assert worksheet.get(AMT_PART_6_FEDERAL_SURTAX).value == D("3554.60")
+    assert worksheet.get(AMT_PART_6_TAX_WITH_SURTAX).value == D("10960.02")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("10960.02")
+
+
+def test_return_bg_part_6_line_11_is_line_10_when_line_10_has_an_amount() -> None:
+    # With the security options at 150000.00 and 50 as the percentage of Column 5 of line 52220 on
+    # Form T2203 (a figure the caller gives), line 10 is 3554.60 times 50%, 1777.30, which is an
+    # amount, so line 11 is line 10, 1777.30. Line 12 is 7405.42 plus 1777.30, 9182.72, and line 14
+    # is the same.
+    worksheet = return_bg(security_t4_39_and_91="150000", t2203_percentage="50")
+
+    assert worksheet.get(AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS).value == D("1777.30")
+    assert worksheet.get(AMT_PART_6_HAS_AMOUNT_ON_LINE_10).value == 1
+    assert worksheet.get(AMT_PART_6_FEDERAL_SURTAX).value == D("1777.30")
+    assert worksheet.get(AMT_PART_6_TAX_WITH_SURTAX).value == D("9182.72")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("9182.72")
+
+
+def test_return_bg_part_6_line_14_is_line_13_when_the_split_income_tax_is_more_than_line_12() -> (
+    None
+):
+    # Split dividends of 11500.00, as on Return AL: Form T1206 line 22 is 2756.54 (3795.00 less
+    # 1038.46) and line 24 is the same. Line 3 is the basic federal tax of line 1 less 2756.54, and
+    # line 5 is line 3, as the minimum amount is 0.00, and line 7 is line 5 plus line 6, the basic
+    # federal tax again. Line 8 is 0.00 and line 11
+    # is 0.00 (a resident, with no tax to multiple jurisdictions), so line 12 is 0.00 and line 14
+    # is line 13, 2756.54.
+    worksheet = return_bg(
+        split_income_dividends="11500",
+        split_income_dividends_other_than_eligible="11500",
+    )
+    basic = worksheet.get(AMT_BASIC_FEDERAL_TAX).value
+
+    assert worksheet.get(SPLIT_INCOME_LINE_22).value == D("2756.54")
+    assert worksheet.get(AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX).value == basic - D("2756.54")
+    assert worksheet.get(AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX).value == basic
+    assert worksheet.get(SPLIT_INCOME_LINE_24).value == D("2756.54")
+    assert worksheet.get(AMT_PART_6_TAX_WITH_SURTAX).value == D("0")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("2756.54")
+
+
+def test_return_bg_part_6_line_3_is_floored_for_a_non_resident_with_negative_basic_tax() -> None:
+    # A non-resident with employment income of 8000.00, whose basic federal tax is -1304.84 (as the
+    # Part 5 case above): line 3 is -1304.84 less 0.00, not below zero, so 0.00, and line 5 is 0.00.
+    # Line 7 is 0.00 plus 0.00, so line 9 is 0.00 and line 11, the non-resident's amount, is 0.00
+    # too. Part 3 line 2 is -626.32 for this return, but Part 6 does not take that: line 5, the
+    # greater of line 3 and the minimum amount, is 0.00.
+    worksheet = return_bg(employment_income="8000", non_resident=1)
+
+    assert worksheet.get(AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX).value == D("0")
+    assert worksheet.get(AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX).value == D("0")
+    assert worksheet.get(AMT_PART_6_SURTAX_AT_48_PERCENT).value == D("0")
+    assert worksheet.get(AMT_PART_6_FEDERAL_SURTAX).value == D("0")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("0")
+
+
+def test_return_bg_line_41700_is_the_line_139_figure_when_part_5_line_11_is_zero() -> None:
+    # Part 5 line 11 is 0.00 (the Part 5 case above), so the condition "line 11 is positive" counts
+    # 0 and T1 line 41700 is the line 139 figure: line 132 (the federal tax with the ITC recapture,
+    # 5846.47) less line 138 (0.00), 5846.47. Part 6 line 14, 0.00, is not entered on the return.
+    # Line 29 of Form T1206 Part 2 is then 5846.47 plus 0.00, and the net federal tax is the same.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_PART_5_LINE_11_IS_POSITIVE).value == 0
+    assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("5846.47")
+    assert worksheet.get(FEDERAL_TAX_LINE_41700).value == D("5846.47")
+    assert worksheet.get(SPLIT_INCOME_LINE_29).value == D("5846.47")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("5846.47")
+
+
+def test_return_bg_line_41700_is_part_6_line_14_when_part_5_line_11_is_positive() -> None:
+    # The security options of boxes 39 and 91 at 150000.00 and a non-resident (a count of 1): Part 5
+    # line 11 is 1558.95 (line 7, 7405.42 less 5846.47 of line 6, with line 10 at 0.00), which is
+    # positive, so the condition "line 11 is positive" counts 1 and T1 line 41700 takes Part 6 line
+    # 14 of 10960.02 (the Part 6 case above) in place of the line 139 figure of 5846.47. Line 29 of
+    # Form T1206 Part 2 is 10960.02 plus 0.00, and line 30 is the greater of line 24 (0.00) and line
+    # 29, 10960.02, so the net federal tax is 10960.02 plus the special taxes of 0.00. The balance
+    # owing rises by the change in the net federal tax, 10960.02 less 5846.47, 5113.55, and by the
+    # Ontario line 72, 24.63% of the Part 5 line 11 of 1558.95, 383.97 (the worksheet line 3 is
+    # under 5710.00, so line 72 is the worksheet line 1): from 8973.29 to 14470.81, as nothing else
+    # in the total payable or the credits changes.
+    worksheet = return_bg(security_t4_39_and_91="150000", non_resident=1)
+
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1558.95")
+    assert worksheet.get(AMT_PART_5_LINE_11_IS_POSITIVE).value == 1
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("10960.02")
+    assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("5846.47")
+    assert worksheet.get(FEDERAL_TAX_LINE_41700).value == D("10960.02")
+    assert worksheet.get(SPLIT_INCOME_LINE_29).value == D("10960.02")
+    assert worksheet.get(SPLIT_INCOME_LINE_30).value == D("10960.02")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("10960.02")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("14470.81")
+
+
+def test_return_bg_line_41700_keeps_line_139_when_regular_tax_is_more_than_minimum() -> None:
+    # Employment income of 200000.00: the minimum amount on line 103 of Part 1 is 5494.59, but the
+    # regular net federal tax less the surtax, line 6 of Part 5, is 39760.79, more than the minimum,
+    # so line 7 and line 11 are 0.00 and the condition "line 11 is positive" counts 0. Part 6 line
+    # 14 is still computed, 5494.59 (line 12 is the net minimum tax of 5494.59, with no amount on
+    # line 11), but it is not entered on line 41700: the line 139 figure, 39760.79, is.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(AMT_MINIMUM_AMOUNT).value == D("5494.59")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
+    assert worksheet.get(AMT_PART_5_LINE_11_IS_POSITIVE).value == 0
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("5494.59")
+    assert worksheet.get(FEDERAL_TAX_LINE_41700).value == D("39760.79")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("39760.79")
+
+
+def test_return_bg_part_7_lines_are_the_basic_tax_by_default() -> None:
+    # Line 1 is 0.00 (no minimum amount) and line 2 is the basic federal tax of 5846.47; line 3 is
+    # 0.00, so line 4 is 5846.47. Lines 5 and 6 are 0.00, so line 7 is 0.00 and line 8 is 5846.47.
+    # Lines 9 and 10 are 0.00, so line 11 is 0.00. With no foreign taxes paid, the denominator of
+    # line 12 is 0.00, so line 12 is 0.00. Line 13 is 5846.47 plus 0.00, 5846.47, and line 14 is
+    # 0.00 less 5846.47, below zero, so 0.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_PART_7_BASIC_TAX_WITH_RECAPTURE).value == D("5846.47")
+    assert worksheet.get(AMT_PART_7_CREDITS_TOTAL).value == D("0")
+    assert worksheet.get(AMT_PART_7_TAX_LESS_CREDITS).value == D("5846.47")
+    assert worksheet.get(AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE).value == D("0")
+    assert worksheet.get(AMT_PART_7_FOREIGN_TAXES_PAID).value == D("0")
+    assert worksheet.get(AMT_PART_7_FOREIGN_CREDIT_SHARE).value == D("0")
+    assert worksheet.get(AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE).value == D("5846.47")
+    assert worksheet.get(AMT_ADDITIONAL_TAXES_FOR_CARRYOVER).value == D("0")
+
+
+def test_return_bg_part_8_lines_13_to_17_are_zero_by_default() -> None:
+    # With no carryover from earlier years, line 1 and line 12 are 0.00, so line 13 is 0.00. Line
+    # 14 is the additional 2025 taxes of Part 7 line 14, 0.00, so line 15 is 0.00. No unapplied 2018
+    # carryover is entered, so line 16 is 0.00 and line 17 is 0.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_CARRYOVER_BALANCE).value == D("0")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES).value == D("0")
+    assert worksheet.get(AMT_CARRYOVER_AVAILABLE_FOR_2026).value == D("0")
+
+
+def test_return_bg_part_7_line_14_is_the_minimum_amount_less_line_13_when_positive() -> None:
+    # The security options of boxes 39 and 91 at 150000.00 make the minimum amount on line 1
+    # 7405.42. Line 13 is 5846.47 (line 8 of 5846.47 plus line 12 of 0.00), so line 14 is 7405.42
+    # less 5846.47, 1558.95, and the same carries into Part 8: line 13 is 0.00, line 15 is 1558.95
+    # and line 17, with no unapplied 2018 carryover, is 1558.95.
+    worksheet = return_bg(security_t4_39_and_91="150000")
+
+    assert worksheet.get(AMT_MINIMUM_AMOUNT).value == D("7405.42")
+    assert worksheet.get(AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE).value == D("5846.47")
+    assert worksheet.get(AMT_ADDITIONAL_TAXES_FOR_CARRYOVER).value == D("1558.95")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE).value == D("0")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES).value == D("1558.95")
+    assert worksheet.get(AMT_CARRYOVER_AVAILABLE_FOR_2026).value == D("1558.95")
+
+
+def test_return_bg_part_7_line_12_is_line_11_times_the_foreign_credit_share() -> None:
+    # The foreign figures of the Part 4 case: 1500.00 and 500.00 of income, a claim of 300.00,
+    # 600.00 of non-business tax and 100.00 of business tax, with the security options of 150000.00.
+    # Line 9 is the special foreign tax credit of 471.50 (line 11 of Part 4) and line 10 is the
+    # federal foreign tax credit, 0.00, so line 11 is 471.50. The denominator of line 12 is the
+    # foreign taxes paid, 600.00 plus 100.00, 700.00, and the numerator is the foreign taxes paid
+    # for the special foreign tax credit, 500.00 (line 9 of Part 4). Line 12 is 471.50 times 500.00
+    # over 700.00, 336.7857, rounded half-up to 336.79. Line 8 is 5846.47, so line 13 is 5846.47
+    # plus 336.79, 6183.26, and line 14 is 7405.42 less 6183.26, 1222.16.
+    worksheet = return_bg(
+        security_t4_39_and_91="150000",
+        foreign_business_income="1500",
+        foreign_non_business_income="500",
+        foreign_capital_gains_claim="300",
+        foreign_non_business_tax="600",
+        foreign_business_tax="100",
+    )
+
+    assert worksheet.get(AMT_SPECIAL_FOREIGN_TAX_CREDIT).value == D("471.50")
+    assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT).value == D("0")
+    assert worksheet.get(AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE).value == D("471.50")
+    assert worksheet.get(AMT_PART_7_FOREIGN_TAXES_PAID).value == D("700.00")
+    assert worksheet.get(AMT_FOREIGN_TAXES_PAID).value == D("500.00")
+    assert worksheet.get(AMT_PART_7_FOREIGN_CREDIT_SHARE).value == D("336.79")
+    assert worksheet.get(AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE).value == D("6183.26")
+    assert worksheet.get(AMT_ADDITIONAL_TAXES_FOR_CARRYOVER).value == D("1222.16")
+    assert worksheet.get(AMT_CARRYOVER_AVAILABLE_FOR_2026).value == D("1222.16")
+
+
+def test_return_bg_part_8_line_17_is_line_15_less_the_unapplied_2018_carryover() -> None:
+    # The carryover from 2018 to 2024 of 1000.00 with a claim of 400.00 (line 12, within line 1 and
+    # line 11) leaves 600.00 on line 13. The claim lowers the basic federal tax to 5446.47, so Part
+    # 7 line 8 is 5446.47 and line 13 is 5446.47 with no foreign or recapture amounts. The minimum
+    # amount is 0.00, so Part 7 line 14 is 0.00. Line 15 is 600.00 plus 0.00, and the unapplied 2018
+    # carryover of 100.00 (line 16) leaves 500.00 on line 17.
+    worksheet = return_bg(
+        carryover_from_previous_years="1000",
+        carryover_claim="400",
+        unapplied_2018_carryover="100",
+    )
+
+    assert worksheet.get(AMT_PART_7_BASIC_TAX_WITH_RECAPTURE).value == D("5446.47")
+    assert worksheet.get(AMT_ADDITIONAL_TAXES_FOR_CARRYOVER).value == D("0")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE).value == D("600.00")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES).value == D("600.00")
+    assert worksheet.get(AMT_CARRYOVER_AVAILABLE_FOR_2026).value == D("500.00")
+
+
+def test_return_bg_part_8_line_14_adds_the_additional_taxes_when_no_carryover_is_claimed() -> None:
+    # The carryover of 1000.00 with no claim leaves line 13 at 1000.00 (line 12 is 0.00). The
+    # security options of 150000.00 give Part 7 line 14 of 1558.95, as above, since the basic
+    # federal tax of 5846.47 is unchanged with no claim. Line 15 is 1000.00 plus 1558.95, 2558.95,
+    # and line 17 is 2558.95 less the unapplied 2018 carryover of 100.00, 2458.95.
+    worksheet = return_bg(
+        security_t4_39_and_91="150000",
+        carryover_from_previous_years="1000",
+        unapplied_2018_carryover="100",
+    )
+
+    assert worksheet.get(AMT_ADDITIONAL_TAXES_FOR_CARRYOVER).value == D("1558.95")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE).value == D("1000.00")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES).value == D("2558.95")
+    assert worksheet.get(AMT_CARRYOVER_AVAILABLE_FOR_2026).value == D("2458.95")
+
+
+def test_return_bg_on428_lines_59_to_61_and_72_are_zero_and_line_61_is_line_55_by_default() -> None:
+    # No minimum tax carryover is applied (line 40427 is 0.00), so line 59 is 24.63% x 0.00, 0.00,
+    # and line 60, the lesser of line 58 (2526.82) and line 59, is 0.00. Line 61 is line 55 less
+    # line 60: 2526.82, which lines 62 and 63 carry; line 65 is line 63 less line 64 (0.00), and
+    # the surtax on 2526.82 is 0.00. Part 5 line 11 is 0.00, so Worksheet ON428 line 1 is 0.00, line
+    # 2 is line 65 (2526.82), line 3 is 2526.82, not more than $5,710, so lines 4 to 6 are 0.00,
+    # line 7 (line 68) is 0.00, line 8 is 0.00 less 0.00 and line 9, ON428 line 72, is 0.00 plus
+    # 0.00: line 73 is 2526.82 plus 0.00, 2526.82.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("0")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("2526.82")
+    assert worksheet.get(ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT).value == D("2526.82")
+    assert worksheet.get(ontario.MINIMUM_TAX_CARRYOVER_CREDIT).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER).value == D("2526.82")
+    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("2526.82")
+    assert worksheet.get(ontario.ONTARIO_SURTAX).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SURTAX).value == D("2526.82")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_2).value == D("2526.82")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("2526.82")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_6).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_7).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_8).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("2526.82")
+
+
+def test_return_bg_on428_line_59_is_24_63_percent_of_the_carryover_applied() -> None:
+    # A carryover from previous years of 3000.00 with a claim of 2000.00 (within line 1, 3000.00,
+    # and Part 8 line 11, 5846.47): line 40427 is 2000.00. Line 59 is 24.63% x 2000.00 = 492.60;
+    # line 58 is 2526.82 (the federal carryover claim does not change the Ontario tax), so line 60,
+    # the lesser, is line 59, 492.60, and line 61 is 2526.82 - 492.60 = 2034.22. Lines 62 and 63
+    # carry it, line 64 is 0.00 so line 65 is 2034.22, under $5,710, with no surtax: line 69 is
+    # 2034.22, line 71 the same (no dividend tax credit), and Worksheet ON428 (Part 5 line 11 is
+    # 0.00) gives line 72 of 0.00 whose line 2 is the new line 65, 2034.22, so line 73 is 2034.22.
+    worksheet = return_bg(carryover_from_previous_years="3000", carryover_claim="2000")
+
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("2000")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("2526.82")
+    assert worksheet.get(ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT).value == D("2526.82")
+    assert worksheet.get(ontario.MINIMUM_TAX_CARRYOVER_CREDIT).value == D("492.60")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("492.60")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER).value == D("2034.22")
+    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("2034.22")
+    assert worksheet.get(ontario.ONTARIO_SURTAX).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SURTAX).value == D("2034.22")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("2034.22")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_2).value == D("2034.22")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("2034.22")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("2034.22")
+
+
+def test_return_bg_on428_line_60_is_line_58_when_line_58_is_less_than_line_59() -> None:
+    # No employment income and 300000.00 of eligible taxable dividends (T5, with the federal credit
+    # of 15.0198% x 300000.00 = 45059.40): taxable income is 301000.00 and the Ontario tax of line
+    # 55 is 30973.48. The Ontario dividend tax credit (10% x 300000.00 = 30000.00) leaves line 58 at
+    # 973.48. A carryover from previous years of 20000.00 with a claim of 10000.00 (within line 1
+    # and Part 8 line 11, 17256.15) makes line 40427 10000.00, so line 59 is 24.63% x 10000.00 =
+    # 2463.00, more than line 58: line 60 is line 58, 973.48 (the Ontario tax less the dividend
+    # credit, not the whole of line 59). Line 61 is 30973.48 - 973.48 = 30000.00. Line 65 is
+    # 30000.00 (line 64 is 0.00): line 66 is 20% x (30000.00 - 5710) = 4858.00, line 67 is 36% x
+    # (30000.00 - 7307) = 8169.48 and line 68 is 13027.48, so line 69 is 30000.00 + 13027.48 =
+    # 43027.48 and line 71 is that less the dividend tax credit of 30000.00, 13027.48. Part 5 line
+    # 11 is 0.00: Worksheet ON428 line 1 is 0.00, line 3 is line 2 (30000.00), line 6 is line 4
+    # (4858.00) plus line 5 (8169.48), 13027.48, line 7 is 13027.48 and line 8 is 0.00, so line 72
+    # is 0.00 and line 73 is 13027.48.
+    worksheet = return_bg(
+        employment_income="0",
+        carryover_from_previous_years="20000",
+        carryover_claim="10000",
+        t5_taxable_dividends="300000",
+        t5_dividend_tax_credit="45059.40",
+    )
+
+    assert worksheet.get(TAXABLE_INCOME).value == D("301000.00")
+    assert worksheet.get(AMT_MAXIMUM_CARRYOVER_CLAIM).value == D("17256.15")
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("10000")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("30973.48")
+    assert worksheet.get(ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT).value == D("973.48")
+    assert worksheet.get(ontario.MINIMUM_TAX_CARRYOVER_CREDIT).value == D("2463.00")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("973.48")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER).value == D("30000.00")
+    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("30000.00")
+    assert worksheet.get(ontario.ONTARIO_SURTAX).value == D("13027.48")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SURTAX).value == D("43027.48")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("13027.48")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_2).value == D("30000.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("30000.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_6).value == D("13027.48")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_7).value == D("13027.48")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_8).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("13027.48")
+
+
+def test_return_bg_worksheet_on428_line_72_is_line_1_when_line_3_is_not_more_than_5710() -> None:
+    # The security options of boxes 39 and 91 at 150000.00 make Part 5 line 11 1558.95 (the Part 7
+    # case above). Worksheet ON428 line 1 is 24.63% x 1558.95 = 383.969385, 383.97; line 2 is line
+    # 65, 2526.82, and line 3 is 383.97 + 2526.82 = 2910.79, not more than $5,710, so lines 4 and
+    # 5 are 0.00 ("if negative, enter "0""), line 6 is 0.00, line 7 (the surtax on line 65) is
+    # 0.00, line 8 is 0.00 and line 9 is 383.97 + 0.00: line 72 is line 1, 383.97. Line 73 is line
+    # 71 (2526.82) plus line 72, 2910.79.
+    worksheet = return_bg(security_t4_39_and_91="150000")
+
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1558.95")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("383.97")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_2).value == D("2526.82")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("2910.79")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_6).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_7).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_8).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("383.97")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("2526.82")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("2910.79")
+
+
+def test_return_bg_worksheet_on428_line_3_over_5710_adds_the_surtax_on_the_additional_tax() -> None:
+    # Security options of 210000.00 give Part 5 line 11 of 13858.95. Worksheet ON428 line 1 is
+    # 24.63% x 13858.95 = 3413.459385, 3413.46; line 2 is line 65, 2526.82; line 3 is 3413.46 +
+    # 2526.82 = 5940.28, more than $5,710: line 4 is 20% x (5940.28 - 5710) = 46.056, 46.06; line 5
+    # is 36% x (5940.28 - 7307), negative, so 0.00; line 6 is 46.06. Line 7 is the surtax of ON428
+    # line 68 on 2526.82, 0.00, so line 8 is 46.06 - 0.00 = 46.06 and line 9, line 72, is 3413.46 +
+    # 46.06 = 3459.52. Line 73 is 2526.82 + 3459.52 = 5986.34.
+    worksheet = return_bg(security_t4_39_and_91="210000")
+
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("13858.95")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("3413.46")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_2).value == D("2526.82")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("5940.28")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_6).value == D("46.06")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_7).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_8).value == D("46.06")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("3459.52")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("5986.34")
+
+
+def test_return_bg_worksheet_on428_line_8_takes_the_surtax_of_line_68_off_line_6() -> None:
+    # Employment income of 120000.00 with security options of 150000.00: the Ontario tax of line 55
+    # is 8221.72, line 65 is 8221.72 and the surtax of line 68 is 831.64 (20% x 2511.72 = 502.344,
+    # 502.34, plus 36% x 914.72 = 329.2992, 329.30). Part 5 line 11 is 1373.78. Worksheet ON428
+    # line 1 is 24.63% x 1373.78 = 338.362014, 338.36; line 2 is 8221.72; line 3 is 8560.08. Line 4
+    # is 20% x (8560.08 - 5710) = 570.016, 570.02; line 5 is 36% x (8560.08 - 7307) = 451.1088,
+    # 451.11; line 6 is 1021.13. Line 7 is the 831.64 of line 68, so line 8 is 1021.13 - 831.64 =
+    # 189.49 and line 9, line 72, is 338.36 + 189.49 = 527.85. Line 69 is 8221.72 + 831.64 =
+    # 9053.36, line 71 the same, and line 73 is 9053.36 + 527.85 = 9581.21.
+    worksheet = return_bg(employment_income="120000", security_t4_39_and_91="150000")
+
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("8221.72")
+    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("8221.72")
+    assert worksheet.get(ontario.ONTARIO_SURTAX).value == D("831.64")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1373.78")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("338.36")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_2).value == D("8221.72")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("8560.08")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_6).value == D("1021.13")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_7).value == D("831.64")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_8).value == D("189.49")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("527.85")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("9053.36")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("9581.21")

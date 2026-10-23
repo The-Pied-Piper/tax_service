@@ -582,7 +582,7 @@ def test_a_claim_above_line_6_is_refused_the_extra_2000_is_not_part_of_line_7(cl
         return_ba(net_capital_losses_claimed=claim)
 
     assert str(raised.value) == (
-        f"ca/net_capital_losses_claimed {claim} is above "
+        f"ca-on/return, instance 1: ca/net_capital_losses_claimed {claim} is above "
         "ca/net_capital_losses_available_to_claim 10000.00"
     )
 
@@ -598,7 +598,7 @@ def test_the_pre_1986_balance_counts_in_line_4_and_so_in_line_6() -> None:
         )
 
     assert str(raised.value) == (
-        "ca/net_capital_losses_claimed 10000 is above "
+        "ca-on/return, instance 1: ca/net_capital_losses_claimed 10000 is above "
         "ca/net_capital_losses_available_to_claim 7000.00"
     )
     assert return_ba().get(NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM).value == D("10000.00")

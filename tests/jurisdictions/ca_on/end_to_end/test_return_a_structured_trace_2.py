@@ -23,6 +23,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_ADDITIONAL_TAXES_FOR_CARRYOVER,
     AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
     AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
@@ -33,6 +34,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+    AMT_CARRYOVER_BALANCE,
+    AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
@@ -46,12 +49,16 @@ from app.jurisdictions.ca.catalog import (
     AMT_EXCESS_EPSP_AMOUNTS,
     AMT_FEDERAL_LOGGING_TAX_CREDIT,
     AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FINANCING_EXPENSES,
     AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+    AMT_FOREIGN_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
+    AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
     AMT_INVESTMENT_COUNSEL_FEES,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
@@ -67,6 +74,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
+    AMT_NET_MINIMUM_TAX_PAYABLE,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_DEDUCTIBLE_INTEREST,
@@ -76,6 +84,14 @@ from app.jurisdictions.ca.catalog import (
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
+    AMT_PART_6_FEDERAL_SURTAX,
+    AMT_PART_6_TAX_WITH_SURTAX,
+    AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+    AMT_PART_7_CREDITS_TOTAL,
+    AMT_PART_7_FOREIGN_CREDIT_SHARE,
+    AMT_PART_7_FOREIGN_TAXES_PAID,
+    AMT_PART_7_TAX_LESS_CREDITS,
+    AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
@@ -550,8 +566,8 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
-    FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
@@ -1057,11 +1073,20 @@ from app.jurisdictions.ca_on.catalog import (
     TAX_REDUCTION_FOR_CHILDREN,
     TAX_REDUCTION_FOR_DEPENDANTS,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, return_a
+from tests.jurisdictions.ca_on.end_to_end.support import D, run_a
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
-    trace = return_a().trace
+    # The lines of the one T2125, T2042, T2121 and T776 statement of Return A, then those
+    # of the return form.
+    result = run_a()
+    trace = (
+        *result["ca/t2125"][0].trace,
+        *result["ca/t2042"][0].trace,
+        *result["ca/t2121"][0].trace,
+        *result["ca/t776"][0].trace,
+        *result["ca-on/return"][0].trace,
+    )
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
         # Form RC381 Part 3 lines 44, 49, 52, 56, 59, 61, 64, 67 and 69, each "Line N plus line M"
@@ -1115,6 +1140,63 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             RC381_PART_3_LINE_69,
             ((RC381_PART_3_LINE_61, D("4034.10")), (RC381_PART_3_LINE_68, D("0.00"))),
             D("4034.10"),
+        ),
+        # Form T691 Part 7 line 4 "Line 2 plus line 3": line 2, the basic federal tax (16951.38),
+        # and line 3, the recapture of investment tax credit (0.00): 16951.38.
+        AMT_PART_7_BASIC_TAX_WITH_RECAPTURE: SumLine(
+            AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+            ((AMT_BASIC_FEDERAL_TAX, D("16951.38")), (ITC_RECAPTURE, D("0.00"))),
+            D("16951.38"),
+        ),
+        # Form T691 Part 7 line 7 "Line 5 plus line 6": line 5, the federal logging tax credit (0),
+        # and line 6, the amount from line 41600 of your return (0.00): 0.00.
+        AMT_PART_7_CREDITS_TOTAL: SumLine(
+            AMT_PART_7_CREDITS_TOTAL,
+            ((AMT_FEDERAL_LOGGING_TAX_CREDIT, D("0")), (CREDITS_AGAINST_FEDERAL_TAX, D("0.00"))),
+            D("0.00"),
+        ),
+        # Form T691 Part 7 line 12, the denominator of the fraction: the non-business income tax
+        # paid to a foreign country (0) plus the business income tax paid to a foreign country (0):
+        # 0.
+        AMT_PART_7_FOREIGN_TAXES_PAID: SumLine(
+            AMT_PART_7_FOREIGN_TAXES_PAID,
+            ((AMT_FOREIGN_NON_BUSINESS_TAX_PAID, D("0")), (AMT_FOREIGN_BUSINESS_TAX_PAID, D("0"))),
+            D("0"),
+        ),
+        # Form T691 Part 7 line 13 "Line 8 plus line 12": line 8, 16951.38, and line 12, the foreign
+        # credit share (0.00): 16951.38.
+        AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE: SumLine(
+            AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
+            (
+                (AMT_PART_7_TAX_LESS_CREDITS, D("16951.38")),
+                (AMT_PART_7_FOREIGN_CREDIT_SHARE, D("0.00")),
+            ),
+            D("16951.38"),
+        ),
+        # Form T691 Part 8 line 15 "Line 13 plus line 14": line 13, the balance of the carryover
+        # (0), and line 14, the additional 2025 taxes (0): 0.
+        AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES: SumLine(
+            AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
+            ((AMT_CARRYOVER_BALANCE, D("0")), (AMT_ADDITIONAL_TAXES_FOR_CARRYOVER, D("0"))),
+            D("0"),
+        ),
+        # Form T691 Part 6 line 7 "Line 5 plus line 6 (14)": line 5, the greater of line 3
+        # (16951.38) and line 4 (the minimum amount, 0), 16951.38, and line 6, the amount from line
+        # 22 of Form T1206 (0): 16951.38.
+        AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX: SumLine(
+            AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
+            (
+                (AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT, D("16951.38")),
+                (SPLIT_INCOME_LINE_22, D("0")),
+            ),
+            D("16951.38"),
+        ),
+        # Form T691 Part 6 line 12 "Line 8 plus line 11": line 8, the net minimum tax payable (0),
+        # and line 11, the federal surtax (0): 0.
+        AMT_PART_6_TAX_WITH_SURTAX: SumLine(
+            AMT_PART_6_TAX_WITH_SURTAX,
+            ((AMT_NET_MINIMUM_TAX_PAYABLE, D("0")), (AMT_PART_6_FEDERAL_SURTAX, D("0"))),
+            D("0"),
         ),
         # Form RC381 Part 3 line 3 "Line 1 plus line 2 Total pensionable earnings": Return A has
         # no T4 pensionable earnings on lines 1 and 2.
@@ -2171,7 +2253,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         SPLIT_INCOME_LINE_29: SumLine(
             SPLIT_INCOME_LINE_29,
-            ((FEDERAL_TAX_LESS_CREDITS, D("16951.38")), (ADVANCED_CANADA_WORKERS_BENEFIT, D("0"))),
+            ((FEDERAL_TAX_LINE_41700, D("16951.38")), (ADVANCED_CANADA_WORKERS_BENEFIT, D("0"))),
             D("16951.38"),
         ),
         # The Federal Worksheet's "Line 25000 - Other payments deduction" lines 4, 8 and 9, each
@@ -2490,15 +2572,43 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((TAXABLE_INCOME, D("115000")), (TOTAL_SPLIT_INCOME, D("0"))),
             D("115000"),
         ),
-        # ON428 line 69 "Line 62 plus line 68": line 62 (line 55, the tax with the tax on split
-        # income) plus the surtax.
+        # ON428 line 69 "Line 62 plus line 68": line 62 (the amount from line 61, the tax after the
+        # minimum tax carryover) plus the surtax.
         ONTARIO_TAX_WITH_SURTAX: SumLine(
             ONTARIO_TAX_WITH_SURTAX,
             (
-                (ontario.ONTARIO_TAX_WITH_SPLIT_INCOME, D("7671.98")),
+                (ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER, D("7671.98")),
                 (ONTARIO_SURTAX, D("523.79")),
             ),
             D("8195.77"),
+        ),
+        # Worksheet ON428 (Line 72 - Ontario additional tax for minimum tax purposes): line 2
+        # "Amount from line 65 of your Form ON428", line 3 "Line 1 plus line 2 =" and line 7
+        # "Amount from line 68 of your Form ON428", for no alternative minimum tax payable.
+        ontario.WORKSHEET_ON428_LINE_2: SumLine(
+            ontario.WORKSHEET_ON428_LINE_2,
+            ((ontario.ONTARIO_SURTAX_BASE, D("7671.98")),),
+            D("7671.98"),
+        ),
+        ontario.WORKSHEET_ON428_LINE_3: SumLine(
+            ontario.WORKSHEET_ON428_LINE_3,
+            (
+                (ontario.WORKSHEET_ON428_LINE_1, D("0")),
+                (ontario.WORKSHEET_ON428_LINE_2, D("7671.98")),
+            ),
+            D("7671.98"),
+        ),
+        ontario.WORKSHEET_ON428_LINE_7: SumLine(
+            ontario.WORKSHEET_ON428_LINE_7,
+            ((ONTARIO_SURTAX, D("523.79")),),
+            D("523.79"),
+        ),
+        # Worksheet ON428 line 9 "Line 1 plus line 8 Enter this amount on line 72 of your Form
+        # ON428.": no alternative minimum tax, so 0.
+        ONTARIO_MINIMUM_TAX: SumLine(
+            ONTARIO_MINIMUM_TAX,
+            ((ontario.WORKSHEET_ON428_LINE_1, D("0")), (ontario.WORKSHEET_ON428_LINE_8, D("0"))),
+            D("0"),
         ),
         # Form T2036 note (4): ON428 line 71 and line 73 with "0" on lines 70 and 72, line 69 over
         # one part.

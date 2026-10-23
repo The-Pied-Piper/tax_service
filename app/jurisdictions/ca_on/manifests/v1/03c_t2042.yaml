@@ -1,3 +1,16 @@
+# Form T2042, Statement of Farming Activities: the form ca/t2042, run once for each statement of the
+# list ca/t2042_statements (one for each farming business; any number, none included). Each
+# statement's fields are the T2042 inputs. The form exports its line 9946 "Your net income (loss)",
+# which T1 line 14100 "Net" adds over the statements, and the lines nothing on the return reads,
+# which the return declares as outputs, one record for each statement. The five printed constants
+# of Charts B and C are the form's own copies of the datasets of the same name.
+form:
+  name: ca/t2042
+  instances: ca/t2042_statements
+  exports:
+    - ca/farming_income
+    - ca/farm_closing_ucc
+    - ca/farm_home_carry_forward
 capabilities:
   # T2042 Area A endnote 3 "If you have a negative amount in column 7, add it to income as a
   # recapture in Part 3 on line 9600. If no property is left in the class and there is a
@@ -88,6 +101,35 @@ capabilities:
         - ca/farm_terminal_loss
     produces:
       output: ca/farm_other_expenses_with_terminal_loss
+  # T2125 Chart B "Available interest expense for passenger vehicles and zero-emission passenger
+  # vehicles" and Chart C "Eligible leasing cost for passenger vehicles", which T2042 repeats: the
+  # printed constants are datasets of the same name, one step each ("$350***", "÷ 30", "$44,706",
+  # "$1,100" and "$38,000"), and the amounts of the charts are the steps that follow.
+  - name: core/credit_amount
+    params:
+      amount: ca/business_vehicle_interest_limit
+    produces:
+      output: ca/business_vehicle_interest_limit
+  - name: core/credit_amount
+    params:
+      amount: ca/business_vehicle_days_divisor
+    produces:
+      output: ca/business_vehicle_days_divisor
+  - name: core/credit_amount
+    params:
+      amount: ca/business_vehicle_list_price_limit
+    produces:
+      output: ca/business_vehicle_list_price_limit
+  - name: core/credit_amount
+    params:
+      amount: ca/business_vehicle_lease_charge_limit
+    produces:
+      output: ca/business_vehicle_lease_charge_limit
+  - name: core/credit_amount
+    params:
+      amount: ca/business_vehicle_lease_cost_limit
+    produces:
+      output: ca/business_vehicle_lease_cost_limit
   # Chart B line 18 "($350*** ÷ 30) × the number of days in the fiscal period for which interest
   # was payable (accrual method) or paid (cash method)".
   - name: core/apply_ratio

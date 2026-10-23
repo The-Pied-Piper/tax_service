@@ -16,23 +16,6 @@ outputs:
   - ca/net_capital_loss_balance_1990_to_1999
   - ca/net_capital_loss_balance_2000
   - ca/net_capital_loss_balance_2001_to_2024
-  - ca/rental_short_term_portion
-  - ca/rental_closing_ucc
-  - ca/rental_non_compliant_cca
-  - ca/short_term_rental_non_compliant_cca_by_class
-  - ca/short_term_rental_gross_rents
-  - ca/business_closing_ucc
-  - ca/business_home_carry_forward
-  # Form T2042 Area A column 22 "UCC at the end of the year" (for next year) and Part 7 line
-  # 7O "Business-use-of-home expenses available to carry forward": nothing else on the return
-  # reads them.
-  - ca/farm_closing_ucc
-  - ca/farm_home_carry_forward
-  # Form T2121 Area A column 22 "UCC at the end of the year" (for next year) and Part 7 line
-  # 7O "Business-use-of-home expenses available to carry forward": nothing else on the return
-  # reads them.
-  - ca/fish_closing_ucc
-  - ca/fish_home_carry_forward
   - ca/tuition_carried_forward
   - ca/qsbcs_proceeds
   - ca/qffp_proceeds
@@ -107,10 +90,7 @@ outputs:
   # Form T1206 Part 3 line 33C "Amount from line 33A divided by the tax rate you entered on line
   # 33B": Ontario's provincial Schedule does not add it, so nothing on the return reads it.
   - ca-on/tosi_adjusted_taxable_income
-  # Form T691 Part 3 line 15 "Line 10 minus line 14 (if negative, enter "0")" "Regular net federal
-  # tax payable", which nothing else on the return reads yet.
-  - ca/amt_regular_net_federal_tax_payable
-  # Form T691 Part 4 line 11 "Enter whichever is more: amount from line 7 of Part 3 or line 10."
-  # "Special foreign tax credit", which nothing else on the return reads yet; Part 4 lines 1 to 10
-  # are read by the lines after them.
-  - ca/amt_special_foreign_tax_credit
+  # Form T691 Part 8 line 17 "Total minimum tax carryover available for 2026: line 15 minus line 16":
+  # the carryover for 2026, which nothing on the return reads (Part 8 line 14 reads Part 7 line 14,
+  # not this line).
+  - ca/amt_carryover_available_for_2026

@@ -1,3 +1,16 @@
+# Form T2125, Statement of Business or Professional Activities: the form ca/t2125, run once for each
+# statement of the list ca/t2125_statements (one for each business; any number, none included).
+# Each statement's fields are the T2125 inputs. The form exports its line 9946 "Your net income
+# (loss)", which T1 line 13500 "Net" adds over the statements, and the lines nothing on the return
+# reads, which the return declares as outputs, one record for each statement. The five printed
+# constants of Charts B and C are the form's own copies of the datasets of the same name.
+form:
+  name: ca/t2125
+  instances: ca/t2125_statements
+  exports:
+    - ca/business_income
+    - ca/business_closing_ucc
+    - ca/business_home_carry_forward
 capabilities:
   # T2125 Part 3A "Subtotal: Amount 3A minus amount 3B 3C": amount 3A "Gross sales,
   # commissions, or fees (include GST/HST collected or collectible)" less amount 3B

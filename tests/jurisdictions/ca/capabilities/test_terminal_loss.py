@@ -277,7 +277,7 @@ def test_traces_no_classes_as_only_an_empty_total() -> None:
 def test_a_computation_gives_the_total_terminal_loss() -> None:
     worksheet = service("ca/terminal_loss", TERMINAL_LOSS).compute(
         JurisdictionCode("CA-ON"), 2025, classes(WITH_ADDITIONS, WITH_RECAPTURE, WITH_TERMINAL_LOSS)
-    )
+    )["ca-on/return"][0]
 
     assert worksheet.get(TERMINAL_LOSS).value == D("5000")
     assert isinstance(worksheet.producer_of(TERMINAL_LOSS), TerminalLoss)

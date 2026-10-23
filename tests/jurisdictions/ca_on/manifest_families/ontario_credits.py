@@ -241,10 +241,10 @@ STEPS = {
         },
         produces={"output": "ca-on/ontario_tax_with_split_income"},
     ),
-    # ON428 lines 56 to 63 carry as before: the Ontario minimum tax carryover (lines 59 to 61) is
-    # not triggered, so line 61 is line 55 and lines 62 and 63 are line 61. Line 64 "Ontario tax on
-    # split income from line 54" and line 65 "Line 63 minus line 64 (if negative, enter "0")", the
-    # base of the surtax.
+    # ON428 lines 62 and 63 are the amount from line 61, the tax after the minimum tax carryover
+    # (wired with lines 59 to 61 in the Ontario alternative minimum tax part). Line 64 "Ontario tax
+    # on split income from line 54" and line 65 "Line 63 minus line 64 (if negative, enter "0")",
+    # the base of the surtax.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -255,7 +255,7 @@ STEPS = {
         name="core/subtract_not_below_zero",
         params={},
         consumes={
-            "amount": "ca-on/ontario_tax_with_split_income",
+            "amount": "ca-on/ontario_tax_after_minimum_tax_carryover",
             "less": "ca-on/ontario_tax_on_split_income_for_surtax",
         },
         produces={"output": "ca-on/ontario_surtax_base"},
@@ -271,7 +271,9 @@ STEPS = {
     CapabilitySelection(
         name="core/sum",
         params={},
-        consumes={"parts": ("ca-on/ontario_tax_with_split_income", "ca-on/ontario_surtax")},
+        consumes={
+            "parts": ("ca-on/ontario_tax_after_minimum_tax_carryover", "ca-on/ontario_surtax")
+        },
         produces={"output": "ca-on/ontario_tax_with_surtax"},
     ),
     # ON428 line 56 "Enter the amount from line 53 above.", line 57 (printed "Line 57 and
@@ -457,14 +459,17 @@ WIRING = {
     (
         SubtractNotBelowZero,
         frozenset(
-            {ontario.ONTARIO_TAX_WITH_SPLIT_INCOME, ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX}
+            {
+                ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER,
+                ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
+            }
         ),
         frozenset({ontario.ONTARIO_SURTAX_BASE}),
     ),
     (TieredSurcharge, frozenset({ontario.ONTARIO_SURTAX_BASE}), frozenset({ONTARIO_SURTAX})),
     (
         Sum,
-        frozenset({ontario.ONTARIO_TAX_WITH_SPLIT_INCOME, ONTARIO_SURTAX}),
+        frozenset({ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER, ONTARIO_SURTAX}),
         frozenset({ONTARIO_TAX_WITH_SURTAX}),
     ),
     (

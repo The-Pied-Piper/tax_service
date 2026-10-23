@@ -54,9 +54,13 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_ADDITIONAL_TAXES_FOR_CARRYOVER,
     AMT_ADJUSTED_TAXABLE_INCOME,
     AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_BASIC_EXEMPTION,
+    AMT_BASIC_FEDERAL_TAX,
+    AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
@@ -65,6 +69,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
     AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
@@ -79,18 +84,31 @@ from app.jurisdictions.ca.catalog import (
     AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
     AMT_FOREIGN_TAX_CREDIT_LESSER,
     AMT_FOREIGN_TAXES_PAID,
+    AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_INVESTMENT_TAX_CREDIT_CLAIM,
+    AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
     AMT_LINE_3_HAS_AMOUNT,
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
+    AMT_NET_MINIMUM_TAX_PAYABLE,
+    AMT_PART_5_LINE_11_IS_POSITIVE,
+    AMT_PART_6_FEDERAL_SURTAX,
+    AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+    AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+    AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_PART_6_TAX_WITH_SURTAX,
+    AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE,
+    AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_NET_TAX_LESS_SURTAX,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
@@ -103,6 +121,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_NET,
     AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     AMT_T2038_AMOUNT_I,
+    AMT_T2038_PART_D_AMOUNT_15,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TOTAL_FOREIGN_INCOME,
     ANNUAL_GAINS_LIMIT_2025,
@@ -115,6 +134,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_HOME_CARRY_FORWARD,
     BUSINESS_HOME_EXPENSES_AVAILABLE,
     BUSINESS_HOME_INCOME_LIMIT,
+    BUSINESS_INCOME,
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
@@ -532,11 +552,13 @@ from app.jurisdictions.ca.catalog import (
     FARM_VEHICLE_LEASING_COST,
     FARM_VEHICLE_LIST_PRICE,
     FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FARMING_INCOME,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
     FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
@@ -579,6 +601,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_VEHICLE_LEASING_COST,
     FISH_VEHICLE_LIST_PRICE,
     FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FISHING_INCOME,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
@@ -884,11 +907,20 @@ from app.jurisdictions.ca_on.catalog import (
     SENIORS_CARE_REDUCTION,
 )
 from app.jurisdictions.ca_on.trace import PlacementCreditLine
-from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a
+from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a, run_a
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
-    trace = return_a().trace
+    # The lines of the one T2125, T2042, T2121 and T776 statement of Return A, then those
+    # of the return form.
+    result = run_a()
+    trace = (
+        *result["ca/t2125"][0].trace,
+        *result["ca/t2042"][0].trace,
+        *result["ca/t2121"][0].trace,
+        *result["ca/t776"][0].trace,
+        *result["ca-on/return"][0].trace,
+    )
     floored = {line.output: line for line in trace if isinstance(line, SubtractedNotBelowZeroLine)}
     summed_floored = {line.output: line for line in trace if isinstance(line, SumNotBelowZeroLine)}
     by_count = {line.output: line for line in trace if isinstance(line, AmountByCountLine)}
@@ -899,6 +931,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         line
         for line in trace
         if isinstance(line, SurchargeTierLine) and line.output == ONTARIO_SURTAX
+    ]
+    worksheet_surcharged = [
+        line
+        for line in trace
+        if isinstance(line, SurchargeTierLine) and line.output == ontario.WORKSHEET_ON428_LINE_6
     ]
     lift_tiers = [
         line
@@ -995,6 +1032,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (AMT_MAXIMUM_CARRYOVER_APPLIED, D("16951.38")),
             ),
             result=D("0"),
+        ),
+        # ON428 line 60 and line 61540 "Enter whichever is less: amount from line 58 or line 59.":
+        # line 58 (7671.98) and line 59 (0), the lesser of them, 0.
+        ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED: LesserOfLine(
+            ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED,
+            (
+                (ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT, D("7671.98")),
+                (ontario.MINIMUM_TAX_CARRYOVER_CREDIT, D("0")),
+            ),
+            D("0"),
         ),
         # Form T2209 line 13 "should not be more than" line 42900: the line 3 total, 0 with no
         # country, against line 42900, 16951.38.
@@ -2223,6 +2270,27 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             part=D("131.39"),
         ),
     ]
+    # Worksheet ON428 lines 4 and 5, inside line 6: 20% over 5710 and 36% over 7307 of line 3.
+    assert worksheet_surcharged == [
+        SurchargeTierLine(
+            output=ontario.WORKSHEET_ON428_LINE_6,
+            base=ontario.WORKSHEET_ON428_LINE_3,
+            base_amount=D("7671.98"),
+            threshold=D("5710"),
+            rate=Rate(D("0.20")),
+            rounding=CENT,
+            part=D("392.40"),
+        ),
+        SurchargeTierLine(
+            output=ontario.WORKSHEET_ON428_LINE_6,
+            base=ontario.WORKSHEET_ON428_LINE_3,
+            base_amount=D("7671.98"),
+            threshold=D("7307"),
+            rate=Rate(D("0.36")),
+            rounding=CENT,
+            part=D("131.39"),
+        ),
+    ]
     assert premium_tiers == [
         SurchargeTierLine(
             output=ONTARIO_HEALTH_PREMIUM,
@@ -2351,6 +2419,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("3500.00"),
             result=D("0"),
         ),
+        # Form T691 Part 7 line 11 "Line 9 minus line 10 (if negative, enter "0")": the special
+        # foreign tax credit (0) less the federal foreign tax credit (0): 0.
+        AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE: SubtractedNotBelowZeroLine(
+            output=AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE,
+            minuend=AMT_SPECIAL_FOREIGN_TAX_CREDIT,
+            minuend_amount=D("0"),
+            subtrahend=FEDERAL_FOREIGN_TAX_CREDIT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T691 Part 7 line 14 "Line 1 minus line 13 (if negative, enter "0")": line 1, the
+        # minimum amount (0), less line 13, 16951.38, below zero: 0.
+        AMT_ADDITIONAL_TAXES_FOR_CARRYOVER: SubtractedNotBelowZeroLine(
+            output=AMT_ADDITIONAL_TAXES_FOR_CARRYOVER,
+            minuend=AMT_MINIMUM_AMOUNT,
+            minuend_amount=D("0"),
+            subtrahend=AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
+            subtrahend_amount=D("16951.38"),
+            result=D("0"),
+        ),
+        # Form T691 Part 6 line 3 "Line 1 minus line 2 (if negative, enter "0")": line 1, the basic
+        # federal tax of 16951.38, less line 2, the amount from line 22 of Form T1206 (0): 16951.38.
+        AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX: SubtractedNotBelowZeroLine(
+            output=AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX,
+            minuend=AMT_BASIC_FEDERAL_TAX,
+            minuend_amount=D("16951.38"),
+            subtrahend=SPLIT_INCOME_LINE_22,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Form RC381 Part 3 line 14 "Line 12 minus line 13 (if negative, enter "0")": line 12 is
         # line 11 (0) and line 13 is line 8 (0.00).
         RC381_PART_3_LINE_14: SubtractedNotBelowZeroLine(
@@ -2390,6 +2488,56 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=AMT_REGULAR_TAX_CREDITS_TOTAL,
             subtrahend_amount=D("0"),
             result=D("16951.38"),
+        ),
+        # Form T691 Part 5 line 3 "Line 1 minus line 2 (if negative, enter "0")" "Net minimum tax
+        # payable": line 1, 0, less line 2, 0, 0.
+        AMT_NET_MINIMUM_TAX_PAYABLE: SubtractedNotBelowZeroLine(
+            output=AMT_NET_MINIMUM_TAX_PAYABLE,
+            minuend=AMT_MINIMUM_AMOUNT,
+            minuend_amount=D("0"),
+            subtrahend=AMT_SPECIAL_FOREIGN_TAX_CREDIT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T691 Part 5 line 6 "Line 4 minus line 5 (if negative, enter "0")": line 4, 16951.38,
+        # less line 5, the federal surtax of 0, 16951.38.
+        AMT_REGULAR_NET_TAX_LESS_SURTAX: SubtractedNotBelowZeroLine(
+            output=AMT_REGULAR_NET_TAX_LESS_SURTAX,
+            minuend=AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_FEDERAL_SURTAX,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
+        # Form T691 Part 5 line 7 "Line 3 minus line 6 (if negative, enter "0")": line 3, 0, less
+        # line 6, 16951.38: 0.
+        AMT_MINIMUM_TAX_AFTER_REGULAR_TAX: SubtractedNotBelowZeroLine(
+            output=AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
+            minuend=AMT_NET_MINIMUM_TAX_PAYABLE,
+            minuend_amount=D("0"),
+            subtrahend=AMT_REGULAR_NET_TAX_LESS_SURTAX,
+            subtrahend_amount=D("16951.38"),
+            result=D("0"),
+        ),
+        # Form T691 Part 5 line 10 "Line 8 minus line 9 (if negative, enter "0")": line 8, the
+        # investment tax credit of 0, less line 9, 0, 0.
+        AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D: SubtractedNotBelowZeroLine(
+            output=AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
+            minuend=AMT_INVESTMENT_TAX_CREDIT,
+            minuend_amount=D("0"),
+            subtrahend=AMT_T2038_PART_D_AMOUNT_15,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T691 Part 5 line 11 "Line 7 minus line 10 (if negative, enter "0")": line 7, 0, less
+        # line 10, 0: 0.
+        AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE: SubtractedNotBelowZeroLine(
+            output=AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
+            minuend=AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
+            minuend_amount=D("0"),
+            subtrahend=AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
+            subtrahend_amount=D("0"),
+            result=D("0"),
         ),
         # Form T691 Part 8 line 11 "Maximum carryover that can be applied in 2025: line 9 minus line
         # 10 (if negative, enter "0")": 16951.38 less the minimum amount of 0, 16951.38.
@@ -3300,9 +3448,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # with the tax on split income, less that tax again (line 64 is line 54), here 0.
         ontario.ONTARIO_SURTAX_BASE: SubtractedNotBelowZeroLine(
             output=ontario.ONTARIO_SURTAX_BASE,
-            minuend=ontario.ONTARIO_TAX_WITH_SPLIT_INCOME,
+            minuend=ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER,
             minuend_amount=D("7671.98"),
             subtrahend=ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
+            subtrahend_amount=D("0"),
+            result=D("7671.98"),
+        ),
+        # ON428 line 61 "Line 55 minus line 60 (if negative, enter "0")": the tax with the tax on
+        # split income, less the minimum tax carryover applied (0).
+        ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER: SubtractedNotBelowZeroLine(
+            output=ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER,
+            minuend=ontario.ONTARIO_TAX_WITH_SPLIT_INCOME,
+            minuend_amount=D("7671.98"),
+            subtrahend=ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED,
             subtrahend_amount=D("0"),
             result=D("7671.98"),
         ),
@@ -4254,6 +4412,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         FLOW_THROUGH_SHARE_EXPENSES: RecordTotalLine(
             FLOW_THROUGH_SHARE_EXPENSES, FLOW_THROUGH_SHARE_SLIP_EXPENSES, (), D("0")
         ),
+        # T1 line 12600 "Net": the lines 9946 of Return A's one T776 statement, a blank one.
+        NET_RENTAL_INCOME: RecordTotalLine(NET_RENTAL_INCOME, NET_RENTAL_INCOME, (D("0"),), D("0")),
+        # T1 line 13500 "Net": the lines 9946 of Return A's one T2125 statement, a blank one.
+        BUSINESS_INCOME: RecordTotalLine(BUSINESS_INCOME, BUSINESS_INCOME, (D("0"),), D("0")),
+        # T1 line 14100 "Net": the lines 9946 of Return A's one T2042 statement, a blank one.
+        FARMING_INCOME: RecordTotalLine(FARMING_INCOME, FARMING_INCOME, (D("0"),), D("0")),
+        # T1 line 14300 "Net": the lines 9946 of Return A's one T2121 statement, a blank one.
+        FISHING_INCOME: RecordTotalLine(FISHING_INCOME, FISHING_INCOME, (D("0"),), D("0")),
     }
     assert quotients == {
         COOP_EDUCATION_PHASE_OUT_SHARE: QuotientLine(
@@ -4291,6 +4457,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert {line.output: line for line in trace if isinstance(line, GreaterOfLine)} == {
+        # Form T691 Part 6 line 5 "Enter whichever is more: amount from line 3 or line 4.": line 3,
+        # 16951.38 (line 1 less line 2, 0), and line 4, the minimum amount of 0: 16951.38.
+        AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT: GreaterOfLine(
+            output=AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
+            parts=(
+                (AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX, D("16951.38")),
+                (AMT_MINIMUM_AMOUNT, D("0")),
+            ),
+            result=D("16951.38"),
+        ),
+        # Form T691 Part 6 line 14 "Enter whichever is more: amount from line 12 or line 13. Enter
+        # this amount on line 41700 of your return." "Federal tax payable (under alternative minimum
+        # tax)": line 12, 0, and line 13, the amount from line 24 of Form T1206, 0: 0.
+        AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX: GreaterOfLine(
+            output=AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
+            parts=((AMT_PART_6_TAX_WITH_SURTAX, D("0")), (SPLIT_INCOME_LINE_24, D("0"))),
+            result=D("0"),
+        ),
         # Form T691 Part 4 line 11 "Enter whichever is more: amount from line 7 of Part 3 or line
         # 10." "Special foreign tax credit": the federal foreign tax credit of Part 3 line 7, 0, and
         # line 10, 0: the greater, 0.
@@ -4836,7 +5020,84 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
         ),
     }
+    part_6_has_amount_conditions = {
+        (line.output, line.position): line
+        for line in trace
+        if isinstance(line, ConditionLine) and line.output is AMT_PART_6_HAS_AMOUNT_ON_LINE_10
+    }
+    part_6_has_amount_count = {
+        line.output: line
+        for line in trace
+        if isinstance(line, ConditionsCountLine) and line.output is AMT_PART_6_HAS_AMOUNT_ON_LINE_10
+    }
+    assert part_6_has_amount_conditions == {
+        # Form T691 Part 6 line 11 "If you have an amount on line 10, enter that amount.": the
+        # condition "you have an amount on line 10" reads line 10 (0): it does not apply.
+        (AMT_PART_6_HAS_AMOUNT_ON_LINE_10, 1): ConditionLine(
+            output=AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+            position=1,
+            text="you have an amount on line 10",
+            reads=((AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS, D("0")),),
+            applies=False,
+        ),
+    }
+    assert part_6_has_amount_count == {
+        # Form T691 Part 6 line 11: no condition applies, so the count is 0.
+        AMT_PART_6_HAS_AMOUNT_ON_LINE_10: ConditionsCountLine(
+            output=AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+            applied=(),
+            count=0,
+        ),
+    }
+    part_5_line_11_conditions = {
+        (line.output, line.position): line
+        for line in trace
+        if isinstance(line, ConditionLine) and line.output is AMT_PART_5_LINE_11_IS_POSITIVE
+    }
+    part_5_line_11_count = {
+        line.output: line
+        for line in trace
+        if isinstance(line, ConditionsCountLine) and line.output is AMT_PART_5_LINE_11_IS_POSITIVE
+    }
+    assert part_5_line_11_conditions == {
+        # Form T691 Part 5 line 11 "If line 11 is positive, complete parts 6 and 7.": the condition
+        # "line 11 is positive" reads line 11 (0): it does not apply.
+        (AMT_PART_5_LINE_11_IS_POSITIVE, 1): ConditionLine(
+            output=AMT_PART_5_LINE_11_IS_POSITIVE,
+            position=1,
+            text="line 11 is positive",
+            reads=((AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE, D("0")),),
+            applies=False,
+        ),
+    }
+    assert part_5_line_11_count == {
+        # Form T691 Part 5 line 11: no condition applies, so the count is 0.
+        AMT_PART_5_LINE_11_IS_POSITIVE: ConditionsCountLine(
+            output=AMT_PART_5_LINE_11_IS_POSITIVE,
+            applied=(),
+            count=0,
+        ),
+    }
     assert chosen == {
+        # T1 line 139 and line 41700 "Line 134 minus line 138 (if negative, enter "0")", chosen by
+        # the count of "line 11 is positive": the count is 0, so the figure of line 139, 16951.38.
+        FEDERAL_TAX_LINE_41700: ChosenByCountLine(
+            output=FEDERAL_TAX_LINE_41700,
+            count_kind=AMT_PART_5_LINE_11_IS_POSITIVE,
+            count=0,
+            chosen_kind=FEDERAL_TAX_LESS_CREDITS,
+            chosen_value=D("16951.38"),
+        ),
+        # Form T691 Part 6 line 11 "If you have an amount on line 10, enter that amount. If not, ...
+        # enter the amount from line 9. Otherwise, enter "0".": no condition applies (line 10 is 0),
+        # so the second branch, 0.
+        AMT_PART_6_FEDERAL_SURTAX: ChosenByCountLine(
+            output=AMT_PART_6_FEDERAL_SURTAX,
+            count_kind=AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+            count=0,
+            chosen_kind=AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+            chosen_value=D("0"),
+        ),
         # Form T691 Part 3 line 4 "If you have an amount on line 3, enter that amount. If not, ...
         # enter the amount from line 2. Otherwise, enter "0".": no condition applies (line 3 is 0),
         # so the second branch, 0.

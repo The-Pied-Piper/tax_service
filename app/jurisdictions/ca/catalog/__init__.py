@@ -1,4 +1,4 @@
-"""The federal Canada artifact catalog: artifact kinds named from Canada's own return (§2, §7).
+"""The federal Canada artifact catalog: artifact kinds named from Canada's own return (§2, §8).
 
 Only the kinds in use are declared, each non-negative except the lines that print no floor: none of
 these lines can be negative on the return as modelled except the refund or balance owing, where

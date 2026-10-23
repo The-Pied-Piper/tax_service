@@ -664,7 +664,12 @@ def test_compute_is_repeatable() -> None:
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset() -> None:
-    composition = service("ca/cca_claim", CCA_CLAIM).compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service("ca/cca_claim", CCA_CLAIM)
+        .compose(JurisdictionCode("CA-ON"), 2025)
+        .form("ca-on/return")
+        .composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, CcaClaim)
@@ -675,7 +680,7 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset()
 def test_a_computation_gives_the_total_claim() -> None:
     worksheet = service("ca/cca_claim", CCA_CLAIM).compute(
         JurisdictionCode("CA-ON"), 2025, classes(WITH_ADDITIONS, WITH_RECAPTURE, WITH_TERMINAL_LOSS)
-    )
+    )["ca-on/return"][0]
 
     assert worksheet.get(CCA_CLAIM).value == D("2300.00")
     assert isinstance(worksheet.producer_of(CCA_CLAIM), CcaClaim)

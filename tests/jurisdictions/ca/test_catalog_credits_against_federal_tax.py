@@ -7,16 +7,20 @@ from typing import Any
 
 import pytest
 
-from app.domain.artifact import ArtifactKind, ArtifactRegistry
+from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
 from app.domain.errors import InvalidRecordError, NegativeArtifactError
 from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
     CREDITS_AGAINST_FEDERAL_TAX,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LINE_41700,
     FOREIGN_NON_BUSINESS_TAX_PAID,
     FOREIGN_TAX_COUNTRIES,
     FOREIGN_TAX_CREDIT_SHEET_LINE_3,
     FOREIGN_TAX_CREDIT_SHEETS,
+    ITC_APPRENTICE_SALARY_AND_WAGES,
+    ITC_APPRENTICES,
+    ITC_APPRENTICESHIP_WAGES_TOTAL,
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
     LABOUR_SPONSORED_FUNDS_NET_COST,
@@ -78,6 +82,23 @@ def test_the_credits_against_federal_tax_kinds_are_the_registered_ones(
     assert registry.get("ca/labour_sponsored_funds_credit") is LABOUR_SPONSORED_FUNDS_CREDIT
     assert registry.get("ca/credits_against_federal_tax") is CREDITS_AGAINST_FEDERAL_TAX
     assert registry.get("ca/federal_tax_less_credits") is FEDERAL_TAX_LESS_CREDITS
+    assert registry.get("ca/federal_tax_line_41700") is FEDERAL_TAX_LINE_41700
+
+
+def test_the_federal_tax_line_41700_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:
+    # T1 line 139 and line 41700 "Line 134 minus line 138 (if negative, enter "0")", or, when Part 5
+    # line 11 of Form T691 is positive, Part 6 line 14 "Enter this amount on line 41700 of your
+    # return.": the figure entered on line 41700, never below 0.
+    assert FEDERAL_TAX_LINE_41700.identifier == "ca/federal_tax_line_41700"
+    assert FEDERAL_TAX_LINE_41700.value_type is Decimal
+    assert FEDERAL_TAX_LINE_41700.non_negative is True
+    assert registry.kind("ca/federal_tax_line_41700") is FEDERAL_TAX_LINE_41700
+
+
+def test_a_negative_federal_tax_line_41700_is_refused() -> None:
+    # A negative figure is an input error on the line 41700 entry, refused and not taken as 0.
+    with pytest.raises(NegativeArtifactError, match="ca/federal_tax_line_41700 cannot be negative"):
+        Artifact(FEDERAL_TAX_LINE_41700, Decimal("-1"))
 
 
 def test_the_credits_against_federal_tax_kinds_are_money() -> None:
@@ -107,6 +128,7 @@ def test_the_credits_against_federal_tax_kinds_are_money() -> None:
         LABOUR_SPONSORED_FUNDS_CREDIT,
         CREDITS_AGAINST_FEDERAL_TAX,
         FEDERAL_TAX_LESS_CREDITS,
+        FEDERAL_TAX_LINE_41700,
     ):
         assert kind.value_type is Decimal, kind.identifier
 
@@ -252,3 +274,58 @@ def test_the_foreign_tax_credit_sheets_may_be_empty() -> None:
 def test_a_foreign_tax_credit_sheet_refuses_a_negative_line_3() -> None:
     with pytest.raises(NegativeArtifactError):
         RecordList(FOREIGN_TAX_CREDIT_SHEETS.fields, [foreign_sheet_record(line_3=Decimal("-1"))])
+
+
+# --- Form T2038(IND): the apprentices of the apprenticeship job creation tax credit ---------------
+
+
+def test_the_itc_apprentice_salary_and_wages_is_a_non_negative_decimal(
+    registry: ArtifactRegistry,
+) -> None:
+    # T2038(IND) Part B Table 1 column 3 "The lesser of eligible salary and wages** payable in the
+    # year or $20,000.": each apprentice's eligible salary and wages, net of any assistance.
+
+    assert ITC_APPRENTICE_SALARY_AND_WAGES.identifier == "ca/itc_apprentice_salary_and_wages"
+    assert ITC_APPRENTICE_SALARY_AND_WAGES.value_type is Decimal
+    assert ITC_APPRENTICE_SALARY_AND_WAGES.non_negative is True
+    assert registry.kind("ca/itc_apprentice_salary_and_wages") is ITC_APPRENTICE_SALARY_AND_WAGES
+
+
+def test_the_itc_apprentices_are_a_record_list_of_their_salary_and_wages(
+    registry: ArtifactRegistry,
+) -> None:
+    # T2038(IND) Part B Table 1: one row for each apprentice, its own record list.
+
+    assert isinstance(ITC_APPRENTICES, RecordListKind)
+    assert ITC_APPRENTICES.identifier == "ca/itc_apprentices"
+    assert ITC_APPRENTICES.value_type is RecordList
+    assert ITC_APPRENTICES.fields == (ITC_APPRENTICE_SALARY_AND_WAGES,)
+    assert registry.get("ca/itc_apprentices") is ITC_APPRENTICES
+
+
+def test_the_itc_apprentices_may_be_empty() -> None:
+
+    assert RecordList(ITC_APPRENTICES.fields, []).records == ()
+
+
+def test_an_itc_apprentice_refuses_negative_salary_and_wages() -> None:
+
+    with pytest.raises(NegativeArtifactError, match="item 1"):
+        RecordList(ITC_APPRENTICES.fields, [{ITC_APPRENTICE_SALARY_AND_WAGES: Decimal("-1")}])
+
+
+def test_an_itc_apprentice_missing_salary_and_wages_is_refused_naming_the_row() -> None:
+
+    with pytest.raises(InvalidRecordError, match="item 1.*itc_apprentice_salary_and_wages"):
+        RecordList(ITC_APPRENTICES.fields, [{}])
+
+
+def test_the_itc_apprenticeship_wages_total_is_a_non_negative_decimal(
+    registry: ArtifactRegistry,
+) -> None:
+    # T2038(IND) Part B Table 1: the total of column 3 is the amount the credit's 10% is taken of.
+
+    assert ITC_APPRENTICESHIP_WAGES_TOTAL.identifier == "ca/itc_apprenticeship_wages_total"
+    assert ITC_APPRENTICESHIP_WAGES_TOTAL.value_type is Decimal
+    assert ITC_APPRENTICESHIP_WAGES_TOTAL.non_negative is True
+    assert registry.kind("ca/itc_apprenticeship_wages_total") is ITC_APPRENTICESHIP_WAGES_TOTAL

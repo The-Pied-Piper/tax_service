@@ -32,13 +32,13 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_PAYABLE,
 )
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
 BUILDING = ("1", "200000", "0", "0", "0", "0", "8000", 0)
 FURNITURE = ("8", "5000", "2000", "0", "0", "0", "1200", 0)
 
 
-def return_ap(**overrides: Any) -> Worksheet:
+def return_ap(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
     """Return AP's inputs, as in `returns/2025_return_ap.yaml`: Return AD's landlord with two
     capital cost allowance classes.
 
@@ -65,7 +65,7 @@ def return_ap(**overrides: Any) -> Worksheet:
         },
         "rental_cca_classes_rows": (BUILDING, FURNITURE),
     }
-    return compute(**{**inputs, **overrides})
+    return run(**{**inputs, **overrides})
 
 
 def test_return_aps_area_a_claims_9200_on_line_9936() -> None:
@@ -76,37 +76,41 @@ def test_return_aps_area_a_claims_9200_on_line_9936() -> None:
     # x 20% = 1200.00; 1200 is claimed. Line ii (the total of column 23) is 8000 + 1200 = 9200;
     # with no co-owner, personal part or business-use-of-home CCA, line 9936 is 9200, within the
     # 12000 of amount 5.
-    worksheet = return_ap()
+    result = return_ap()
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_CCA_TABLE_CLAIM).value == D("9200")
-    assert worksheet.get(RENTAL_CCA_CLAIM_SHARE).value == D("9200")
-    assert worksheet.get(RENTAL_CCA_CLAIM_LESS_PERSONAL_PART).value == D("9200")
-    assert worksheet.get(RENTAL_CCA_CLAIM_BEFORE_LIMIT).value == D("9200")
-    assert worksheet.get(RENTAL_CCA_LIMIT).value == D("12000")
-    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("9200")
+    assert statement.get(RENTAL_CCA_TABLE_CLAIM).value == D("9200")
+    assert statement.get(RENTAL_CCA_CLAIM_SHARE).value == D("9200")
+    assert statement.get(RENTAL_CCA_CLAIM_LESS_PERSONAL_PART).value == D("9200")
+    assert statement.get(RENTAL_CCA_CLAIM_BEFORE_LIMIT).value == D("9200")
+    assert statement.get(RENTAL_CCA_LIMIT).value == D("12000")
+    assert statement.get(RENTAL_CCA_CLAIM).value == D("9200")
 
 
 def test_return_aps_classes_have_no_recapture_and_no_terminal_loss() -> None:
     # Neither class has a negative column 7 (200000 and 7000), and both have property left
     # (the count of no property left is 0), so lines 9947 and 9948 are 0 and amounts 4 and 5 are
     # amount 3, 12000.
-    worksheet = return_ap()
+    result = return_ap()
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_CCA_TABLE_RECAPTURE).value == D("0")
-    assert worksheet.get(RENTAL_RECAPTURED_CCA).value == D("0")
-    assert worksheet.get(RENTAL_CCA_TABLE_TERMINAL_LOSS).value == D("0")
-    assert worksheet.get(RENTAL_TERMINAL_LOSS).value == D("0")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES).value == D("12000")
-    assert worksheet.get(RENTAL_NET_INCOME_WITH_RECAPTURE).value == D("12000")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("12000")
+    assert statement.get(RENTAL_CCA_TABLE_RECAPTURE).value == D("0")
+    assert statement.get(RENTAL_RECAPTURED_CCA).value == D("0")
+    assert statement.get(RENTAL_CCA_TABLE_TERMINAL_LOSS).value == D("0")
+    assert statement.get(RENTAL_TERMINAL_LOSS).value == D("0")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES).value == D("12000")
+    assert statement.get(RENTAL_NET_INCOME_WITH_RECAPTURE).value == D("12000")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("12000")
 
 
 def test_return_aps_net_rental_income_is_2800_on_line_12600() -> None:
     # Amount 6 is amount 5 less line 9936: 12000 - 9200 = 2800, which is line 9946 and T1 line
     # 12600; it is the whole of total income.
-    worksheet = return_ap()
+    result = return_ap()
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("2800")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("2800")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("2800")
     assert worksheet.get(TOTAL_INCOME).value == D("2800")
 
@@ -114,9 +118,10 @@ def test_return_aps_net_rental_income_is_2800_on_line_12600() -> None:
 def test_return_aps_closing_ucc_is_192000_for_class_1_and_5800_for_class_8() -> None:
     # Column 24 is column 7 less column 23: 200000 - 8000 = 192000 and 7000 - 1200 = 5800, the
     # next year's column 2, with each record's class number.
-    worksheet = return_ap()
+    result = return_ap()
+    statement = result["ca/t776"][0]
 
-    closing = worksheet.get(RENTAL_CLOSING_UCC).value
+    closing = statement.get(RENTAL_CLOSING_UCC).value
     assert [list(record.values()) for record in closing.records] == [
         [D("1"), D("192000")],
         [D("8"), D("5800")],
@@ -128,7 +133,8 @@ def test_return_aps_figures_that_depend_on_income_are_return_ads_recomputed_for_
     # x 14.5% = 406.00 and the Ontario tax 2800.00 x 5.05% = 141.40, each below its
     # non-refundable credits (2338.71 and 643.72), so there is no tax payable and the refund or
     # balance owing is 0.
-    worksheet = return_ap()
+    result = return_ap()
+    worksheet = result["ca-on/return"][0]
 
     assert worksheet.get(NET_INCOME).value == D("2800.00")
     assert worksheet.get(TAXABLE_INCOME).value == D("2800.00")
@@ -139,7 +145,8 @@ def test_return_aps_figures_that_depend_on_income_are_return_ads_recomputed_for_
 
 
 def test_return_aps_trace_names_each_line_of_the_capital_cost_allowance() -> None:
-    rendered = EnglishTraceRenderer().render_all(return_ap().trace)
+    result = return_ap()
+    rendered = EnglishTraceRenderer().render_all(result["ca/t776"][0].trace)
 
     for line in (
         "rental_cca_table_recapture: item 1 class 1: column 7 200000 is not negative: recapture 0",
@@ -177,17 +184,19 @@ def test_a_co_owners_share_of_amount_ii_replaces_the_table_total_on_line_9936() 
     # A co-owner (count 1) enters only their share of the total CCA claim from amount ii: 3000 of
     # the 9200, and their share of line 2 is 6000 (amount 2, so amount 5, 6000). Line 9936 is
     # 3000, within the 6000 of amount 5, so amount 6 is 6000 - 3000 = 3000.
-    worksheet = return_ap(
+    result = return_ap(
         rental_coowner=1, rental_coowner_share="6000", rental_coowner_cca_claim="3000"
     )
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_NET_INCOME_SHARE).value == D("6000")
-    assert worksheet.get(RENTAL_CCA_TABLE_CLAIM).value == D("9200")
-    assert worksheet.get(RENTAL_CCA_CLAIM_SHARE).value == D("3000")
-    assert worksheet.get(RENTAL_CCA_LIMIT).value == D("6000")
-    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("3000")
+    assert statement.get(RENTAL_NET_INCOME_SHARE).value == D("6000")
+    assert statement.get(RENTAL_CCA_TABLE_CLAIM).value == D("9200")
+    assert statement.get(RENTAL_CCA_CLAIM_SHARE).value == D("3000")
+    assert statement.get(RENTAL_CCA_LIMIT).value == D("6000")
+    assert statement.get(RENTAL_CCA_CLAIM).value == D("3000")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("3000")
-    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    rendered = EnglishTraceRenderer().render_all(statement.trace)
     assert (
         "rental_cca_claim_share: rental_coowner_cca_claim 3000, chosen as rental_coowner is 1"
     ) in rendered
@@ -198,34 +207,39 @@ def test_a_co_owners_shares_of_lines_9947_and_9948_replace_the_tables() -> None:
     # 9948) 100, entered as the form says ("co-owners: enter your share of the amount"), though
     # the table gives 0 for each: amount 3 is 6000 - 0 = 6000, amount 4 is 6200 and amount 5 is
     # 6100; the claim of 3000 is within it, so amount 6 is 3100.
-    worksheet = return_ap(
+    result = return_ap(
         rental_coowner=1,
         rental_coowner_share="6000",
         rental_coowner_recaptured_cca="200",
         rental_coowner_terminal_loss="100",
         rental_coowner_cca_claim="3000",
     )
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_RECAPTURED_CCA).value == D("200")
-    assert worksheet.get(RENTAL_TERMINAL_LOSS).value == D("100")
-    assert worksheet.get(RENTAL_NET_INCOME_WITH_RECAPTURE).value == D("6200")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("6100")
-    assert worksheet.get(RENTAL_CCA_LIMIT).value == D("6100")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("3100")
+    assert statement.get(RENTAL_RECAPTURED_CCA).value == D("200")
+    assert statement.get(RENTAL_TERMINAL_LOSS).value == D("100")
+    assert statement.get(RENTAL_NET_INCOME_WITH_RECAPTURE).value == D("6200")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("6100")
+    assert statement.get(RENTAL_CCA_LIMIT).value == D("6100")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("3100")
 
 
 def test_a_sole_proprietor_ignores_the_co_owners_share_of_amount_ii() -> None:
-    worksheet = return_ap(rental_coowner=0, rental_coowner_cca_claim="3000")
+    result = return_ap(rental_coowner=0, rental_coowner_cca_claim="3000")
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_CCA_CLAIM_SHARE).value == D("9200")
+    assert statement.get(RENTAL_CCA_CLAIM_SHARE).value == D("9200")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("2800")
 
 
 def test_the_personal_part_and_the_business_use_of_home_cca_come_off_line_9936() -> None:
     # Line 9936 is "amount ii from Area A minus any personal part of CCA, and any CCA for
     # business-use-of home expenses": 9200 - 700 - 300 = 8200, so amount 6 is 12000 - 8200 = 3800.
-    worksheet = return_ap(rental_cca_personal_part="700", rental_cca_business_use_of_home="300")
+    result = return_ap(rental_cca_personal_part="700", rental_cca_business_use_of_home="300")
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_CCA_CLAIM_LESS_PERSONAL_PART).value == D("8500")
-    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("8200")
+    assert statement.get(RENTAL_CCA_CLAIM_LESS_PERSONAL_PART).value == D("8500")
+    assert statement.get(RENTAL_CCA_CLAIM).value == D("8200")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("3800")

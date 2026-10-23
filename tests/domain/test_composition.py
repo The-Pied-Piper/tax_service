@@ -577,6 +577,67 @@ def test_compute_names_the_value_type_of_a_starting_artifact_of_the_wrong_type()
     assert "Decimal" in message
 
 
+def test_sort_key_orders_by_identifier_then_value_type_name() -> None:
+    as_int = ArtifactKind("ex/a", int)
+
+    unordered: list[ArtifactKind[Any]] = [B, as_int, A]
+
+    ordered = sorted(unordered, key=Composition.sort_key)
+
+    assert ordered == [A, as_int, B]
+    assert Composition.sort_key(as_int) == ("ex/a", "int")
+
+
+def test_labels_are_distinct_sorted_and_quoted() -> None:
+    assert ArtifactKind.labels([B, A, B]) == f"{A.label!r}, {B.label!r}"
+    assert ArtifactKind.labels([]) == ""
+
+
+def test_check_starting_kinds_accepts_exactly_the_inputs() -> None:
+    Composition.check_starting_kinds(iter([B, A]), kinds(A, B))
+
+
+def test_check_starting_kinds_names_one_extra_kind() -> None:
+    with pytest.raises(InvalidCompositionError) as raised:
+        Composition.check_starting_kinds([A, E], kinds(A))
+
+    assert str(raised.value) == f"{E.label!r} is not an input of this composition"
+
+
+def test_check_starting_kinds_names_several_extra_kinds() -> None:
+    with pytest.raises(InvalidCompositionError) as raised:
+        Composition.check_starting_kinds([A, E, C], kinds(A))
+
+    assert str(raised.value) == (f"{C.label!r}, {E.label!r} are not inputs of this composition")
+
+
+def test_check_starting_kinds_names_missing_inputs_grammatically() -> None:
+    with pytest.raises(InvalidCompositionError) as one:
+        Composition.check_starting_kinds([A], kinds(A, B))
+    with pytest.raises(InvalidCompositionError) as several:
+        Composition.check_starting_kinds([], kinds(A, B))
+
+    assert str(one.value) == f"missing input {B.label!r}"
+    assert str(several.value) == f"missing inputs {A.label!r}, {B.label!r}"
+
+
+def test_check_starting_kinds_reports_extra_before_missing() -> None:
+    with pytest.raises(InvalidCompositionError, match="is not an input"):
+        Composition.check_starting_kinds([E], kinds(A))
+
+
+def test_value_type_hints_name_the_type_the_input_takes() -> None:
+    as_int = ArtifactKind("ex/a", int)
+
+    hints = Composition.value_type_hints([as_int, E], kinds(A))
+
+    assert hints == f"; {as_int.label!r} was given as int but the input takes Decimal"
+
+
+def test_value_type_hints_are_empty_without_a_shared_identifier() -> None:
+    assert Composition.value_type_hints([E], kinds(A)) == ""
+
+
 def test_compute_rejects_a_starting_artifact_the_composition_produces() -> None:
     composition, _, _ = chain_composition()
 

@@ -41,8 +41,22 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1300
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1300
+    assert (
+        len(
+            computation.compose(JurisdictionCode("CA-ON"), 2025)
+            .form("ca-on/return")
+            .composition.order
+        )
+        == 1167
+    )
+    assert (
+        len(
+            computation.compose(JurisdictionCode("CA-ON"), 2025)
+            .form("ca-on/return")
+            .composition.order
+        )
+        == 1167
+    )
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -248,6 +262,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/business_partner_share",
         "ca/business_partner",
         "ca/business_cca_classes",
+        "ca/t2125_statements",
         "ca/business_sales_subtotal",
         "ca/business_recaptured_cca",
         "ca/business_other_income_with_recapture",
@@ -400,6 +415,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/farm_home_cca",
         "ca/farm_home_carried_forward",
         "ca/farm_cca_classes",
+        "ca/t2042_statements",
         "ca/farm_recaptured_cca",
         "ca/farm_other_income_with_recapture",
         "ca/farm_gross_income",
@@ -487,6 +503,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/fish_other_expenses",
         "ca/fish_cca_personal_part",
         "ca/fish_cca_classes",
+        "ca/t2121_statements",
         "ca/fish_partner",
         "ca/fish_partner_share",
         "ca/fish_partner_gst_hst_rebate",
@@ -1310,6 +1327,9 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/foreign_tax_countries",
         "ca/foreign_tax_credit_sheet_line_3",
         "ca/foreign_tax_credit_sheets",
+        "ca/itc_apprentice_salary_and_wages",
+        "ca/itc_apprentices",
+        "ca/itc_apprenticeship_wages_total",
         "ca/spouses_claimed",
         "ca/spouse_caregiver_eligible",
         "ca/spouse_net_income",
@@ -1426,6 +1446,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rental_partner_share_with_rebate",
         "ca/rental_partnership_net_income",
         "ca/net_rental_income",
+        "ca/t776_statements",
         "ca/medical_expenses",
         "ca/medical_net_income_share",
         "ca/medical_threshold",
@@ -1626,6 +1647,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/labour_sponsored_funds_credit",
         "ca/credits_against_federal_tax",
         "ca/federal_tax_less_credits",
+        "ca/federal_tax_line_41700",
         "ca/resp_aips_contributions_counted",
         "ca/resp_aips_lifetime_limit",
         "ca/resp_aips_limit_remaining",
@@ -1829,6 +1851,35 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/amt_foreign_taxes_paid",
         "ca/amt_foreign_tax_credit_lesser",
         "ca/amt_special_foreign_tax_credit",
+        "ca/amt_net_minimum_tax_payable",
+        "ca/amt_regular_net_tax_less_surtax",
+        "ca/amt_minimum_tax_after_regular_tax",
+        "ca/amt_t2038_part_d_amount_15",
+        "ca/amt_investment_tax_credit_less_part_d",
+        "ca/amt_alternative_minimum_tax_payable",
+        "ca/amt_part_5_line_11_is_positive",
+        "ca/amt_basic_federal_tax_less_split_income_tax",
+        "ca/amt_greater_of_basic_tax_and_minimum_amount",
+        "ca/amt_federal_tax_under_minimum_tax",
+        "ca/amt_part_6_surtax_at_48_percent",
+        "ca/amt_part_6_surtax_multiple_jurisdictions",
+        "ca/amt_part_6_has_amount_on_line_10",
+        "ca/amt_part_6_surtax_if_non_resident",
+        "ca/amt_part_6_federal_surtax",
+        "ca/amt_part_6_tax_with_surtax",
+        "ca/amt_federal_tax_payable_under_minimum_tax",
+        "ca/amt_unapplied_2018_carryover",
+        "ca/amt_part_7_basic_tax_with_recapture",
+        "ca/amt_part_7_credits_total",
+        "ca/amt_part_7_tax_less_credits",
+        "ca/amt_part_7_foreign_credit_difference",
+        "ca/amt_part_7_foreign_taxes_paid",
+        "ca/amt_part_7_foreign_credit_share",
+        "ca/amt_part_7_tax_less_credits_plus_share",
+        "ca/amt_additional_taxes_for_carryover",
+        "ca/amt_carryover_balance",
+        "ca/amt_carryover_balance_with_additional_taxes",
+        "ca/amt_carryover_available_for_2026",
         "ca/amt_capital_gains_difference",
         "ca/amt_capital_gains_added",
         "ca/amt_capital_gains_added_not_below_zero",
@@ -1993,6 +2044,15 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/tax_reduction_amounts",
         "ca-on/ontario_tax_reduction",
         "ca-on/ontario_minimum_tax",
+        "ca-on/minimum_tax_carryover_credit",
+        "ca-on/ontario_minimum_tax_carryover_applied",
+        "ca-on/ontario_tax_after_minimum_tax_carryover",
+        "ca-on/worksheet_on428_line_1",
+        "ca-on/worksheet_on428_line_2",
+        "ca-on/worksheet_on428_line_3",
+        "ca-on/worksheet_on428_line_6",
+        "ca-on/worksheet_on428_line_7",
+        "ca-on/worksheet_on428_line_8",
         "ca-on/ontario_tax_before_reduction",
         "ca-on/not_resident_of_canada_at_start_of_year",
         "ca-on/not_resident_of_ontario_at_year_end",
@@ -2155,15 +2215,43 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1300
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1300
+    assert (
+        len(
+            computation.compose(JurisdictionCode("CA-ON"), 2025)
+            .form("ca-on/return")
+            .composition.order
+        )
+        == 1167
+    )
+    assert (
+        len(
+            computation.compose(JurisdictionCode("CA-ON"), 2025)
+            .form("ca-on/return")
+            .composition.order
+        )
+        == 1167
+    )
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1300
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1300
+    assert (
+        len(
+            computation.compose(JurisdictionCode("CA-ON"), 2025)
+            .form("ca-on/return")
+            .composition.order
+        )
+        == 1167
+    )
+    assert (
+        len(
+            computation.compose(JurisdictionCode("CA-ON"), 2025)
+            .form("ca-on/return")
+            .composition.order
+        )
+        == 1167
+    )
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

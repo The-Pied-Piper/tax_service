@@ -215,3 +215,5 @@ expected:
   ca/rc381_part_3_line_67: "0.00"
   ca/rc381_part_3_line_68: "0.00"
   ca/rc381_part_3_line_69: "172.25"
+  ca/amt_federal_tax_payable_under_minimum_tax: "0"
+  ca/amt_carryover_available_for_2026: "0"

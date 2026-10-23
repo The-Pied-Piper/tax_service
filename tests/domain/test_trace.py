@@ -78,6 +78,7 @@ from app.domain.trace import (
     TraceLine,
 )
 from app.jurisdictions.ca.trace import (
+    ApprenticeWagesLine,
     CaregiverClaimLine,
     CcaClaimLine,
     CcaZeroReason,
@@ -156,6 +157,7 @@ TOP_BAND = RateTableRow(D(150000), None, Rate(D(0)))
 CARE_EXPENSES = ArtifactKind("ex/care_expenses", Decimal)
 CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 CAREGIVER = ArtifactKind("ex/caregiver_amount", Decimal)
+APPRENTICESHIP = ArtifactKind("ex/apprenticeship_wages_total", Decimal)
 MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
 MEDICAL_REDUCTION = ClaimReduction(Rate(D("0.03")), D("2834"), D("15551"))
 LIMITED = ArtifactKind("ex/limited_amount", Decimal)
@@ -354,6 +356,12 @@ def caregiver_claim_line() -> CaregiverClaimLine:
         Amount(D("8601")),
         CENT,
         D("3798.00"),
+    )
+
+
+def apprentice_wages_line() -> ApprenticeWagesLine:
+    return ApprenticeWagesLine(
+        APPRENTICESHIP, 2, D("25000"), Amount(D("20000")), CENT, D("20000.00")
     )
 
 
@@ -2322,6 +2330,45 @@ def test_a_chosen_rate_applied_lines_amount_is_not_one_of_its_fields() -> None:
 
 def test_a_chosen_rate_applied_line_is_not_a_rate_applied_line() -> None:
     assert not isinstance(chosen_rate_applied_line(), RateAppliedLine)
+
+
+def test_apprentice_wages_line_fields_in_order() -> None:
+    line = apprentice_wages_line()
+
+    assert line == ApprenticeWagesLine(
+        output=APPRENTICESHIP,
+        position=2,
+        salary_and_wages=D("25000"),
+        maximum=Amount(D("20000")),
+        rounding=CENT,
+        result=D("20000.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "salary_and_wages",
+        "maximum",
+        "rounding",
+        "result",
+    ]
+    assert line.amount == D("20000.00")
+
+
+def test_apprentice_wages_lines_differ_by_each_field() -> None:
+    line = apprentice_wages_line()
+
+    assert line != ApprenticeWagesLine(
+        APPRENTICESHIP, 1, line.salary_and_wages, line.maximum, CENT, line.result
+    )
+    assert line != ApprenticeWagesLine(
+        APPRENTICESHIP, 2, D("15000"), line.maximum, CENT, line.result
+    )
+    assert line != ApprenticeWagesLine(
+        APPRENTICESHIP, 2, line.salary_and_wages, Amount(D("21000")), CENT, line.result
+    )
+    assert line != ApprenticeWagesLine(
+        APPRENTICESHIP, 2, line.salary_and_wages, line.maximum, CENT, D("19999.99")
+    )
 
 
 def test_caregiver_claim_line_fields_in_order() -> None:

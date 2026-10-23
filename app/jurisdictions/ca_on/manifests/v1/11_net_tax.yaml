@@ -95,13 +95,14 @@ capabilities:
     produces:
       output: ca/split_income_line_24
   # Line 25 "Amount from line 40600 of your return", line 26 "Amount from line 41600 of your
-  # return" and line 27 "Line 25 minus line 26 (if negative, enter "0")" are the T1's line 139
-  # (41700), the federal tax less credits, and line 28 "Amount from line 41500 of your return" is
-  # line 140: line 29 "Line 27 plus line 28".
+  # return" and line 27 "Line 25 minus line 26 (if negative, enter "0")" are the T1's line 41700,
+  # the federal tax of the return (line 139, or the Part 6 line 14 of Form T691 when Part 5 line
+  # 11 is positive), and line 28 "Amount from line 41500 of your return" is line 140: line 29
+  # "Line 27 plus line 28".
   - name: core/sum
     consumes:
       parts:
-        - ca/federal_tax_less_credits
+        - ca/federal_tax_line_41700
         - ca/advanced_canada_workers_benefit
     produces:
       output: ca/split_income_line_29

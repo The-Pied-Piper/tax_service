@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Mapping
 from decimal import ROUND_HALF_UP, Decimal
+from functools import cache
 from typing import Any
 
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
@@ -64,10 +65,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
     AMT_T2038_AMOUNT_I,
+    AMT_T2038_PART_D_AMOUNT_15,
     AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
     AMT_TAX_SHELTER_LOSSES,
     AMT_TREATY_EXEMPT_CAPITAL_GAINS,
+    AMT_UNAPPLIED_2018_CARRYOVER,
     BOND_DISPOSITIONS,
     BORN_IN_1960_OR_EARLIER,
     BUSINESS_ADVERTISING,
@@ -720,6 +723,10 @@ from app.jurisdictions.ca.catalog import (
     T657_PART_2_EXCLUDED_H,
     T657_T2017_LINE_13,
     T657_T2048_LINE_17217_FOR_2024,
+    T776_STATEMENTS,
+    T2042_STATEMENTS,
+    T2121_STATEMENTS,
+    T2125_STATEMENTS,
     T5013_DIVIDEND_TAX_CREDIT,
     T5013_INVESTMENT_INCOME,
     T5013_TAXABLE_DIVIDENDS,
@@ -855,7 +862,9 @@ POLITICAL_COLUMN_LINES = {
 }
 
 
+@cache
 def service() -> TaxComputationService:
+    """One service for the whole run, so each (jurisdiction, tax year) is composed once."""
     return build_tax_computation()
 
 
@@ -1034,6 +1043,57 @@ def rental_expense_artifacts(
     return artifacts
 
 
+def t776_statement(
+    *,
+    rental_properties: tuple[tuple[int, str, str], ...] = (),
+    rental_other_income: str = "0",
+    rental_expenses: Mapping[str, tuple[str, str, str]] | None = None,
+    short_term_rental_units_rows: tuple[tuple[str, int, int], ...] = (),
+    short_term_rental_cca_units_rows: tuple[tuple[str, str, int, int], ...] = (),
+    rental_coowner: int = 0,
+    rental_coowner_share: str = "0",
+    rental_coowner_other_expenses: str = "0",
+    rental_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    rental_coowner_recaptured_cca: str = "0",
+    rental_coowner_terminal_loss: str = "0",
+    rental_coowner_cca_claim: str = "0",
+    rental_cca_personal_part: str = "0",
+    rental_cca_business_use_of_home: str = "0",
+    rental_partner: int = 0,
+    rental_partner_share: str = "0",
+    rental_partner_gst_hst_rebate: str = "0",
+    rental_partner_other_expenses: str = "0",
+) -> dict[ArtifactKind[Any], object]:
+    """One Form T776 statement, a record of `ca/t776_statements`: the T776 inputs, as given or 0."""
+    artifacts: list[Artifact[Any]] = [
+        rental_properties_list(*rental_properties),
+        Artifact(RENTAL_OTHER_INCOME, D(rental_other_income)),
+        *rental_expense_artifacts(rental_expenses or {}),
+        short_term_rental_units(*short_term_rental_units_rows),
+        short_term_rental_cca_units(*short_term_rental_cca_units_rows),
+        Artifact(RENTAL_COOWNER, rental_coowner),
+        Artifact(RENTAL_COOWNER_SHARE, D(rental_coowner_share)),
+        Artifact(RENTAL_COOWNER_OTHER_EXPENSES, D(rental_coowner_other_expenses)),
+        rental_cca_classes(*rental_cca_classes_rows),
+        Artifact(RENTAL_COOWNER_RECAPTURED_CCA, D(rental_coowner_recaptured_cca)),
+        Artifact(RENTAL_COOWNER_TERMINAL_LOSS, D(rental_coowner_terminal_loss)),
+        Artifact(RENTAL_COOWNER_CCA_CLAIM, D(rental_coowner_cca_claim)),
+        Artifact(RENTAL_CCA_PERSONAL_PART, D(rental_cca_personal_part)),
+        Artifact(RENTAL_CCA_BUSINESS_USE_OF_HOME, D(rental_cca_business_use_of_home)),
+        Artifact(RENTAL_PARTNER, rental_partner),
+        Artifact(RENTAL_PARTNER_SHARE, D(rental_partner_share)),
+        Artifact(RENTAL_PARTNER_GST_HST_REBATE, D(rental_partner_gst_hst_rebate)),
+        Artifact(RENTAL_PARTNER_OTHER_EXPENSES, D(rental_partner_other_expenses)),
+    ]
+    return {artifact.kind: artifact.value for artifact in artifacts}
+
+
+def t776_statements(statements: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
+    """The statements of Form T776, one record for each mapping of `t776_statement` arguments."""
+    records = [t776_statement(**statement) for statement in statements]
+    return Artifact(T776_STATEMENTS, RecordList(T776_STATEMENTS.fields, records))
+
+
 # The Form T2125 amounts the caller enters, in the form's order: the non-negative ones, then the
 # signed one (amount 5A, the T5013 amount or a share of a loss).
 BUSINESS_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
@@ -1148,6 +1208,27 @@ def business_cca_classes(
         ) in rows
     ]
     return Artifact(kind, RecordList(kind.fields, records))
+
+
+def t2125_statement(
+    *,
+    business: Mapping[str, str] | None = None,
+    business_partner: int = 0,
+    business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+) -> dict[ArtifactKind[Any], object]:
+    """One Form T2125 statement, a record of `ca/t2125_statements`: its inputs, as given or 0."""
+    artifacts: list[Artifact[Any]] = [
+        *business_amount_artifacts(business or {}),
+        Artifact(BUSINESS_PARTNER, business_partner),
+        business_cca_classes(*business_cca_classes_rows),
+    ]
+    return {artifact.kind: artifact.value for artifact in artifacts}
+
+
+def t2125_statements(statements: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
+    """The statements of Form T2125, one record for each mapping of `t2125_statement` arguments."""
+    records = [t2125_statement(**statement) for statement in statements]
+    return Artifact(T2125_STATEMENTS, RecordList(T2125_STATEMENTS.fields, records))
 
 
 # The Form T2042 amounts the caller enters, in the form's order: the non-negative ones, then the
@@ -1296,6 +1377,27 @@ def farm_cca_classes(
     return Artifact(kind, RecordList(kind.fields, records))
 
 
+def t2042_statement(
+    *,
+    farm: Mapping[str, str] | None = None,
+    farm_partner: int = 0,
+    farm_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+) -> dict[ArtifactKind[Any], object]:
+    """One Form T2042 statement, a record of `ca/t2042_statements`: its inputs, as given or 0."""
+    artifacts: list[Artifact[Any]] = [
+        *farm_amount_artifacts(farm or {}),
+        Artifact(FARM_PARTNER, farm_partner),
+        farm_cca_classes(*farm_cca_classes_rows),
+    ]
+    return {artifact.kind: artifact.value for artifact in artifacts}
+
+
+def t2042_statements(statements: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
+    """The statements of Form T2042, one record for each mapping of `t2042_statement` arguments."""
+    records = [t2042_statement(**statement) for statement in statements]
+    return Artifact(T2042_STATEMENTS, RecordList(T2042_STATEMENTS.fields, records))
+
+
 # The Form T2121 amounts the caller enters, in the form's order: the income lines 3A to 3F and
 # line 9600, the expense lines, the repairs, the partnership amounts, the business-use-of-home
 # amounts and the carry forward.
@@ -1403,6 +1505,27 @@ def fish_cca_classes(
         ) in rows
     ]
     return Artifact(kind, RecordList(kind.fields, records))
+
+
+def t2121_statement(
+    *,
+    fish: Mapping[str, str] | None = None,
+    fish_partner: int = 0,
+    fish_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+) -> dict[ArtifactKind[Any], object]:
+    """One Form T2121 statement, a record of `ca/t2121_statements`: its inputs, as given or 0."""
+    artifacts: list[Artifact[Any]] = [
+        *fish_amount_artifacts(fish or {}),
+        Artifact(FISH_PARTNER, fish_partner),
+        fish_cca_classes(*fish_cca_classes_rows),
+    ]
+    return {artifact.kind: artifact.value for artifact in artifacts}
+
+
+def t2121_statements(statements: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
+    """The statements of Form T2121, one record for each mapping of `t2121_statement` arguments."""
+    records = [t2121_statement(**statement) for statement in statements]
+    return Artifact(T2121_STATEMENTS, RecordList(T2121_STATEMENTS.fields, records))
 
 
 def trip(individual: int, zone: int, column_3: str, column_4: str, column_5: str) -> dict[Any, Any]:
@@ -1529,7 +1652,27 @@ def required_cpp_contributions(employment_income: Decimal) -> tuple[Decimal, Dec
     return base_and_first, _cpp_tier(CPP_SECOND_ADDITIONAL_TIER, employment_income)
 
 
-def compute(
+def _worksheet_of[**P](build: Callable[P, tuple[Artifact[Any], ...]]) -> Callable[P, Worksheet]:
+    """`build`'s starting artifacts computed: the worksheet of the form `ca-on/return`."""
+
+    def compute(*args: P.args, **kwargs: P.kwargs) -> Worksheet:
+        return service().compute(CA_ON, 2025, *build(*args, **kwargs))["ca-on/return"][0]
+
+    return compute
+
+
+def _run_of[**P](
+    build: Callable[P, tuple[Artifact[Any], ...]],
+) -> Callable[P, dict[str, tuple[Worksheet, ...]]]:
+    """`build`'s starting artifacts run: the worksheets of every form, one for each instance."""
+
+    def run(*args: P.args, **kwargs: P.kwargs) -> dict[str, tuple[Worksheet, ...]]:
+        return service().compute(CA_ON, 2025, *build(*args, **kwargs))
+
+    return run
+
+
+def starting(
     employment_income: str,
     share_dispositions: tuple[Disposition, ...],
     unused_rrsp_contributions: str,
@@ -1604,12 +1747,16 @@ def compute(
     rental_partner_share: str = "0",
     rental_partner_gst_hst_rebate: str = "0",
     rental_partner_other_expenses: str = "0",
+    rental_statements: tuple[Mapping[str, Any], ...] | None = None,
+    business_statements: tuple[Mapping[str, Any], ...] | None = None,
     business: Mapping[str, str] | None = None,
     business_partner: int = 0,
     business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    farm_statements: tuple[Mapping[str, Any], ...] | None = None,
     farm: Mapping[str, str] | None = None,
     farm_partner: int = 0,
     farm_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    fish_statements: tuple[Mapping[str, Any], ...] | None = None,
     fish: Mapping[str, str] | None = None,
     fish_partner: int = 0,
     fish_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
@@ -1830,7 +1977,6 @@ def compute(
     spouse_return_ontario_line_24: str = "0",
     spouse_return_ontario_unused_tuition_amount: str = "0",
     lift_spouse_at_year_end: int = 0,
-    ontario_minimum_tax: str = "0",
     not_resident_of_canada_at_start_of_year: int = 0,
     not_resident_of_ontario_at_year_end: int = 0,
     bankrupt_in_year: int = 0,
@@ -1990,14 +2136,16 @@ def compute(
     amt_minimum_tax_carryover_claim: str = "0",
     amt_t2203_column_5_percentage: str = "0",
     amt_non_resident_or_deemed_resident: int = 0,
+    amt_unapplied_2018_carryover: str = "0",
     amt_investment_tax_credit_claim: str = "0",
     amt_t2038_amount_i: str = "0",
+    amt_t2038_part_d_amount_15: str = "0",
     amt_foreign_business_income: str = "0",
     amt_foreign_non_business_income: str = "0",
     amt_foreign_capital_gains_non_taxable_claim: str = "0",
     amt_foreign_non_business_tax_paid: str = "0",
     amt_foreign_business_tax_paid: str = "0",
-) -> Worksheet:
+) -> tuple[Artifact[Any], ...]:
     # The T4 box 16 and 16A amounts default to the required ones for the employment income given,
     # so line 24 is 0 unless a test gives its own.
     required_base_and_first, required_second = required_cpp_contributions(D(employment_income))
@@ -2011,9 +2159,66 @@ def compute(
         if cpp_t4_second_additional_contributions is None
         else D(cpp_t4_second_additional_contributions)
     )
-    return service().compute(
-        CA_ON,
-        2025,
+    statements: tuple[Mapping[str, Any], ...] = (
+        rental_statements
+        if rental_statements is not None
+        else (
+            {
+                "rental_properties": rental_properties,
+                "rental_other_income": rental_other_income,
+                "rental_expenses": rental_expenses,
+                "short_term_rental_units_rows": short_term_rental_units_rows,
+                "short_term_rental_cca_units_rows": short_term_rental_cca_units_rows,
+                "rental_coowner": rental_coowner,
+                "rental_coowner_share": rental_coowner_share,
+                "rental_coowner_other_expenses": rental_coowner_other_expenses,
+                "rental_cca_classes_rows": rental_cca_classes_rows,
+                "rental_coowner_recaptured_cca": rental_coowner_recaptured_cca,
+                "rental_coowner_terminal_loss": rental_coowner_terminal_loss,
+                "rental_coowner_cca_claim": rental_coowner_cca_claim,
+                "rental_cca_personal_part": rental_cca_personal_part,
+                "rental_cca_business_use_of_home": rental_cca_business_use_of_home,
+                "rental_partner": rental_partner,
+                "rental_partner_share": rental_partner_share,
+                "rental_partner_gst_hst_rebate": rental_partner_gst_hst_rebate,
+                "rental_partner_other_expenses": rental_partner_other_expenses,
+            },
+        )
+    )
+    business_statement_list: tuple[Mapping[str, Any], ...] = (
+        business_statements
+        if business_statements is not None
+        else (
+            {
+                "business": business,
+                "business_partner": business_partner,
+                "business_cca_classes_rows": business_cca_classes_rows,
+            },
+        )
+    )
+    farm_statement_list: tuple[Mapping[str, Any], ...] = (
+        farm_statements
+        if farm_statements is not None
+        else (
+            {
+                "farm": farm,
+                "farm_partner": farm_partner,
+                "farm_cca_classes_rows": farm_cca_classes_rows,
+            },
+        )
+    )
+    fish_statement_list: tuple[Mapping[str, Any], ...] = (
+        fish_statements
+        if fish_statements is not None
+        else (
+            {
+                "fish": fish,
+                "fish_partner": fish_partner,
+                "fish_cca_classes_rows": fish_cca_classes_rows,
+            },
+        )
+    )
+    return (
         Artifact(EMPLOYMENT_INCOME, D(employment_income)),
         dispositions(QSBCS_DISPOSITIONS, *qsbcs_dispositions),
         dispositions(QFFP_DISPOSITIONS, *qffp_dispositions),
@@ -2088,33 +2293,10 @@ def compute(
         ),
         Artifact(NET_PARTNERSHIP_INCOME, D(net_partnership_income)),
         Artifact(RDSP_INCOME, D(rdsp_income)),
-        rental_properties_list(*rental_properties),
-        Artifact(RENTAL_OTHER_INCOME, D(rental_other_income)),
-        *rental_expense_artifacts(rental_expenses or {}),
-        short_term_rental_units(*short_term_rental_units_rows),
-        short_term_rental_cca_units(*short_term_rental_cca_units_rows),
-        Artifact(RENTAL_COOWNER, rental_coowner),
-        Artifact(RENTAL_COOWNER_SHARE, D(rental_coowner_share)),
-        Artifact(RENTAL_COOWNER_OTHER_EXPENSES, D(rental_coowner_other_expenses)),
-        rental_cca_classes(*rental_cca_classes_rows),
-        Artifact(RENTAL_COOWNER_RECAPTURED_CCA, D(rental_coowner_recaptured_cca)),
-        Artifact(RENTAL_COOWNER_TERMINAL_LOSS, D(rental_coowner_terminal_loss)),
-        Artifact(RENTAL_COOWNER_CCA_CLAIM, D(rental_coowner_cca_claim)),
-        Artifact(RENTAL_CCA_PERSONAL_PART, D(rental_cca_personal_part)),
-        Artifact(RENTAL_CCA_BUSINESS_USE_OF_HOME, D(rental_cca_business_use_of_home)),
-        Artifact(RENTAL_PARTNER, rental_partner),
-        Artifact(RENTAL_PARTNER_SHARE, D(rental_partner_share)),
-        Artifact(RENTAL_PARTNER_GST_HST_REBATE, D(rental_partner_gst_hst_rebate)),
-        Artifact(RENTAL_PARTNER_OTHER_EXPENSES, D(rental_partner_other_expenses)),
-        *business_amount_artifacts(business or {}),
-        Artifact(BUSINESS_PARTNER, business_partner),
-        business_cca_classes(*business_cca_classes_rows),
-        *farm_amount_artifacts(farm or {}),
-        Artifact(FARM_PARTNER, farm_partner),
-        farm_cca_classes(*farm_cca_classes_rows),
-        *fish_amount_artifacts(fish or {}),
-        Artifact(FISH_PARTNER, fish_partner),
-        fish_cca_classes(*fish_cca_classes_rows),
+        t776_statements(statements),
+        t2125_statements(business_statement_list),
+        t2042_statements(farm_statement_list),
+        t2121_statements(fish_statement_list),
         Artifact(TAXABLE_SUPPORT_PAYMENTS, D(taxable_support_payments)),
         Artifact(RRSP_INCOME, D(rrsp_income)),
         Artifact(FHSA_INCOME, D(fhsa_income)),
@@ -2489,7 +2671,6 @@ def compute(
             D(spouse_return_ontario_unused_tuition_amount),
         ),
         Artifact(ontario.LIFT_SPOUSE_AT_YEAR_END, lift_spouse_at_year_end),
-        Artifact(ontario.ONTARIO_MINIMUM_TAX, D(ontario_minimum_tax)),
         Artifact(
             ontario.NOT_RESIDENT_OF_CANADA_AT_START_OF_YEAR, not_resident_of_canada_at_start_of_year
         ),
@@ -2721,8 +2902,10 @@ def compute(
         Artifact(AMT_MINIMUM_TAX_CARRYOVER_CLAIM, D(amt_minimum_tax_carryover_claim)),
         Artifact(AMT_T2203_COLUMN_5_PERCENTAGE, D(amt_t2203_column_5_percentage)),
         Artifact(AMT_NON_RESIDENT_OR_DEEMED_RESIDENT, amt_non_resident_or_deemed_resident),
+        Artifact(AMT_UNAPPLIED_2018_CARRYOVER, D(amt_unapplied_2018_carryover)),
         Artifact(AMT_INVESTMENT_TAX_CREDIT_CLAIM, D(amt_investment_tax_credit_claim)),
         Artifact(AMT_T2038_AMOUNT_I, D(amt_t2038_amount_i)),
+        Artifact(AMT_T2038_PART_D_AMOUNT_15, D(amt_t2038_part_d_amount_15)),
         Artifact(AMT_FOREIGN_BUSINESS_INCOME, D(amt_foreign_business_income)),
         Artifact(AMT_FOREIGN_NON_BUSINESS_INCOME, D(amt_foreign_non_business_income)),
         Artifact(
@@ -2734,9 +2917,18 @@ def compute(
     )
 
 
+compute = _worksheet_of(starting)
+run = _run_of(starting)
+
+
 def return_a() -> Worksheet:
+    """The worksheet of the form `ca-on/return` of `run_a()`."""
+    return run_a()["ca-on/return"][0]
+
+
+def run_a() -> dict[str, tuple[Worksheet, ...]]:
     """Return A's inputs, as in `returns/2025_return_a.yaml`, with its chosen tax deducted."""
-    return compute(
+    return run(
         "110000",
         (("20000", "0", "0"),),
         "0",

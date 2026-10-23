@@ -6,6 +6,7 @@ Every failure names the file and the key that is wrong, so a reviewer editing a 
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from app.domain.artifact import Artifact, ArtifactCatalog, ArtifactKind, Artifac
 from app.domain.digits import DigitsKind
 from app.domain.errors import InvalidRateError, InvalidTextError, NegativeArtifactError
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.manifest import CapabilitySelection, Form
 from app.domain.parameters.rate import Rate
 from app.domain.record_list import RecordList, RecordListKind
 from app.domain.registry import Namespace
@@ -23,7 +25,7 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_INCOME,
 )
 from app.registrations import JURISDICTIONS
-from tests.jurisdictions.ca_on.worked_return import WorkedReturn, WorkedReturnError
+from tests.jurisdictions.ca_on.worked_return import FormExpectation, WorkedReturn, WorkedReturnError
 
 D = Decimal
 RETURNS = Path(__file__).parent / "returns"
@@ -1119,3 +1121,317 @@ def test_a_nested_record_list_left_out_of_the_inputs_is_no_records(
     kind = nested.kind("ex/properties")
     assert isinstance(kind, RecordListKind)
     assert Artifact(kind, RecordList(kind.fields, [])) in filled.inputs
+
+
+@pytest.fixture
+def rentals() -> ArtifactRegistry:
+    """A registry of the made-up `ex/rentals`: a record per instance of a rental form, holding
+    `ex/gross_rent`, `ex/expenses` and a nested `ex/units` list (one amount per record)."""
+    catalog = ArtifactCatalog(Namespace("ex"))
+    gross = catalog.declare("gross_rent", Decimal)
+    expenses = catalog.declare("expenses", Decimal)
+    catalog.declare("other_amount", Decimal)
+    catalog.declare("net_income", Decimal)
+    amount = catalog.declare("unit_amount", Decimal)
+    units = RecordListKind.declare(catalog, "units", fields=(amount,))
+    RecordListKind.declare(catalog, "rentals", fields=(gross, expenses, units))
+    count = catalog.declare("business_count", int, non_negative=True)
+    profit = catalog.declare("profit", Decimal)
+    RecordListKind.declare(catalog, "businesses", fields=(count, profit))
+    artifacts = ArtifactRegistry()
+    artifacts.register_catalog(catalog)
+    artifacts.register(FEDERAL_BASIC_TAX.identifier, FEDERAL_BASIC_TAX)
+    return artifacts
+
+
+def rental_form() -> Form:
+    return Form(
+        name="ex/rental",
+        instances="ex/rentals",
+        exports=("ex/net_income",),
+        capabilities=(
+            CapabilitySelection(
+                name="core/subtract",
+                params={},
+                consumes={"amount": "ex/gross_rent", "less": "ex/expenses"},
+                produces={"output": "ex/net_income"},
+            ),
+        ),
+    )
+
+
+def business_form() -> Form:
+    return Form(
+        name="ex/business",
+        instances="ex/businesses",
+        exports=("ex/profit",),
+        capabilities=(
+            CapabilitySelection(
+                name="core/sum", params={}, consumes={}, produces={"output": "ex/profit"}
+            ),
+        ),
+    )
+
+
+def test_a_form_whose_instances_nothing_registers_fails_naming_the_file(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    worked = per_instance(tmp_path, lines)
+    lost = Form(
+        name="ex/rental", instances="ex/nowhere", exports=("ex/net_income",), capabilities=()
+    )
+
+    with pytest.raises(WorkedReturnError, match=r"per\.yaml: .*'ex/nowhere'"):
+        worked.check_forms([lost], lines)
+
+
+def test_a_form_whose_instances_is_not_a_record_list_fails_naming_the_file(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    worked = per_instance(tmp_path, lines)
+    wrong = Form(
+        name="ex/rental",
+        instances="ex/gross_rent",
+        exports=("ex/net_income",),
+        capabilities=(),
+    )
+
+    with pytest.raises(WorkedReturnError, match=r"per\.yaml: .*'ex/gross_rent'.*record list"):
+        worked.check_forms([wrong], lines)
+
+
+# --- per-instance expected lines ---------------------------------------------------------------
+#
+# Under `expected:` a key that is not an artifact identifier but whose value is a list names a FORM
+# (as `instances:` inputs are a list of mappings, one per instance, so are the lines): one entry
+# per instance, in instance order, each a mapping of artifact identifiers (of that instance's own
+# worksheet) to figures spelled as under the flat `expected`. The flat lines stay the return's.
+# `WorkedReturn.form_expected` keeps them as `FormExpectation`s in file order; `check_forms` checks
+# that each names a form of the manifest and has an entry per instance.
+
+PER_INSTANCE = (
+    "expected:\n"
+    '  ex/total_net_income: "14000"\n'
+    "  ex/rental:\n"
+    '    - ex/net_income: "10000"\n'
+    '    - ex/net_income: "4000"\n'
+)
+
+TWO_INSTANCES = (
+    "inputs:\n"
+    "  ex/rentals:\n"
+    '    - ex/gross_rent: "12000"\n'
+    '      ex/expenses: "2000"\n'
+    "      ex/units: []\n"
+    '    - ex/gross_rent: "5000"\n'
+    '      ex/expenses: "1000"\n'
+    "      ex/units: []\n"
+)
+
+
+@pytest.fixture
+def lines(rentals: ArtifactRegistry) -> ArtifactRegistry:
+    """`rentals` with the total the made-up return expects."""
+    rentals.register("ex/total_net_income", ArtifactKind("ex/total_net_income", Decimal))
+    return rentals
+
+
+def per_instance(
+    tmp_path: Path, registry: ArtifactRegistry, expected: str = PER_INSTANCE
+) -> WorkedReturn:
+    text = with_section("inputs", TWO_INSTANCES)
+    text = text.replace(SECTIONS["expected"], expected)
+    return WorkedReturn.load(write(tmp_path, text, "per.yaml"), registry)
+
+
+def test_a_worked_return_has_no_form_expectations_unless_the_file_gives_some(
+    tmp_path: Path, rentals: ArtifactRegistry
+) -> None:
+    text = with_section("inputs", TWO_INSTANCES)
+    worked = WorkedReturn.load(write(tmp_path, text, "plain.yaml"), rentals)
+
+    assert worked.form_expected == ()
+
+
+def test_the_lines_of_each_instance_are_read_in_instance_order(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    worked = per_instance(tmp_path, lines)
+
+    net_income = lines.kind("ex/net_income")
+    assert worked.form_expected == (
+        FormExpectation(
+            "ex/rental",
+            (
+                (Artifact(net_income, D("10000")),),
+                (Artifact(net_income, D("4000")),),
+            ),
+        ),
+    )
+
+
+def test_the_flat_lines_stay_the_returns_own(tmp_path: Path, lines: ArtifactRegistry) -> None:
+    worked = per_instance(tmp_path, lines)
+
+    assert [(a.kind.identifier, a.value) for a in worked.expected] == [
+        ("ex/total_net_income", D("14000"))
+    ]
+
+
+def test_an_instance_may_check_several_lines_of_any_kind(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    text = (
+        "expected:\n"
+        "  ex/rental:\n"
+        '    - ex/net_income: "10000"\n'
+        "      ex/units:\n"
+        '        - ex/unit_amount: "1"\n'
+        '    - ex/net_income: "4000"\n'
+        "      ex/units: []\n"
+    )
+
+    worked = per_instance(tmp_path, lines, text)
+
+    ((first, second),) = [found.instances for found in worked.form_expected]
+    assert [a.kind.identifier for a in first] == ["ex/net_income", "ex/units"]
+    assert first[1].value.records[0][lines.kind("ex/unit_amount")] == D(1)
+    assert second[1].value.records == ()
+
+
+def test_an_instance_with_nothing_to_check_is_an_empty_mapping(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    worked = per_instance(
+        tmp_path, lines, 'expected:\n  ex/rental:\n    - {}\n    - ex/net_income: "4"\n'
+    )
+
+    ((first, _second),) = [found.instances for found in worked.form_expected]
+    assert first == ()
+
+
+def test_several_forms_keep_the_order_of_the_file(tmp_path: Path, lines: ArtifactRegistry) -> None:
+    text = (
+        'expected:\n  ex/business:\n    - ex/profit: "1"\n  ex/rental:\n    - ex/net_income: "2"\n'
+    )
+
+    worked = per_instance(tmp_path, lines, text)
+
+    assert [found.form for found in worked.form_expected] == ["ex/business", "ex/rental"]
+
+
+def test_an_unknown_identifier_in_an_instance_names_the_file_and_key(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    with pytest.raises(WorkedReturnError, match=r"per\.yaml.*ex/nowhere") as caught:
+        per_instance(tmp_path, lines, 'expected:\n  ex/rental:\n    - ex/nowhere: "1"\n')
+
+    assert "expected.ex/rental[0]" in str(caught.value)
+
+
+def test_an_instance_that_is_not_a_mapping_names_the_file_and_key(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    with pytest.raises(WorkedReturnError, match=r"per\.yaml: expected\.ex/rental\[1\]"):
+        per_instance(
+            tmp_path, lines, 'expected:\n  ex/rental:\n    - {ex/net_income: "1"}\n    - 7\n'
+        )
+
+
+def test_a_figure_in_an_instance_is_spelled_as_under_the_flat_lines(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    with pytest.raises(WorkedReturnError, match=r"per\.yaml: expected\.ex/rental\[0\]\.ex/net_inc"):
+        per_instance(tmp_path, lines, "expected:\n  ex/rental:\n    - ex/net_income: 10000\n")
+
+
+def test_a_key_that_is_neither_an_identifier_nor_a_list_is_an_unknown_identifier(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    with pytest.raises(WorkedReturnError, match=r"per\.yaml.*unknown artifact identifier"):
+        per_instance(tmp_path, lines, 'expected:\n  ex/rental: "5"\n')
+
+
+def test_a_registered_identifier_with_a_list_is_a_record_list_line_not_a_form(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    worked = per_instance(tmp_path, lines, "expected:\n  ex/units:\n    - ex/unit_amount: '1'\n")
+
+    assert worked.form_expected == ()
+    assert [a.kind.identifier for a in worked.expected] == ["ex/units"]
+
+
+def test_with_blanks_keeps_the_form_expectations_and_adds_none(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    worked = per_instance(tmp_path, lines)
+
+    filled = worked.with_blanks(
+        frozenset({"ex/rentals"}), frozenset({"ex/total_net_income"}), lines
+    )
+
+    assert filled.form_expected == worked.form_expected
+
+
+def test_check_forms_accepts_the_expectations_of_a_form_with_an_entry_per_instance(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    per_instance(tmp_path, lines).check_forms([rental_form()], lines)
+
+
+def test_an_expectation_of_a_form_the_manifest_lacks_fails_naming_the_file_and_form(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    worked = per_instance(tmp_path, lines)
+
+    with pytest.raises(WorkedReturnError, match=r"per\.yaml: expected: 'ex/rental' is not a form"):
+        worked.check_forms([business_form()], lines)
+
+
+def test_an_expectation_of_a_form_without_instances_says_so_not_that_it_is_missing(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    worked = per_instance(tmp_path, lines)
+    once = replace(rental_form(), instances=None)
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=r"per\.yaml: expected: 'ex/rental' is a form without instances; only the default",
+    ):
+        worked.check_forms([once], lines)
+
+
+def test_an_expectation_with_no_forms_at_all_fails_naming_the_form(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    worked = per_instance(tmp_path, lines)
+
+    with pytest.raises(WorkedReturnError, match=r"per\.yaml: expected: 'ex/rental' is not a form"):
+        worked.check_forms([], lines)
+
+
+@pytest.mark.parametrize("entries", [1, 3])
+def test_an_entry_count_other_than_the_instance_count_fails_naming_both(
+    tmp_path: Path, lines: ArtifactRegistry, entries: int
+) -> None:
+    text = "expected:\n  ex/rental:\n" + '    - ex/net_income: "1"\n' * entries
+    worked = per_instance(tmp_path, lines, text)
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=rf"per\.yaml: expected: 'ex/rental' has {entries} entr(y|ies) for 2 instances",
+    ):
+        worked.check_forms([rental_form()], lines)
+
+
+def test_no_entry_for_a_form_with_no_instances_matches_an_empty_list(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    text = with_section("inputs", "inputs:\n  ex/rentals: []\n").replace(
+        SECTIONS["expected"], "expected:\n  ex/rental: []\n"
+    )
+    worked = WorkedReturn.load(write(tmp_path, text, "none.yaml"), lines)
+
+    worked.check_forms([rental_form()], lines)
+
+    assert worked.form_expected == (FormExpectation("ex/rental", ()),)

@@ -36,7 +36,7 @@ from app.domain.errors import (
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
@@ -417,9 +417,15 @@ def service(dataset: ParameterDataset[RoundingOnly] | None = None) -> TaxComputa
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ca/short_term_rental_cca_units"}),
-        outputs=frozenset({"ex/non_compliant_cca"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ex/non_compliant_cca",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (SHORT_TERM_RENTAL_CCA_UNITS, LINE_9367):
@@ -433,7 +439,9 @@ def service(dataset: ParameterDataset[RoundingOnly] | None = None) -> TaxComputa
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, ShortTermRentalNonCompliantCca)
@@ -444,7 +452,7 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset()
 def test_a_computation_gives_the_total_of_column_7() -> None:
     worksheet = service().compute(
         JurisdictionCode("CA-ON"), 2025, units(TICKET_ROW, THIRD_ROW, CLASS_8_ROW)
-    )
+    )["ca-on/return"][0]
 
     assert worksheet.get(LINE_9367).value == D("583.33")
     assert isinstance(worksheet.producer_of(LINE_9367), ShortTermRentalNonCompliantCca)

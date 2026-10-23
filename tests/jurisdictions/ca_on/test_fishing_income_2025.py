@@ -83,7 +83,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_VEHICLE_TOTAL_EXPENSES,
     FISHING_INCOME,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
 # Return BD's statement, the default of these tests: one fish products amount of 40000 (amount 3A),
 # expenses of 25000 (salt, bait and ice 10000 on line 9138, fishing gear 15000 on line 9136), so
@@ -122,7 +122,7 @@ def statement(
     """Return BD's statement with `fish` changing or adding its amounts, `partner` the partner
     count (amount 5A) and `cca_classes` the Area A rows."""
     amounts = {**DEFAULT_FISH, **(fish or {})}
-    return compute(
+    result = run(
         "0",
         (),
         "0",
@@ -135,6 +135,7 @@ def statement(
         fish_cca_classes_rows=cca_classes,
         **overrides,
     )
+    return result["ca/t2121"][0]
 
 
 def line(worksheet: Worksheet, kind: ArtifactKind[Any]) -> Any:

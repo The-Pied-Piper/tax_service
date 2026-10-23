@@ -78,7 +78,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_TRAVEL_EXPENSES,
     BUSINESS_UTILITIES,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
 ROW_8 = ("8", "10000", "0", "0", "0", "0", "2000", 0)
 
@@ -110,7 +110,8 @@ def statement(business: dict[str, str] | None = None, **overrides: Any) -> Works
     """A T2125 of gross sales of 50000 and office expenses of 20000, so line 9369 is 30000,
     with `business` changing or adding its amounts and `overrides` the other inputs."""
     amounts = {"gross_sales": "50000", "office_expenses": "20000", **(business or {})}
-    return compute("0", (), "0", "0", "0", "0", "0", business=amounts, **overrides)
+    result = run("0", (), "0", "0", "0", "0", "0", business=amounts, **overrides)
+    return result["ca/t2125"][0]
 
 
 def line(worksheet: Worksheet, kind: ArtifactKind[Any]) -> Any:

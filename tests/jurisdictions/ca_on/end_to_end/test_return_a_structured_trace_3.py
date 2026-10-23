@@ -55,18 +55,27 @@ from app.jurisdictions.ca.catalog import (
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CARRYOVER_AVAILABLE_FOR_2026,
+    AMT_CARRYOVER_BALANCE,
+    AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
     AMT_CREDITS_TOTAL,
     AMT_FEDERAL_SURTAX_AT_48_PERCENT,
     AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
+    AMT_PART_6_SURTAX_AT_48_PERCENT,
+    AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+    AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+    AMT_PART_7_CREDITS_TOTAL,
+    AMT_PART_7_TAX_LESS_CREDITS,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
     AMT_PUBLICLY_LISTED_GIFTS_TOTAL,
@@ -76,6 +85,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
     AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
+    AMT_UNAPPLIED_2018_CARRYOVER,
     ANNUAL_GAINS_LINE_3,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -653,11 +663,20 @@ from app.jurisdictions.ca_on.catalog import (
     TAX_REDUCTION_FOR_DEPENDANTS,
     TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a
+from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, run_a
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
-    trace = return_a().trace
+    # The lines of the one T2125, T2042, T2121 and T776 statement of Return A, then those
+    # of the return form.
+    result = run_a()
+    trace = (
+        *result["ca/t2125"][0].trace,
+        *result["ca/t2042"][0].trace,
+        *result["ca/t2121"][0].trace,
+        *result["ca/t776"][0].trace,
+        *result["ca-on/return"][0].trace,
+    )
     subtracted = {line.output: line for line in trace if isinstance(line, SubtractedLine)}
     amounts = {line.output: line for line in trace if isinstance(line, CreditAmountLine)}
     tapered = {line.output: line for line in trace if isinstance(line, TaperedAmountLine)}
@@ -765,6 +784,46 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=RC381_PART_3_LINE_67,
             subtrahend_amount=D("0.00"),
             result=D("0.00"),
+        ),
+        # Form T691 Part 7 line 8 "Line 4 minus line 7": line 4, 16951.38, less line 7, 0.00:
+        # 16951.38.
+        AMT_PART_7_TAX_LESS_CREDITS: SubtractedLine(
+            output=AMT_PART_7_TAX_LESS_CREDITS,
+            minuend=AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_PART_7_CREDITS_TOTAL,
+            subtrahend_amount=D("0.00"),
+            result=D("16951.38"),
+        ),
+        # Worksheet ON428 line 8 "Line 6 minus line 7": line 6, the surtax on line 3 (523.79), less
+        # line 7, the surtax on line 65 of the form (523.79): 0.
+        ontario.WORKSHEET_ON428_LINE_8: SubtractedLine(
+            output=ontario.WORKSHEET_ON428_LINE_8,
+            minuend=ontario.WORKSHEET_ON428_LINE_6,
+            minuend_amount=D("523.79"),
+            subtrahend=ontario.WORKSHEET_ON428_LINE_7,
+            subtrahend_amount=D("523.79"),
+            result=D("0"),
+        ),
+        # Form T691 Part 8 line 13 "Balance of minimum tax carryover available for later years, if
+        # any: line 1 minus line 12": line 1 (0) less line 12 (0): 0.
+        AMT_CARRYOVER_BALANCE: SubtractedLine(
+            output=AMT_CARRYOVER_BALANCE,
+            minuend=AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+            minuend_amount=D("0"),
+            subtrahend=AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T691 Part 8 line 17 "Total minimum tax carryover available for 2026: line 15 minus
+        # line 16": line 15 (0) less line 16, the unapplied 2018 carryover (0): 0.
+        AMT_CARRYOVER_AVAILABLE_FOR_2026: SubtractedLine(
+            output=AMT_CARRYOVER_AVAILABLE_FOR_2026,
+            minuend=AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
+            minuend_amount=D("0"),
+            subtrahend=AMT_UNAPPLIED_2018_CARRYOVER,
+            subtrahend_amount=D("0"),
+            result=D("0"),
         ),
         # Form RC381 Part 3 line 16 "Line 11 minus line 15": both are 0.
         RC381_PART_3_LINE_16: SubtractedLine(
@@ -2922,6 +2981,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert times == {
+        # Form T691 Part 6 line 11, the second branch, "enter the amount from line 9" when "you are
+        # a non-resident or deemed resident": line 9, 8136.66, times a count of 0 (Return A is not a
+        # non-resident), a plain 0.
+        AMT_PART_6_SURTAX_IF_NON_RESIDENT: TimesCountLine(
+            output=AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+            amount_kind=AMT_PART_6_SURTAX_AT_48_PERCENT,
+            amount_value=D("8136.66"),
+            count_kind=AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
+            count=0,
+            result=D("0"),
+        ),
         # Form T691 Part 3 line 4, the second branch, "enter the amount from line 2" when "you are a
         # non-resident or deemed resident": line 2, 8136.66, times a count of 0 (Return A is not a
         # non-resident), a plain 0.
@@ -3373,7 +3443,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 
 
 def test_the_trace_records_the_capital_gains_picked_by_the_sign_of_line_20() -> None:
-    chosen = [line for line in return_a().trace if isinstance(line, SignChosenDifferenceLine)]
+    result = run_a()
+    trace = (
+        *result["ca/t2125"][0].trace,
+        *result["ca/t2042"][0].trace,
+        *result["ca/t2121"][0].trace,
+        *result["ca-on/return"][0].trace,
+    )
+    chosen = [line for line in trace if isinstance(line, SignChosenDifferenceLine)]
     # Form T691 Part 1 line 23 "If line 20 is positive, enter the amount from line 22.": Return
     # A's line 20 is 20000 (positive), so line 23 is line 22, 10000.
     assert chosen == [

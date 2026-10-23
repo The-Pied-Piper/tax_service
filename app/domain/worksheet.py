@@ -1,5 +1,7 @@
-"""The worksheet: every artifact of one computation.
+"""The worksheet: one filled-in copy of a form.
 
+A form (`app.domain.form`) is the blank: which lines it has and how they connect. A worksheet is
+the figures one run of it produced, so a form with several instances has one worksheet each.
 It starts with the computation's starting artifacts and records each capability's
 output artifacts as the capability is applied, holding it to its contract (design.md §3).
 It never decides what runs next; ordering belongs to the composition (§5).
@@ -18,7 +20,7 @@ from app.domain.trace import TraceLine
 
 
 class Worksheet:
-    """The artifacts of one computation by kind, who produced each, and the trace of how."""
+    """One filled-in copy of a form: its artifacts by kind, who produced each, and the trace."""
 
     def __init__(self, *artifacts: Artifact[Any]) -> None:
         self._check_artifacts(artifacts)
@@ -54,9 +56,9 @@ class Worksheet:
         the capability runs under a `decimal` context that traps `Inexact`.
         """
         name = type(capability).__name__
-        missing = capability.consumes - self._artifacts.keys()
+        missing = {k for k in capability.consumes if k not in self._artifacts}
         if missing:
-            raise MissingArtifactError(f"{name} needs {self._labels(missing)}")
+            raise MissingArtifactError(f"{name} needs {ArtifactKind.labels(missing)}")
         inputs = tuple(self._artifacts[k] for k in capability.consumes)
         # Exact arithmetic only: a result that would lose digits raises. Rounding goes through
         # a dataset's `RoundingRule`, which is the one place allowed to be inexact.
@@ -72,25 +74,23 @@ class Worksheet:
         produced = [artifact.kind for artifact in result.outputs]
         if frozenset(produced) != capability.produces:
             raise CapabilityContractError(
-                f"{name} declares {self._labels(capability.produces)} "
-                f"but produced {self._labels(set(produced))}"
+                f"{name} declares {ArtifactKind.labels(capability.produces)} "
+                f"but produced {ArtifactKind.labels(set(produced))}"
             )
         repeated = {k for k in produced if produced.count(k) > 1}
         if repeated:
-            raise DuplicateArtifactError(f"{name} produced {self._labels(repeated)} more than once")
+            raise DuplicateArtifactError(
+                f"{name} produced {ArtifactKind.labels(repeated)} more than once"
+            )
         recorded = capability.produces & self._artifacts.keys()
         if recorded:
             raise DuplicateArtifactError(
-                f"{name} produced {self._labels(recorded)}, already recorded"
+                f"{name} produced {ArtifactKind.labels(recorded)}, already recorded"
             )
         for artifact in result.outputs:
             self._artifacts[artifact.kind] = artifact
             self._producers[artifact.kind] = capability
         self._trace.extend(result.trace)
-
-    @staticmethod
-    def _labels(kinds: Iterable[ArtifactKind[Any]]) -> str:
-        return ", ".join(repr(label) for label in sorted(k.label for k in kinds))
 
     @staticmethod
     def _check_artifacts(artifacts: Iterable[object]) -> None:

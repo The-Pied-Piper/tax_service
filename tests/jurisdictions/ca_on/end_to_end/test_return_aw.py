@@ -16,6 +16,7 @@ from app.domain.trace import ItemsTotalLine, SubtractedLine, SumLine
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.catalog import (
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     DIVIDEND_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT,
@@ -805,18 +806,22 @@ def test_the_credit_is_limited_by_the_tax_otherwise_payable_and_line_83_is_not_b
 
 def test_line_72_and_the_tax_reduction_conditions_do_not_enter_the_tax_otherwise_payable() -> None:
     # A filer with employment income of 24000 and one country (500 of tax on 3000 of income), as
-    # in `test_the_tax_reduction_lowers_a_tax_below_twice_the_reduction_amounts`, with 100 on line
-    # 72 (additional tax for minimum tax purposes). Net income is 23795.00 and the basic federal
+    # in `test_the_tax_reduction_lowers_a_tax_below_twice_the_reduction_amounts`, with an amount on
+    # line 72 (additional tax for minimum tax purposes): security options of 200000 (T4 boxes 39
+    # and 91) give Form T691 Part 5 line 11 of 7361.00, so Worksheet ON428 line 1 is 24.63% x
+    # 7361.00 = 1813.0143, 1813.01, and line 72 is that, as line 3 (1813.01 + 486.80 = 2299.81) is
+    # not more than $5,710. Net income is 23795.00 and the basic federal
     # tax 694.07, so the T2209 line 2 is 3000 x 694.07 / 23795.00 = 87.5062..., half-up 87.51,
     # below the 500 paid: the sheet's line 3 is 87.51. ON428 line 69 is 486.80; the tax itself has
-    # line 73 = 486.80 + 100 = 586.80, and "There is an amount on line 72" so line 80 is 0 and line
-    # 81 is 586.80. The tax otherwise payable has "0" on line 72: line 73 = 486.80, the reduction
-    # amounts 294.00 twice, 588.00, less line 79 (486.80) is 101.20 (no condition applies), and
-    # line 81 = 486.80 - 101.20 = 385.60. Form T2036: line 3 = 500 - 87.51 = 412.49; line 4 =
-    # 3000 x 385.60 / 23795.00 = 48.6152..., half-up 48.62; line 5 = lesser(412.49, 48.62) =
-    # 48.62, which is less than 385.60, so line 82 is 48.62 and line 83 = 586.80 - 48.62 =
-    # 538.18. The LIFT credit is 875 (5.05% x 24000 = 1212.00, at most 875, no reduction), so
-    # line 86 is 0 and the Ontario tax is the health premium, 6% x (23795.00 - 20000) = 227.70.
+    # line 73 = 486.80 + 1813.01 = 2299.81, and "There is an amount on line 72" so line 80 is 0 and
+    # line 81 is 2299.81. The tax otherwise payable has "0" on line 72: line 73 = 486.80, the
+    # reduction amounts 294.00 twice, 588.00, less line 79 (486.80) is 101.20 (no condition
+    # applies), and line 81 = 486.80 - 101.20 = 385.60. Form T2036: line 3 = 500 - 87.51 = 412.49;
+    # line 4 = 3000 x 385.60 / 23795.00 = 48.6152..., half-up 48.62; line 5 = lesser(412.49,
+    # 48.62) = 48.62, which is less than 385.60, so line 82 is 48.62 and line 83 = 2299.81 - 48.62
+    # = 2251.19. The LIFT credit is 875 (5.05% x 24000 = 1212.00, at most 875, no reduction), so
+    # line 86 is 2251.19 - 875 = 1376.19 and the Ontario tax is that plus the health premium,
+    # 6% x (23795.00 - 20000) = 227.70: 1603.89.
     worksheet = compute(
         "24000",
         (),
@@ -826,7 +831,7 @@ def test_line_72_and_the_tax_reduction_conditions_do_not_enter_the_tax_otherwise
         "0",
         "0",
         foreign_tax_countries_rows=(("500", "3000"),),
-        ontario_minimum_tax="100",
+        amt_t4_security_options_boxes_39_and_91="200000",
     )
 
     assert worksheet.get(NET_INCOME).value == D("23795.00")
@@ -834,10 +839,14 @@ def test_line_72_and_the_tax_reduction_conditions_do_not_enter_the_tax_otherwise
     assert worksheet.get(FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX).value == D("694.07")
     assert sheets_of(worksheet) == [(D("500"), D("3000"), D("87.51"))]
     assert worksheet.get(ontario.ONTARIO_TAX_WITH_SURTAX).value == D("486.80")
-    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("586.80")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("7361.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("1813.01")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("2299.81")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("1813.01")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("2299.81")
     assert worksheet.get(ontario.TAX_REDUCTION_CLAIMABLE).value == 0
     assert worksheet.get(ontario.ONTARIO_TAX_REDUCTION).value == D("0")
-    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_REDUCTION).value == D("586.80")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_REDUCTION).value == D("2299.81")
     assert worksheet.get(ontario.TAX_OTHERWISE_PAYABLE_LINE_73).value == D("486.80")
     assert worksheet.get(ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS).value == D(
         "101.20"
@@ -849,10 +858,10 @@ def test_line_72_and_the_tax_reduction_conditions_do_not_enter_the_tax_otherwise
         (D("412.49"), D("48.62"), D("48.62"))
     ]
     assert worksheet.get(ontario.PROVINCIAL_FOREIGN_TAX_CREDIT).value == D("48.62")
-    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT).value == D("538.18")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT).value == D("2251.19")
     assert worksheet.get(ontario.LIFT_CREDIT).value == D("875")
-    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("0")
-    assert worksheet.get(ontario.ONTARIO_TAX).value == D("227.70")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("1376.19")
+    assert worksheet.get(ontario.ONTARIO_TAX).value == D("1603.89")
 
 
 def test_another_condition_on_line_80_zeroes_the_reduction_of_the_tax_otherwise_payable() -> None:

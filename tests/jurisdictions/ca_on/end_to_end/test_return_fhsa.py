@@ -109,6 +109,7 @@ def test_a_claim_above_line_51_is_refused_naming_both_kinds() -> None:
         step_3(fhsa_contributions_in_2025="8000", fhsa_contributions_deducted="8000.01")
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/fhsa_contributions_deducted 8000.01 is above ca/fhsa_maximum_deduction 8000"
     )
 
@@ -119,6 +120,7 @@ def test_any_claim_is_refused_when_line_51_is_0() -> None:
         step_3(fhsa_contributions_deducted="1")
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/fhsa_contributions_deducted 1 is above ca/fhsa_maximum_deduction 0"
     )
 
@@ -162,6 +164,7 @@ def test_a_claim_is_refused_once_the_maximum_participation_period_has_ended() ->
         )
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/fhsa_contributions_deducted 1000 is above ca/fhsa_maximum_deduction 0"
     )
 

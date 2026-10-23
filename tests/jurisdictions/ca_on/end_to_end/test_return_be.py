@@ -246,6 +246,7 @@ def test_a_claim_above_the_most_that_can_be_claimed_is_refused_naming_both_kinds
         return_be(qbt_deduction_claimed="60500.01")
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/qbt_deduction_claimed 60500.01 is above ca/qbt_maximum_deduction 60500"
     )
 

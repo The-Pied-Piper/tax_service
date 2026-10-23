@@ -131,6 +131,7 @@ from app.jurisdictions.ca_on.catalog import (
     MEDICAL_EXPENSES_OVER_THRESHOLD,
     MEDICAL_NET_INCOME_SHARE,
     MEDICAL_THRESHOLD,
+    MINIMUM_TAX_CARRYOVER_CREDIT,
     NET_REFUND,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
@@ -142,6 +143,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_CREDITS_SUBTOTAL,
     ONTARIO_HEALTH_PREMIUM,
     ONTARIO_MINIMUM_TAX,
+    ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED,
     ONTARIO_SURTAX,
     ONTARIO_SURTAX_BASE,
     ONTARIO_TAX,
@@ -150,6 +152,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_AFTER_FOOD_CREDIT,
     ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
+    ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT,
     ONTARIO_TAX_BEFORE_REDUCTION,
@@ -246,6 +249,12 @@ from app.jurisdictions.ca_on.catalog import (
     UNUSED_TUITION_CLAIMED,
     UNUSED_TUITION_INCOME_CAP,
     UNUSED_TUITION_ROOM,
+    WORKSHEET_ON428_LINE_1,
+    WORKSHEET_ON428_LINE_2,
+    WORKSHEET_ON428_LINE_3,
+    WORKSHEET_ON428_LINE_6,
+    WORKSHEET_ON428_LINE_7,
+    WORKSHEET_ON428_LINE_8,
 )
 from app.registrations import JURISDICTIONS
 
@@ -324,6 +333,15 @@ REGISTERED = frozenset(
         "ca-on/tax_reduction_amounts",
         "ca-on/ontario_tax_reduction",
         "ca-on/ontario_minimum_tax",
+        "ca-on/minimum_tax_carryover_credit",
+        "ca-on/ontario_minimum_tax_carryover_applied",
+        "ca-on/ontario_tax_after_minimum_tax_carryover",
+        "ca-on/worksheet_on428_line_1",
+        "ca-on/worksheet_on428_line_2",
+        "ca-on/worksheet_on428_line_3",
+        "ca-on/worksheet_on428_line_6",
+        "ca-on/worksheet_on428_line_7",
+        "ca-on/worksheet_on428_line_8",
         "ca-on/ontario_tax_before_reduction",
         "ca-on/not_resident_of_canada_at_start_of_year",
         "ca-on/not_resident_of_ontario_at_year_end",
@@ -525,8 +543,11 @@ RECORD_LISTS = frozenset(
 # take the net income "or the amount you would have entered if the instructions on line 23600
 # said "if negative, show in brackets"": signed kinds. So are Form T1206 Part 3 lines 39, 47 and 50
 # (line 47 "Line 39 minus line 46" may be negative: "Enter... amount from line 47 on line 50").
+# So is Worksheet ON428 line 8 "Line 6 minus line 7", which prints no "(if negative, enter "0")"
+# (it is never negative, as line 65 is at most line 3, but the form prints no floor).
 SIGNED = frozenset(
     {
+        "ca-on/worksheet_on428_line_8",
         "ca-on/lift_net_income_and_repayments",
         "ca-on/lift_spouse_net_income_and_repayments",
         "ca-on/split_income_line_39",
@@ -664,6 +685,21 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/tax_reduction_amounts") is TAX_REDUCTION_AMOUNTS
     assert registry.get("ca-on/ontario_tax_reduction") is ONTARIO_TAX_REDUCTION
     assert registry.get("ca-on/ontario_minimum_tax") is ONTARIO_MINIMUM_TAX
+    assert registry.get("ca-on/minimum_tax_carryover_credit") is MINIMUM_TAX_CARRYOVER_CREDIT
+    assert (
+        registry.get("ca-on/ontario_minimum_tax_carryover_applied")
+        is ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED
+    )
+    assert (
+        registry.get("ca-on/ontario_tax_after_minimum_tax_carryover")
+        is ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER
+    )
+    assert registry.get("ca-on/worksheet_on428_line_1") is WORKSHEET_ON428_LINE_1
+    assert registry.get("ca-on/worksheet_on428_line_2") is WORKSHEET_ON428_LINE_2
+    assert registry.get("ca-on/worksheet_on428_line_3") is WORKSHEET_ON428_LINE_3
+    assert registry.get("ca-on/worksheet_on428_line_6") is WORKSHEET_ON428_LINE_6
+    assert registry.get("ca-on/worksheet_on428_line_7") is WORKSHEET_ON428_LINE_7
+    assert registry.get("ca-on/worksheet_on428_line_8") is WORKSHEET_ON428_LINE_8
     assert registry.get("ca-on/ontario_tax_before_reduction") is ONTARIO_TAX_BEFORE_REDUCTION
     assert (
         registry.get("ca-on/not_resident_of_canada_at_start_of_year")
@@ -1309,11 +1345,37 @@ def test_the_tax_reduction_conditions_are_non_negative_counts() -> None:
 
 
 def test_line_72_and_line_73_are_non_negative_amounts() -> None:
-    # ON428 line 72 (additional tax for minimum tax purposes, as entered) and line 73 "Line 71
-    # plus line 72 =".
+    # ON428 line 72 (additional tax for minimum tax purposes, Worksheet ON428 line 9) and line 73
+    # "Line 71 plus line 72 =".
     for kind in (ONTARIO_MINIMUM_TAX, ONTARIO_TAX_BEFORE_REDUCTION):
         assert kind.value_type is Decimal, kind.identifier
         assert kind.non_negative is True, kind.identifier
+
+
+def test_the_minimum_tax_carryover_and_worksheet_on428_lines_are_amounts(
+    registry: ArtifactRegistry,
+) -> None:
+    # ON428 line 59 "multiplied by 24.63%", line 60 "whichever is less" and line 61 "Line 55 minus
+    # line 60 (if negative, enter "0")" are not below zero; so are Worksheet ON428 line 1 (24.63%
+    # of the amount on line 11 of Part 5 of Form T691), line 2 (the amount from line 65), line 3
+    # "Line 1 plus line 2 =", lines 4 to 6 (each tier "if negative, enter "0"") and line 7 (the
+    # amount from line 68). Line 8 "Line 6 minus line 7 =" prints no floor and is signed.
+    for kind in (
+        MINIMUM_TAX_CARRYOVER_CREDIT,
+        ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED,
+        ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER,
+        WORKSHEET_ON428_LINE_1,
+        WORKSHEET_ON428_LINE_2,
+        WORKSHEET_ON428_LINE_3,
+        WORKSHEET_ON428_LINE_6,
+        WORKSHEET_ON428_LINE_7,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier) is kind
+    assert WORKSHEET_ON428_LINE_8.value_type is Decimal
+    assert WORKSHEET_ON428_LINE_8.non_negative is False
+    assert registry.kind("ca-on/worksheet_on428_line_8") is WORKSHEET_ON428_LINE_8
 
 
 def test_the_provincial_foreign_tax_credit_lines_are_non_negative_amounts() -> None:

@@ -34,6 +34,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_FEDERAL_TAX,
@@ -42,13 +43,17 @@ from app.jurisdictions.ca.catalog import (
     AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_FEDERAL_SURTAX_AT_48_PERCENT,
     AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
     AMT_FOREIGN_INCOME_LIMIT,
     AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
     AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
+    AMT_PART_6_SURTAX_AT_48_PERCENT,
+    AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
@@ -175,11 +180,19 @@ from app.jurisdictions.ca_on.catalog import (
     SENIORS_TRANSIT_CREDIT,
 )
 from app.jurisdictions.ca_on.trace import PlacementCreditLine
-from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a
+from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, run_a
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
-    trace = return_a().trace
+    # The lines of the one T2125, the one T2042 and the one T2121 statement of Return A, then those
+    # of the return form.
+    result = run_a()
+    trace = (
+        *result["ca/t2125"][0].trace,
+        *result["ca/t2042"][0].trace,
+        *result["ca/t2121"][0].trace,
+        *result["ca-on/return"][0].trace,
+    )
     rated = {line.output: line for line in trace if isinstance(line, RateAppliedLine)}
     {line.output: line for line in trace if isinstance(line, SumLine)}
     {line.output: line for line in trace if isinstance(line, SubtractedNotBelowZeroLine)}
@@ -240,6 +253,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         for line in trace
         if isinstance(line, PercentageAppliedLine)
         and line.output is AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS
+    }
+    part_6_percentages = {
+        line.output: line
+        for line in trace
+        if isinstance(line, PercentageAppliedLine)
+        and line.output is AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS
+    }
+    assert part_6_percentages == {
+        # Form T691 Part 6 line 10 "If you have to pay tax to multiple jurisdictions, multiply the
+        # amount from line 9 by the percentage in Column 5 of line 52220 on Form T2203.": line 9,
+        # 8136.66, at the percentage "0" a caller gives for Return A, 8136.66 x 0 / 100, 0.00.
+        AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS: PercentageAppliedLine(
+            output=AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
+            amount_kind=AMT_PART_6_SURTAX_AT_48_PERCENT,
+            amount_value=D("8136.66"),
+            percentage_kind=AMT_T2203_COLUMN_5_PERCENTAGE,
+            percentage_value=D("0"),
+            rounding=CENT,
+            result=D("0"),
+        ),
     }
     assert percentages == {
         # Form T691 Part 3 line 3 "If you have to pay tax to multiple jurisdictions, multiply the
@@ -304,6 +337,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         AMT_FEDERAL_SURTAX_AT_48_PERCENT: RateAppliedLine(
             output=AMT_FEDERAL_SURTAX_AT_48_PERCENT,
             base=AMT_BASIC_FEDERAL_TAX,
+            base_amount=D("16951.38"),
+            rate=Rate(D("0.48")),
+            rounding=CENT,
+            result=D("8136.66"),
+        ),
+        # Form T691 Part 6 line 9 "Federal surtax on business income earned outside Canada"
+        # "Multiply the amount from line 7 by 48%.": line 7, the federal tax under the minimum tax
+        # of 16951.38, at 48%, 16951.38 x 0.48 = 8136.6624, rounded half-up to 8136.66.
+        AMT_PART_6_SURTAX_AT_48_PERCENT: RateAppliedLine(
+            output=AMT_PART_6_SURTAX_AT_48_PERCENT,
+            base=AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
             base_amount=D("16951.38"),
             rate=Rate(D("0.48")),
             rounding=CENT,
@@ -562,6 +606,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
             D("0"),
             Rate(D("0.029863")),
+            CENT,
+            D("0"),
+        ),
+        # ON428 line 59 "Line 40427 multiplied by 24.63%" on no minimum tax carryover applied, and
+        # Worksheet ON428 line 1 "Amount from line 11 of Part 5 of your Form T691 multiplied by
+        # 24.63%" on no alternative minimum tax payable.
+        ontario.MINIMUM_TAX_CARRYOVER_CREDIT: RateAppliedLine(
+            ontario.MINIMUM_TAX_CARRYOVER_CREDIT,
+            AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+            D("0"),
+            Rate(D("0.2463")),
+            CENT,
+            D("0"),
+        ),
+        ontario.WORKSHEET_ON428_LINE_1: RateAppliedLine(
+            ontario.WORKSHEET_ON428_LINE_1,
+            AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
+            D("0"),
+            Rate(D("0.2463")),
             CENT,
             D("0"),
         ),

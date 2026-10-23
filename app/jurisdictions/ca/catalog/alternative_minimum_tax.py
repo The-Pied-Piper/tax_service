@@ -9,7 +9,14 @@ credits. Part 9 of the form: the resource
 property and flow-through shares. Part 2 of the form: the basic federal tax. Part 8 of the form:
 the minimum tax carryover applied on line 40427. Part 3 of the form: the federal surtax, the
 federal tax payable and the regular net federal tax payable. Part 4 of the form: the special
-foreign tax credit.
+foreign tax credit. Part 5 of the form: the obligation to pay alternative minimum tax, from the net
+minimum tax payable to the alternative minimum tax payable. Part 6 of the form: the federal tax
+payable under the alternative minimum tax, from the basic federal tax less the split income tax to
+the greater of the federal tax with the surtax and the split income tax after the credits. Part 7 of
+the form: the additional taxes paid for minimum tax carryover, from the basic federal tax with the
+recapture to the foreign credit share. Part 8 of the form, from line 13: the balance of the minimum
+tax carryover available for later years and the total available for 2026, less the unapplied 2018
+carryover.
 """
 
 from __future__ import annotations
@@ -783,3 +790,186 @@ AMT_SPECIAL_FOREIGN_TAX_CREDIT = CATALOG.declare(
 """Special foreign tax credit, Form T691 Part 4 line 11 "Enter whichever is more: amount from line 7
 of Part 3 or line 10." "Special foreign tax credit": the greater of the federal foreign tax credit
 of Part 3 line 7 (Form T2209) and line 10."""
+
+AMT_NET_MINIMUM_TAX_PAYABLE = CATALOG.declare(
+    "amt_net_minimum_tax_payable", Decimal, non_negative=True
+)
+"""Net minimum tax payable, Form T691 Part 5 line 3 "Line 1 minus line 2 (if negative, enter "0")"
+"Net minimum tax payable": line 1 less line 2, not below zero."""
+
+AMT_REGULAR_NET_TAX_LESS_SURTAX = CATALOG.declare(
+    "amt_regular_net_tax_less_surtax", Decimal, non_negative=True
+)
+"""Regular net tax less the surtax, Form T691 Part 5 line 6 "Line 4 minus line 5 (if negative, enter
+"0")": line 4, the regular net federal tax payable of Part 3 line 15, less line 5, the federal
+surtax of Part 3 line 4, which may be negative and is then added back; not below zero."""
+
+AMT_MINIMUM_TAX_AFTER_REGULAR_TAX = CATALOG.declare(
+    "amt_minimum_tax_after_regular_tax", Decimal, non_negative=True
+)
+"""Minimum tax after the regular tax, Form T691 Part 5 line 7 "Line 3 minus line 6 (if negative,
+enter "0")": line 3 less line 6, not below zero."""
+
+AMT_T2038_PART_D_AMOUNT_15 = CATALOG.declare(
+    "amt_t2038_part_d_amount_15", Decimal, non_negative=True
+)
+"""Amount 15 of Part D of Form T2038(IND), Form T691 Part 5 line 9 "Amount from line 15 of Part D of
+Form T2038(IND)": the credit claimed on Part D line 15, the caller's figure, never negative."""
+
+AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D = CATALOG.declare(
+    "amt_investment_tax_credit_less_part_d", Decimal, non_negative=True
+)
+"""Investment tax credit less amount 15 of Part D, Form T691 Part 5 line 10 "Line 8 minus line 9 (if
+negative, enter "0")": line 8, the investment tax credit of Part 3 line 12, less line 9, not below
+zero."""
+
+AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE = CATALOG.declare(
+    "amt_alternative_minimum_tax_payable", Decimal, non_negative=True
+)
+"""Alternative minimum tax payable, Form T691 Part 5 line 11 "Line 7 minus line 10 (if negative,
+enter "0")": line 7 less line 10, not below zero; a positive amount means Parts 6 and 7 apply."""
+
+AMT_PART_5_LINE_11_IS_POSITIVE = CATALOG.declare(
+    "amt_part_5_line_11_is_positive", int, non_negative=True
+)
+"""Line 11 is positive, Form T691 Part 5 line 11 "If line 11 is positive, complete parts 6 and 7.":
+1 when line 11 (`amt_alternative_minimum_tax_payable`) is more than 0, and 0 otherwise, the count of
+the condition."""
+
+AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX = CATALOG.declare(
+    "amt_basic_federal_tax_less_split_income_tax", Decimal, non_negative=True
+)
+"""Basic federal tax less the split income tax, Form T691 Part 6 line 3 "Line 1 minus line 2 (if
+negative, enter "0")": line 1, the basic federal tax of Part 2 line 7, less line 2, the amount from
+line 22 of Form T1206, Tax on Split Income, not below zero."""
+
+AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT = CATALOG.declare(
+    "amt_greater_of_basic_tax_and_minimum_amount", Decimal, non_negative=True
+)
+"""Greater of the basic tax and the minimum amount, Form T691 Part 6 line 5 "Enter whichever is
+more: amount from line 3 or line 4.": the greater of line 3 and line 4, the minimum amount from
+line 103 of Part 1."""
+
+AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX = CATALOG.declare("amt_federal_tax_under_minimum_tax", Decimal)
+"""Federal tax under the minimum tax, Form T691 Part 6 line 7 "Line 5 plus line 6 (14)": line 5 and
+line 6, the amount from line 22 of Form T1206, in line order. The form prints no floor, so the sum
+may be negative."""
+
+AMT_PART_6_SURTAX_AT_48_PERCENT = CATALOG.declare("amt_part_6_surtax_at_48_percent", Decimal)
+"""Federal surtax at 48 percent, Form T691 Part 6 line 9 "Federal surtax on business income earned
+outside Canada" "Multiply the amount from line 7 by 48%.": line 7 times the 48% of its dataset,
+rounded to the cent. The form prints no floor, so a negative line 7 gives a negative surtax."""
+
+AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS = CATALOG.declare(
+    "amt_part_6_surtax_multiple_jurisdictions", Decimal
+)
+"""Federal surtax for multiple jurisdictions, Form T691 Part 6 line 10 "If you have to pay tax to
+multiple jurisdictions, multiply the amount from line 9 by the percentage in Column 5 of line 52220
+on Form T2203.": line 9 times the percentage of Form T2203, the caller's figure as the form prints
+it (50 for 50%), rounded once to the cent. The form prints no floor, so the product may be
+negative."""
+
+AMT_PART_6_HAS_AMOUNT_ON_LINE_10 = CATALOG.declare(
+    "amt_part_6_has_amount_on_line_10", int, non_negative=True
+)
+"""You have an amount on line 10, Form T691 Part 6 line 11 "If you have an amount on line 10, enter
+that amount.": 1 when line 10 is not 0, and 0 otherwise, the count of the condition."""
+
+AMT_PART_6_SURTAX_IF_NON_RESIDENT = CATALOG.declare("amt_part_6_surtax_if_non_resident", Decimal)
+"""Federal surtax for a non-resident or deemed resident, Form T691 Part 6 line 11 "If not, and you
+are a non-resident or deemed resident, enter the amount from line 9.": line 9 when you are a
+non-resident or deemed resident, and 0 otherwise. The form prints no floor, so line 9 may be
+negative."""
+
+AMT_PART_6_FEDERAL_SURTAX = CATALOG.declare("amt_part_6_federal_surtax", Decimal)
+"""Federal surtax, Form T691 Part 6 line 11 "If you have an amount on line 10, enter that amount. If
+not, and you are a non-resident or deemed resident, enter the amount from line 9. Otherwise, enter
+"0".": line 10 when it has an amount, else the surtax for a non-resident or deemed resident, in the
+form's order."""
+
+AMT_PART_6_TAX_WITH_SURTAX = CATALOG.declare("amt_part_6_tax_with_surtax", Decimal)
+"""Federal tax with the surtax, Form T691 Part 6 line 12 "Line 8 plus line 11": line 8, the net
+minimum tax payable of Part 5 line 3, and line 11, in line order. The form prints no floor, so the
+sum may be negative."""
+
+AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX = CATALOG.declare(
+    "amt_federal_tax_payable_under_minimum_tax", Decimal, non_negative=True
+)
+"""Federal tax payable (under alternative minimum tax), Form T691 Part 6 line 14 "Enter whichever is
+more: amount from line 12 or line 13. Enter this amount on line 41700 of your return." "Federal tax
+payable (under alternative minimum tax)": the greater of line 12 and line 13, "Amount from line 24
+of Form T1206", which is not below zero. The entry on line 41700 of the return is made by the choice
+of the line 41700 entry, which takes this amount only when Part 5 line 11 is positive."""
+
+AMT_UNAPPLIED_2018_CARRYOVER = CATALOG.declare(
+    "amt_unapplied_2018_carryover", Decimal, non_negative=True
+)
+"""Unapplied 2018 minimum tax carryover, Form T691 Part 8 line 16 "Unapplied 2018 minimum tax
+carryover": a starting amount, the caller's figure, not below zero."""
+
+AMT_PART_7_BASIC_TAX_WITH_RECAPTURE = CATALOG.declare(
+    "amt_part_7_basic_tax_with_recapture", Decimal
+)
+"""Basic federal tax with the recapture, Form T691 Part 7 line 4 "Line 2 plus line 3": line 2, the
+basic federal tax of Part 2 line 7, and line 3, the recapture of investment tax credit, in line
+order. The form prints no floor, so the sum may be negative."""
+
+AMT_PART_7_CREDITS_TOTAL = CATALOG.declare("amt_part_7_credits_total", Decimal, non_negative=True)
+"""Credits, Form T691 Part 7 line 7 "Line 5 plus line 6": line 5, the federal logging tax credit,
+and line 6, "Amount from line 41600 of your return", in line order."""
+
+AMT_PART_7_TAX_LESS_CREDITS = CATALOG.declare("amt_part_7_tax_less_credits", Decimal)
+"""Tax less the credits, Form T691 Part 7 line 8 "Line 4 minus line 7": line 4 less line 7. The form
+prints no floor, so the difference may be negative."""
+
+AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE = CATALOG.declare(
+    "amt_part_7_foreign_credit_difference", Decimal, non_negative=True
+)
+"""Foreign credit difference, Form T691 Part 7 line 11 "Line 9 minus line 10 (if negative, enter
+"0")": the special foreign tax credit of Part 4 line 11 less the federal foreign tax credit of Part
+3 line 7, not below zero."""
+
+AMT_PART_7_FOREIGN_TAXES_PAID = CATALOG.declare(
+    "amt_part_7_foreign_taxes_paid", Decimal, non_negative=True
+)
+"""Foreign taxes paid, the denominator of Form T691 Part 7 line 12 "Foreign taxes* paid
+(non-business income tax paid to a foreign country (15) plus business income tax paid to a foreign
+country (16))": the non-business income tax paid to a foreign country and the business income tax
+paid to a foreign country, added. It is the fraction's denominator, not a numbered line."""
+
+AMT_PART_7_FOREIGN_CREDIT_SHARE = CATALOG.declare(
+    "amt_part_7_foreign_credit_share", Decimal, non_negative=True
+)
+"""Foreign credit share, Form T691 Part 7 line 12 "Line 11 × [Foreign taxes paid for special foreign
+tax credit (line 9 of Part 4)] / [Foreign taxes paid ...]" "= +": line 11 times the foreign taxes
+paid for the special foreign tax credit, over the foreign taxes paid, rounded once to the cent; 0
+when there are no foreign taxes paid."""
+
+AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE = CATALOG.declare(
+    "amt_part_7_tax_less_credits_plus_share", Decimal
+)
+"""Tax less the credits plus the foreign credit share, Form T691 Part 7 line 13 "Line 8 plus line
+12": line 8 and line 12, in line order. The form prints no floor, so the sum may be negative."""
+
+AMT_ADDITIONAL_TAXES_FOR_CARRYOVER = CATALOG.declare(
+    "amt_additional_taxes_for_carryover", Decimal, non_negative=True
+)
+"""Additional taxes paid for minimum tax carryover, Form T691 Part 7 line 14 "Line 1 minus line 13
+(if negative, enter "0")" "Additional taxes paid for minimum tax carryover": the minimum amount of
+line 1 less line 13, not below zero. Part 8 line 14 reads it."""
+
+AMT_CARRYOVER_BALANCE = CATALOG.declare("amt_carryover_balance", Decimal, non_negative=True)
+"""Balance of minimum tax carryover available for later years, Form T691 Part 8 line 13 "Balance of
+minimum tax carryover available for later years, if any: line 1 minus line 12": line 1 less line 12.
+Line 12 is at most line 1, so the balance is not below zero."""
+
+AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES = CATALOG.declare(
+    "amt_carryover_balance_with_additional_taxes", Decimal, non_negative=True
+)
+"""Carryover balance with the additional taxes, Form T691 Part 8 line 15 "Line 13 plus line 14":
+line 13 and line 14, the additional 2025 taxes of Part 7 line 14, in line order."""
+
+AMT_CARRYOVER_AVAILABLE_FOR_2026 = CATALOG.declare("amt_carryover_available_for_2026", Decimal)
+"""Total minimum tax carryover available for 2026, Form T691 Part 8 line 17 "Total minimum tax
+carryover available for 2026: line 15 minus line 16": line 15 less line 16, the unapplied 2018
+carryover. The form prints no floor, so the difference may be negative."""

@@ -1,9 +1,12 @@
 # Return BG: a filer with employment income who has film property, rental and leasing
 # property, tax shelter amounts, resource property, a capital gain and gifts of publicly
 # listed securities, computed on Form T691 (alternative minimum tax) Parts 1 and 9 as far as
-# line 103, Parts 2 and 8 as far as line 12 (no carryover is claimed), Part 3 lines 1 to 15
-# (no tax is payable to multiple jurisdictions), and Part 4 lines 1 to 11 (no foreign income,
-# tax or claim). The Part 1 and
+# line 103, Parts 2 and 8 (no carryover is claimed), Part 3 lines 1 to 15
+# (no tax is payable to multiple jurisdictions), Part 4 lines 1 to 11 (no foreign income, tax
+# or claim), Part 5 lines 1 to 11 (no minimum tax payable), Part 6 lines 1 to 14 (no split
+# income, so lines 2 and 6 are 0.00), and Part 7 lines 1 to 14 and Part 8 lines 13 to 17 (no
+# carryover from earlier years and no unapplied 2018 carryover), and Form ON428 lines 59 to 61 and
+# line 72 by Worksheet ON428 (no carryover applied, no alternative minimum tax). The Part 1 and
 # Part 9 amounts that are not lines of this return are chosen
 # figures, entered as the form takes them; the adjustments and the sums are computed from them.
 jurisdiction: CA-ON
@@ -118,9 +121,72 @@ description: >-
   line 8, the business income tax paid to a foreign country, with no entry (0.00); line 9,
   "Foreign taxes paid", is 0.00. Line 10, the lesser of lines 6 and 9, is 0.00, and line 11, the
   greater of the "Federal foreign tax credit from Form T2209" (0.00, no foreign tax countries) and
-  line 10, is 0.00. Not yet computed: Parts 5 to 7 of
-  Form T691 and Part 8 lines 13 to 17. Amounts are quoted decimals, and the count of CPP months
-  is a quoted digit string.
+  line 10, is 0.00. Part 5, obligation to pay alternative minimum tax, lines 1 to 11: line 1,
+  "Minimum amount from line 103 of Part 1", is 0.00, and line 2, "Special foreign tax credit from
+  line 11 of Part 4", is 0.00, so line 3, "Line 1 minus line 2 (if negative, enter "0")", the net
+  minimum tax payable, is 0.00 minus 0.00, 0.00. Line 4, "Regular net federal tax payable from line
+  15 of Part 3", is 5846.47, and line 5, "Federal surtax from line 4 of Part 3", is 0.00, so line 6,
+  "Line 4 minus line 5 (if negative, enter "0")", is 5846.47 minus 0.00, 5846.47. Line 7, "Line 3
+  minus line 6 (if negative, enter "0")", is 0.00 minus 5846.47, below zero, so 0.00. Line 8,
+  "Amount from line 12 of Part 3", is 0.00, as no investment tax credit is claimed, and line 9,
+  "Amount from line 15 of Part D of Form T2038(IND)", is 0.00, as no claim is made on it. Line 10,
+  "Line 8 minus line 9 (if negative, enter "0")", is 0.00 minus 0.00, 0.00. Line 11, "Line 7 minus
+  line 10 (if negative, enter "0")", is 0.00 minus 0.00, 0.00: the filer is not subject to
+  alternative minimum tax. Part 6, federal tax payable under alternative minimum tax, lines 1 to
+  14: line 1, "Basic federal tax from line 7 of Part 2", is 5846.47, and line 2, "Amount from line
+  22 of Form T1206, Tax on Split Income", is 0.00, so line 3, "Line 1 minus line 2 (if negative,
+  enter "0")", is 5846.47 minus 0.00, 5846.47. Line 4, "Minimum amount from line 103 of Part 1",
+  is 0.00, so line 5, "Enter whichever is more: amount from line 3 or line 4.", is 5846.47.
+  Line 6, "Amount from line 22 of Form T1206", is 0.00, so line 7, "Line 5 plus line 6 (14)",
+  is 5846.47 plus 0.00, 5846.47. Line 8, "Net minimum tax payable from line 3 of Part 5", is
+  0.00. Line 9, "Federal surtax on business income earned outside Canada", multiplies line 7 by
+  48%: 5846.47 times 0.48 is 2806.3056, rounded half-up to 2806.31. Line 10, the percentage in
+  Column 5 of line 52220 on Form T2203 applied to line 9, is a chosen figure of 0 as no tax is
+  payable to multiple jurisdictions, so line 10 is 2806.31 times 0, 0.00. Line 11, "If you have
+  an amount on line 10, enter that amount. If not, and you are a non-resident or deemed resident,
+  enter the amount from line 9. Otherwise, enter "0".", is 0.00: line 10 is 0.00, and the filer
+  is not a non-resident (a chosen figure of 0). Line 12, "Line 8 plus line 11", is 0.00. Line 13,
+  "Amount from line 24 of Form T1206", is 0.00, so line 14, "Enter whichever is more: amount from
+  line 12 or line 13", is 0.00. Line 11 of Part 5 is 0.00, so the amount is not entered on line
+  41700 of the return: line 41700 is the line 139 figure, 5846.47 (line 132, 5846.47, less line
+  138, 0.00). Part 7, additional taxes paid for minimum tax carryover, lines 1 to 14: line 1, "Minimum amount
+  from line 103 of Part 1", is 0.00, and line 2, "Basic federal tax from line 7 of Part 2", is
+  5846.47. Line 3, "Recapture of investment tax credit from line 3 of Part C of Form T2038(IND)",
+  is 0.00, so line 4, "Line 2 plus line 3", is 5846.47. Line 5, "Federal logging tax credit", is
+  0.00, and line 6, "Amount from line 41600 of your return", is 0.00, so line 7, "Line 5 plus line
+  6", is 0.00. Line 8, "Line 4 minus line 7", is 5846.47 minus 0.00, 5846.47. Line 9, "Special
+  foreign tax credit from line 11 of Part 4", is 0.00, and line 10, "Federal foreign tax credit
+  from line 7 of Part 3", is 0.00, so line 11, "Line 9 minus line 10 (if negative, enter "0")",
+  is 0.00. Line 12 multiplies line 11 by the foreign taxes paid for the special foreign tax credit
+  (line 9 of Part 4, 0.00) over the foreign taxes paid (non-business income tax paid to a foreign
+  country, 0.00, plus business income tax paid to a foreign country, 0.00): the denominator is 0.00,
+  so line 12 is 0.00. Line 13, "Line 8 plus line 12", is 5846.47 plus 0.00, 5846.47. Line 14,
+  "Additional taxes paid for minimum tax carryover", is "Line 1 minus line 13 (if negative, enter
+  "0")": 0.00 minus 5846.47, below zero, so 0.00. Part 8, lines 13 to 17: with no carryover from
+  earlier years, line 1 is 0.00 and line 12, "Minimum tax carryover applied in 2025", is 0.00, so
+  line 13, "Balance of minimum tax carryover available for later years, if any: line 1 minus line
+  12", is 0.00. Line 14, "Additional 2025 taxes for carryover to later years from line 14 of Part
+  7", is 0.00, so line 15, "Line 13 plus line 14", is 0.00. Line 16, "Unapplied 2018 minimum tax
+  carryover", is 0.00, so line 17, "Total minimum tax carryover available for 2026: line 15 minus
+  line 16", is 0.00.
+  Form ON428 (Ontario tax), lines 59 to 61, the Ontario minimum tax carryover: line 55 is the
+  Ontario tax of 2526.82 (the tax after credits, with no tax on split income, line 54 being 0.00),
+  and line 58, "Line 56 minus line 57 (if negative, enter "0")", is 2526.82 (no dividend tax credit).
+  Line 59, "Amount from line 40427 of your return multiplied by 24.63%", is 24.63% of the minimum
+  tax carryover applied of 0.00 (line 40427): 0.00. Line 60, "Enter whichever is less: amount from
+  line 58 or line 59.", is the lesser of 2526.82 and 0.00, 0.00, and line 61, "Line 55 minus line 60
+  (if negative, enter "0")", is 2526.82 minus 0.00, 2526.82, which lines 62 and 63 carry. Line 65,
+  the surtax base, is line 63 less line 64 (0.00), 2526.82, below $5,710, so the surtax of line 68
+  is 0.00. Line 72, "Ontario additional tax for minimum tax purposes", is calculated by Worksheet
+  ON428 because line 11 of Part 5 of Form T691 is 0.00 (no alternative minimum tax payable): line
+  1, "Amount from line 11 of Part 5 of your Form T691 multiplied by 24.63%", is 0.00 times 24.63%,
+  0.00; line 2, "Amount from line 65 of your Form ON428", is 2526.82; line 3, "Line 1 plus line
+  2", is 0.00 plus 2526.82, 2526.82, which is not more than $5,710, so lines 4 and 5, each "if
+  negative, enter "0"", are 0.00 and line 6, "Line 4 plus line 5", is 0.00. Line 7, "Amount from
+  line 68 of your Form ON428", is 0.00, so line 8, "Line 6 minus line 7", is 0.00 minus 0.00, 0.00,
+  and line 9, "Line 1 plus line 8 Enter this amount on line 72 of your Form ON428.", is 0.00 plus
+  0.00, 0.00: line 72 is 0.00 and line 73, "Line 71 plus line 72", is 2526.82 plus 0.00, 2526.82.
+  Amounts are quoted decimals, and the count of CPP months is a quoted digit string.
 sources:
   - >-
     CRA, Form T691 (2025), docs/cra-forms-2025/t691-25e.pdf: "Taxable income from line
@@ -146,7 +212,7 @@ sources:
     "Federal tax rate" "× 20.5%"; "Gross minimum amount: line 95 multiplied by the percentage on
     line 96."; "Net non-refundable tax credits (line 33800 of your return)" "× 50% ="; "Donations and
     gifts (line 34900 of your return)" "× 80% ="; "Add lines 98 to 101."; "Line 97 minus line 102
-    (if negative, enter "0")"; "Minimum amount"; "Enter the amount from line 40400 of your return"; "Total non-refundable tax credits (line 35000 of your return)"; "Dividend tax credit (line 40425 of your return)"; "Line 2 plus line 3"; "Line 1 minus line 4"; "Tax payable before minimum tax carryover"; "Minimum tax carryover applied in 2025 from line 12 of Part 8"; "Line 5 minus line 6"; "Basic federal tax"; "Minimum tax carryover from previous years (2018 to 2024)"; "Tax payable before minimum tax carryover from line 5 of Part 2"; "Recapture of investment tax credit from line 3 of Part C of Form T2038(IND)"; "Federal tax on split income from line 8 of Form T1206"; "Amount from line 41600 of your return"; "Add lines 5 to 7"; "Line 4 minus line 8"; "Minimum amount from line 103 of Part 1"; "Maximum carryover that can be applied in 2025: line 9 minus line 10 (if negative, enter "0")"; "Claim an amount that is not more than line 1 or 11, whichever is less."; "Enter this amount on line 40427 of your return." "Amount from line 7 of Part 2"; "Federal surtax on business income earned outside Canada" "Multiply the amount from line 1 by 48%."; "If you have to pay tax to multiple jurisdictions, multiply the amount from line 2 by the percentage in Column 5 of line 52220 on Form T2203."; "If you have an amount on line 3, enter that amount. If not, and you are a non-resident or deemed resident, enter the amount from line 2. Otherwise, enter "0"."; "Recapture of investment tax credit (from line 3 of Part C of Form T2038(IND))"; "Add lines 1, 4, and 5."; "Federal foreign tax credit from Form T2209"; "Federal logging tax credit"; "Line 7 plus line 8"; "Line 6 minus line 9 (if negative, enter "0")" "Federal tax payable"; "Federal political contribution tax credit from line 41000 of your return"; "Investment tax credit amount up to, but not more than the amount I of Form T2038(IND)"; "Labour-sponsored funds tax credit from line 41400 of your return"; "Add lines 11 to 13."; "Line 10 minus line 14 (if negative, enter "0")" "Regular net federal tax payable"; "Part 4 – Special foreign tax credit"; "Foreign business income (total business income earned in the foreign country, minus allowable expenses and deductions for the foreign income)"; "Foreign non-business income (on which non-business income tax was paid to a foreign country (12))"; "Non-taxable part of foreign capital gains included in adjusted taxable income (cannot be more than line 23 of Part 1)" "67940"; "Total foreign income: add lines 1 to 3 (if negative, enter "0")"; "Applicable rate" "× 20.5%"; "Foreign income limit for special foreign tax credit: line 4 multiplied by the percentage on line 5 (if negative, enter "0")."; "Total non-business income tax paid to a foreign country (12)" "× 66.6666%"; "Total business income tax paid to a foreign country (13)"; "Foreign taxes paid for special foreign tax credit: line 7 plus line 8 (if negative, enter "0")"; "Enter whichever is less: amount from line 6 or line 9."; "Enter whichever is more: amount from line 7 of Part 3 or line 10." "Special foreign tax credit".
+    (if negative, enter "0")"; "Minimum amount"; "Enter the amount from line 40400 of your return"; "Total non-refundable tax credits (line 35000 of your return)"; "Dividend tax credit (line 40425 of your return)"; "Line 2 plus line 3"; "Line 1 minus line 4"; "Tax payable before minimum tax carryover"; "Minimum tax carryover applied in 2025 from line 12 of Part 8"; "Line 5 minus line 6"; "Basic federal tax"; "Minimum tax carryover from previous years (2018 to 2024)"; "Tax payable before minimum tax carryover from line 5 of Part 2"; "Recapture of investment tax credit from line 3 of Part C of Form T2038(IND)"; "Federal tax on split income from line 8 of Form T1206"; "Amount from line 41600 of your return"; "Add lines 5 to 7"; "Line 4 minus line 8"; "Minimum amount from line 103 of Part 1"; "Maximum carryover that can be applied in 2025: line 9 minus line 10 (if negative, enter "0")"; "Claim an amount that is not more than line 1 or 11, whichever is less."; "Enter this amount on line 40427 of your return." "Amount from line 7 of Part 2"; "Federal surtax on business income earned outside Canada" "Multiply the amount from line 1 by 48%."; "If you have to pay tax to multiple jurisdictions, multiply the amount from line 2 by the percentage in Column 5 of line 52220 on Form T2203."; "If you have an amount on line 3, enter that amount. If not, and you are a non-resident or deemed resident, enter the amount from line 2. Otherwise, enter "0"."; "Recapture of investment tax credit (from line 3 of Part C of Form T2038(IND))"; "Add lines 1, 4, and 5."; "Federal foreign tax credit from Form T2209"; "Federal logging tax credit"; "Line 7 plus line 8"; "Line 6 minus line 9 (if negative, enter "0")" "Federal tax payable"; "Federal political contribution tax credit from line 41000 of your return"; "Investment tax credit amount up to, but not more than the amount I of Form T2038(IND)"; "Labour-sponsored funds tax credit from line 41400 of your return"; "Add lines 11 to 13."; "Line 10 minus line 14 (if negative, enter "0")" "Regular net federal tax payable"; "Part 4 – Special foreign tax credit"; "Foreign business income (total business income earned in the foreign country, minus allowable expenses and deductions for the foreign income)"; "Foreign non-business income (on which non-business income tax was paid to a foreign country (12))"; "Non-taxable part of foreign capital gains included in adjusted taxable income (cannot be more than line 23 of Part 1)" "67940"; "Total foreign income: add lines 1 to 3 (if negative, enter "0")"; "Applicable rate" "× 20.5%"; "Foreign income limit for special foreign tax credit: line 4 multiplied by the percentage on line 5 (if negative, enter "0")."; "Total non-business income tax paid to a foreign country (12)" "× 66.6666%"; "Total business income tax paid to a foreign country (13)"; "Foreign taxes paid for special foreign tax credit: line 7 plus line 8 (if negative, enter "0")"; "Enter whichever is less: amount from line 6 or line 9."; "Enter whichever is more: amount from line 7 of Part 3 or line 10." "Special foreign tax credit"; "Part 5 – Obligation to pay alternative minimum tax"; "Special foreign tax credit from line 11 of Part 4"; "Line 1 minus line 2 (if negative, enter "0")" "Net minimum tax payable"; "Regular net federal tax payable from line 15 of Part 3"; "Federal surtax from line 4 of Part 3"; "Line 4 minus line 5 (if negative, enter "0")"; "Line 3 minus line 6 (if negative, enter "0")"; "Amount from line 12 of Part 3"; "Amount from line 15 of Part D of Form T2038(IND)"; "Line 8 minus line 9 (if negative, enter "0")"; "Line 7 minus line 10 (if negative, enter "0")".
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t691/t691-25e.pdf
   - >-
     CRA, T1 (2025), docs/cra-forms-2025/5006-r-25e.txt: "Line 124 and line 40427: Minimum tax
@@ -157,6 +223,23 @@ sources:
     for CPP enhanced contributions on employment income:" "Line 28: Line 26 plus line 27 Enter
     this amount (in dollars and cents) on line 22215 of your return."
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s8/5000-s8-25e.txt
+  - >-
+    CRA, Form ON428 (form 5006-C, 2025), docs/cra-forms-2025/5006-c-25e.txt: "Line 58: Line 56
+    minus line 57 (if negative, enter "0")"; "Line 59: Amount from line 40427 of your return
+    multiplied by 24.63%"; "Line 60 and line 61540: Enter whichever is less: amount from line 58
+    or line 59."; "Line 61: Line 55 minus line 60 (if negative, enter "0")"; "Line 72: If you
+    entered an amount on line 11 of Part 5 of Form T691, use Worksheet ON428 to calculate your
+    additional tax for minimum tax purposes."; "Line 73: Line 71 plus line 72".
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
+  - >-
+    CRA, Worksheet ON428 (form 5006-D, 2025), docs/cra-forms-2025/5006-d-25e.txt: "Line 72 -
+    Ontario additional tax for minimum tax purposes"; "Line 1: Amount from line 11 of Part 5 of
+    your Form T691 multiplied by 24.63%"; "Line 2: Amount from line 65 of your Form ON428"; "Line
+    3: Line 1 plus line 2"; "Line 4: (Line 3 Minus $5,710) multiplied by 20% (if negative, enter
+    "0")"; "Line 5: (Line 3 Minus $7,307) multiplied by 36% (if negative, enter "0")"; "Line 6:
+    Line 4 plus line 5"; "Line 7: Amount from line 68 of your Form ON428"; "Line 8: Line 6 minus
+    line 7"; "Line 9: Line 1 plus line 8 Enter this amount on line 72 of your Form ON428."
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-d/5006-d-25e.txt
 inputs:
   ca/employment_income: "60000"
   ca/cpp_months: "12"
@@ -291,3 +374,43 @@ expected:
   ca/amt_foreign_taxes_paid: "0.00"
   ca/amt_foreign_tax_credit_lesser: "0.00"
   ca/amt_special_foreign_tax_credit: "0.00"
+  ca/amt_net_minimum_tax_payable: "0.00"
+  ca/amt_regular_net_tax_less_surtax: "5846.47"
+  ca/amt_minimum_tax_after_regular_tax: "0.00"
+  ca/amt_investment_tax_credit_less_part_d: "0.00"
+  ca/amt_alternative_minimum_tax_payable: "0.00"
+  ca/amt_basic_federal_tax_less_split_income_tax: "5846.47"
+  ca/amt_greater_of_basic_tax_and_minimum_amount: "5846.47"
+  ca/amt_federal_tax_under_minimum_tax: "5846.47"
+  ca/amt_part_6_surtax_at_48_percent: "2806.31"
+  ca/amt_part_6_surtax_multiple_jurisdictions: "0.00"
+  ca/amt_part_6_has_amount_on_line_10: "0"
+  ca/amt_part_6_surtax_if_non_resident: "0.00"
+  ca/amt_part_6_federal_surtax: "0.00"
+  ca/amt_part_6_tax_with_surtax: "0.00"
+  ca/amt_federal_tax_payable_under_minimum_tax: "0.00"
+  ca/amt_part_7_basic_tax_with_recapture: "5846.47"
+  ca/amt_part_7_credits_total: "0.00"
+  ca/amt_part_7_tax_less_credits: "5846.47"
+  ca/amt_part_7_foreign_credit_difference: "0.00"
+  ca/amt_part_7_foreign_taxes_paid: "0.00"
+  ca/amt_part_7_foreign_credit_share: "0.00"
+  ca/amt_part_7_tax_less_credits_plus_share: "5846.47"
+  ca/amt_additional_taxes_for_carryover: "0.00"
+  ca/amt_carryover_balance: "0.00"
+  ca/amt_carryover_balance_with_additional_taxes: "0.00"
+  ca/amt_carryover_available_for_2026: "0.00"
+  ca-on/ontario_tax_with_split_income: "2526.82"
+  ca-on/minimum_tax_carryover_credit: "0.00"
+  ca-on/ontario_minimum_tax_carryover_applied: "0.00"
+  ca-on/ontario_tax_after_minimum_tax_carryover: "2526.82"
+  ca-on/ontario_surtax_base: "2526.82"
+  ca-on/ontario_surtax: "0.00"
+  ca-on/worksheet_on428_line_1: "0.00"
+  ca-on/worksheet_on428_line_2: "2526.82"
+  ca-on/worksheet_on428_line_3: "2526.82"
+  ca-on/worksheet_on428_line_6: "0.00"
+  ca-on/worksheet_on428_line_7: "0.00"
+  ca-on/worksheet_on428_line_8: "0.00"
+  ca-on/ontario_minimum_tax: "0.00"
+  ca-on/ontario_tax_before_reduction: "2526.82"
