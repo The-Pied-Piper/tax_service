@@ -930,6 +930,28 @@ def test_two_starting_values_for_a_return_input_are_refused_as_the_worksheet_doe
     assert str(wrapped.value) == str(bare.value)
 
 
+def test_the_kind_named_is_the_first_given_that_is_repeated_not_the_first_to_repeat() -> None:
+    given = (
+        Artifact(SALES, D(10)),
+        Artifact(COSTS, D(4)),
+        Artifact(COSTS, D(5)),
+        Artifact(SALES, D(11)),
+    )
+
+    with pytest.raises(DuplicateArtifactError) as refused:
+        lone_set().compute(*given)
+
+    assert str(refused.value) == "two starting values for 'sales'"
+
+
+def test_distinct_starting_values_leave_the_result_and_its_trace_as_the_bare_wiring() -> None:
+    given = (Artifact(SALES, D(10)), Artifact(COSTS, D(4)))
+
+    result = lone_set().compute(*given)
+
+    assert result[RETURN][0].trace == lone_composition().compute(*given).trace
+
+
 def test_two_starting_values_for_a_forms_instances_are_refused() -> None:
     with pytest.raises(DuplicateArtifactError, match="two starting values for 'shops'"):
         form_set(shop(), audit()).compute(TWO_SHOPS, shops(("1", "1")), TWO_AUDITS)
