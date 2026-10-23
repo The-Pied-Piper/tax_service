@@ -39,13 +39,6 @@ pensionable earnings from box 26 of all of your T4 slips where the province of e
 Quebec": the amount the filer enters, a starting amount. The form's "(if box 26 is blank, enter the
 amount from box 14)" and "(maximum $81,200 per slip)" are the filer's to apply to each slip."""
 
-T4_CPP_CONTRIBUTIONS_BOX_16 = CATALOG.declare(
-    "t4_cpp_contributions_box_16", Decimal, non_negative=True
-)
-"""CPP contributions on T4 slips, Form RC381 Part 3 line 19 and line 50340 "Total actual base and
-first additional contributions on CPP pensionable earnings from box 16 of all of your T4 slips":
-the amount the filer enters, a starting amount."""
-
 RC381_PART_2_LINE_G = CATALOG.declare("rc381_part_2_line_g", Decimal, non_negative=True)
 """QPP maximum pensionable earnings, Form RC381 Part 2 line G "Your maximum pensionable earnings
 for 2025 (maximum $71,300)": the "Maximum pensionable earnings" column of the monthly proration

@@ -178,6 +178,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.domain.trace.arithmetic.GreaterOfLine",
         "app.domain.trace.arithmetic.LesserOfLine",
         "app.domain.trace.arithmetic.LesserOfWhenPositiveLine",
+        "app.domain.trace.arithmetic.LesserOfWithMaximumLine",
         "app.domain.trace.arithmetic.MultipleOverLine",
         "app.domain.trace.arithmetic.PerUnitAmountLine",
         "app.domain.trace.arithmetic.PositivePartOfNegationLine",
@@ -186,6 +187,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.domain.trace.arithmetic.RatioAppliedLine",
         "app.domain.trace.arithmetic.RatioTruncatedLine",
         "app.domain.trace.arithmetic.RoundedTotalLine",
+        "app.domain.trace.arithmetic.SignChosenDifferenceLine",
         "app.domain.trace.arithmetic.SubtractedLine",
         "app.domain.trace.arithmetic.SubtractedNotBelowZeroLine",
         "app.domain.trace.arithmetic.SumLine",
@@ -216,6 +218,8 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.jurisdictions.ca.trace.dependants.CaregiverClaimLine",
         "app.jurisdictions.ca.trace.dependants.DisabilityTransferLine",
         "app.jurisdictions.ca.trace.dependants.OtherDependantMedicalLine",
+        "app.jurisdictions.ca.trace.foreign_tax.ForeignTaxCreditLine",
+        "app.jurisdictions.ca.trace.foreign_tax.PooledForeignTaxCreditLine",
         "app.jurisdictions.ca.trace.gains.DispositionGainLine",
         "app.jurisdictions.ca.trace.gains.DispositionGainOnlyLine",
         "app.jurisdictions.ca.trace.gains.DispositionProceedsLine",
@@ -226,6 +230,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.jurisdictions.ca.trace.rentals.ShortTermRentalNonCompliantCcaLine",
         "app.jurisdictions.ca.trace.rentals.ShortTermRentalNonCompliantLine",
         "app.jurisdictions.ca_on.trace.dependants.CaregiverClaimLessClaimedLine",
+        "app.jurisdictions.ca_on.trace.foreign_tax.ProvincialForeignTaxCreditLine",
         "app.jurisdictions.ca_on.trace.placement_credit.PlacementCreditLine",
     }
 

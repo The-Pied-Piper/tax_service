@@ -9,6 +9,7 @@ from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.catalog import (
     CANADA_TRAINING_CREDIT,
     CANADA_WORKERS_BENEFIT,
+    CPP_OVERPAYMENT,
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     INCOME_TAX_DEDUCTED,
@@ -32,8 +33,9 @@ OUTPUTS = frozenset(
 )
 
 STEPS = {
-    # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line 154
-    # (45200) "Refundable medical expense supplement (use Federal Worksheet)", line 155 (45300)
+    # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line 152
+    # (44800) "CPP or QPP overpayment" (Schedule 8 line 29, 0 when line 24 is not positive), line
+    # 154 (45200) "Refundable medical expense supplement (use Federal Worksheet)", line 155 (45300)
     # "Canada workers benefit (CWB) (complete Schedule 6)", line 156 (45350) "Canada training
     # credit (CTC) (complete Schedule 11)", line 159 (45600) "Part XII.2 tax credit (box 38 of
     # all T3 slips and box 209 of all T5013 slips)", line 160 (45700) "Employee and partner
@@ -47,6 +49,7 @@ STEPS = {
         consumes={
             "parts": (
                 "ca/income_tax_deducted",
+                "ca/cpp_overpayment",
                 "ca/refundable_medical_expense_supplement",
                 "ca/canada_workers_benefit",
                 "ca/canada_training_credit",
@@ -86,6 +89,7 @@ WIRING = {
         frozenset(
             {
                 INCOME_TAX_DEDUCTED,
+                CPP_OVERPAYMENT,
                 REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
                 CANADA_WORKERS_BENEFIT,
                 CANADA_TRAINING_CREDIT,

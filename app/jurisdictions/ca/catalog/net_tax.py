@@ -86,12 +86,12 @@ line 24 is at most line 29, so line 30 is line 29 and the sum is lines 139 to 14
 
 Line 126 (42900) is "Line 121 minus line 125 (if negative, enter "0") Basic federal tax", line 121
 (40400) "Line 119 plus line 120" and line 125 "Add lines 122 to 124.", line 122 being "Amount from
-line 35000" and line 123 the federal dividend tax credit: the federal tax after credits. Line 131
-(`itc_recapture`) is added to it (line 132) and line 134 (40600) "Line 132 minus line 133 (if
-negative, enter "0") Federal tax" carries line 132, as line 133 is not wired. Not modelled: line 124
-(minimum tax carryover), line 127 (foreign surtax, not
-triggered on a return whose income is all allocated to Ontario), line 129 (foreign tax credit),
-line 133 (logging tax credit) and line 136 (investment tax credit).
+line 35000", line 123 the federal dividend tax credit and line 124 the minimum tax carryover: the
+federal tax after credits. Line 131 (`itc_recapture`) is added to it (line 132) and line 134
+(40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax" carries line 132, as line 133
+is not wired. Not modelled: line 127 (foreign surtax, not triggered on a return whose income is all
+allocated to Ontario), line 129 (foreign tax credit), line 133 (logging tax credit) and line 136
+(investment tax credit).
 """
 
 CPP_PAYABLE_ON_SELF_EMPLOYMENT = CATALOG.declare(
@@ -129,3 +129,15 @@ attach your provincial or territorial Form 428, even if the result is "0")". Lin
 INCOME_TAX_DEDUCTED = CATALOG.declare("income_tax_deducted", Decimal, non_negative=True)
 """Income tax deducted, T1 line 150 (line 43700) "Total income tax deducted (amounts from all
 Canadian slips)": a starting amount."""
+
+CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT = CATALOG.declare(
+    "cpp_part_5_payable_on_self_employment", Decimal, non_negative=True
+)
+"""T1 line 42100 from Part 5 line 49 (cpp_part_5_line_49_if_positive), once for each Part 5
+completed (1 or 0)."""
+
+CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
+    "cpp_payable_on_self_employment_and_other_earnings", Decimal, non_negative=True
+)
+"""T1 line 42100: the Part 4 amount (cpp_payable_on_self_employment) plus the Part 5 amount,
+added into the total payable by 11_net_tax."""

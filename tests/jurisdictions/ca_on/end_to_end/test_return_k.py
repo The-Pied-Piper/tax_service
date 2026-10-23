@@ -135,7 +135,7 @@ def test_the_dividend_tax_credit_comes_off_the_basic_federal_tax_with_the_other_
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "credits_against_basic_federal_tax: non_refundable_tax_credits 3004.65 "
-        "+ dividend_tax_credit 319.19 = 3323.84"
+        "+ dividend_tax_credit 319.19 + amt_minimum_tax_carryover_applied 0 = 3323.84"
     ) in rendered
     assert (
         "federal_tax_after_credits: federal_tax_with_split_income 7538.55 "

@@ -15,9 +15,13 @@ from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.amount_or_divided_by_rate import AmountOrDividedByRate
 from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
+from app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit import (
+    ForeignNonBusinessTaxCredit,
+)
 from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_TRAINING_CREDIT,
@@ -25,8 +29,10 @@ from app.jurisdictions.ca.catalog import (
     CANADA_TRAINING_CREDIT_CLAIMED,
     CANADA_TRAINING_CREDIT_LIMIT,
     CANADA_TRAINING_CREDIT_MAXIMUM,
+    CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CANADIAN_TUITION_AVAILABLE,
     CANADIAN_TUITION_FEES,
+    CAPITAL_GAINS_DEDUCTION,
     CAPITAL_GIFT_GAINS_DEDUCTION,
     CAPITAL_GIFT_TAXABLE_GAINS,
     CAPITAL_GIFTS_LIMIT_ADDITION,
@@ -37,8 +43,13 @@ from app.jurisdictions.ca.catalog import (
     CHARITABLE_DONATIONS_CLAIMED,
     CHARITABLE_DONATIONS_LIMIT,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_COMPLETED,
+    CPP_PART_5_LINE_70,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDIT_AMOUNTS_SUBTOTAL,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -51,6 +62,7 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFTS,
     DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_TRANSFERRED_AMOUNT,
+    DIVIDEND_TAX_CREDIT,
     DONATION_FIRST_TIER_MAXIMUM,
     DONATION_HIGH_INCOME_THRESHOLD,
     DONATION_LIMIT_ON_NET_INCOME,
@@ -67,14 +79,26 @@ from app.jurisdictions.ca.catalog import (
     EI_SPECIAL_BENEFITS_AGREEMENT,
     ELIGIBLE_DEPENDANT_AMOUNT,
     EMPLOYMENT_INCOME,
+    EXEMPT_INCOME_DEDUCTIONS,
     FEDERAL_BASIC_TAX,
+    FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
+    FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
     FEDERAL_TUITION_AMOUNT,
+    FIRST_NATIONS_ABATEMENT,
     FIRST_TIER_DONATION_CREDIT,
     FOREIGN_CHARITY_DONATIONS,
+    FOREIGN_TAX_COUNTRIES,
+    FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+    FOREIGN_TAX_CREDIT_NET_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+    FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_SHEETS,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
     HIGH_INCOME_DONATION_CREDIT,
@@ -86,13 +110,19 @@ from app.jurisdictions.ca.catalog import (
     ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
     ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
     MEDICAL_CLAIM,
+    NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_INCOME,
+    NET_INCOME_BEFORE_ADJUSTMENTS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    OTHER_PAYMENTS_DEDUCTION,
+    QBT_CAPITAL_GAINS_DEDUCTION,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    SECURITY_OPTIONS_DEDUCTIONS,
     SELF_EMPLOYED_CPP_BASE_CREDIT,
     SELF_EMPLOYED_EI_PREMIUMS,
+    SOCIAL_BENEFITS_REPAYMENT,
     SPOUSE_ADJUSTED_TAXABLE_INCOME,
     SPOUSE_AMOUNT,
     SPOUSE_CAREGIVER_AMOUNT,
@@ -139,6 +169,10 @@ from app.jurisdictions.ca.catalog import (
 
 INPUTS = frozenset(
     {
+        # Form T2209, "the federal refundable First Nations abatement (line 44100 of your return)"
+        # of note (4), and the countries of lines 1 and 2, each with lines 43100 and 43300.
+        "ca/first_nations_abatement",
+        "ca/foreign_tax_countries",
         "ca/itc_recapture_expenditure_at_15_percent",
         "ca/itc_recapture_expenditure_at_20_percent",
         "ca/charitable_donations",
@@ -174,7 +208,7 @@ INPUTS = frozenset(
     }
 )
 
-OUTPUTS = frozenset({"ca/tuition_carried_forward"})
+OUTPUTS = frozenset({"ca/tuition_carried_forward", "ca/foreign_tax_credit_sheets"})
 
 STEPS = {
     # Schedule 8 Part 3, each contribution on employment income: line 11 (base, 4.95% of the
@@ -215,6 +249,30 @@ STEPS = {
             "count": "ca/cpp_part_4_completed",
         },
         produces={"output": "ca/cpp_base_contributions_on_self_employment"},
+    ),
+    # T1 line 87 and line 31000, entered from Schedule 8 Part 5 line 70: counted once for each
+    # Part 5 completed, 1 or 0. The form prints line 70 as the amount for line 31000.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/cpp_part_5_line_70",
+            "count": "ca/cpp_part_5_completed",
+        },
+        produces={"output": "ca/cpp_part_5_base_contributions_on_self_employment"},
+    ),
+    # T1 line 87 and line 31000: the Part 4 amount plus the Part 5 amount; both are added when
+    # both parts are marked completed, as the form leaves the choice to the filer.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/cpp_base_contributions_on_self_employment",
+                "ca/cpp_part_5_base_contributions_on_self_employment",
+            ),
+        },
+        produces={"output": "ca/cpp_base_contributions_on_self_employment_and_other_earnings"},
     ),
     # "Enter the amount from line 9 or line 10, whichever applies, on line 31217 and line 42120
     # of your return.": Schedule 13 is completed only with an agreement with the Canada
@@ -309,8 +367,8 @@ STEPS = {
                 "ca/spouse_caregiver_amount",
                 "ca/caregiver_amount",
                 "ca/infirm_children_amount",
-                "ca/cpp_base_contributions",
-                "ca/cpp_base_contributions_on_self_employment",
+                "ca/cpp_base_contributions_on_return",
+                "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
                 "ca/canada_employment_amount",
@@ -511,8 +569,8 @@ STEPS = {
                 "ca/spouse_caregiver_amount",
                 "ca/caregiver_amount",
                 "ca/infirm_children_amount",
-                "ca/cpp_base_contributions",
-                "ca/cpp_base_contributions_on_self_employment",
+                "ca/cpp_base_contributions_on_return",
+                "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
                 "ca/canada_employment_amount",
@@ -883,14 +941,151 @@ STEPS = {
         consumes={"parts": ("ca/itc_recapture_at_15_percent", "ca/itc_recapture_at_20_percent")},
         produces={"output": "ca/itc_recapture"},
     ),
-    # T1 line 132 "Line 130 plus line 131 =": line 126 (42900) "Basic federal tax" and line 131.
-    # Line 127 "Federal surtax on income earned outside Canada (complete Form T2203)" is not
-    # triggered on a return whose income is all allocated to Ontario and line 129 (40500) is not
-    # yet wired, so lines 128 and 130 carry line 126 unchanged.
+    # Form T2209 note (3), net income: "Amount from line 23600 of your return (or the amount you
+    # would have entered if the instructions said "if negative, show in brackets") plus the amount
+    # on line 68360 of Form T1206, Total split income, minus any:" "amount deductible as a
+    # Canadian Forces personnel and police deduction (line 24400 of your return)", "amount
+    # deductible as security options deductions (line 24900 of your return)", "amount deductible
+    # as an other payments deduction (line 25000 of your return)", "net capital losses of other
+    # years you claimed (line 25300 of your return)", "capital gains deduction for qualifying
+    # business transfer or qualifying cooperative conversion you claimed (line 25395 of your
+    # return)", "capital gains deduction you claimed (line 25400 of your return)" and "amounts
+    # deductible as net employment income from a prescribed international organization, as foreign
+    # income exempt under a tax treaty, or as adult basic education tuition assistance (included
+    # on line 25600 of your return)", in the note's order, added.
     CapabilitySelection(
         name="core/sum",
         params={},
-        consumes={"parts": ("ca/federal_tax_after_credits", "ca/itc_recapture")},
+        consumes={
+            "parts": (
+                "ca/canadian_armed_forces_and_police_deduction",
+                "ca/security_options_deductions",
+                "ca/other_payments_deduction",
+                "ca/net_capital_losses_of_other_years",
+                "ca/qbt_capital_gains_deduction",
+                "ca/capital_gains_deduction",
+                "ca/exempt_income_deductions",
+            )
+        },
+        produces={"output": "ca/foreign_tax_credit_net_income_deductions"},
+    ),
+    # The net income of note (3), "Amount from line 23600 of your return (or the amount you would
+    # have entered if the instructions said "if negative, show in brackets")": line 23400 less line
+    # 23500, not floored, so signed. It is not the line 23600 kind, which is floored at 0.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/net_income_before_adjustments",
+            "less": "ca/social_benefits_repayment",
+        },
+        produces={"output": "ca/foreign_tax_credit_net_income_before_split_income"},
+    ),
+    # Note (3), "plus the amount on line 68360 of Form T1206, Total split income": that amount
+    # added. It is not the TOSI-adjusted net income, which adds line 68360 to line 23400, not to
+    # line 23400 less line 23500.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/foreign_tax_credit_net_income_before_split_income",
+                "ca/total_split_income",
+            )
+        },
+        produces={"output": "ca/foreign_tax_credit_net_income_with_split_income"},
+    ),
+    # Note (3), "minus any:" the deductions above. The note prints no "(if negative, enter "0")",
+    # so the result is signed.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/foreign_tax_credit_net_income_with_split_income",
+            "less": "ca/foreign_tax_credit_net_income_deductions",
+        },
+        produces={"output": "ca/foreign_tax_credit_net_income"},
+    ),
+    # Form T2209 note (4), basic federal tax: "Line 42900 of your return plus any:" "federal
+    # dividend tax credit (line 40425 of your return)" (note (8) is this sum alone, for the
+    # business lines).
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/federal_tax_after_credits", "ca/dividend_tax_credit")},
+        produces={"output": "ca/basic_federal_tax_with_dividend_credit"},
+    ),
+    # Note (4), "minus any:" "federal refundable First Nations abatement (line 44100 of your
+    # return)". The federal surtax on income allocated to "Other (Outside Canada)" (line 127 of the
+    # return, not wired and not triggered on an Ontario return) and the refundable Quebec
+    # abatement (line 44000, which does not apply to an Ontario return) are not part of it.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/basic_federal_tax_with_dividend_credit",
+            "less": "ca/first_nations_abatement",
+        },
+        produces={"output": "ca/foreign_tax_credit_basic_federal_tax"},
+    ),
+    # Form T2209, federal non-business foreign tax credit: line 1 "Non-business income tax paid to
+    # a foreign country (1) 43100", line 2 "Net foreign non-business income (2) 43300" "× Basic
+    # federal tax (4) =" over "Net income (3)", line 3 "Enter whichever is less: the amount from
+    # line 1 or line 2. Federal non-business foreign tax credit", for each country on its own
+    # when "you paid tax to more than one foreign country, and the total foreign taxes paid to all
+    # foreign countries was more than $200", otherwise once on the totals; the total of line 3.
+    CapabilitySelection(
+        name="ca/foreign_non_business_tax_credit",
+        params={
+            "rounding": "ca/foreign_non_business_tax_credit_rounding",
+            "pooling_threshold": "ca/foreign_tax_pooling_threshold",
+        },
+        consumes={
+            "countries": "ca/foreign_tax_countries",
+            "net_income": "ca/foreign_tax_credit_net_income",
+            "basic_federal_tax": "ca/foreign_tax_credit_basic_federal_tax",
+        },
+        produces={
+            "total": "ca/federal_non_business_foreign_tax_credit",
+            "sheets": "ca/foreign_tax_credit_sheets",
+        },
+    ),
+    # T2209 line 13 "Federal foreign tax credit", which is line 3 while the business lines (lines
+    # 4 to 12) are not wired, and T1 line 129 (line 40500) "Federal foreign tax credit (complete
+    # Form T2209)": "The amount on line 3 should not be more than the total of the amount on line
+    # 42900 of your return plus any federal surtax on income earned outside of Canada." Line 127
+    # (the surtax) is not wired, so the limit is line 42900.
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/federal_non_business_foreign_tax_credit",
+                "ca/federal_tax_after_credits",
+            )
+        },
+        produces={"output": "ca/federal_foreign_tax_credit"},
+    ),
+    # T1 line 130 "Line 128 minus line 129 =": line 128 "Line 126 plus line 127 =" is line 126
+    # (42900) "Basic federal tax", as line 127 "Federal surtax on income earned outside Canada
+    # (complete Form T2203)" is not wired and not triggered on an Ontario return, and line 129
+    # (40500) comes off it. The line prints no "(if negative, enter "0")" but line 129 is at most
+    # line 126, so the result is not below zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/federal_tax_after_credits",
+            "less": "ca/federal_foreign_tax_credit",
+        },
+        produces={"output": "ca/federal_tax_less_foreign_tax_credit"},
+    ),
+    # T1 line 132 "Line 130 plus line 131 =": line 130 and line 131 "Recapture of investment tax
+    # credit (complete Form T2038(IND))".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/federal_tax_less_foreign_tax_credit", "ca/itc_recapture")},
         produces={"output": "ca/federal_tax_with_itc_recapture"},
     ),
 }
@@ -907,6 +1102,21 @@ WIRING = {
         TimesCount,
         frozenset({SELF_EMPLOYED_CPP_BASE_CREDIT, CPP_PART_4_COMPLETED}),
         frozenset({CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT}),
+    ),
+    (
+        TimesCount,
+        frozenset({CPP_PART_5_LINE_70, CPP_PART_5_COMPLETED}),
+        frozenset({CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+                CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+            }
+        ),
+        frozenset({CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
     ),
     (
         TimesCount,
@@ -959,8 +1169,8 @@ WIRING = {
                 SPOUSE_CAREGIVER_AMOUNT,
                 CAREGIVER_AMOUNT,
                 INFIRM_CHILDREN_AMOUNT,
-                CPP_BASE_CONTRIBUTIONS,
-                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+                CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
                 CANADA_EMPLOYMENT_AMOUNT,
@@ -1075,8 +1285,8 @@ WIRING = {
                 SPOUSE_CAREGIVER_AMOUNT,
                 CAREGIVER_AMOUNT,
                 INFIRM_CHILDREN_AMOUNT,
-                CPP_BASE_CONTRIBUTIONS,
-                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+                CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
                 CANADA_EMPLOYMENT_AMOUNT,
@@ -1252,7 +1462,73 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({FEDERAL_TAX_AFTER_CREDITS, ITC_RECAPTURE}),
+        frozenset(
+            {
+                CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
+                SECURITY_OPTIONS_DEDUCTIONS,
+                OTHER_PAYMENTS_DEDUCTION,
+                NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+                QBT_CAPITAL_GAINS_DEDUCTION,
+                CAPITAL_GAINS_DEDUCTION,
+                EXEMPT_INCOME_DEDUCTIONS,
+            }
+        ),
+        frozenset({FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS}),
+    ),
+    (
+        Subtract,
+        frozenset({NET_INCOME_BEFORE_ADJUSTMENTS, SOCIAL_BENEFITS_REPAYMENT}),
+        frozenset({FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME}),
+    ),
+    (
+        Sum,
+        frozenset({FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME, TOTAL_SPLIT_INCOME}),
+        frozenset({FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {
+                FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+                FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+            }
+        ),
+        frozenset({FOREIGN_TAX_CREDIT_NET_INCOME}),
+    ),
+    (
+        Sum,
+        frozenset({FEDERAL_TAX_AFTER_CREDITS, DIVIDEND_TAX_CREDIT}),
+        frozenset({BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT}),
+    ),
+    (
+        Subtract,
+        frozenset({BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT, FIRST_NATIONS_ABATEMENT}),
+        frozenset({FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX}),
+    ),
+    (
+        ForeignNonBusinessTaxCredit,
+        frozenset(
+            {
+                FOREIGN_TAX_COUNTRIES,
+                FOREIGN_TAX_CREDIT_NET_INCOME,
+                FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+            }
+        ),
+        frozenset({FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, FOREIGN_TAX_CREDIT_SHEETS}),
+    ),
+    (
+        LesserOf,
+        frozenset({FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, FEDERAL_TAX_AFTER_CREDITS}),
+        frozenset({FEDERAL_FOREIGN_TAX_CREDIT}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({FEDERAL_TAX_AFTER_CREDITS, FEDERAL_FOREIGN_TAX_CREDIT}),
+        frozenset({FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT}),
+    ),
+    (
+        Sum,
+        frozenset({FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT, ITC_RECAPTURE}),
         frozenset({FEDERAL_TAX_WITH_ITC_RECAPTURE}),
     ),
 }

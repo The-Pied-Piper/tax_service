@@ -8,14 +8,17 @@ from app.domain.parameters.amount import Amount
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
 from app.domain.parameters.fraction import Fraction
+from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING
 from app.domain.parameters.taper import Taper
 from app.domain.trace import (
     CappedAmountLine,
     CreditAmountLine,
+    DividedByRateLine,
     FractionAppliedLine,
     MultipleOverLine,
     PerUnitAmountLine,
+    SignChosenDifferenceLine,
     SubtractedLine,
     TaperedAmountLine,
     ThresholdGateLine,
@@ -27,32 +30,52 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2000,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
     ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
     ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
     ADJUSTED_LOSSES_APPLIED_2000,
     ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
     ADJUSTED_LOSSES_LEFT_AFTER_2000,
+    ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_THRESHOLD,
     AGE_MAXIMUM,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_AMOUNT_A_MINUS_AMOUNT_B,
+    AMT_BASIC_EXEMPTION,
+    AMT_BASIC_FEDERAL_TAX,
+    AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CREDITS_TOTAL,
+    AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+    AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
+    AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
     AMT_PUBLICLY_LISTED_GIFTS_TOTAL,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+    AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+    AMT_TAX_PAYABLE_AFTER_CREDITS,
+    AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+    AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
     ANNUAL_GAINS_LINE_3,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -60,6 +83,7 @@ from app.jurisdictions.ca.catalog import (
     ANNUAL_GAINS_LINE_9,
     ANNUAL_GAINS_LINE_10,
     ANNUAL_GAINS_LINE_12,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
     BUSINESS_CCA_CLAIM,
@@ -191,10 +215,72 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CPP_ACTUAL_BASE_CONTRIBUTIONS,
+    CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPP_PART_3B_LINE_23_LESS_LINE_35,
+    CPP_PART_3B_LINE_31,
+    CPP_PART_3B_LINE_32,
+    CPP_PART_3B_LINE_33,
+    CPP_PART_3B_LINE_35,
+    CPP_PART_3B_LINE_38,
+    CPP_PART_3B_LINE_39,
+    CPP_PART_3B_LINE_40,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_COMPLETED,
+    CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_LINE_4,
+    CPP_PART_5_LINE_6,
+    CPP_PART_5_LINE_7,
+    CPP_PART_5_LINE_10,
+    CPP_PART_5_LINE_12,
+    CPP_PART_5_LINE_13,
+    CPP_PART_5_LINE_16,
+    CPP_PART_5_LINE_20,
+    CPP_PART_5_LINE_23_LESS_LINE_56,
+    CPP_PART_5_LINE_25,
+    CPP_PART_5_LINE_30,
+    CPP_PART_5_LINE_35,
+    CPP_PART_5_LINE_36,
+    CPP_PART_5_LINE_39,
+    CPP_PART_5_LINE_41,
+    CPP_PART_5_LINE_47,
+    CPP_PART_5_LINE_48,
+    CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+    CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_49_IF_POSITIVE,
+    CPP_PART_5_LINE_52,
+    CPP_PART_5_LINE_53,
+    CPP_PART_5_LINE_54,
+    CPP_PART_5_LINE_56,
+    CPP_PART_5_LINE_59,
+    CPP_PART_5_LINE_60,
+    CPP_PART_5_LINE_61,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_72,
+    CPP_PART_5_LINE_73,
+    CPP_PART_5_LINE_74,
+    CPP_PART_5_LINE_75,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_77,
+    CPP_PART_5_LINE_80,
+    CPP_PART_5_LINE_83,
+    CPP_PART_5_LINE_88,
+    CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_ZERO,
     CURRENT_YEAR_TUITION_AVAILABLE,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DISABILITY_AMOUNT_FOR_SELF,
@@ -242,6 +328,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_VEHICLE_LEASE_CHARGES_NET,
     FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
     FARMING_INCOME,
+    FEDERAL_TAX_WITH_SPLIT_INCOME,
     FEDERAL_TUITION_AMOUNT,
     FHSA_ANNUAL_AMOUNT,
     FHSA_ANNUAL_AMOUNT_FOR_2024,
@@ -270,6 +357,7 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+    FIRST_NATIONS_ABATEMENT,
     FISH_CCA_CLAIM,
     FISH_CCA_CLAIM_LESS_PERSONAL_PART,
     FISH_CCA_PERSONAL_PART,
@@ -292,6 +380,11 @@ from app.jurisdictions.ca.catalog import (
     FISH_VEHICLE_LEASE_CHARGES_NET,
     FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
     FISHING_INCOME,
+    FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+    FOREIGN_TAX_CREDIT_NET_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+    FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
     GROSS_RENTAL_INCOME,
     HIGH_INCOME_DONATIONS,
     INFIRM_CHILDREN,
@@ -317,9 +410,10 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
     NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985,
     NET_CAPITAL_LOSS_NUMERATOR_ONE_2000,
     NET_CAPITAL_LOSS_TWICE_IR_2000,
-    NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+    NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
@@ -340,6 +434,12 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_SHORTCUT_AMOUNT,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+    PRE_1986_CAPITAL_LOSS_BALANCE,
+    PRE_1986_DEDUCTIONS_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_TOTAL,
     QBT_ABIL_REDUCTION,
     QBT_ALLOCATION_LIMIT,
     QBT_CAPITAL_GAINS_DEDUCTION,
@@ -374,6 +474,7 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2000,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
     RENTAL_CCA_BUSINESS_USE_OF_HOME,
     RENTAL_CCA_CLAIM,
     RENTAL_CCA_CLAIM_BEFORE_LIMIT,
@@ -434,7 +535,6 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_NOT_SEPARATED_90_DAYS,
     SPOUSE_UNUSED_AMOUNTS,
     SPOUSES_CLAIMED,
-    T4_CPP_CONTRIBUTIONS_BOX_16,
     T657_CHART_2_LINE_2,
     T657_CHART_2_LINE_6,
     T657_CHART_2_LINE_10,
@@ -457,8 +557,13 @@ from app.jurisdictions.ca.catalog import (
     T657_PART_2_EXCLUDED_F,
     T657_PART_2_EXCLUDED_G,
     T657_PART_2_EXCLUDED_H,
+    TAXABLE_CAPITAL_GAINS,
+    TAXABLE_DIVIDENDS,
+    TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TOP_UP_THRESHOLD,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
@@ -469,6 +574,7 @@ from app.jurisdictions.ca.catalog import (
     TUITION_TRANSFER_LIMIT,
     TUITION_TRANSFERRED,
     UCCB_AND_RDSP_INCOME,
+    UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
     UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
     UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
     UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
@@ -533,6 +639,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     times = {line.output: line for line in trace if isinstance(line, TimesCountLine)}
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
+    divided = {
+        line.output: line
+        for line in trace
+        if isinstance(line, DividedByRateLine) and line.output == CPP_PART_5_LINE_35
+    }
+    # Schedule 8 Part 5 line 35 "Amount from line 16 divided by 4%": 396.00 / 4% = 9,900.00 for
+    # Return A (the second additional contribution required on 110,000).
+    assert divided == {
+        CPP_PART_5_LINE_35: DividedByRateLine(
+            output=CPP_PART_5_LINE_35,
+            dividend=CPP_PART_5_LINE_16,
+            dividend_amount=D("396.00"),
+            rate=Rate(D("0.04")),
+            rounding=CENT,
+            result=D("9900.00"),
+        ),
+    }
     assert subtracted == {
         # Form RC381 Part 3 line 16 "Line 11 minus line 15": both are 0.
         RC381_PART_3_LINE_16: SubtractedLine(
@@ -543,14 +666,266 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
-        # Form RC381 Part 3 line 21 "Line 19 minus line 20": both are 0.
+        # Form RC381 Part 3 line 21 "Line 19 minus line 20": the T4 box 16 total of 4034.10 less
+        # line 20, 3356.10, 678.00.
         RC381_PART_3_LINE_21: SubtractedLine(
             output=RC381_PART_3_LINE_21,
-            minuend=T4_CPP_CONTRIBUTIONS_BOX_16,
-            minuend_amount=D("0"),
+            minuend=CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            minuend_amount=D("4034.10"),
             subtrahend=RC381_PART_3_LINE_20,
+            subtrahend_amount=D("3356.10"),
+            result=D("678.00"),
+        ),
+        # Form T691 Part 2 line 5 "Line 1 minus line 4" "Tax payable before minimum tax carryover":
+        # 20146.25 less 3194.87, 16951.38.
+        AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER: SubtractedLine(
+            output=AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+            minuend=FEDERAL_TAX_WITH_SPLIT_INCOME,
+            minuend_amount=D("20146.25"),
+            subtrahend=AMT_CREDITS_TOTAL,
+            subtrahend_amount=D("3194.87"),
+            result=D("16951.38"),
+        ),
+        # Form T691 Part 2 line 7 "Line 5 minus line 6" "Basic federal tax": 16951.38 less 0 (line
+        # 6, the carryover applied, is 0 for Return A), 16951.38.
+        AMT_BASIC_FEDERAL_TAX: SubtractedLine(
+            output=AMT_BASIC_FEDERAL_TAX,
+            minuend=AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
+        # Form T691 Part 8 line 9 "Line 4 minus line 8": 16951.38 less 0, 16951.38.
+        AMT_TAX_PAYABLE_AFTER_CREDITS: SubtractedLine(
+            output=AMT_TAX_PAYABLE_AFTER_CREDITS,
+            minuend=AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
+        # Form T2209 note (3), net income: line 23400 less line 23500 (the line 23600 amount, here
+        # not floored), none repaid on Return A; then the deductions it lists, none on Return A,
+        # come off that amount plus line 68360 of Form T1206.
+        FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME: SubtractedLine(
+            output=FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+            minuend=NET_INCOME_BEFORE_ADJUSTMENTS,
+            minuend_amount=D("115000"),
+            subtrahend=SOCIAL_BENEFITS_REPAYMENT,
+            subtrahend_amount=D("0"),
+            result=D("115000"),
+        ),
+        FOREIGN_TAX_CREDIT_NET_INCOME: SubtractedLine(
+            output=FOREIGN_TAX_CREDIT_NET_INCOME,
+            minuend=FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+            minuend_amount=D("115000"),
+            subtrahend=FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+            subtrahend_amount=D("0"),
+            result=D("115000"),
+        ),
+        # Note (4), basic federal tax: line 42900 plus the dividend tax credit, less the federal
+        # refundable First Nations abatement (line 44100), none on Return A.
+        FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX: SubtractedLine(
+            output=FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+            minuend=BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+            minuend_amount=D("16951.38"),
+            subtrahend=FIRST_NATIONS_ABATEMENT,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
+        # Schedule 8 Part 5 line 74 "Line 72 minus line 73": 0.00 and line 73 ("0", line 24 of
+        # Part 3 is 0) for Return A.
+        CPP_PART_5_LINE_74: SubtractedLine(
+            output=CPP_PART_5_LINE_74,
+            minuend=CPP_PART_5_LINE_72,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_73,
+            subtrahend_amount=D("0"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 77 "Amount A minus line 76": line A and line 75 (line 76 is the
+        # amount from line 75) are both 0.00 for Return A.
+        CPP_PART_5_LINE_77: SubtractedLine(
+            output=CPP_PART_5_LINE_77,
+            minuend=CPP_PART_5_LINE_75_BASE,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_75,
             subtrahend_amount=D("0.00"),
             result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 80 "Line 78 minus line 79": line 78 is the amount from line 70
+        # and line 79 the amount from line 75, both 0.00 for Return A.
+        CPP_PART_5_LINE_80: SubtractedLine(
+            output=CPP_PART_5_LINE_80,
+            minuend=CPP_PART_5_LINE_70,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_75,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 83 "Line 81 minus line 82": line 81 is the amount from line 71
+        # and line 82 the amount from line 77, both 0.00 for Return A.
+        CPP_PART_5_LINE_83: SubtractedLine(
+            output=CPP_PART_5_LINE_83,
+            minuend=CPP_PART_5_LINE_71,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_77,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 54 "Line 52 minus line 53": line 52 and line 53 are both 0
+        # for Return A.
+        CPP_PART_5_LINE_54: SubtractedLine(
+            output=CPP_PART_5_LINE_54,
+            minuend=CPP_PART_5_LINE_52,
+            minuend_amount=D("0"),
+            subtrahend=CPP_PART_5_LINE_53,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 63 "the result of line 23 of Part 3 minus line 56": line 23
+        # of Part 3 and line 56 are both 0 for Return A.
+        CPP_PART_5_LINE_23_LESS_LINE_56: SubtractedLine(
+            output=CPP_PART_5_LINE_23_LESS_LINE_56,
+            minuend=CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_56,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 61 "Line 59 minus line 60": line 59 and line 60 are both 0
+        # for Return A.
+        CPP_PART_5_LINE_61: SubtractedLine(
+            output=CPP_PART_5_LINE_61,
+            minuend=CPP_PART_5_LINE_59,
+            minuend_amount=D("0"),
+            subtrahend=CPP_PART_5_LINE_60,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 49 "Line 47 minus line 48": both are 0.00 for Return A.
+        CPP_PART_5_LINE_49: SubtractedLine(
+            output=CPP_PART_5_LINE_49,
+            minuend=CPP_PART_5_LINE_47,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_48,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 7 "Line 5 minus line 6": line 5 is the T4 box 16 total and line 6
+        # is "0" for Return A.
+        CPP_PART_5_LINE_7: SubtractedLine(
+            CPP_PART_5_LINE_7,
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
+            CPP_PART_5_LINE_6,
+            D("0"),
+            D("4034.10"),
+        ),
+        # Schedule 8 Part 5 line 13 "Line 11 minus line 12": line 11 is the T4 box 16A total and
+        # line 12 is "0" for Return A.
+        CPP_PART_5_LINE_13: SubtractedLine(
+            CPP_PART_5_LINE_13,
+            CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            D("396.00"),
+            CPP_PART_5_LINE_12,
+            D("0"),
+            D("396.00"),
+        ),
+        # Schedule 8 Part 5 line 36 "Line 34 minus line 35": line C of Part 2 (9,900) less
+        # 396.00 / 4% (9,900.00) for Return A.
+        CPP_PART_5_LINE_36: SubtractedLine(
+            CPP_PART_5_LINE_36,
+            CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+            D("9900.00"),
+            CPP_PART_5_LINE_35,
+            D("9900.00"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 39 "Line 37 minus line 38": line 4 and line 25 are both "0" for
+        # Return A.
+        CPP_PART_5_LINE_39: SubtractedLine(
+            CPP_PART_5_LINE_39,
+            CPP_PART_5_LINE_4,
+            D("0.00"),
+            CPP_PART_5_LINE_25,
+            D("0"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 41 "Line 39 minus line 40": line 39 and line 30 are both "0" for
+        # Return A.
+        CPP_PART_5_LINE_41: SubtractedLine(
+            CPP_PART_5_LINE_41,
+            CPP_PART_5_LINE_39,
+            D("0.00"),
+            CPP_PART_5_LINE_30,
+            D("0"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3b line 33 "Line 31 minus line 32": both are "0" for Return A.
+        CPP_PART_3B_LINE_33: SubtractedLine(
+            CPP_PART_3B_LINE_33,
+            CPP_PART_3B_LINE_31,
+            D("0"),
+            CPP_PART_3B_LINE_32,
+            D("0"),
+            D("0"),
+        ),
+        # Schedule 8 Part 3b line 40 "Line 38 minus line 39": both are "0" for Return A.
+        CPP_PART_3B_LINE_40: SubtractedLine(
+            CPP_PART_3B_LINE_40,
+            CPP_PART_3B_LINE_38,
+            D("0"),
+            CPP_PART_3B_LINE_39,
+            D("0"),
+            D("0"),
+        ),
+        # Schedule 8 Part 3b line 42 "the result of line 23 minus line 35": line 23 and line 35 are
+        # "0" for Return A.
+        CPP_PART_3B_LINE_23_LESS_LINE_35: SubtractedLine(
+            CPP_PART_3B_LINE_23_LESS_LINE_35,
+            CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            D("0.00"),
+            CPP_PART_3B_LINE_35,
+            D("0"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 10 "Line 8 minus line 9".
+        CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS: SubtractedLine(
+            CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
+            CPP_ACTUAL_BASE_CONTRIBUTIONS,
+            D("3356.10"),
+            D("678.00"),
+        ),
+        # Schedule 8 Part 3 line 16 "Line 14 minus line 15".
+        CPP_BASE_CONTRIBUTIONS_DIFFERENCE: SubtractedLine(
+            CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
+            CPP_ACTUAL_BASE_CONTRIBUTIONS,
+            D("3356.10"),
+            CPP_BASE_CONTRIBUTIONS,
+            D("3356.10"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 19 "Line 17 minus line 18".
+        CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE: SubtractedLine(
+            CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("678.00"),
+            CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("678.00"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 23 "Line 21 minus line 22".
+        CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE: SubtractedLine(
+            CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            D("396.00"),
+            CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            D("396.00"),
+            D("0.00"),
         ),
         # Form T2125 Chart C line 26 "Amount 25: amount 21" (printed with a subtraction sign): line
         # 25 is 0 for Return A (no leased vehicle), and amount 21 is 0.
@@ -591,6 +966,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=AMT_CAPITAL_GAINS_ADJUSTMENTS,
             subtrahend_amount=D("0"),
             result=D("20000"),
+        ),
+        # Form T691 Part 1 line 22 "Line 20 minus line 21": line 20 is 20000 and line 21 is the
+        # taxable capital gains of line 12700, 10000.
+        AMT_CAPITAL_GAINS_DIFFERENCE: SubtractedLine(
+            output=AMT_CAPITAL_GAINS_DIFFERENCE,
+            minuend=AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
+            minuend_amount=D("20000"),
+            subtrahend=TAXABLE_CAPITAL_GAINS,
+            subtrahend_amount=D("10000"),
+            result=D("10000"),
         ),
         # Form T691 Part 1 line 26 "Line 24 minus line 25": Return A has no gifts of publicly
         # listed securities.
@@ -999,13 +1384,48 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("5000"),
             result=D("115000"),
         ),
-        # Form T1436 Chart A: what is left of line 13 (the amount claimed, 0) after each of the
-        # older rows, and column E "Remaining adjusted net capital losses (column C minus column
+        # Form T1436 line 3 "Pre-1986 capital loss balance available for 2025: line 1 minus line
+        # 2" and line 8 "Balance of unapplied adjusted net capital losses of other years not used
+        # to reduce taxable capital gains: line 4 minus line 7", for no losses and no claim.
+        PRE_1986_CAPITAL_LOSS_BALANCE: SubtractedLine(
+            output=PRE_1986_CAPITAL_LOSS_BALANCE,
+            minuend=NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
+            minuend_amount=D("0"),
+            subtrahend=PRE_1986_DEDUCTIONS_TOTAL,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES: SubtractedLine(
+            output=UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
+            minuend=TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+            minuend_amount=D("0.00"),
+            subtrahend=ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
+            subtrahend_amount=D("0"),
+            result=D("0.00"),
+        ),
+        # Form T1436 Chart A: what is left of line 13 (the amount claimed, 0) after each row,
+        # oldest first, and column E "Remaining adjusted net capital losses (column C minus column
         # D)".
+        ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985: SubtractedLine(
+            output=ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+            minuend=TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
+            minuend_amount=D("0.00"),
+            subtrahend=ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985: SubtractedLine(
+            output=REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
+            minuend=ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
+            minuend_amount=D("0.00"),
+            subtrahend=ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
         ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987: SubtractedLine(
             output=ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
-            minuend=NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
-            minuend_amount=D("0"),
+            minuend=ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+            minuend_amount=D("0.00"),
             subtrahend=ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
             subtrahend_amount=D("0.00"),
             result=D("0.00"),
@@ -1395,6 +1815,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # Form T691 Part 1 "Amount A minus Amount B": A is line 12000 of the return, 0, and B is
+        # line 12010 of the return, 0.
+        AMT_AMOUNT_A_MINUS_AMOUNT_B: SubtractedLine(
+            output=AMT_AMOUNT_A_MINUS_AMOUNT_B,
+            minuend=TAXABLE_DIVIDENDS,
+            minuend_amount=D("0"),
+            subtrahend=TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T691 Part 1 line 91 "line 89 minus line 90": 0 less the amount from line 25395, 0.
+        AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE: SubtractedLine(
+            output=AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+            minuend=AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+            minuend_amount=D("0"),
+            subtrahend=QBT_CAPITAL_GAINS_DEDUCTION,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
     }
     assert tapered == {
         BASIC_PERSONAL_AMOUNT: TaperedAmountLine(
@@ -1514,6 +1953,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=CENT,
             value=D("500000.00"),
         ),
+        # Schedule 8 Part 3b line 32 "enter "0"": the form's "0", claimed whole.
+        CPP_ZERO: CreditAmountLine(CPP_ZERO, Credit(amount=D("0")), CENT, D("0")),
         # Form T2125 Chart B line 18 and Chart C line 25 "÷ 30": the printed constants, each a
         # dataset of the same name, claimed whole to the cent.
         BUSINESS_VEHICLE_INTEREST_LIMIT: CreditAmountLine(
@@ -1811,6 +2252,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=CENT,
             value=D("1.00"),
         ),
+        # Form T691 Part 1 line 94 "Basic exemption" 177,882.00, a printed amount.
+        AMT_BASIC_EXEMPTION: CreditAmountLine(
+            AMT_BASIC_EXEMPTION, Credit(amount=D("177882.00")), CENT, D("177882.00")
+        ),
     }
     assert per_unit == {
         # Form T2222 lines 1, 2, 6 and 7 "multiplied by $11.00" and "multiplied by $5.50": Return A
@@ -1911,6 +2356,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert fractions == {
+        # Schedule 8 Part 5 line 48 "multiplied by 2": 0 x 2 for Return A.
+        CPP_PART_5_LINE_48: FractionAppliedLine(
+            output=CPP_PART_5_LINE_48,
+            base=CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+            base_amount=D("0"),
+            fraction=Fraction(2, 1),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 20 "Amount from line 10 multiplied by 16.80672": 4,034.10 x
+        # 16.80672 = 67,799.989152, to the cent 67,799.99 for Return A.
+        CPP_PART_5_LINE_20: FractionAppliedLine(
+            output=CPP_PART_5_LINE_20,
+            base=CPP_PART_5_LINE_10,
+            base_amount=D("4034.10"),
+            fraction=Fraction(1680672, 100000),
+            rounding=CENT,
+            result=D("67799.99"),
+        ),
         # Form T657 Chart 2016 Part 1 "× 1/2 = F": amounts D and E of 0, times 1/2.
         CHART_2016_PART_1_AMOUNT_F: FractionAppliedLine(
             output=CHART_2016_PART_1_AMOUNT_F,
@@ -2144,6 +2608,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=CENT,
             result=D("0"),
         ),
+        # Form T691 Part 1 line 89 "× 2" of the amount from line 25395 of the return, 0.
+        AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED: FractionAppliedLine(
+            output=AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+            base=QBT_CAPITAL_GAINS_DEDUCTION,
+            base_amount=D("0"),
+            fraction=Fraction(2, 1),
+            rounding=CENT,
+            result=D("0"),
+        ),
         CHILD_CARE_EARNED_INCOME_LIMIT: FractionAppliedLine(
             output=CHILD_CARE_EARNED_INCOME_LIMIT,
             base=CHILD_CARE_EARNED_INCOME,
@@ -2155,6 +2628,41 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # Form T1436 Chart A column C "Adjusted gross capital losses (column A multiplied by column
         # B)" for no unapplied losses, and column G "Net capital loss balance available to carry
         # forward (column E multiplied by column F)" for none remaining, each a fraction of 0.
+        # Form T1436 lines 2: "In 1988 and 1989" (B) x 0.75 and "From 1990 to 1999" (C) x 0.6667,
+        # each of 0, as exact fractions; column C of the row "Before May 23, 1985" (column A is
+        # line 3) and its column G, each factor 1.
+        PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989: FractionAppliedLine(
+            output=PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+            base=PRE_1986_DEDUCTIONS_1988_AND_1989,
+            base_amount=D("0"),
+            fraction=Fraction(3, 4),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999: FractionAppliedLine(
+            output=PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+            base=PRE_1986_DEDUCTIONS_1990_TO_1999,
+            base_amount=D("0"),
+            fraction=Fraction(2, 3),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985: FractionAppliedLine(
+            output=ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
+            base=PRE_1986_CAPITAL_LOSS_BALANCE,
+            base_amount=D("0.00"),
+            fraction=Fraction(1, 1),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985: FractionAppliedLine(
+            output=NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985,
+            base=REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
+            base_amount=D("0.00"),
+            fraction=Fraction(1, 1),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
         ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987: FractionAppliedLine(
             output=ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
             base=UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
@@ -2295,6 +2803,47 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert times == {
+        # Form T691 Part 3 line 4, the second branch, "enter the amount from line 2" when "you are a
+        # non-resident or deemed resident": line 2, 8136.66, times a count of 0 (Return A is not a
+        # non-resident), a plain 0.
+        AMT_FEDERAL_SURTAX_IF_NON_RESIDENT: TimesCountLine(
+            output=AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
+            amount_kind=AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+            amount_value=D("8136.66"),
+            count_kind=AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
+            count=0,
+            result=D("0"),
+        ),
+        # T1 line 31000 from Schedule 8 Part 5 line 70, once for each Part 5 completed: 0 for
+        # Return A.
+        CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+            amount_kind=CPP_PART_5_LINE_70,
+            amount_value=D("0.00"),
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            result=D("0"),
+        ),
+        # T1 line 22200 from Schedule 8 Part 5 line 88, once for each Part 5 completed: 0 for
+        # Return A.
+        CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+            amount_kind=CPP_PART_5_LINE_88,
+            amount_value=D("0.00"),
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            result=D("0"),
+        ),
+        # T1 line 42100 from Schedule 8 Part 5 line 49 if positive, once for each Part 5
+        # completed: 0 for Return A.
+        CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
+            amount_kind=CPP_PART_5_LINE_49_IF_POSITIVE,
+            amount_value=D("0"),
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            result=D("0"),
+        ),
         ontario.DISABILITY_AMOUNT_FOR_SELF: TimesCountLine(
             output=ontario.DISABILITY_AMOUNT_FOR_SELF,
             amount_kind=ontario.DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
@@ -2345,6 +2894,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             amount_kind=ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS,
             amount_value=D("0"),
             count_kind=TAX_REDUCTION_CLAIMABLE,
+            count=1,
+            result=D("0"),
+        ),
+        ontario.TAX_OTHERWISE_PAYABLE_REDUCTION: TimesCountLine(
+            output=ontario.TAX_OTHERWISE_PAYABLE_REDUCTION,
+            amount_kind=ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS,
+            amount_value=D("0"),
+            count_kind=ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE,
             count=1,
             result=D("0"),
         ),
@@ -2532,7 +3089,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             less_amount=D("8195.77"),
             rounding=CENT,
             result=D("0"),
-        )
+        ),
+        ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS: MultipleOverLine(
+            output=ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS,
+            base=TAX_REDUCTION_AMOUNTS,
+            base_amount=D("294.00"),
+            factor=Factor(D("2")),
+            less=ontario.TAX_OTHERWISE_PAYABLE_LINE_73,
+            less_amount=D("8195.77"),
+            rounding=CENT,
+            result=D("0"),
+        ),
     }
     assert capped == {
         # The guide's line 41400 "to a maximum of $750", after the 15%: 0 is below it.
@@ -2684,3 +3251,21 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             result=D("0.00"),
         ),
     }
+
+
+def test_the_trace_records_the_capital_gains_picked_by_the_sign_of_line_20() -> None:
+    chosen = [line for line in return_a().trace if isinstance(line, SignChosenDifferenceLine)]
+    # Form T691 Part 1 line 23 "If line 20 is positive, enter the amount from line 22.": Return
+    # A's line 20 is 20000 (positive), so line 23 is line 22, 10000.
+    assert chosen == [
+        SignChosenDifferenceLine(
+            output=AMT_CAPITAL_GAINS_ADDED,
+            sign=AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
+            sign_amount=D("20000"),
+            reference=TAXABLE_CAPITAL_GAINS,
+            reference_amount=D("10000"),
+            difference=AMT_CAPITAL_GAINS_DIFFERENCE,
+            difference_amount=D("10000"),
+            result=D("10000"),
+        )
+    ]

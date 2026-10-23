@@ -25,7 +25,9 @@ description: >-
   the table row "more than $99,600 but not more than $103,200: 27%", so the rate is 27%; line
   6 is 5,000 and line 8 is 5,000 x 27% = 1,350.00. Return Y, with no split income, has a
   family adjusted income of 89,435.00, a rate of 33% and a credit of 1,650.00. The other
-  lines are the engine's figures (to be confirmed against CRA's calculator).
+  lines are the engine's figures (to be confirmed against CRA's calculator). T1206 line 33C
+  is the Ontario tax on split income, 20.53% x 11,500 = 2,360.95, divided by 5.05% =
+  46,751.49 (a declared output).
 sources:
   - >-
     CRA, "T1206 Tax on split income" (confirmed 2026-10-19), Part 1: line 4 "Total split
@@ -61,6 +63,8 @@ inputs:
   ca/rrsp_deduction_limit: "10800"
   ca/cpp_months: "12"
   ca/qpp_months: "12"
+  ca/cpp_t4_base_and_first_additional_contributions: "3361.75"
+  ca/cpp_t4_second_additional_contributions: "0"
   ca-on/dependent_children: "1"
   ca/eligible_dependants: "1"
   ca/child_care_expenses_paid: "6000"
@@ -74,6 +78,7 @@ inputs:
 expected:
   ca/total_income: "71500.00"
   ca/total_split_income: "11500"
+  ca-on/tosi_adjusted_taxable_income: "46751.49"
   ca/child_care_expenses: "5000.00"
   ca/net_income_before_adjustments: "54435.00"
   ca/tosi_adjusted_net_income: "65935.00"
@@ -100,3 +105,14 @@ expected:
   ca/rc381_part_2_line_h: "9900.00"
   ca/rc381_part_2_line_i: "81200.00"
   ca/rc381_part_2_line_j: "3500.00"
+  ca/rc381_part_3_line_20: "2796.75"
+  ca/rc381_part_3_line_21: "565.00"
+  ca/cpp_required_base_and_first_additional_contributions: "3361.75"
+  ca/cpp_contributions_difference: "0.00"
+  ca/cpp_part_5_line_57: "2796.75"
+  ca/cpp_part_5_line_69: "565.00"
+  ca/amt_adjusted_income_with_gains: "54435.00"
+  ca/amt_minimum_amount: "0"
+  ca/amt_basic_federal_tax: "5210.71"
+  ca/amt_regular_net_federal_tax_payable: "5210.71"
+  ca/amt_special_foreign_tax_credit: "0"

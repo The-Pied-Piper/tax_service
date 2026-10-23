@@ -78,7 +78,7 @@ def return_bo(
         qpp_months=qpp_months,
         t4_cpp_pensionable_earnings_outside_quebec=line_1,
         t4_qpp_pensionable_earnings_in_quebec=line_2,
-        t4_cpp_contributions_box_16=line_19,
+        cpp_t4_base_and_first_additional_contributions=line_19,
         income_tax_deducted="12000",
     )
 
@@ -439,9 +439,11 @@ def test_return_bo_with_6_months_the_lines_read_the_row_of_line_a() -> None:
 
 
 def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero() -> None:
-    # Employment income of 60,000 and none of the RC381 totals: the T1 lines are Schedule 8's, base
-    # contributions 4.95% x (60,000 less 3,500) = 2,796.75 and enhanced 1% x 56,500 = 565.00, and
-    # every Part 3 line is 0.
+    # Employment income of 60,000 and none of the Quebec figures: the T1 lines are Schedule 8's,
+    # base contributions 4.95% x (60,000 less 3,500) = 2,796.75 and enhanced 1% x 56,500 = 565.00.
+    # The T4 box 16 total is the Schedule 8 Part 3 line 8 input, here the required 3,361.75, so
+    # line 20 (83.1933% of it) is the base contributions 2,796.75 and line 21 the enhanced 565.00;
+    # every other Part 3 line is 0.
     worksheet = compute("60000", (), "0", "0", "0", "0", "0")
 
     assert worksheet.get(CPP_BASE_CONTRIBUTIONS).value == D("2796.75")
@@ -458,23 +460,24 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
         RC381_PART_3_LINE_15,
         RC381_PART_3_LINE_16,
         RC381_PART_3_LINE_18,
-        RC381_PART_3_LINE_20,
-        RC381_PART_3_LINE_21,
         RC381_PART_3_LINE_22,
         RC381_PART_3_LINE_23,
         RC381_PART_3_LINE_24,
         RC381_PART_3_LINE_26,
     )
+    assert worksheet.get(RC381_PART_3_LINE_20).value == D("2796.75")
+    assert worksheet.get(RC381_PART_3_LINE_21).value == D("565.00")
     assert worksheet.get(RC381_PART_3_LINE_6).value == Rate(D("0"))
     for kind in kinds:
         assert worksheet.get(kind).value == D("0"), kind.identifier
 
 
 def test_the_rc381_figures_do_not_change_the_t1_lines_yet() -> None:
-    # This part of Form RC381 reaches no line of the return: the same employment income with and
-    # without the T4 totals gives the same Schedule 8 contributions, net income and total payable.
+    # This part of Form RC381 reaches no line of the return: the same employment income and T4 box
+    # 16 total (which Schedule 8 reads too) with and without the pensionable earnings totals gives
+    # the same Schedule 8 contributions, net income and total payable.
     with_totals = return_bo()
-    without_totals = return_bo(line_1="0", line_2="0", line_19="0")
+    without_totals = return_bo(line_1="0", line_2="0")
 
     for kind in (CPP_BASE_CONTRIBUTIONS, CPP_ENHANCED_CONTRIBUTIONS, NET_INCOME, TOTAL_PAYABLE):
         assert with_totals.get(kind).value == without_totals.get(kind).value, kind.identifier

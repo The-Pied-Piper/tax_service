@@ -677,13 +677,15 @@ capabilities:
         - ca/no_slip_dividend_tax_credit
     produces:
       output: ca/dividend_tax_credit
-  # T1 line 125 "Add lines 122 to 124.": line 122 "Amount from line 35000" and line 123
-  # (40425), in line order; line 124 (40427, minimum tax carryover) is not triggered.
+  # T1 line 125 "Add lines 122 to 124.": line 122 "Amount from line 35000", line 123 (40425),
+  # the federal dividend tax credit, and line 124 (40427), the minimum tax carryover applied
+  # on Form T691 Part 8 line 12, in line order.
   - name: core/sum
     consumes:
       parts:
         - ca/non_refundable_tax_credits
         - ca/dividend_tax_credit
+        - ca/amt_minimum_tax_carryover_applied
     produces:
       output: ca/credits_against_basic_federal_tax
   # T1 line 27 "Add lines 22 to 26. Net self-employment income": line 22 (13500) business

@@ -8,9 +8,10 @@ from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.manifest import CapabilitySelection
+from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 from app.jurisdictions.ca.catalog import (
-    CPP_BASE_CONTRIBUTIONS,
-    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     DONATIONS_FIRST_TIER,
     DONATIONS_OVER_FIRST_TIER,
     EI_PREMIUMS,
@@ -37,6 +38,7 @@ INPUTS = frozenset[str]()
 OUTPUTS = frozenset(
     {
         "ca-on/ontario_tax_less_dividend_credit",
+        "ca-on/tosi_adjusted_taxable_income",
     }
 )
 
@@ -57,8 +59,8 @@ STEPS = {
                 "ca-on/spouse_amount",
                 "ca-on/eligible_dependant_amount",
                 "ca-on/caregiver_amount",
-                "ca/cpp_base_contributions",
-                "ca/cpp_base_contributions_on_self_employment",
+                "ca/cpp_base_contributions_on_return",
+                "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
                 "ca-on/disability_amount_for_self",
@@ -137,6 +139,16 @@ STEPS = {
         params={"rate": "ca-on/split_income_rate"},
         consumes={"base": "ca/total_split_income"},
         produces={"output": "ca-on/ontario_tax_on_split_income"},
+    ),
+    # Form T1206 Part 3 line 33C "TOSI-adjusted taxable income: Amount from line 33A divided by
+    # the tax rate you entered on line 33B", line 33A being the amount from line 33 and line 33B
+    # the rate of Chart C column 3 for Ontario, 5.05%. Nothing on the Ontario return reads it, so
+    # it is a declared output.
+    CapabilitySelection(
+        name="ca/divided_by_rate",
+        params={"rate": "ca-on/tosi_taxable_income_rate"},
+        consumes={"dividend": "ca-on/ontario_tax_on_split_income"},
+        produces={"output": "ca-on/tosi_adjusted_taxable_income"},
     ),
     # "Provincial or territorial disability tax credit (DTC)": line 34 "DTC from line 58440 of your
     # provincial or territorial Form 428" (the Ontario amount for self, computed on the Ontario
@@ -351,8 +363,8 @@ WIRING = {
                 ontario.SPOUSE_AMOUNT,
                 ontario.ELIGIBLE_DEPENDANT_AMOUNT,
                 ontario.CAREGIVER_AMOUNT,
-                CPP_BASE_CONTRIBUTIONS,
-                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+                CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
                 ontario.DISABILITY_AMOUNT_FOR_SELF,
@@ -395,6 +407,11 @@ WIRING = {
         frozenset({ONTARIO_TAX_AFTER_CREDITS}),
     ),
     (ApplyRate, frozenset({TOTAL_SPLIT_INCOME}), frozenset({ontario.ONTARIO_TAX_ON_SPLIT_INCOME})),
+    (
+        DividedByRate,
+        frozenset({ontario.ONTARIO_TAX_ON_SPLIT_INCOME}),
+        frozenset({ontario.TOSI_ADJUSTED_TAXABLE_INCOME}),
+    ),
     (
         Sum,
         frozenset({ontario.DISABILITY_AMOUNT_FOR_SELF, ontario.DISABILITY_TRANSFERRED_AMOUNT}),

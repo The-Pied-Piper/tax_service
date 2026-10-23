@@ -10,6 +10,7 @@ outputs:
   - ca-on/coop_education_placement_count
   - ca-on/coop_claimed_as_partnership_member
   - ca-on/coop_partnership_business_number
+  - ca/net_capital_loss_balance_before_may_23_1985
   - ca/net_capital_loss_balance_1985_to_1987
   - ca/net_capital_loss_balance_1988_and_1989
   - ca/net_capital_loss_balance_1990_to_1999
@@ -42,6 +43,8 @@ outputs:
   - ca/crypto_asset_proceeds
   - ca/other_foreclosure_proceeds
   - ca/cpp_second_additional_earnings_maximum
+  # Schedule 8 Part 3 line 13 "Line 11 plus line 12 =": nothing else on the return reads it yet.
+  - ca/cpp_required_base_and_first_additional_contributions
   - ca-on/applies_for_energy_and_property_tax_credit
   - ca-on/applies_for_northern_energy_credit
   - ca-on/chooses_single_benefit_payment
@@ -54,6 +57,7 @@ outputs:
   - ca-on/public_long_term_care_paid
   - ca-on/unused_tuition_carried_forward
   - ca/standard_amount_allocated
+  - ca/foreign_tax_credit_sheets
   # Form T2048 (line 25395): the Part 4 and Part 5 figures, and the line 41 and 42 reductions,
   # produced by `06a_capital_gains_deduction_qbt.yaml`.
   - ca/qbt_allocation_total
@@ -64,9 +68,6 @@ outputs:
   - ca/qsbcs_qffp_taxable_gains_related_to_deduction
   - ca/qbt_abil_reduction
   - ca/qbt_net_investment_loss_reduction
-  # Form T691 Part 1 line 12 "Add lines 1, 4, 7, and 11.", the adjusted taxable income subtotal,
-  # which nothing else on the return reads yet.
-  - ca/amt_part_1_subtotal
   # Form T657
   - ca/chart_2025_part_1_amount_q
   # Form T657 Chart 2024 Period 1 and Period 2 amount O, "Enter whichever is less: line 21 of Step 1,
@@ -97,19 +98,6 @@ outputs:
   - ca/chart_2022_part_2_amount_m
   - ca/chart_2023_part_1_amount_n
   - ca/chart_2023_part_2_amount_m
-  # Form T691 Part 9 line 6 "Enter this amount on line 14 of Part 1", Part 1 line 20 "Line 15 minus
-  # line 19" and Part 1 line 26 "Line 24 minus line 25" times 30%, which nothing else on the return
-  # reads yet.
-  - ca/amt_resource_property_and_flow_through_shares
-  - ca/amt_net_capital_gains_after_adjustments
-  - ca/amt_publicly_listed_gifts_adjustment
-  # Form T691 Part 1 line 32 "Line 30 minus line 31 (if negative, enter "0")", line 38 "Add lines 35 to
-  # 37.", line 43 "Line 39 or 40, as applicable, plus line 41 and 42" and line 80 "Line 78 multiply by
-  # the percentage from line 79", which nothing else on the return reads yet.
-  - ca/amt_security_options_net
-  - ca/amt_security_options_d1_total
-  - ca/amt_other_years_losses_total
-  - ca/amt_applicable_rate_amount
   # Form RC381 Part 2 lines G, H, I and J, the QPP maximum pensionable earnings, maximum
   # amount subject to second additional contributions, additional maximum pensionable
   # earnings and maximum basic exemption of the monthly proration table, and Part 3 line 21
@@ -122,3 +110,13 @@ outputs:
   - ca/rc381_part_3_line_21
   - ca/rc381_part_3_line_24
   - ca/rc381_part_3_line_26
+  # Form T1206 Part 3 line 33C "Amount from line 33A divided by the tax rate you entered on line
+  # 33B": Ontario's provincial Schedule does not add it, so nothing on the return reads it.
+  - ca-on/tosi_adjusted_taxable_income
+  # Form T691 Part 3 line 15 "Line 10 minus line 14 (if negative, enter "0")" "Regular net federal
+  # tax payable", which nothing else on the return reads yet.
+  - ca/amt_regular_net_federal_tax_payable
+  # Form T691 Part 4 line 11 "Enter whichever is more: amount from line 7 of Part 3 or line 10."
+  # "Special foreign tax credit", which nothing else on the return reads yet; Part 4 lines 1 to 10
+  # are read by the lines after them.
+  - ca/amt_special_foreign_tax_credit

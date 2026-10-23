@@ -44,7 +44,6 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_23,
     RC381_PART_3_LINE_24,
     RC381_PART_3_LINE_26,
-    T4_CPP_CONTRIBUTIONS_BOX_16,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC,
 )
@@ -52,7 +51,6 @@ from app.jurisdictions.ca.catalog import (
 INPUT_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC,
-    T4_CPP_CONTRIBUTIONS_BOX_16,
 )
 
 PART_2_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
@@ -101,7 +99,6 @@ def test_the_rc381_part_3_input_kinds_are_the_registered_ones(registry: Artifact
         registry.get("ca/t4_qpp_pensionable_earnings_in_quebec")
         is T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC
     )
-    assert registry.get("ca/t4_cpp_contributions_box_16") is T4_CPP_CONTRIBUTIONS_BOX_16
 
 
 def test_the_rc381_part_3_line_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
@@ -177,15 +174,6 @@ INPUT_QUOTES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "Total QPP pensionable earnings from box 26 of all of your T4 slips where the "
             "province of employment is Quebec",
             "50329",
-            "Part 3",
-        ),
-    ),
-    (
-        "t4_cpp_contributions_box_16",
-        (
-            "Total actual base and first additional contributions on CPP pensionable earnings "
-            "from box 16 of all of your T4 slips",
-            "50340",
             "Part 3",
         ),
     ),

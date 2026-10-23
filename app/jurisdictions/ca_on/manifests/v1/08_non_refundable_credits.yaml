@@ -19,6 +19,21 @@ capabilities:
       count: ca/cpp_part_4_completed
     produces:
       output: ca/cpp_base_contributions_on_self_employment
+  # T1 line 31000 from Part 5 line 70, once for each Part 5 completed, 1 or 0.
+  - name: core/times_count
+    consumes:
+      amount: ca/cpp_part_5_line_70
+      count: ca/cpp_part_5_completed
+    produces:
+      output: ca/cpp_part_5_base_contributions_on_self_employment
+  # T1 line 31000: the Part 4 amount plus the Part 5 amount.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/cpp_base_contributions_on_self_employment
+        - ca/cpp_part_5_base_contributions_on_self_employment
+    produces:
+      output: ca/cpp_base_contributions_on_self_employment_and_other_earnings
   # T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
   # $1,077.48)": the EI premiums, 1.64% of the employment income up to the $65,700
   # maximum insurable earnings, with no exemption (the EI premium rates and maximums,
@@ -157,8 +172,8 @@ capabilities:
         - ca/spouse_caregiver_amount
         - ca/caregiver_amount
         - ca/infirm_children_amount
-        - ca/cpp_base_contributions
-        - ca/cpp_base_contributions_on_self_employment
+        - ca/cpp_base_contributions_on_return
+        - ca/cpp_base_contributions_on_self_employment_and_other_earnings
         - ca/ei_premiums
         - ca/ei_premiums_on_self_employment
         - ca/canada_employment_amount
@@ -337,8 +352,8 @@ capabilities:
         - ca/spouse_caregiver_amount
         - ca/caregiver_amount
         - ca/infirm_children_amount
-        - ca/cpp_base_contributions
-        - ca/cpp_base_contributions_on_self_employment
+        - ca/cpp_base_contributions_on_return
+        - ca/cpp_base_contributions_on_self_employment_and_other_earnings
         - ca/ei_premiums
         - ca/ei_premiums_on_self_employment
         - ca/canada_employment_amount
@@ -663,14 +678,12 @@ capabilities:
         - ca/itc_recapture_at_20_percent
     produces:
       output: ca/itc_recapture
-  # T1 line 132 "Line 130 plus line 131 =": line 126 (42900) "Basic federal tax" and line
-  # 131. Line 127 "Federal surtax on income earned outside Canada (complete Form T2203)" is
-  # not triggered on a return whose income is all allocated to Ontario and line 129 (40500)
-  # is not yet wired, so lines 128 and 130 carry line 126 unchanged.
+  # T1 line 132 "Line 130 plus line 131 =": line 130 and line 131 "Recapture of investment tax
+  # credit (complete Form T2038(IND))".
   - name: core/sum
     consumes:
       parts:
-        - ca/federal_tax_after_credits
+        - ca/federal_tax_less_foreign_tax_credit
         - ca/itc_recapture
     produces:
       output: ca/federal_tax_with_itc_recapture

@@ -16,31 +16,54 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2000,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     ADJUSTED_NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGE_AMOUNT,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_ADJUSTED_INCOME_WITH_GAINS,
+    AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
+    AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_BASIC_FEDERAL_TAX,
+    AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
+    AMT_CREDITS_ADJUSTMENTS_TOTAL,
+    AMT_CREDITS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
     AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
+    AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
+    AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+    AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+    AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_EXCESS_EPSP_AMOUNTS,
+    AMT_FEDERAL_LOGGING_TAX_CREDIT,
+    AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FINANCING_EXPENSES,
+    AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
     AMT_INVESTMENT_COUNSEL_FEES,
+    AMT_INVESTMENT_TAX_CREDIT,
     AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
     AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
+    AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_LIMITED_PARTNER_CARRYING_CHARGES,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
@@ -49,28 +72,40 @@ from app.jurisdictions.ca.catalog import (
     AMT_NON_DEDUCTIBLE_INTEREST,
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
+    AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
+    AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+    AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_REPAYMENT_OF_SALARY_AND_WAGES,
     AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT,
     AMT_RESOURCE_FOREIGN_PROPERTY_INCOME,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PRODUCTION_INCOME,
+    AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
+    AMT_SECTION_119_FORMER_RESIDENT_CREDIT,
+    AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL,
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
+    AMT_SECURITY_OPTIONS_NET,
+    AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
+    AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+    AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
     AMT_TAX_SHELTER_ADJUSTMENTS,
     AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
     AMT_TAX_SHELTER_LOSSES,
     AMT_TREATY_EXEMPT_CAPITAL_GAINS,
     ANNUAL_GAINS_LINE_3,
     ANNUAL_GAINS_SCHEDULE_3_TOTAL,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BOND_GAIN_OR_LOSS,
     BUSINESS_ADJUSTED_GROSS_SALES,
@@ -270,14 +305,81 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
     CLERGY_RESIDENCE_DEDUCTION,
     COMMISSION_INCOME,
+    CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_OR_QPP_BENEFITS,
+    CPP_OVERPAYMENT,
+    CPP_PART_3_LINE_2,
+    CPP_PART_3B_LINE_30,
+    CPP_PART_3B_LINE_32,
+    CPP_PART_3B_LINE_34,
+    CPP_PART_3B_LINE_35,
+    CPP_PART_3B_LINE_36,
+    CPP_PART_3B_LINE_37,
+    CPP_PART_3B_LINE_39,
+    CPP_PART_3B_LINE_41,
+    CPP_PART_3B_LINE_42,
+    CPP_PART_3B_LINE_43,
+    CPP_PART_3B_LINE_44,
+    CPP_PART_3B_LINE_46,
+    CPP_PART_3B_LINE_47,
+    CPP_PART_3B_LINE_48,
+    CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_LINE_4,
+    CPP_PART_5_LINE_7,
+    CPP_PART_5_LINE_9,
+    CPP_PART_5_LINE_10,
+    CPP_PART_5_LINE_13,
+    CPP_PART_5_LINE_15,
+    CPP_PART_5_LINE_16,
+    CPP_PART_5_LINE_33,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
+    CPP_PART_5_LINE_46,
+    CPP_PART_5_LINE_47,
+    CPP_PART_5_LINE_51,
+    CPP_PART_5_LINE_53,
+    CPP_PART_5_LINE_55,
+    CPP_PART_5_LINE_56,
+    CPP_PART_5_LINE_57,
+    CPP_PART_5_LINE_58,
+    CPP_PART_5_LINE_60,
+    CPP_PART_5_LINE_62,
+    CPP_PART_5_LINE_63,
+    CPP_PART_5_LINE_64,
+    CPP_PART_5_LINE_65,
+    CPP_PART_5_LINE_67,
+    CPP_PART_5_LINE_68,
+    CPP_PART_5_LINE_69,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_72,
+    CPP_PART_5_LINE_80,
+    CPP_PART_5_LINE_83,
+    CPP_PART_5_LINE_84,
+    CPP_PART_5_LINE_87,
+    CPP_PART_5_LINE_88,
+    CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPT20_EARNINGS,
+    CPT20_T4_EARNINGS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDIT_AMOUNTS_SUBTOTAL,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -325,6 +427,7 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_TAXABLE_CAPITAL_GAINS_2025,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     EMPLOYMENT_INCOME,
+    EXEMPT_INCOME_DEDUCTIONS,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FARM_BARLEY,
     FARM_BUILDING_REPAIRS_AND_MAINTENANCE,
@@ -445,8 +548,10 @@ from app.jurisdictions.ca.catalog import (
     FARM_WHEAT,
     FARMING_INCOME,
     FEDERAL_BASIC_TAX,
+    FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
@@ -561,6 +666,9 @@ from app.jurisdictions.ca.catalog import (
     FISHING_INCOME,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+    FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
     GROSS_RENTAL_INCOME,
@@ -597,6 +705,7 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
     MEDICAL_SUPPLEMENT_WORKING_INCOME,
     NET_BUSINESS_INCOME,
+    NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_COMMISSION_INCOME,
     NET_FARMING_INCOME,
@@ -651,6 +760,12 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_5,
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
+    PRE_1986_DEDUCTIONS_2001_TO_2024,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_ADJUSTED_2000,
+    PRE_1986_DEDUCTIONS_BEFORE_1988,
+    PRE_1986_DEDUCTIONS_TOTAL,
     PRINCIPAL_RESIDENCE_GAIN,
     PROFESSIONAL_INCOME,
     PROVINCIAL_CREDITS,
@@ -855,6 +970,7 @@ from app.jurisdictions.ca.catalog import (
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
@@ -939,6 +1055,290 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         RC381_PART_3_LINE_24: SumLine(
             RC381_PART_3_LINE_24,
             ((RC381_PART_3_LINE_22, D("0.00")), (RC381_PART_3_LINE_23, D("0.00"))),
+            D("0.00"),
+        ),
+        # Form T691 Part 3 line 6 "Add lines 1, 4, and 5.": line 1, the basic federal tax
+        # (16951.38), line 4, the surtax (0) and line 5, the recapture of investment tax credit (0):
+        # 16951.38.
+        AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE: SumLine(
+            AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
+            (
+                (AMT_BASIC_FEDERAL_TAX, D("16951.38")),
+                (AMT_FEDERAL_SURTAX, D("0")),
+                (ITC_RECAPTURE, D("0")),
+            ),
+            D("16951.38"),
+        ),
+        # Form T691 Part 3 line 9 "Line 7 plus line 8": line 7, the federal foreign tax credit (0),
+        # and line 8, the federal logging tax credit (0): 0.
+        AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL: SumLine(
+            AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+            ((FEDERAL_FOREIGN_TAX_CREDIT, D("0")), (AMT_FEDERAL_LOGGING_TAX_CREDIT, D("0"))),
+            D("0"),
+        ),
+        # Form T691 Part 3 line 14 "Add lines 11 to 13.": line 11, the political contribution tax
+        # credit (0), line 12, the investment tax credit (0) and line 13, the labour-sponsored funds
+        # tax credit (0): 0.
+        AMT_REGULAR_TAX_CREDITS_TOTAL: SumLine(
+            AMT_REGULAR_TAX_CREDITS_TOTAL,
+            (
+                (POLITICAL_CREDIT, D("0")),
+                (AMT_INVESTMENT_TAX_CREDIT, D("0")),
+                (LABOUR_SPONSORED_FUNDS_CREDIT, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 2 line 4 "Line 2 plus line 3": the non-refundable tax credits of line 35000
+        # (3194.87) and the dividend tax credit of line 40425 (0).
+        AMT_CREDITS_TOTAL: SumLine(
+            AMT_CREDITS_TOTAL,
+            ((NON_REFUNDABLE_TAX_CREDITS, D("3194.87")), (DIVIDEND_TAX_CREDIT, D("0"))),
+            D("3194.87"),
+        ),
+        # Form T691 Part 8 line 4 "Line 2 plus line 3": line 2 "Tax payable before minimum tax
+        # carryover from line 5 of Part 2" (16951.38) and line 3, the recapture of investment tax
+        # credit (0).
+        AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE: SumLine(
+            AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
+            (
+                (AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER, D("16951.38")),
+                (ITC_RECAPTURE, D("0")),
+            ),
+            D("16951.38"),
+        ),
+        # Form T691 Part 8 line 8 "Add lines 5 to 7": the federal tax on split income (0), the
+        # federal logging tax credit (0) and line 41600 (0) for Return A.
+        AMT_SPLIT_INCOME_AND_CREDITS_TOTAL: SumLine(
+            AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+            (
+                (FEDERAL_TAX_ON_SPLIT_INCOME, D("0")),
+                (AMT_FEDERAL_LOGGING_TAX_CREDIT, D("0")),
+                (CREDITS_AGAINST_FEDERAL_TAX, D("0")),
+            ),
+            D("0"),
+        ),
+        # Schedule 8 Part 5 line 72 "Line 70 plus line 71": 0.00 + 0.00 for Return A.
+        CPP_PART_5_LINE_72: SumLine(
+            output=CPP_PART_5_LINE_72,
+            parts=((CPP_PART_5_LINE_70, D("0.00")), (CPP_PART_5_LINE_71, D("0.00"))),
+            total=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 88 "Add lines 80, 81, 83, 84, and 87": line 81 is the amount
+        # from line 71; all five are 0.00 for Return A.
+        CPP_PART_5_LINE_88: SumLine(
+            output=CPP_PART_5_LINE_88,
+            parts=(
+                (CPP_PART_5_LINE_80, D("0.00")),
+                (CPP_PART_5_LINE_71, D("0.00")),
+                (CPP_PART_5_LINE_83, D("0.00")),
+                (CPP_PART_5_LINE_84, D("0.00")),
+                (CPP_PART_5_LINE_87, D("0")),
+            ),
+            total=D("0.00"),
+        ),
+        # T1 line 31000, the Part 4 amount plus the Part 5 amount: both 0 for Return A.
+        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
+            output=CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            parts=(
+                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+            ),
+            total=D("0"),
+        ),
+        # T1 line 22200, the Part 4 amount plus the Part 5 amount: both 0 for Return A.
+        CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
+            output=CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            parts=(
+                (CPP_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
+            ),
+            total=D("0"),
+        ),
+        # T1 line 42100, the Part 4 amount plus the Part 5 amount: both 0 for Return A.
+        CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
+            output=CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            parts=(
+                (CPP_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
+            ),
+            total=D("0"),
+        ),
+        # Schedule 8 Part 5 line 55 "Line 51 plus line 53": line 51 is line 11 and line 53
+        # is 0 for Return A.
+        CPP_PART_5_LINE_55: SumLine(
+            output=CPP_PART_5_LINE_55,
+            parts=((CPP_PART_5_LINE_51, D("3356.10")), (CPP_PART_5_LINE_53, D("0.00"))),
+            total=D("3356.10"),
+        ),
+        # Schedule 8 Part 5 line 57 "Line 55 plus line 56": line 55 and line 56 (0) for
+        # Return A.
+        CPP_PART_5_LINE_57: SumLine(
+            output=CPP_PART_5_LINE_57,
+            parts=((CPP_PART_5_LINE_55, D("3356.10")), (CPP_PART_5_LINE_56, D("0.00"))),
+            total=D("3356.10"),
+        ),
+        # Schedule 8 Part 5 line 62 "Line 58 plus line 60": line 58 is line 12 and line 60
+        # is 0 for Return A.
+        CPP_PART_5_LINE_62: SumLine(
+            output=CPP_PART_5_LINE_62,
+            parts=((CPP_PART_5_LINE_58, D("678.00")), (CPP_PART_5_LINE_60, D("0.00"))),
+            total=D("678.00"),
+        ),
+        # Schedule 8 Part 5 line 64 "Line 62 plus line 63": line 62 and line 63 (0) for
+        # Return A.
+        CPP_PART_5_LINE_64: SumLine(
+            output=CPP_PART_5_LINE_64,
+            parts=((CPP_PART_5_LINE_62, D("678.00")), (CPP_PART_5_LINE_63, D("0.00"))),
+            total=D("678.00"),
+        ),
+        # Schedule 8 Part 5 line 68 "Line 65 plus line 67": line 65 is line 22 and line 67
+        # is 0 for Return A.
+        CPP_PART_5_LINE_68: SumLine(
+            output=CPP_PART_5_LINE_68,
+            parts=((CPP_PART_5_LINE_65, D("396.00")), (CPP_PART_5_LINE_67, D("0.00"))),
+            total=D("396.00"),
+        ),
+        # Schedule 8 Part 5 line 69 "Line 64 plus line 68": line 64 and line 68 for Return
+        # A.
+        CPP_PART_5_LINE_69: SumLine(
+            output=CPP_PART_5_LINE_69,
+            parts=((CPP_PART_5_LINE_64, D("678.00")), (CPP_PART_5_LINE_68, D("396.00"))),
+            total=D("1074.00"),
+        ),
+        # Schedule 8 Part 5 line 46 "Line 44 plus line 45": both tiers are 0.00 for Return
+        # A.
+        CPP_PART_5_LINE_46: SumLine(
+            output=CPP_PART_5_LINE_46,
+            parts=((CPP_PART_5_LINE_44, D("0.00")), (CPP_PART_5_LINE_45, D("0.00"))),
+            total=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 47 "Line 43 plus line 46": both are 0.00 for Return A.
+        CPP_PART_5_LINE_47: SumLine(
+            output=CPP_PART_5_LINE_47,
+            parts=((CPP_PART_5_LINE_43, D("0.00")), (CPP_PART_5_LINE_46, D("0.00"))),
+            total=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 4 "Add lines 1 to 3.": line 1 is 0.00 and lines 2 and 3 are "0" for
+        # Return A.
+        CPP_PART_5_LINE_4: SumLine(
+            CPP_PART_5_LINE_4,
+            (
+                (PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS, D("0.00")),
+                (CPT20_EARNINGS, D("0")),
+                (CPT20_T4_EARNINGS, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 10 "Line 7 plus line 9": line 7 is the T4 box 16 total and line 9
+        # is "0" for Return A.
+        CPP_PART_5_LINE_10: SumLine(
+            CPP_PART_5_LINE_10,
+            (
+                (CPP_PART_5_LINE_7, D("4034.10")),
+                (CPP_PART_5_LINE_9, D("0")),
+            ),
+            D("4034.10"),
+        ),
+        # Schedule 8 Part 5 line 16 "Line 13 plus line 15": line 13 is the T4 box 16A total and line
+        # 15 is "0" for Return A.
+        CPP_PART_5_LINE_16: SumLine(
+            CPP_PART_5_LINE_16,
+            (
+                (CPP_PART_5_LINE_13, D("396.00")),
+                (CPP_PART_5_LINE_15, D("0")),
+            ),
+            D("396.00"),
+        ),
+        # Schedule 8 Part 5 line 33 "Line 31 plus line 32": line 31 is line 4 (0.00) and line 32 is
+        # line 2 of Part 3, the lesser of 81,200 and the employment income of 110,000.
+        CPP_PART_5_LINE_33: SumLine(
+            CPP_PART_5_LINE_33,
+            (
+                (CPP_PART_5_LINE_4, D("0.00")),
+                (CPP_PART_3_LINE_2, D("81200.00")),
+            ),
+            D("81200.00"),
+        ),
+        # Schedule 8 Part 3b line 34 "Line 30 plus line 32": line 30 is line 11 (line 16 is "0") and
+        # line 32 is "0".
+        CPP_PART_3B_LINE_34: SumLine(
+            CPP_PART_3B_LINE_34,
+            (
+                (CPP_PART_3B_LINE_30, D("3356.10")),
+                (CPP_PART_3B_LINE_32, D("0")),
+            ),
+            D("3356.10"),
+        ),
+        # Schedule 8 Part 3b line 36 "Line 34 plus line 35".
+        CPP_PART_3B_LINE_36: SumLine(
+            CPP_PART_3B_LINE_36,
+            (
+                (CPP_PART_3B_LINE_34, D("3356.10")),
+                (CPP_PART_3B_LINE_35, D("0")),
+            ),
+            D("3356.10"),
+        ),
+        # Schedule 8 Part 3b line 41 "Line 37 plus line 39": line 37 is line 18 (line 19 is "0").
+        CPP_PART_3B_LINE_41: SumLine(
+            CPP_PART_3B_LINE_41,
+            (
+                (CPP_PART_3B_LINE_37, D("678.00")),
+                (CPP_PART_3B_LINE_39, D("0")),
+            ),
+            D("678.00"),
+        ),
+        # Schedule 8 Part 3b line 43 "Line 41 plus line 42".
+        CPP_PART_3B_LINE_43: SumLine(
+            CPP_PART_3B_LINE_43,
+            (
+                (CPP_PART_3B_LINE_41, D("678.00")),
+                (CPP_PART_3B_LINE_42, D("0")),
+            ),
+            D("678.00"),
+        ),
+        # Schedule 8 Part 3b line 47 "Line 44 plus line 46": line 44 is line 22 (line 23 is "0").
+        CPP_PART_3B_LINE_47: SumLine(
+            CPP_PART_3B_LINE_47,
+            (
+                (CPP_PART_3B_LINE_44, D("396.00")),
+                (CPP_PART_3B_LINE_46, D("0")),
+            ),
+            D("396.00"),
+        ),
+        # Schedule 8 Part 3b line 48 "Line 43 plus line 47".
+        CPP_PART_3B_LINE_48: SumLine(
+            CPP_PART_3B_LINE_48,
+            (
+                (CPP_PART_3B_LINE_43, D("678.00")),
+                (CPP_PART_3B_LINE_47, D("396.00")),
+            ),
+            D("1074.00"),
+        ),
+        # Schedule 8 Part 3 line 13 "Line 11 plus line 12".
+        CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS: SumLine(
+            CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            (
+                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
+                (CPP_FIRST_ADDITIONAL_CONTRIBUTIONS, D("678.00")),
+            ),
+            D("4034.10"),
+        ),
+        # Schedule 8 Part 3 line 20 "Line 16 plus line 19".
+        CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE: SumLine(
+            CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            (
+                (CPP_BASE_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 24 "Line 20 plus line 23".
+        CPP_CONTRIBUTIONS_DIFFERENCE: SumLine(
+            CPP_CONTRIBUTIONS_DIFFERENCE,
+            (
+                (CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+            ),
             D("0.00"),
         ),
         # Form T657 Chart 2016 Part 2 "Amount G plus amount H" I: G and Part 1 amount G are 0.
@@ -1102,6 +1502,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("115000.00"),
         ),
+        # Form T691 Part 1 line 27 "Add lines 13, 14, 23, and 26.": line 13 is line 12, 115000.00;
+        # line 14 is 0 (no resource amounts); line 23 is line 22, 10000 (line 20 of 20000 less the
+        # taxable capital gains of 10000); line 26 is 0 (no gifts of publicly listed securities).
+        AMT_ADJUSTED_INCOME_WITH_GAINS: SumLine(
+            AMT_ADJUSTED_INCOME_WITH_GAINS,
+            (
+                (AMT_PART_1_SUBTOTAL, D("115000.00")),
+                (AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES, D("0")),
+                (AMT_CAPITAL_GAINS_ADDED, D("10000")),
+                (AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT, D("0")),
+            ),
+            D("125000.00"),
+        ),
         # Form T691 Part 9 line 5 "Add lines 2 to 4.": Return A has no resource amounts.
         AMT_RESOURCE_INCOME_TOTAL: SumLine(
             AMT_RESOURCE_INCOME_TOTAL,
@@ -1193,8 +1606,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL, D("2000")),
                 (DISABILITY_SUPPORTS_DEDUCTION, D("0")),
                 (AMT_MOVING_EXPENSES_DEDUCTION, D("0")),
-                (CPP_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
-                (CPP_ENHANCED_CONTRIBUTIONS, D("1074.00")),
+                (CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
+                (CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, D("1074.00")),
                 (AMT_PPIP_PREMIUMS_DEDUCTION, D("0")),
                 (CLERGY_RESIDENCE_DEDUCTION, D("0")),
                 (CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION, D("0")),
@@ -1525,9 +1938,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("0"),
         ),
+        # T1 line 125 "Add lines 122 to 124.": line 122 (35000), line 123 (40425) and line 124
+        # (40427), the minimum tax carryover applied on Form T691 Part 8 line 12, 0 for Return A.
         CREDITS_AGAINST_BASIC_FEDERAL_TAX: SumLine(
             CREDITS_AGAINST_BASIC_FEDERAL_TAX,
-            ((NON_REFUNDABLE_TAX_CREDITS, D("3194.87")), (DIVIDEND_TAX_CREDIT, D("0"))),
+            (
+                (NON_REFUNDABLE_TAX_CREDITS, D("3194.87")),
+                (DIVIDEND_TAX_CREDIT, D("0")),
+                (AMT_MINIMUM_TAX_CARRYOVER_APPLIED, D("0")),
+            ),
             D("3194.87"),
         ),
         # T1 line 15000 "Line 28 plus line 32 Total income": the income lines, in line order.
@@ -1630,8 +2049,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ALLOWABLE_BUSINESS_INVESTMENT_LOSS, D("0")),
                 (SUPPORT_PAYMENTS_DEDUCTION, D("0")),
                 (CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES, D("0")),
-                (CPP_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
-                (CPP_ENHANCED_CONTRIBUTIONS, D("1074.00")),
+                (CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
+                (CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, D("1074.00")),
                 (EXPLORATION_AND_DEVELOPMENT_EXPENSES, D("0")),
                 (OTHER_DEDUCTIONS, D("0")),
                 (TOTAL_SPLIT_INCOME, D("0")),
@@ -1865,8 +2284,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (SPOUSE_CAREGIVER_AMOUNT, D("0")),
                 (CAREGIVER_AMOUNT, D("0")),
                 (INFIRM_CHILDREN_AMOUNT, D("0")),
-                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
-                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (CANADA_EMPLOYMENT_AMOUNT, D("1471")),
@@ -1899,8 +2318,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ontario.SPOUSE_AMOUNT, D("0")),
                 (ontario.ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
                 (ontario.CAREGIVER_AMOUNT, D("0")),
-                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
-                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (ontario.DISABILITY_AMOUNT_FOR_SELF, D("0")),
@@ -1919,8 +2338,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ontario.SPOUSE_AMOUNT, D("0")),
                 (ontario.ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
                 (ontario.CAREGIVER_AMOUNT, D("0")),
-                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
-                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (ontario.DISABILITY_AMOUNT_FOR_SELF, D("0")),
@@ -2006,6 +2425,18 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("8195.77"),
         ),
+        # Form T2036 note (4): ON428 line 71 and line 73 with "0" on lines 70 and 72, line 69 over
+        # one part.
+        ontario.TAX_OTHERWISE_PAYABLE_LINE_71: SumLine(
+            ontario.TAX_OTHERWISE_PAYABLE_LINE_71,
+            ((ONTARIO_TAX_WITH_SURTAX, D("8195.77")),),
+            D("8195.77"),
+        ),
+        ontario.TAX_OTHERWISE_PAYABLE_LINE_73: SumLine(
+            ontario.TAX_OTHERWISE_PAYABLE_LINE_73,
+            ((ontario.TAX_OTHERWISE_PAYABLE_LINE_71, D("8195.77")),),
+            D("8195.77"),
+        ),
         # ON428 line 73 "Line 71 plus line 72 =": line 72 is 0, not triggered.
         ONTARIO_TAX_BEFORE_REDUCTION: SumLine(
             ONTARIO_TAX_BEFORE_REDUCTION,
@@ -2050,7 +2481,40 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         FEDERAL_TAX_WITH_ITC_RECAPTURE: SumLine(
             FEDERAL_TAX_WITH_ITC_RECAPTURE,
-            ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")), (ITC_RECAPTURE, D("0"))),
+            ((FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT, D("16951.38")), (ITC_RECAPTURE, D("0"))),
+            D("16951.38"),
+        ),
+        # Form T2209 note (3), net income, "minus any:" the deductions of lines 24400, 24900,
+        # 25000, 25300, 25395, 25400 and the exempt part of 25600, in that order: Return A claims
+        # none of them.
+        FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS: SumLine(
+            FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+            (
+                (CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION, D("0")),
+                (SECURITY_OPTIONS_DEDUCTIONS, D("0")),
+                (OTHER_PAYMENTS_DEDUCTION, D("0")),
+                (NET_CAPITAL_LOSSES_OF_OTHER_YEARS, D("0")),
+                (QBT_CAPITAL_GAINS_DEDUCTION, D("0")),
+                (CAPITAL_GAINS_DEDUCTION, D("0")),
+                (EXEMPT_INCOME_DEDUCTIONS, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T2209 note (3), net income, "plus the amount on line 68360 of Form T1206, Total split
+        # income": the line 23600 amount (not floored) plus it; Return A has no split income.
+        FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME: SumLine(
+            FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+            (
+                (FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME, D("115000")),
+                (TOTAL_SPLIT_INCOME, D("0")),
+            ),
+            D("115000"),
+        ),
+        # Form T2209 note (4), basic federal tax: "Line 42900 of your return plus any federal
+        # dividend tax credit (line 40425 of your return)": Return A has no dividends.
+        BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT: SumLine(
+            BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+            ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")), (DIVIDEND_TAX_CREDIT, D("0"))),
             D("16951.38"),
         ),
         # T1 line 138 (line 41600) "Add lines 135 to 137.": lines 135 and 137, in line order.
@@ -2099,7 +2563,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             TOTAL_PAYABLE,
             (
                 (NET_FEDERAL_TAX, D("16951.38")),
-                (CPP_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
                 (EI_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
                 (SOCIAL_BENEFITS_REPAYMENT_PAYABLE, D("0")),
                 (ONTARIO_TAX, D("8945.77")),
@@ -2194,6 +2658,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             TOTAL_CREDITS,
             (
                 (INCOME_TAX_DEDUCTED, D("25000")),
+                (CPP_OVERPAYMENT, D("0")),
                 (REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT, D("0.00")),
                 (CANADA_WORKERS_BENEFIT, D("0")),
                 (CANADA_TRAINING_CREDIT, D("0")),
@@ -2318,10 +2783,43 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("0"),
         ),
+        # Form T1436 line 2 "Total capital gains deductions after adjustment: add amounts A to E."
+        # for no capital gains deductions.
+        PRE_1986_DEDUCTIONS_TOTAL: SumLine(
+            PRE_1986_DEDUCTIONS_TOTAL,
+            (
+                (PRE_1986_DEDUCTIONS_BEFORE_1988, D("0")),
+                (PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989, D("0.00")),
+                (PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999, D("0.00")),
+                (PRE_1986_DEDUCTIONS_ADJUSTED_2000, D("0.00")),
+                (PRE_1986_DEDUCTIONS_2001_TO_2024, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Form T1436 line 10 "Line 7 plus line 9" (T1 line 25300) and line 13 "Line 11 plus line
+        # 12" (line 11 is a copy of line 7 and line 12 of line 9), for no claim and no
+        # pre-1986 capital loss balance.
+        NET_CAPITAL_LOSSES_OF_OTHER_YEARS: SumLine(
+            NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+            (
+                (ADJUSTED_NET_CAPITAL_LOSSES_APPLIED, D("0")),
+                (NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION, D("0.00")),
+            ),
+            D("0.00"),
+        ),
+        TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED: SumLine(
+            TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
+            (
+                (ADJUSTED_NET_CAPITAL_LOSSES_APPLIED, D("0")),
+                (NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION, D("0.00")),
+            ),
+            D("0.00"),
+        ),
         # Form T1436 line 4 "Total of column C from Chart A", for no unapplied losses.
         TOTAL_ADJUSTED_NET_CAPITAL_LOSSES: SumLine(
             TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
             (
+                (ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985, D("0.00")),
                 (ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987, D("0.00")),
                 (ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989, D("0.00")),
                 (ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999, D("0.00")),
@@ -2631,8 +3129,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (SPOUSE_CAREGIVER_AMOUNT, D("0")),
                 (CAREGIVER_AMOUNT, D("0")),
                 (INFIRM_CHILDREN_AMOUNT, D("0.00")),
-                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
-                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (CANADA_EMPLOYMENT_AMOUNT, D("1471.00")),
@@ -3389,6 +3887,73 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             FISH_HOME_EXPENSES,
             ((FISH_HOME_ALLOWABLE_CLAIM, D("0")),),
             D("0"),
+        ),
+        # Form T691 Part 1 line 33 "Line 27 plus line 32": 125000.00 and 0.
+        AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS: SumLine(
+            AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
+            (
+                (AMT_ADJUSTED_INCOME_WITH_GAINS, D("125000.00")),
+                (AMT_SECURITY_OPTIONS_NET, D("0")),
+            ),
+            D("125000.00"),
+        ),
+        # Form T691 Part 1 line 44 "Add lines 34, 38, and 43.": 125000.00, 0 and 0.
+        AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL: SumLine(
+            AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL,
+            (
+                (AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS, D("125000.00")),
+                (AMT_SECURITY_OPTIONS_D1_TOTAL, D("0")),
+                (AMT_OTHER_YEARS_LOSSES_TOTAL, D("0")),
+            ),
+            D("125000.00"),
+        ),
+        # Form T691 Part 1 line 82 "Line 80 plus line 81": 1537.00 and 125000.00.
+        AMT_ADJUSTMENTS_AFTER_RATE_TOTAL: SumLine(
+            AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
+            (
+                (AMT_APPLICABLE_RATE_AMOUNT, D("1537.00")),
+                (AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL, D("125000.00")),
+            ),
+            D("126537.00"),
+        ),
+        # Form T691 Part 1 line 86 "Line 84 plus line 85": 0 and 0.
+        AMT_DIVIDENDS_ADJUSTMENTS_TOTAL: SumLine(
+            AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
+            (
+                (AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT, D("0")),
+                (AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 88 "Line 86 plus line 87": 0 and 0.
+        AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL: SumLine(
+            AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+            (
+                (AMT_DIVIDENDS_ADJUSTMENTS_TOTAL, D("0")),
+                (AMT_LIFETIME_EXEMPTION_ADJUSTMENT, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 92 "Line 88 plus line 91": 0 and 0.
+        AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL: SumLine(
+            AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+            (
+                (AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL, D("0")),
+                (AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 102 "Add lines 98 to 101.": 1597.44, and 0 for each of lines 99
+        # to 101 (no donations and gifts, and the caller's amounts are 0).
+        AMT_CREDITS_ADJUSTMENTS_TOTAL: SumLine(
+            AMT_CREDITS_ADJUSTMENTS_TOTAL,
+            (
+                (AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT, D("1597.44")),
+                (AMT_DONATIONS_AND_GIFTS_ADJUSTMENT, D("0")),
+                (AMT_FEDERAL_LOGGING_TAX_CREDIT, D("0")),
+                (AMT_SECTION_119_FORMER_RESIDENT_CREDIT, D("0")),
+            ),
+            D("1597.44"),
         ),
     }
     # Form T1206 Part 1 "(If the TOSI-adjusted net income at line 6 is negative, use the negative

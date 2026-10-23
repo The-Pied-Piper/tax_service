@@ -374,7 +374,17 @@ inputs:
   - ca/unapplied_net_capital_losses_2000
   - ca/unapplied_net_capital_losses_2001_to_2024
   - ca/net_capital_losses_claimed
+  - ca/net_capital_losses_before_may_23_1985
+  - ca/pre_1986_deductions_before_1988
+  - ca/pre_1986_deductions_1988_and_1989
+  - ca/pre_1986_deductions_1990_to_1999
+  - ca/pre_1986_deductions_2000
+  - ca/pre_1986_deductions_2001_to_2024
   - ca/additional_deductions
+  # Form T2209 note (3), net income, "minus any:" the part of line 25600 that is net employment
+  # income from a prescribed international organization, foreign income exempt under a tax
+  # treaty, or adult basic education tuition assistance; read by the foreign tax credit alone.
+  - ca/exempt_income_deductions
   - ca/zone_a_days_lived
   - ca/zone_a_additional_residency_days
   - ca/zone_a_special_work_site_benefits
@@ -435,12 +445,22 @@ inputs:
   - ca/fhsa_contributions_deducted
   - ca/fhsa_maximum_participation_period_ended
   - ca/cpp_months
-  - ca/qpp_months
-  - ca/t4_cpp_pensionable_earnings_outside_quebec
-  - ca/t4_qpp_pensionable_earnings_in_quebec
-  - ca/t4_cpp_contributions_box_16
   - ca/cpt20_earnings
+  # Schedule 8 Part 5 line 3 and line 50399 "Employment earnings shown on a T4 slip that you are
+  # electing to pay additional CPP contributions on (complete Form CPT20)": the caller's, taken as
+  # the form takes it.
+  - ca/cpt20_t4_earnings
   - ca/cpp_part_4_completed
+  # Schedule 8 Part 5 heading "Part 5 - Complete this part if you are reporting both: employment
+  # income (complete Part 3 first) / self-employment income or other earnings that you are electing
+  # to pay CPP contributions on. If not, leave this part blank.": the filer's choice, 1 or 0.
+  - ca/cpp_part_5_completed
+  # Schedule 8 Part 3 line 8 and line 50340 "Total actual base and first additional contributions
+  # on CPP pensionable earnings from box 16 of all of your T4 slips", and line 21 and line 50341
+  # "Total actual second additional contributions on CPP pensionable earnings from box 16A of all
+  # of your T4 slips": the caller's, taken as the form takes them.
+  - ca/cpp_t4_base_and_first_additional_contributions
+  - ca/cpp_t4_second_additional_contributions
   - ca/ei_controlled_corporation_earnings
   - ca/ei_exempt_self_employment_income
   - ca/ei_excluded_slips
@@ -518,6 +538,10 @@ inputs:
   - ca/tax_paid_by_instalments
   - ca/itc_recapture_expenditure_at_15_percent
   - ca/itc_recapture_expenditure_at_20_percent
+  # Form T2209, "the federal refundable First Nations abatement (line 44100 of your return)"
+  # of note (4), and the countries of lines 1 and 2, each with lines 43100 and 43300.
+  - ca/first_nations_abatement
+  - ca/foreign_tax_countries
   - ca/labour_sponsored_funds_net_cost
   - ca/advanced_canada_workers_benefit
   - ca/resp_aips_received_part_a
@@ -577,6 +601,15 @@ inputs:
   - ca/amt_excess_epsp_amounts
   - ca/amt_forfeited_salary_deferral_amounts
   - ca/amt_repayment_of_wage_loss_replacement
+  # Form T691 Part 1 lines 100 and 101: the caller's figures, the federal logging tax credit and the
+  # section 119 credit for a former resident, entered as the form takes them.
+  - ca/amt_federal_logging_tax_credit
+  - ca/amt_section_119_former_resident_credit
+  # Form T691 Part 8 line 1 "Minimum tax carryover from previous years (2018 to 2024)" and line 12
+  # "Claim an amount that is not more than line 1 or 11, whichever is less.": the carryover from
+  # earlier returns, and the amount the filer claims on line 40427, entered as the form takes them.
+  - ca/amt_minimum_tax_carryover_from_previous_years
+  - ca/amt_minimum_tax_carryover_claim
   - ca/political_contributions
   - ca/disability_supports_deduction
   - ca/other_employment_expenses

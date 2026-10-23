@@ -14,6 +14,7 @@ from app.domain.trace import (
     ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
+    PercentageAppliedLine,
     PerUnitAmountLine,
     QuotientLine,
     RateAppliedLine,
@@ -33,19 +34,48 @@ from app.jurisdictions.ca.catalog import (
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_BASIC_FEDERAL_TAX,
+    AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+    AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+    AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
+    AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+    AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FOREIGN_INCOME_LIMIT,
+    AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+    AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
+    AMT_NET_ADJUSTED_TAXABLE_INCOME,
+    AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
     AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
+    AMT_T2203_COLUMN_5_PERCENTAGE,
+    AMT_TOTAL_FOREIGN_INCOME,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
     BUSINESS_VEHICLE_LEASE_PRICE_BASE,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADIAN_TUITION_FEES,
     CAPITAL_GAIN,
+    CAPITAL_GAINS_DEDUCTION,
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
+    CPP_ACTUAL_BASE_CONTRIBUTIONS,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
+    CPP_PART_5_LINE_50,
+    CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_75,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_84,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
@@ -54,6 +84,7 @@ from app.jurisdictions.ca.catalog import (
     DIVIDENDS_AMOUNT_A_LESS_B,
     DIVIDENDS_AMOUNT_B,
     DONATION_LIMIT_ON_NET_INCOME,
+    DONATIONS_AND_GIFTS_CREDIT,
     DONATIONS_FIRST_TIER,
     DONATIONS_OVER_FIRST_TIER,
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
@@ -115,7 +146,7 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_18,
     SPLIT_INCOME_LINE_19,
     SPLIT_INCOME_LINE_20,
-    T4_CPP_CONTRIBUTIONS_BOX_16,
+    TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOTAL_SPLIT_INCOME,
@@ -202,16 +233,127 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         for line in trace
         if isinstance(line, ItemsTotalLine) and line.output is COOP_EDUCATION_CREDIT
     }
+    percentages = {
+        line.output: line
+        for line in trace
+        if isinstance(line, PercentageAppliedLine)
+        and line.output is AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS
+    }
+    assert percentages == {
+        # Form T691 Part 3 line 3 "If you have to pay tax to multiple jurisdictions, multiply the
+        # amount from line 2 by the percentage in Column 5 of line 52220 on Form T2203.": line 2,
+        # 8136.66, at the percentage "0" a caller gives for Return A (no multiple jurisdictions),
+        # 8136.66 x 0 / 100, 0.00.
+        AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS: PercentageAppliedLine(
+            output=AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+            amount_kind=AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+            amount_value=D("8136.66"),
+            percentage_kind=AMT_T2203_COLUMN_5_PERCENTAGE,
+            percentage_value=D("0"),
+            rounding=CENT,
+            result=D("0"),
+        ),
+    }
     assert rated == {
-        # Form RC381 Part 3 line 20 "amount from line 19 x 83.1933%": Return A enters no box 16
-        # contributions on line 19, so the base is 0 and so is the 83.1933%.
+        # Form RC381 Part 3 line 20 "amount from line 19 x 83.1933%": line 19 is the T4 box 16 total
+        # of 4034.10 that Return A enters, 4034.10 x 0.831933 = 3356.1000..., 3356.10.
         RC381_PART_3_LINE_20: RateAppliedLine(
             RC381_PART_3_LINE_20,
-            T4_CPP_CONTRIBUTIONS_BOX_16,
-            D("0"),
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
             Rate(D("0.831933")),
             CENT,
-            D("0.00"),
+            D("3356.10"),
+        ),
+        # Form T691 Part 4 line 6 "Foreign income limit for special foreign tax credit: line 4
+        # multiplied by the percentage on line 5 (if negative, enter "0")", with line 5 "Applicable
+        # rate" "× 20.5%": line 4, 0.00 for Return A, at 20.5%, 0 times 0.205, 0.00.
+        AMT_FOREIGN_INCOME_LIMIT: RateAppliedLine(
+            output=AMT_FOREIGN_INCOME_LIMIT,
+            base=AMT_TOTAL_FOREIGN_INCOME,
+            base_amount=D("0"),
+            rate=Rate(D("0.205")),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T691 Part 4 line 7 "Total non-business income tax paid to a foreign country (12)"
+        # "× 66.6666%": the caller's tax paid, 0 for Return A, at 66.6666%, 0 times 0.666666, 0.00.
+        AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS: RateAppliedLine(
+            output=AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+            base=AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
+            base_amount=D("0"),
+            rate=Rate(D("0.666666")),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T691 Part 3 line 2 "Federal surtax on business income earned outside Canada"
+        # "Multiply the amount from line 1 by 48%.": line 1, the basic federal tax of 16951.38, at
+        # 48%, 16951.38 x 0.48 = 8136.6624, rounded half-up to 8136.66.
+        AMT_FEDERAL_SURTAX_AT_48_PERCENT: RateAppliedLine(
+            output=AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+            base=AMT_BASIC_FEDERAL_TAX,
+            base_amount=D("16951.38"),
+            rate=Rate(D("0.48")),
+            rounding=CENT,
+            result=D("8136.66"),
+        ),
+        # Schedule 8 Part 5 line 70 "amount from line 43 multiplied by 50%": 0.00 x 50% for
+        # Return A (no self-employment income, so line 43 is 0.00).
+        CPP_PART_5_LINE_70: RateAppliedLine(
+            output=CPP_PART_5_LINE_70,
+            base=CPP_PART_5_LINE_43,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 71 "Amount from line 44 multiplied by 50%": 0.00 x 50% for
+        # Return A.
+        CPP_PART_5_LINE_71: RateAppliedLine(
+            output=CPP_PART_5_LINE_71,
+            base=CPP_PART_5_LINE_44,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 84 "Amount from line 45 multiplied by 50%": 0.00 x 50% for
+        # Return A.
+        CPP_PART_5_LINE_84: RateAppliedLine(
+            output=CPP_PART_5_LINE_84,
+            base=CPP_PART_5_LINE_45,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 75 "Line A multiply by 83.1933": 0.00 x 83.1933% for Return A.
+        CPP_PART_5_LINE_75: RateAppliedLine(
+            output=CPP_PART_5_LINE_75,
+            base=CPP_PART_5_LINE_75_BASE,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.831933")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 50 "multiplied by 50%": 0 x 50% for Return A.
+        CPP_PART_5_LINE_50: RateAppliedLine(
+            output=CPP_PART_5_LINE_50,
+            base=CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+            base_amount=D("0"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 9 "amount from line 8 multiplied by 83.1933%": Return A's T4 box 16
+        # equals the required contributions (line 13), so the base share is line 11.
+        CPP_ACTUAL_BASE_CONTRIBUTIONS: RateAppliedLine(
+            CPP_ACTUAL_BASE_CONTRIBUTIONS,
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
+            Rate(D("0.831933")),
+            CENT,
+            D("3356.10"),
         ),
         # Form T691 Part 1 line 31 "× 40%" of the gifts under a security option plan (67914): Return
         # A has none, so the base and the 40% are 0.
@@ -780,5 +922,61 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.5")),
             CENT,
             D("0.00"),
+        ),
+        # Form T691 Part 1 line 84 "B × 13.0435%": B is the amount of line 12010 of the return, 0.
+        AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT: RateAppliedLine(
+            AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+            TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            D("0"),
+            Rate(D("0.130435")),
+            CENT,
+            D("0"),
+        ),
+        # Form T691 Part 1 line 85 "C × 27.5362%": C is amount A minus amount B, 0.
+        AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT: RateAppliedLine(
+            AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+            AMT_AMOUNT_A_MINUS_AMOUNT_B,
+            D("0"),
+            Rate(D("0.275362")),
+            CENT,
+            D("0"),
+        ),
+        # Form T691 Part 1 line 87 "× 40%" of the amount from line 25400 of the return, 0.
+        AMT_LIFETIME_EXEMPTION_ADJUSTMENT: RateAppliedLine(
+            AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
+            CAPITAL_GAINS_DEDUCTION,
+            D("0"),
+            Rate(D("0.40")),
+            CENT,
+            D("0"),
+        ),
+        # Form T691 Part 1 line 97 "Gross minimum amount": line 95 multiplied by 20.5%. Return A's
+        # line 95 is 0, as line 93 (126537.00) is under the basic exemption.
+        AMT_GROSS_MINIMUM_AMOUNT: RateAppliedLine(
+            AMT_GROSS_MINIMUM_AMOUNT,
+            AMT_NET_ADJUSTED_TAXABLE_INCOME,
+            D("0"),
+            Rate(D("0.205")),
+            CENT,
+            D("0"),
+        ),
+        # Form T691 Part 1 line 98 "× 50%" of line 33800 of the return, 3194.87: 1597.435, a tie,
+        # rounded half-up to 1597.44.
+        AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT: RateAppliedLine(
+            AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
+            CREDIT_AMOUNTS_AT_CREDIT_RATE,
+            D("3194.87"),
+            Rate(D("0.5")),
+            CENT,
+            D("1597.44"),
+        ),
+        # Form T691 Part 1 line 99 "× 80%" of line 34900 of the return, 0.
+        AMT_DONATIONS_AND_GIFTS_ADJUSTMENT: RateAppliedLine(
+            AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
+            DONATIONS_AND_GIFTS_CREDIT,
+            D("0"),
+            Rate(D("0.8")),
+            CENT,
+            D("0"),
         ),
     }

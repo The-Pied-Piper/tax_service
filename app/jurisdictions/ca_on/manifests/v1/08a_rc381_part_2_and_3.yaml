@@ -3,7 +3,12 @@
 # lines B to E, the same table read with the same months (line A), so no step repeats them.
 # Part 2 line B and the Part 3 lines 1, 2 and 19 are the filer's entries; line 25 (box 16A)
 # is read by Part 3 line 64, which a later PR wires, and the composition refuses an input
-# that nothing consumes, so it is declared there. The inputs are in 01_inputs.yaml.
+# that nothing consumes, so it is declared there. Part 3 line 19 is the T4 box 16 input of Schedule 8 Part 3 line 8
+# (in 01_inputs.yaml); the other inputs are declared here.
+inputs:
+  - ca/qpp_months
+  - ca/t4_cpp_pensionable_earnings_outside_quebec
+  - ca/t4_qpp_pensionable_earnings_in_quebec
 capabilities:
   # Part 2 "The number you enter on line A cannot be more than the number you enter on line
   # B.": line B is the QPP months, produced unchanged when it is at least line A's months and
@@ -165,14 +170,14 @@ capabilities:
     params:
       rate: ca/rc381_cpp_base_share_rate
     consumes:
-      base: ca/t4_cpp_contributions_box_16
+      base: ca/cpp_t4_base_and_first_additional_contributions
     produces:
       output: ca/rc381_part_3_line_20
   # Line 21 "Actual first additional contributions on CPP pensionable earnings: Line 19 minus
   # line 20".
   - name: core/subtract
     consumes:
-      amount: ca/t4_cpp_contributions_box_16
+      amount: ca/cpp_t4_base_and_first_additional_contributions
       less: ca/rc381_part_3_line_20
     produces:
       output: ca/rc381_part_3_line_21

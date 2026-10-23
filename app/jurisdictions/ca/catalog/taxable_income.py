@@ -261,8 +261,145 @@ carry forward (column E multiplied by column F)", row "After 2000 and before 202
 the exact fraction of column F, rounded half-up to the cent, once; what the return produces for next
 year's column A."""
 
+NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985 = CATALOG.declare(
+    "net_capital_losses_before_may_23_1985", Decimal, non_negative=True
+)
+"""Net capital losses before May 23, 1985, Form T1436 "Calculating your pre-1986 capital loss
+balance available for 2025, if any" line 1 "Balance of unapplied net capital losses you had before
+May 23, 1985": a starting amount."""
+
+PRE_1986_DEDUCTIONS_BEFORE_1988 = CATALOG.declare(
+    "pre_1986_deductions_before_1988", Decimal, non_negative=True
+)
+"""Capital gains deductions claimed, Form T1436 "Calculating your pre-1986 capital loss balance
+available for 2025, if any", "Capital gains deductions you claimed:", row "Before 1988" (A): a
+starting amount."""
+
+PRE_1986_DEDUCTIONS_1988_AND_1989 = CATALOG.declare(
+    "pre_1986_deductions_1988_and_1989", Decimal, non_negative=True
+)
+"""Capital gains deductions claimed, Form T1436 "Calculating your pre-1986 capital loss balance
+available for 2025, if any", "Capital gains deductions you claimed:", row "In 1988 and 1989" (B): a
+starting amount, before the printed "x 0.75"."""
+
+PRE_1986_DEDUCTIONS_1990_TO_1999 = CATALOG.declare(
+    "pre_1986_deductions_1990_to_1999", Decimal, non_negative=True
+)
+"""Capital gains deductions claimed, Form T1436 "Calculating your pre-1986 capital loss balance
+available for 2025, if any", "Capital gains deductions you claimed:", row "From 1990 to 1999" (C): a
+starting amount, before the printed "x 0.6667"."""
+
+PRE_1986_DEDUCTIONS_2000 = CATALOG.declare("pre_1986_deductions_2000", Decimal, non_negative=True)
+"""Capital gains deductions claimed, Form T1436 "Calculating your pre-1986 capital loss balance
+available for 2025, if any", "Capital gains deductions you claimed:", row "In 2000" (D): a starting
+amount, before the printed "x 1/(IR x 2)". The 2000 inclusion rate (ca/t657_inclusion_rate_2000)
+must be entered when this is not 0; with that rate at 0 the row's adjusted amount is 0."""
+
+PRE_1986_DEDUCTIONS_2001_TO_2024 = CATALOG.declare(
+    "pre_1986_deductions_2001_to_2024", Decimal, non_negative=True
+)
+"""Capital gains deductions claimed, Form T1436 "Calculating your pre-1986 capital loss balance
+available for 2025, if any", "Capital gains deductions you claimed:", row "From 2001 to 2024" (E): a
+starting amount."""
+
+PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989 = CATALOG.declare(
+    "pre_1986_deductions_adjusted_1988_and_1989", Decimal, non_negative=True
+)
+"""Capital gains deductions claimed after adjustment, Form T1436 "Calculating your pre-1986 capital
+loss balance available for 2025, if any", row "In 1988 and 1989" (B): the amount times the exact
+fraction 3/4 (printed 0.75), rounded half-up to the cent, once."""
+
+PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999 = CATALOG.declare(
+    "pre_1986_deductions_adjusted_1990_to_1999", Decimal, non_negative=True
+)
+"""Capital gains deductions claimed after adjustment, Form T1436 "Calculating your pre-1986 capital
+loss balance available for 2025, if any", row "From 1990 to 1999" (C): the amount times the exact
+fraction 2/3 (printed 0.6667), rounded half-up to the cent, once."""
+
+PRE_1986_DEDUCTIONS_ADJUSTED_2000 = CATALOG.declare(
+    "pre_1986_deductions_adjusted_2000", Decimal, non_negative=True
+)
+"""Capital gains deductions claimed after adjustment, Form T1436 "Calculating your pre-1986 capital
+loss balance available for 2025, if any", row "In 2000" (D): the amount times 1/(IR x 2), the amount
+divided by 2 x IR, rounded half-up to the cent, once; 0 when IR is 0."""
+
+PRE_1986_DEDUCTIONS_TOTAL = CATALOG.declare("pre_1986_deductions_total", Decimal, non_negative=True)
+"""Total capital gains deductions after adjustment, Form T1436 "Calculating your pre-1986 capital
+loss balance available for 2025, if any" line 2 "Total capital gains deductions after adjustment:
+add amounts A to E.": the sum of the rows A to E."""
+
+PRE_1986_CAPITAL_LOSS_BALANCE = CATALOG.declare("pre_1986_capital_loss_balance", Decimal)
+"""Pre-1986 capital loss balance, Form T1436 "Calculating your pre-1986 capital loss balance
+available for 2025, if any" line 3 "Pre-1986 capital loss balance available for 2025: line 1 minus
+line 2". The line prints no "(if negative, enter "0")", so the kind is signed."""
+
+ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985 = CATALOG.declare(
+    "adjusted_gross_capital_losses_before_may_23_1985", Decimal, non_negative=True
+)
+"""Adjusted gross capital losses, Form T1436 Chart A column (C) "Adjusted gross capital losses
+(column A multiplied by column B)", row "Before May 23, 1985": column A (line 3) times the exact
+fraction of column B, rounded half-up to the cent, once."""
+
+ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985 = CATALOG.declare(
+    "adjusted_losses_applied_before_may_23_1985", Decimal, non_negative=True
+)
+"""Adjusted losses applied, Form T1436 Chart A column (D) "Total adjusted net capital losses applied
+against taxable capital gains in 2025", row "Before May 23, 1985": the lesser of column C and line
+13, the oldest row first."""
+
+ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985 = CATALOG.declare(
+    "adjusted_losses_left_after_before_may_23_1985", Decimal, non_negative=True
+)
+"""Adjusted losses left after the row "Before May 23, 1985" of Form T1436 Chart A: line 13 less its
+column (D), what the next row may take."""
+
+REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985 = CATALOG.declare(
+    "remaining_adjusted_losses_before_may_23_1985", Decimal, non_negative=True
+)
+"""Remaining adjusted losses, Form T1436 Chart A column (E) "Remaining adjusted net capital losses
+(column C minus column D)", row "Before May 23, 1985": column C less column D."""
+
+NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985 = CATALOG.declare(
+    "net_capital_loss_balance_before_may_23_1985", Decimal, non_negative=True
+)
+"""Net capital loss balance, Form T1436 Chart A column (G) "Net capital loss balance available to
+carry forward (column E multiplied by column F)", row "Before May 23, 1985": column E times the
+exact fraction of column F, rounded half-up to the cent, once; what the return produces for next
+year."""
+
+ADJUSTED_NET_CAPITAL_LOSSES_APPLIED = CATALOG.declare(
+    "adjusted_net_capital_losses_applied", Decimal, non_negative=True
+)
+"""Adjusted net capital losses applied, Form T1436 line 7 "Enter the amount of losses you want to
+claim (3).": the amount claimed, not above line 6."""
+
+UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES = CATALOG.declare(
+    "unapplied_adjusted_net_capital_losses", Decimal, non_negative=True
+)
+"""Unapplied adjusted net capital losses, Form T1436 line 8 "Balance of unapplied adjusted net
+capital losses of other years not used to reduce taxable capital gains: line 4 minus line 7"."""
+
+NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION = CATALOG.declare(
+    "net_capital_losses_additional_deduction", Decimal, non_negative=True
+)
+"""Additional deduction for net capital losses, Form T1436 line 9 "Enter whichever is less: amount
+from line 3, line 8, or $2,000": the least of the three."""
+
+TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED = CATALOG.declare(
+    "total_adjusted_net_capital_losses_applied", Decimal, non_negative=True
+)
+"""Total adjusted net capital losses of other years applied in 2025, Form T1436 line 13 "Line 11
+plus line 12": line 7 plus line 9, the total of Chart A column (D)."""
+
 ADDITIONAL_DEDUCTIONS = CATALOG.declare("additional_deductions", Decimal, non_negative=True)
 """Additional deductions, T1 line 67 and line 25600 "Additional deductions": a starting amount."""
+
+EXEMPT_INCOME_DEDUCTIONS = CATALOG.declare("exempt_income_deductions", Decimal, non_negative=True)
+"""Exempt income deductions, Form T2209 note (3) "amounts deductible as net employment income from a
+prescribed international organization, as foreign income exempt under a tax treaty, or as adult
+basic education tuition assistance (included on line 25600 of your return)": a starting amount, the
+part of T1 line 67 and line 25600 "Additional deductions" that the note names. It is already inside
+`additional_deductions`; only the foreign tax credit's net income reads it on its own."""
 
 DEDUCTIONS_FROM_NET_INCOME = CATALOG.declare(
     "deductions_from_net_income", Decimal, non_negative=True

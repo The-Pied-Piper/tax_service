@@ -27,6 +27,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     QPP_MONTHS,
     RC381_PART_2_LINE_B,
     RC381_PART_2_LINE_G,
@@ -51,7 +52,6 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_23,
     RC381_PART_3_LINE_24,
     RC381_PART_3_LINE_26,
-    T4_CPP_CONTRIBUTIONS_BOX_16,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC,
 )
@@ -64,7 +64,6 @@ INPUTS = frozenset(
         "ca/qpp_months",
         "ca/t4_cpp_pensionable_earnings_outside_quebec",
         "ca/t4_qpp_pensionable_earnings_in_quebec",
-        "ca/t4_cpp_contributions_box_16",
     }
 )
 
@@ -251,7 +250,7 @@ STEPS = {
     CapabilitySelection(
         name="core/apply_rate",
         params={"rate": "ca/rc381_cpp_base_share_rate"},
-        consumes={"base": "ca/t4_cpp_contributions_box_16"},
+        consumes={"base": "ca/cpp_t4_base_and_first_additional_contributions"},
         produces={"output": "ca/rc381_part_3_line_20"},
     ),
     # Line 21 "Actual first additional contributions on CPP pensionable earnings: Line 19 minus
@@ -259,7 +258,10 @@ STEPS = {
     CapabilitySelection(
         name="core/subtract",
         params={},
-        consumes={"amount": "ca/t4_cpp_contributions_box_16", "less": "ca/rc381_part_3_line_20"},
+        consumes={
+            "amount": "ca/cpp_t4_base_and_first_additional_contributions",
+            "less": "ca/rc381_part_3_line_20",
+        },
         produces={"output": "ca/rc381_part_3_line_21"},
     ),
     # Line 22 "Required base contributions on CPP pensionable earnings: amount from line 18 x
@@ -366,10 +368,14 @@ WIRING = {
         frozenset({RC381_PART_3_LINE_16, RC381_PART_3_LINE_9}),
         frozenset({RC381_PART_3_LINE_18}),
     ),
-    (ApplyRate, frozenset({T4_CPP_CONTRIBUTIONS_BOX_16}), frozenset({RC381_PART_3_LINE_20})),
+    (
+        ApplyRate,
+        frozenset({CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS}),
+        frozenset({RC381_PART_3_LINE_20}),
+    ),
     (
         Subtract,
-        frozenset({T4_CPP_CONTRIBUTIONS_BOX_16, RC381_PART_3_LINE_20}),
+        frozenset({CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS, RC381_PART_3_LINE_20}),
         frozenset({RC381_PART_3_LINE_21}),
     ),
     (TieredContribution, frozenset({RC381_PART_3_LINE_18}), frozenset({RC381_PART_3_LINE_22})),

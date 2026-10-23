@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 
 from app.domain.errors import InputAboveBoundError
-from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     ABIL_AFTER_QBT_REDUCTION,
     ABIL_CLAIMED_AFTER_1984_AND_BEFORE_2025,
@@ -87,34 +84,13 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_LOSSES_FOR_ANNUAL_GAINS_LIMIT,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute, return_be, t657_chart_1_row
-
-
-def return_bf(**overrides: Any) -> Worksheet:
-    """Return BF's inputs, as in `returns/2025_return_bf.yaml`.
-
-    Other income of 10000 and one disposition of QSBCS in 2025 after June 24, 2024: proceeds of
-    500000, adjusted cost base of 150000 and no outlays, a gain of 350000 (Schedule 3 line 10700).
-    Net capital losses of other years of 20000 are available and claimed. Taxable capital gains
-    for 2002 to 2024 of a chosen 100000 on Step 2 line 8; every other Form T657 line is blank. All
-    155000, the annual gains limit, is claimed on line 25400.
-    """
-    inputs: dict[str, Any] = {
-        "employment_income": "0",
-        "share_dispositions": (),
-        "unused_rrsp_contributions": "0",
-        "rrsp_contributions": "0",
-        "rrsp_deduction_limit": "0",
-        "rrsp_amount_deducted": "0",
-        "union_dues": "0",
-        "other_income": "10000",
-        "qsbcs_dispositions": (("500000", "150000", "0"),),
-        "unapplied_net_capital_losses_2001_to_2024": "20000",
-        "net_capital_losses_claimed": "20000",
-        "t657_gains_2002_to_2024": "100000",
-        "capital_gains_deduction_claimed": "155000",
-    }
-    return compute(**{**inputs, **overrides})
+from tests.jurisdictions.ca_on.end_to_end.support import (
+    D,
+    compute,
+    return_be,
+    return_bf,
+    t657_chart_1_row,
+)
 
 
 def test_step_1_gives_an_annual_gains_limit_of_155000() -> None:

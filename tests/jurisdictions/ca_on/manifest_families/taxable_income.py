@@ -12,6 +12,7 @@ from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZero
+from app.jurisdictions.ca.capabilities.lesser_of_with_maximum import LesserOfWithMaximum
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
@@ -19,15 +20,19 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2000,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
     ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
     ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
     ADJUSTED_LOSSES_APPLIED_2000,
     ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
     ADJUSTED_LOSSES_LEFT_AFTER_2000,
+    ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CAPITAL_GAINS_DEDUCTION,
     DEDUCTIONS_FROM_NET_INCOME,
@@ -37,26 +42,42 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
     NET_CAPITAL_LOSS_BALANCE_2000,
     NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985,
     NET_CAPITAL_LOSS_NUMERATOR_ONE_2000,
     NET_CAPITAL_LOSS_TWICE_IR_2000,
+    NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
+    NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_INCOME,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_PAYMENTS_DEDUCTION,
+    PRE_1986_CAPITAL_LOSS_BALANCE,
+    PRE_1986_DEDUCTIONS_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_2000,
+    PRE_1986_DEDUCTIONS_2001_TO_2024,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_ADJUSTED_2000,
+    PRE_1986_DEDUCTIONS_BEFORE_1988,
+    PRE_1986_DEDUCTIONS_TOTAL,
     QBT_CAPITAL_GAINS_DEDUCTION,
     REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2000,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
     SECURITY_OPTIONS_DEDUCTIONS,
     T657_INCLUSION_RATE_2000,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
+    UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
     UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
     UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
     UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
@@ -74,12 +95,24 @@ INPUTS = frozenset(
         "ca/unapplied_net_capital_losses_2000",
         "ca/unapplied_net_capital_losses_2001_to_2024",
         "ca/net_capital_losses_claimed",
+        "ca/net_capital_losses_before_may_23_1985",
+        "ca/pre_1986_deductions_before_1988",
+        "ca/pre_1986_deductions_1988_and_1989",
+        "ca/pre_1986_deductions_1990_to_1999",
+        "ca/pre_1986_deductions_2000",
+        "ca/pre_1986_deductions_2001_to_2024",
         "ca/additional_deductions",
+        # Form T2209 note (3), net income, "minus any:" the part of line 25600 that is net
+        # employment income from a prescribed international organization, foreign income exempt
+        # under a tax treaty, or adult basic education tuition assistance; read by the foreign
+        # tax credit alone.
+        "ca/exempt_income_deductions",
     }
 )
 
 OUTPUTS = frozenset(
     {
+        "ca/net_capital_loss_balance_before_may_23_1985",
         "ca/net_capital_loss_balance_1985_to_1987",
         "ca/net_capital_loss_balance_1988_and_1989",
         "ca/net_capital_loss_balance_1990_to_1999",
@@ -91,11 +124,76 @@ OUTPUTS = frozenset(
 STEPS = {
     # Form T1436 (Capital Gains Worksheet), "Line 25300 - Net capital loss of other years (if
     # you have pre-1986 capital loss balance)" and its "Chart A - Adjustment calculation for
-    # carry-forward losses": each cell of the printed rows "After May 22, 1985, and before
-    # 1988", "In 1988 and 1989", "After 1989 and before 2000" and "After 2000 and before 2025"
-    # is its own step. Column (A) "Amount of your unapplied net capital losses" is a starting
-    # amount per row, as the form takes it; the row "Before May 23, 1985" is not
-    # wired yet.
+    # carry-forward losses": each cell of the printed rows "Before May 23, 1985", "After May
+    # 22, 1985, and before 1988", "In 1988 and 1989", "After 1989 and before 2000", "In 2000" and
+    # "After 2000 and before 2025" is its own step. Column (A) "Amount of your unapplied net
+    # capital losses" is a starting amount per row, as the form takes it (the row "Before May
+    # 23, 1985" takes line 3 of the pre-1986 calculation above it).
+    # Form T1436 "Calculating your pre-1986 capital loss balance available for 2025, if any":
+    # line 1 "Balance of unapplied net capital losses you had before May 23, 1985" and the
+    # capital gains deductions claimed, "Before 1988" (A), "In 1988 and 1989" (B), "From 1990 to
+    # 1999" (C), "In 2000" (D) and "From 2001 to 2024" (E), are starting amounts.
+    # "In 1988 and 1989" (B), "x 0.75" being 3/4.
+    CapabilitySelection(
+        name="core/apply_fraction",
+        params={"fraction": "ca/pre_1986_deductions_factor_1988_and_1989"},
+        consumes={"base": "ca/pre_1986_deductions_1988_and_1989"},
+        produces={"output": "ca/pre_1986_deductions_adjusted_1988_and_1989"},
+    ),
+    # "From 1990 to 1999" (C), "x 0.6667" being 2/3.
+    CapabilitySelection(
+        name="core/apply_fraction",
+        params={"fraction": "ca/pre_1986_deductions_factor_1990_to_1999"},
+        consumes={"base": "ca/pre_1986_deductions_1990_to_1999"},
+        produces={"output": "ca/pre_1986_deductions_adjusted_1990_to_1999"},
+    ),
+    # "In 2000" (D), "x 1/(IR x 2)": the deductions times the same factor as the Chart A row "In
+    # 2000" column (B), that is divided by 2 x IR, rounded half-up to the cent once; 0 when IR
+    # is 0.
+    CapabilitySelection(
+        name="ca/apply_ratio_or_zero",
+        params={"rounding": "ca/pre_1986_deductions_adjusted_2000_rounding"},
+        consumes={
+            "amount": "ca/pre_1986_deductions_2000",
+            "numerator": "ca/net_capital_loss_numerator_one_2000",
+            "denominator": "ca/net_capital_loss_twice_ir_2000",
+        },
+        produces={"output": "ca/pre_1986_deductions_adjusted_2000"},
+    ),
+    # "Total capital gains deductions after adjustment: add amounts A to E." (line 2).
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/pre_1986_deductions_before_1988",
+                "ca/pre_1986_deductions_adjusted_1988_and_1989",
+                "ca/pre_1986_deductions_adjusted_1990_to_1999",
+                "ca/pre_1986_deductions_adjusted_2000",
+                "ca/pre_1986_deductions_2001_to_2024",
+            ),
+        },
+        produces={"output": "ca/pre_1986_deductions_total"},
+    ),
+    # Line 3 "Pre-1986 capital loss balance available for 2025: line 1 minus line 2".
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/net_capital_losses_before_may_23_1985",
+            "less": "ca/pre_1986_deductions_total",
+        },
+        produces={"output": "ca/pre_1986_capital_loss_balance"},
+    ),
+    # Row "Before May 23, 1985", column (A) being line 3, column (C) "Adjusted gross capital
+    # losses (column A multiplied by column B)", column (B) "Adjustment factor (for the
+    # inclusion rate)" being 1.
+    CapabilitySelection(
+        name="core/apply_fraction",
+        params={"fraction": "ca/net_capital_loss_inclusion_rate_factor_before_may_23_1985"},
+        consumes={"base": "ca/pre_1986_capital_loss_balance"},
+        produces={"output": "ca/adjusted_gross_capital_losses_before_may_23_1985"},
+    ),
     # Row "After May 22, 1985, and before 1988", column (C) "Adjusted gross capital losses
     # (column A multiplied by column B)", column (B) "Adjustment factor (for the inclusion
     # rate)" being 1.
@@ -137,6 +235,7 @@ STEPS = {
         params={},
         consumes={
             "parts": (
+                "ca/adjusted_gross_capital_losses_before_may_23_1985",
                 "ca/adjusted_gross_capital_losses_1985_to_1987",
                 "ca/adjusted_gross_capital_losses_1988_and_1989",
                 "ca/adjusted_gross_capital_losses_1990_to_1999",
@@ -162,9 +261,6 @@ STEPS = {
     # Line 7 "Enter the amount of losses you want to claim (3).", note (3) "You can apply all or
     # part of the amount from line 6 against your taxable capital gains in 2025.": the amount
     # the filer chooses to claim, a starting amount, refused when above line 6, not capped.
-    # Lines 1 to 3 are not completed, so "enter the amount from line 7 on line 25300 of your
-    # 2025 return" and "enter the amount from line 7 on line 13": line 7 is T1 line 63 and line
-    # 25300 "Net capital losses of other years" and Form T1436 line 13.
     CapabilitySelection(
         name="core/at_most",
         params={},
@@ -172,30 +268,124 @@ STEPS = {
             "amount": "ca/net_capital_losses_claimed",
             "bound": "ca/net_capital_losses_available_to_claim",
         },
+        produces={"output": "ca/adjusted_net_capital_losses_applied"},
+    ),
+    # Line 8 "Balance of unapplied adjusted net capital losses of other years not used to reduce
+    # taxable capital gains: line 4 minus line 7".
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/total_adjusted_net_capital_losses",
+            "less": "ca/adjusted_net_capital_losses_applied",
+        },
+        produces={"output": "ca/unapplied_adjusted_net_capital_losses"},
+    ),
+    # Line 9 "Enter whichever is less: amount from line 3, line 8, or $2,000.".
+    CapabilitySelection(
+        name="ca/lesser_of_with_maximum",
+        params={"maximum": "ca/net_capital_losses_additional_deduction_maximum"},
+        consumes={
+            "amounts": (
+                "ca/pre_1986_capital_loss_balance",
+                "ca/unapplied_adjusted_net_capital_losses",
+            ),
+        },
+        produces={"output": "ca/net_capital_losses_additional_deduction"},
+    ),
+    # Line 10 "Line 7 plus line 9", "Deduction in 2025 for net capital losses of other years":
+    # T1 line 63 and line 25300 "Net capital losses of other years".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/adjusted_net_capital_losses_applied",
+                "ca/net_capital_losses_additional_deduction",
+            ),
+        },
         produces={"output": "ca/net_capital_losses_of_other_years"},
     ),
+    # Lines 11 "Amount from line 7" and 12 "Amount from line 9" are copies; line 13 "Line 11 plus
+    # line 12", "Total adjusted net capital losses of other years applied in 2025", which note
+    # (4) makes the total of column D.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/adjusted_net_capital_losses_applied",
+                "ca/net_capital_losses_additional_deduction",
+            ),
+        },
+        produces={"output": "ca/total_adjusted_net_capital_losses_applied"},
+    ),
+    # Row "Before May 23, 1985", column (D): the lesser of column C and line 13, the oldest row
+    # first.
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/adjusted_gross_capital_losses_before_may_23_1985",
+                "ca/total_adjusted_net_capital_losses_applied",
+            ),
+        },
+        produces={"output": "ca/adjusted_losses_applied_before_may_23_1985"},
+    ),
+    # What is left of line 13 after the row "Before May 23, 1985": line 13 less its column D.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/total_adjusted_net_capital_losses_applied",
+            "less": "ca/adjusted_losses_applied_before_may_23_1985",
+        },
+        produces={"output": "ca/adjusted_losses_left_after_before_may_23_1985"},
+    ),
+    # Row "Before May 23, 1985", column (E) "Remaining adjusted net capital losses (column C minus
+    # column D)".
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/adjusted_gross_capital_losses_before_may_23_1985",
+            "less": "ca/adjusted_losses_applied_before_may_23_1985",
+        },
+        produces={"output": "ca/remaining_adjusted_losses_before_may_23_1985"},
+    ),
+    # Row "Before May 23, 1985", column (G) "Net capital loss balance available to carry forward
+    # (column E multiplied by column F)", column (F) "Adjustment factor (for carry-forward
+    # losses)" being 1.
+    CapabilitySelection(
+        name="core/apply_fraction",
+        params={"fraction": "ca/net_capital_loss_carry_forward_factor_before_may_23_1985"},
+        consumes={"base": "ca/remaining_adjusted_losses_before_may_23_1985"},
+        produces={"output": "ca/net_capital_loss_balance_before_may_23_1985"},
+    ),
     # Row "After May 22, 1985, and before 1988", column (D) "Total adjusted net capital losses
-    # applied against taxable capital gains in 2025": the lesser of column C and line 13, the
-    # amount claimed, as "You have to apply net capital losses of earlier years before you apply
-    # net capital losses of later years." (Guide T4037) puts the oldest row first.
+    # applied against taxable capital gains in 2025": the lesser of column C and what is left
+    # of line 13 after the row "Before May 23, 1985", as "You have to apply net capital losses of
+    # earlier years before you apply net capital losses of later years." (Guide T4037) puts the
+    # oldest row first.
     CapabilitySelection(
         name="core/lesser_of",
         params={},
         consumes={
             "amounts": (
                 "ca/adjusted_gross_capital_losses_1985_to_1987",
-                "ca/net_capital_losses_of_other_years",
+                "ca/adjusted_losses_left_after_before_may_23_1985",
             ),
         },
         produces={"output": "ca/adjusted_losses_applied_1985_to_1987"},
     ),
     # What is left of line 13 after the row "After May 22, 1985, and before 1988": the amount
-    # before it less its column D.
+    # left after the row before it less its column D.
     CapabilitySelection(
         name="core/subtract",
         params={},
         consumes={
-            "amount": "ca/net_capital_losses_of_other_years",
+            "amount": "ca/adjusted_losses_left_after_before_may_23_1985",
             "less": "ca/adjusted_losses_applied_1985_to_1987",
         },
         produces={"output": "ca/adjusted_losses_left_after_1985_to_1987"},
@@ -450,6 +640,102 @@ STEPS = {
 WIRING = {
     (
         ApplyFraction,
+        frozenset({PRE_1986_DEDUCTIONS_1988_AND_1989}),
+        frozenset({PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989}),
+    ),
+    (
+        ApplyFraction,
+        frozenset({PRE_1986_DEDUCTIONS_1990_TO_1999}),
+        frozenset({PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999}),
+    ),
+    (
+        ApplyRatioOrZero,
+        frozenset(
+            {
+                PRE_1986_DEDUCTIONS_2000,
+                NET_CAPITAL_LOSS_NUMERATOR_ONE_2000,
+                NET_CAPITAL_LOSS_TWICE_IR_2000,
+            }
+        ),
+        frozenset({PRE_1986_DEDUCTIONS_ADJUSTED_2000}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                PRE_1986_DEDUCTIONS_BEFORE_1988,
+                PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+                PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+                PRE_1986_DEDUCTIONS_ADJUSTED_2000,
+                PRE_1986_DEDUCTIONS_2001_TO_2024,
+            }
+        ),
+        frozenset({PRE_1986_DEDUCTIONS_TOTAL}),
+    ),
+    (
+        Subtract,
+        frozenset({NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985, PRE_1986_DEDUCTIONS_TOTAL}),
+        frozenset({PRE_1986_CAPITAL_LOSS_BALANCE}),
+    ),
+    (
+        ApplyFraction,
+        frozenset({PRE_1986_CAPITAL_LOSS_BALANCE}),
+        frozenset({ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985}),
+    ),
+    (
+        Subtract,
+        frozenset({TOTAL_ADJUSTED_NET_CAPITAL_LOSSES, ADJUSTED_NET_CAPITAL_LOSSES_APPLIED}),
+        frozenset({UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES}),
+    ),
+    (
+        LesserOfWithMaximum,
+        frozenset({PRE_1986_CAPITAL_LOSS_BALANCE, UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES}),
+        frozenset({NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION}),
+    ),
+    (
+        Sum,
+        frozenset({ADJUSTED_NET_CAPITAL_LOSSES_APPLIED, NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION}),
+        frozenset({NET_CAPITAL_LOSSES_OF_OTHER_YEARS}),
+    ),
+    (
+        Sum,
+        frozenset({ADJUSTED_NET_CAPITAL_LOSSES_APPLIED, NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION}),
+        frozenset({TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED}),
+    ),
+    (
+        LesserOf,
+        frozenset(
+            {
+                ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
+                TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
+            }
+        ),
+        frozenset({ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED, ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985}
+        ),
+        frozenset({ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {
+                ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
+                ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
+            }
+        ),
+        frozenset({REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985}),
+    ),
+    (
+        ApplyFraction,
+        frozenset({REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985}),
+        frozenset({NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985}),
+    ),
+    (
+        ApplyFraction,
         frozenset({UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987}),
         frozenset({ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987}),
     ),
@@ -472,6 +758,7 @@ WIRING = {
         Sum,
         frozenset(
             {
+                ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
                 ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
                 ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
                 ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
@@ -489,16 +776,23 @@ WIRING = {
     (
         AtMost,
         frozenset({NET_CAPITAL_LOSSES_CLAIMED, NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM}),
-        frozenset({NET_CAPITAL_LOSSES_OF_OTHER_YEARS}),
+        frozenset({ADJUSTED_NET_CAPITAL_LOSSES_APPLIED}),
     ),
     (
         LesserOf,
-        frozenset({ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987, NET_CAPITAL_LOSSES_OF_OTHER_YEARS}),
+        frozenset(
+            {
+                ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
+                ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+            }
+        ),
         frozenset({ADJUSTED_LOSSES_APPLIED_1985_TO_1987}),
     ),
     (
         Subtract,
-        frozenset({NET_CAPITAL_LOSSES_OF_OTHER_YEARS, ADJUSTED_LOSSES_APPLIED_1985_TO_1987}),
+        frozenset(
+            {ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985, ADJUSTED_LOSSES_APPLIED_1985_TO_1987}
+        ),
         frozenset({ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987}),
     ),
     (

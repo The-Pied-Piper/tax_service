@@ -24,11 +24,13 @@ __all__ = [
     "SumNotBelowZeroLine",
     "RateAppliedLine",
     "DividedByRateLine",
+    "SignChosenDifferenceLine",
     "SubtractedLine",
     "SubtractedNotBelowZeroLine",
     "CreditAmountLine",
     "CappedAmountLine",
     "LesserOfLine",
+    "LesserOfWithMaximumLine",
     "GreaterOfLine",
     "PerUnitAmountLine",
     "MultipleOverLine",
@@ -135,6 +137,30 @@ class DividedByRateLine(TraceLine):
 
 
 @dataclass(frozen=True)
+class SignChosenDifferenceLine(TraceLine):
+    """The `result` produced as `output` from `difference` (worth `difference_amount`), picked by
+    the sign of `sign` (worth `sign_amount`) against `reference` (worth `reference_amount`).
+
+    A sign amount that is not negative gives the difference as it is; a negative one gives the
+    lesser of the reference and the magnitude of the difference, as a negative number.
+    """
+
+    output: Money
+    sign: Money
+    sign_amount: Decimal
+    reference: Money
+    reference_amount: Decimal
+    difference: Money
+    difference_amount: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The chosen, signed figure."""
+        return self.result
+
+
+@dataclass(frozen=True)
 class SubtractedLine(TraceLine):
     """`output` = `minuend` (worth `minuend_amount`) less `subtrahend` (worth `subtrahend_amount`),
     exact; `result` may be negative."""
@@ -221,6 +247,27 @@ class LesserOfLine(TraceLine):
     @property
     def amount(self) -> Decimal:
         """The least of the parts."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class LesserOfWithMaximumLine(TraceLine):
+    """The `result` produced as `output`: the least of `parts`, each a kind and its value, and the
+    `maximum`, rounded with `rounding`.
+
+    Its own class, not a `LesserOfLine` or `CappedAmountLine`: it compares several amounts and a
+    dataset's figure.
+    """
+
+    output: Money
+    parts: tuple[tuple[Money, Decimal], ...]
+    maximum: Amount
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded lesser."""
         return self.result
 
 

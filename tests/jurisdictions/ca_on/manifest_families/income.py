@@ -39,6 +39,7 @@ from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_expenses 
 )
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
 from app.jurisdictions.ca.catalog import (
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     BOND_DISPOSITIONS,
     BOND_GAIN_OR_LOSS,
     BOND_PROCEEDS,
@@ -1859,12 +1860,19 @@ STEPS = {
         consumes={"parts": ("ca/slip_dividend_tax_credit", "ca/no_slip_dividend_tax_credit")},
         produces={"output": "ca/dividend_tax_credit"},
     ),
-    # T1 line 125 "Add lines 122 to 124.": line 122 "Amount from line 35000" and line 123
-    # (40425), in line order; line 124 (40427, minimum tax carryover) is not triggered.
+    # T1 line 125 "Add lines 122 to 124.": line 122 "Amount from line 35000", line 123 (40425),
+    # the federal dividend tax credit, and line 124 (40427), the minimum tax carryover applied
+    # on Form T691 Part 8 line 12, in line order.
     CapabilitySelection(
         name="core/sum",
         params={},
-        consumes={"parts": ("ca/non_refundable_tax_credits", "ca/dividend_tax_credit")},
+        consumes={
+            "parts": (
+                "ca/non_refundable_tax_credits",
+                "ca/dividend_tax_credit",
+                "ca/amt_minimum_tax_carryover_applied",
+            )
+        },
         produces={"output": "ca/credits_against_basic_federal_tax"},
     ),
     # T1 line 27 "Add lines 22 to 26. Net self-employment income": line 22 (13500) business
@@ -4110,7 +4118,9 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({NON_REFUNDABLE_TAX_CREDITS, DIVIDEND_TAX_CREDIT}),
+        frozenset(
+            {NON_REFUNDABLE_TAX_CREDITS, DIVIDEND_TAX_CREDIT, AMT_MINIMUM_TAX_CARRYOVER_APPLIED}
+        ),
         frozenset({CREDITS_AGAINST_BASIC_FEDERAL_TAX}),
     ),
     (

@@ -162,6 +162,8 @@ sources:
     Schedule ON428-A, T778 and EI table arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
+  ca/cpp_t4_base_and_first_additional_contributions: "386.75"
+  ca/cpp_t4_second_additional_contributions: "0"
   ca/qsbcs_dispositions: []
   ca/qffp_dispositions: []
   ca/qffp_foreclosure_dispositions: []
@@ -281,6 +283,12 @@ inputs:
   ca/security_options_deductions: "0"
   ca/limited_partnership_losses_of_other_years: "0"
   ca/non_capital_losses_of_other_years: "0"
+  ca/net_capital_losses_before_may_23_1985: "0"
+  ca/pre_1986_deductions_before_1988: "0"
+  ca/pre_1986_deductions_1988_and_1989: "0"
+  ca/pre_1986_deductions_1990_to_1999: "0"
+  ca/pre_1986_deductions_2000: "0"
+  ca/pre_1986_deductions_2001_to_2024: "0"
   ca/unapplied_net_capital_losses_1985_to_1987: "0"
   ca/unapplied_net_capital_losses_1988_and_1989: "0"
   ca/unapplied_net_capital_losses_1990_to_1999: "0"
@@ -464,6 +472,9 @@ expected:
   ca/cpp_first_additional_contributions: "65.00"
   ca/cpp_second_additional_contributions: "0"
   ca/cpp_enhanced_contributions: "65.00"
+  ca/cpp_required_base_and_first_additional_contributions: "386.75"
+  ca/cpp_part_5_line_57: "321.75"
+  ca/cpp_part_5_line_69: "65.00"
   ca/ei_premiums: "164.00"
   ca/rrsp_contributions_available: "0"
   ca/rrsp_deduction_maximum: "0"
@@ -480,12 +491,14 @@ expected:
   ca/net_income: "9935.00"
   ca/amt_part_1_subtotal: "9935.00"
   ca/amt_applicable_rate_amount: "32.50"
+  ca/amt_adjusted_income_with_gains: "9935.00"
   ca/net_income_before_adjustments: "9935.00"
   ca/fhsa_unused_contributions_carried_forward: "0"
   ca/other_payments_limit_income: "9935.00"
   ca/total_adjusted_net_capital_losses: "0.00"
   ca/net_capital_losses_available_to_claim: "0.00"
   ca/net_capital_losses_of_other_years: "0"
+  ca/net_capital_loss_balance_before_may_23_1985: "0.00"
   ca/net_capital_loss_balance_1985_to_1987: "0.00"
   ca/net_capital_loss_balance_1988_and_1989: "0.00"
   ca/net_capital_loss_balance_1990_to_1999: "0.00"
@@ -640,6 +653,12 @@ expected:
   ca/rc381_part_2_line_h: "9900.00"
   ca/rc381_part_2_line_i: "81200.00"
   ca/rc381_part_2_line_j: "3500.00"
+  ca/rc381_part_3_line_20: "321.75"
+  ca/rc381_part_3_line_21: "65.00"
+  ca/amt_basic_federal_tax: "-1181.85"
+  ca/amt_federal_surtax_at_48_percent: "-567.29"
+  ca/amt_regular_net_federal_tax_payable: "0"
+  ca/amt_special_foreign_tax_credit: "0"
 """
 
 

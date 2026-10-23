@@ -54,6 +54,7 @@ from app.domain.trace import (
     ItemSumLine,
     LesserOfLine,
     LesserOfWhenPositiveLine,
+    LesserOfWithMaximumLine,
     MultipleOverLine,
     PercentageAppliedLine,
     PerUnitAmountLine,
@@ -66,6 +67,7 @@ from app.domain.trace import (
     RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
+    SignChosenDifferenceLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
@@ -85,8 +87,10 @@ from app.jurisdictions.ca.trace import (
     DispositionGainLine,
     DispositionGainOnlyLine,
     DispositionProceedsLine,
+    ForeignTaxCreditLine,
     NetCapitalLossesRowLine,
     OtherDependantMedicalLine,
+    PooledForeignTaxCreditLine,
     PrincipalResidenceGainLine,
     RecapturedCcaLine,
     ShortTermRentalNonCompliantCcaByClassLine,
@@ -94,7 +98,11 @@ from app.jurisdictions.ca.trace import (
     ShortTermRentalNonCompliantLine,
     TerminalLossLine,
 )
-from app.jurisdictions.ca_on.trace import CaregiverClaimLessClaimedLine, PlacementCreditLine
+from app.jurisdictions.ca_on.trace import (
+    CaregiverClaimLessClaimedLine,
+    PlacementCreditLine,
+    ProvincialForeignTaxCreditLine,
+)
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
@@ -389,6 +397,60 @@ def test_renders_the_divided_figures_without_trailing_zeros_or_an_exponent() -> 
 
 
 # --- subtractions ----------------------------
+# --- differences chosen by a sign -----------------------------------------------
+#
+# Not negative: "<output>: <difference kind> <difference> (<sign kind> <sign> is not negative) =
+# <result>". Negative: "<output>: <sign kind> <sign> is negative, lesser of <reference kind>
+# <reference> and <difference kind> <difference>, as a negative = <result>". Figures as given
+# without trailing zeros.
+
+
+def test_renders_the_difference_when_the_sign_amount_is_positive() -> None:
+    line = SignChosenDifferenceLine(
+        NET_AMOUNT, GROSS_AMOUNT, D("100"), REDUCTION, D("30"), RATED_AMOUNT, D("70"), D("70")
+    )
+
+    assert render(line) == "net_amount: rated_amount 70 (gross_amount 100 is not negative) = 70"
+
+
+def test_renders_the_difference_when_the_sign_amount_is_zero() -> None:
+    line = SignChosenDifferenceLine(
+        NET_AMOUNT, GROSS_AMOUNT, D("0.00"), REDUCTION, D("0.00"), RATED_AMOUNT, D("0.00"), D("0")
+    )
+
+    assert render(line) == "net_amount: rated_amount 0 (gross_amount 0 is not negative) = 0"
+
+
+def test_renders_the_lesser_figure_as_a_negative_when_the_sign_amount_is_negative() -> None:
+    line = SignChosenDifferenceLine(
+        NET_AMOUNT, GROSS_AMOUNT, D("-100"), REDUCTION, D("30"), RATED_AMOUNT, D("130"), D("-30")
+    )
+
+    assert render(line) == (
+        "net_amount: gross_amount -100 is negative, lesser of reduction 30 and "
+        "rated_amount 130, as a negative = -30"
+    )
+
+
+def test_renders_the_sign_chosen_figures_without_trailing_zeros_or_an_exponent() -> None:
+    line = SignChosenDifferenceLine(
+        NET_AMOUNT,
+        GROSS_AMOUNT,
+        D("-1.00E+2"),
+        REDUCTION,
+        D("30.500"),
+        RATED_AMOUNT,
+        D("130.50"),
+        D("-30.500"),
+    )
+
+    assert render(line) == (
+        "net_amount: gross_amount -100 is negative, lesser of reduction 30.5 and "
+        "rated_amount 130.5, as a negative = -30.5"
+    )
+
+
+# --- subtractions ---------------------------------------------------------------
 
 
 def test_renders_a_subtraction() -> None:
@@ -538,6 +600,64 @@ def test_renders_the_lesser_of_one_amount() -> None:
 
 
 # --- greater of amounts ----------------------------
+# --- lesser of amounts and a maximum ---------------------------------------------------
+#
+# "<output>: lesser of <part> <amount> and <part> <amount> and <maximum> (<rule>) = <result>", every
+# figure as given without trailing zeros, the result last.
+
+
+def test_renders_the_lesser_of_two_amounts_and_a_maximum() -> None:
+    line = LesserOfWithMaximumLine(
+        LESSER_AMOUNT,
+        ((PART_ONE, D("2500")), (PART_TWO, D("3000"))),
+        Amount(D("2000")),
+        NO_ROUNDING,
+        D("2000"),
+    )
+
+    assert render(line) == (
+        "lesser_amount: lesser of part_one 2500 and part_two 3000 and 2000 (no rounding) = 2000"
+    )
+
+
+def test_renders_the_lesser_of_amounts_and_a_maximum_in_the_order_of_the_line() -> None:
+    line = LesserOfWithMaximumLine(
+        LESSER_AMOUNT,
+        ((PART_TWO, D("150")), (PART_ONE, D("80.50"))),
+        Amount(D("2000")),
+        NO_ROUNDING,
+        D("80.50"),
+    )
+
+    assert render(line) == (
+        "lesser_amount: lesser of part_two 150 and part_one 80.5 and 2000 (no rounding) = 80.5"
+    )
+
+
+def test_renders_the_lesser_of_one_amount_and_a_maximum() -> None:
+    line = LesserOfWithMaximumLine(
+        LESSER_AMOUNT, ((PART_TWO, D("40.5")),), Amount(D("2000")), NO_ROUNDING, D("40.5")
+    )
+
+    assert render(line) == "lesser_amount: lesser of part_two 40.5 and 2000 (no rounding) = 40.5"
+
+
+def test_renders_the_lesser_of_amounts_and_a_maximum_with_the_rounding_rule() -> None:
+    line = LesserOfWithMaximumLine(
+        LESSER_AMOUNT,
+        ((PART_ONE, D("80.005")), (PART_TWO, D("150"))),
+        Amount(D("2000.00")),
+        CENT,
+        D("80.01"),
+    )
+
+    assert render(line) == (
+        "lesser_amount: lesser of part_one 80.005 and part_two 150 and 2000 (half-up to 0.01)"
+        " = 80.01"
+    )
+
+
+# --- greater of amounts -------------------------------------------------------------------
 
 
 def test_renders_the_greater_of_two_amounts() -> None:
@@ -2571,6 +2691,20 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             "rated_amount: gross_amount 3795 divided by 14.5% (half-up to 0.01) = 26172.41",
         ),
         (
+            SignChosenDifferenceLine(
+                NET_AMOUNT,
+                GROSS_AMOUNT,
+                D("-100.00"),
+                REDUCTION,
+                D("30.00"),
+                RATED_AMOUNT,
+                D("130.00"),
+                D("-30.00"),
+            ),
+            "net_amount: gross_amount -100 is negative, lesser of reduction 30 and "
+            "rated_amount 130, as a negative = -30",
+        ),
+        (
             SubtractedLine(
                 NET_AMOUNT, GROSS_AMOUNT, D("100.250"), REDUCTION, D("40.00"), D("60.250")
             ),
@@ -2598,6 +2732,17 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
                 LESSER_AMOUNT, ((PART_ONE, D("1500.2500")), (PART_TWO, D("1E+3"))), D("1E+3")
             ),
             "lesser_amount: lesser of part_one 1500.25 and part_two 1000 = 1000",
+        ),
+        (
+            LesserOfWithMaximumLine(
+                LESSER_AMOUNT,
+                ((PART_ONE, D("2500.00")), (PART_TWO, D("3E+3"))),
+                Amount(D("2000.00")),
+                NO_ROUNDING,
+                D("2000.00"),
+            ),
+            "lesser_amount: lesser of part_one 2500 and part_two 3000 and 2000 (no rounding)"
+            " = 2000",
         ),
         (
             GreaterOfLine(
@@ -3774,4 +3919,149 @@ def test_renders_an_amount_when_more_without_trailing_zeros() -> None:
 
     assert render(line) == (
         "allowed_amount: claimed_amount 1500 if gate_amount 2 is more than claim_limit 1 = 1500"
+    )
+
+
+# --- foreign tax credit (Form T2209 lines 1 to 3) --------------------------------------------
+
+
+def foreign_country(
+    position: int,
+    tax_paid: str,
+    income: str,
+    line_2: str,
+    result: str,
+    rounding: RoundingRule = CENT,
+) -> ForeignTaxCreditLine:
+    return ForeignTaxCreditLine(
+        NON_COMPLIANT_EXPENSES,
+        position,
+        D(tax_paid),
+        D(income),
+        D("100000"),
+        D("14000"),
+        rounding,
+        D(line_2),
+        D(result),
+    )
+
+
+def test_renders_one_country_by_position() -> None:
+    line = foreign_country(1, "1500", "10000", "1400.00", "1400.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: country 1: tax paid 1500, 10000 net foreign income x "
+        "14000 basic federal tax / 100000 net income = 1400 (half-up to 0.01); credit 1400"
+    )
+
+
+def test_renders_a_country_whose_tax_paid_is_the_lesser() -> None:
+    line = foreign_country(2, "100", "5000", "700.00", "100")
+
+    assert render(line) == (
+        "non_compliant_expenses: country 2: tax paid 100, 5000 net foreign income x "
+        "14000 basic federal tax / 100000 net income = 700 (half-up to 0.01); credit 100"
+    )
+
+
+def test_renders_a_country_without_rounding() -> None:
+    line = foreign_country(1, "100", "0.015", "0.0021", "0.0021", rounding=NO_ROUNDING)
+
+    assert render(line) == (
+        "non_compliant_expenses: country 1: tax paid 100, 0.015 net foreign income x "
+        "14000 basic federal tax / 100000 net income = 0.0021 (no rounding); credit 0.0021"
+    )
+
+
+def pooled_countries(
+    countries: int, tax_paid: str, income: str, line_2: str, result: str
+) -> PooledForeignTaxCreditLine:
+    return PooledForeignTaxCreditLine(
+        NON_COMPLIANT_EXPENSES,
+        countries,
+        D(tax_paid),
+        D(income),
+        D("100000"),
+        D("14000"),
+        D("200"),
+        CENT,
+        D(line_2),
+        D(result),
+    )
+
+
+def test_renders_a_pooled_calculation_naming_why_it_is_pooled() -> None:
+    line = pooled_countries(2, "200.00", "10100", "1414.00", "200.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: all 2 countries pooled, total tax paid 200 is not more than 200: "
+        "10100 net foreign income x 14000 basic federal tax / 100000 net income = 1414 "
+        "(half-up to 0.01); credit 200"
+    )
+
+
+def test_renders_a_single_country_as_one_country_not_pooled_by_the_threshold() -> None:
+    line = pooled_countries(1, "1500", "10000", "1400.00", "1400.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: one country: tax paid 1500, 10000 net foreign income x "
+        "14000 basic federal tax / 100000 net income = 1400 (half-up to 0.01); credit 1400"
+    )
+
+
+# --- provincial foreign tax credit (Form T2036 lines 1 to 5) ----------------------------------
+
+
+def provincial_sheet(
+    position: int,
+    tax_paid: str,
+    federal_credit: str,
+    line_3: str,
+    income: str,
+    line_4: str,
+    result: str,
+    rounding: RoundingRule = CENT,
+) -> ProvincialForeignTaxCreditLine:
+    return ProvincialForeignTaxCreditLine(
+        NON_COMPLIANT_EXPENSES,
+        position,
+        D(tax_paid),
+        D(federal_credit),
+        D(line_3),
+        D(income),
+        D("100000"),
+        D("5000"),
+        rounding,
+        D(line_4),
+        D(result),
+    )
+
+
+def test_renders_one_sheet_by_position() -> None:
+    line = provincial_sheet(1, "1500", "1400.00", "100.00", "10000", "500.00", "100.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 1: tax paid 1500 less federal credit 1400 = 100; "
+        "10000 net foreign income x 5000 provincial tax / 100000 net income = 500 "
+        "(half-up to 0.01); credit 100"
+    )
+
+
+def test_renders_a_sheet_whose_line_4_is_the_lesser() -> None:
+    line = provincial_sheet(2, "1500", "0", "1500", "10000", "500.00", "500.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 2: tax paid 1500 less federal credit 0 = 1500; "
+        "10000 net foreign income x 5000 provincial tax / 100000 net income = 500 "
+        "(half-up to 0.01); credit 500"
+    )
+
+
+def test_renders_a_sheet_without_rounding() -> None:
+    line = provincial_sheet(1, "5", "0", "5", "0.015", "0.00075", "0.00075", rounding=NO_ROUNDING)
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 1: tax paid 5 less federal credit 0 = 5; "
+        "0.015 net foreign income x 5000 provincial tax / 100000 net income = 0.00075 "
+        "(no rounding); credit 0.00075"
     )

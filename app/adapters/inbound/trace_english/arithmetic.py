@@ -18,6 +18,7 @@ from app.domain.trace.arithmetic import (
     GreaterOfLine,
     LesserOfLine,
     LesserOfWhenPositiveLine,
+    LesserOfWithMaximumLine,
     MultipleOverLine,
     PercentageAppliedLine,
     PerUnitAmountLine,
@@ -27,6 +28,7 @@ from app.domain.trace.arithmetic import (
     RatioAppliedLine,
     RatioTruncatedLine,
     RoundedTotalLine,
+    SignChosenDifferenceLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
@@ -124,6 +126,33 @@ class DividedByRateRenderer:
 
 
 @english_renderer
+class SignChosenDifferenceRenderer:
+    """English text for SignChosenDifferenceLine."""
+
+    line_class = SignChosenDifferenceLine
+
+    def render(self, line: SignChosenDifferenceLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        sign = line.sign
+        sign_amount = EnglishFigures.money(line.sign_amount)
+        reference = line.reference
+        difference = line.difference
+        difference_amount = EnglishFigures.money(line.difference_amount)
+        result = EnglishFigures.money(line.result)
+        if line.sign_amount >= 0:
+            return (
+                f"{output.label}: {difference.label} {difference_amount} "
+                f"({sign.label} {sign_amount} is not negative) = {result}"
+            )
+        return (
+            f"{output.label}: {sign.label} {sign_amount} is negative, lesser of "
+            f"{reference.label} {EnglishFigures.money(line.reference_amount)} and "
+            f"{difference.label} {difference_amount}, as a negative = {result}"
+        )
+
+
+@english_renderer
 class SubtractedRenderer:
     """English text for SubtractedLine."""
 
@@ -216,6 +245,26 @@ class LesserOfRenderer:
             f"{kind.label} {EnglishFigures.money(amount)}" for kind, amount in parts
         )
         return f"{output.label}: lesser of {terms} = {EnglishFigures.money(result)}"
+
+
+@english_renderer
+class LesserOfWithMaximumRenderer:
+    """English text for LesserOfWithMaximumLine."""
+
+    line_class = LesserOfWithMaximumLine
+
+    def render(self, line: LesserOfWithMaximumLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        maximum = line.maximum
+        rule = line.rounding
+        terms = " and ".join(
+            f"{kind.label} {EnglishFigures.money(amount)}" for kind, amount in line.parts
+        )
+        return (
+            f"{output.label}: lesser of {terms} and {EnglishFigures.money(maximum.value)} "
+            f"({EnglishFigures.rounding(rule)}) = {EnglishFigures.money(line.result)}"
+        )
 
 
 @english_renderer
