@@ -5,12 +5,12 @@ selections live in the part `03b_t2125.yaml` under the `form:` key; the caller s
 statements as the record list `ca/t2125_statements`, whose fields are the T2125 inputs; and the form
 exports its line 9946, "Your net income (loss)", which T1 line 13500 "Net" totals over the
 statements. The entries of the form are listed in `manifest_families/t2125.py`. The five printed
-constants of Charts B and C stay selections of the return too (the part
-`03f_t2125_vehicle_limits.yaml`), as Form T2121 still reads them there.
+constants of Charts B and C are the form's own copies; the return selects none of them.
 """
 
 from __future__ import annotations
 
+from itertools import chain
 from pathlib import Path
 
 import yaml
@@ -29,7 +29,6 @@ from tests.jurisdictions.ca_on.manifest_families import t2125
 
 CA_ON = JurisdictionCode("CA-ON")
 PART = Path(app.jurisdictions.ca_on.__file__).parent / "manifests" / "v1" / "03b_t2125.yaml"
-LIMITS_PART = PART.with_name("03f_t2125_vehicle_limits.yaml")
 INCOME_PART = PART.with_name("03_income.yaml")
 INPUTS_PART = PART.with_name("01_inputs.yaml")
 VEHICLE_CONSTANTS = frozenset(
@@ -89,27 +88,29 @@ def test_the_form_holds_the_55_t2125_selections_unchanged() -> None:
     assert set(found.capabilities) == t2125.FORM_STEPS
 
 
-def test_the_return_selects_only_the_total_of_line_9946_and_the_five_printed_constants() -> None:
+def test_the_return_selects_only_the_total_of_line_9946_and_none_of_the_form_steps() -> None:
     (default, *_) = manifest().forms
     selected = set(default.capabilities)
 
     assert t2125.STEPS <= selected
-    # What the form holds, the return holds only for the five constants Form T2121 reads.
-    assert selected & t2125.FORM_STEPS == t2125.STEPS & t2125.FORM_STEPS
-    assert {step.produces["output"] for step in selected & t2125.FORM_STEPS} == VEHICLE_CONSTANTS
+    # What the form holds, the return holds not at all: the five printed constants of Charts B and C
+    # are the form's own copies, and no part of the return selects them.
+    assert not selected & t2125.FORM_STEPS
+    produced = set(chain.from_iterable(step.produces.values() for step in selected))
+    assert not produced & VEHICLE_CONSTANTS
 
 
-def test_the_vehicle_constants_part_holds_exactly_the_five_constants() -> None:
-    steps = yaml.safe_load(LIMITS_PART.read_text())["capabilities"]
+def test_the_form_has_its_own_copy_of_the_five_constants() -> None:
+    own = [step for step in form().capabilities if step.produces["output"] in VEHICLE_CONSTANTS]
 
-    assert "form" not in yaml.safe_load(LIMITS_PART.read_text())
-    assert [step["name"] for step in steps] == ["core/credit_amount"] * 5
-    assert {step["produces"]["output"] for step in steps} == VEHICLE_CONSTANTS
+    assert [step.name for step in own] == ["core/credit_amount"] * 5
+    assert {step.produces["output"] for step in own} == VEHICLE_CONSTANTS
+    assert not PART.with_name("03f_t2125_vehicle_limits.yaml").exists()
 
 
 def test_the_t2125_part_is_not_over_30_kb_and_the_other_parts_hold_no_t2125_input() -> None:
     assert PART.stat().st_size <= 30 * 1024
-    for other in (INCOME_PART, INPUTS_PART, LIMITS_PART):
+    for other in (INCOME_PART, INPUTS_PART):
         text = other.read_text()
         for identifier in t2125.FORM_INPUTS:
             assert f"- {identifier}\n" not in text, (other.name, identifier)

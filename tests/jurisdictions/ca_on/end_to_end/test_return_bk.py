@@ -24,8 +24,8 @@ FARM_2: dict[str, Any] = {"farm": {"fertilizers_and_lime": "2000"}}
 
 def bk_inputs(statements: tuple[dict[str, Any], ...]) -> dict[str, Any]:
     """Return BK's inputs, as in `returns/2025_return_bk.yaml`: a sole proprietor with the T2042
-    `statements` given (none: no farming business), no business, no rental operation and no other
-    income."""
+    `statements` given (none: no farming business), no business, no fishing, no rental operation
+    and no other income."""
     return {
         "employment_income": "0",
         "share_dispositions": (),
@@ -37,6 +37,7 @@ def bk_inputs(statements: tuple[dict[str, Any], ...]) -> dict[str, Any]:
         "rental_statements": (),
         "business_statements": (),
         "farm_statements": statements,
+        "fish_statements": (),
     }
 
 

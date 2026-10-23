@@ -722,6 +722,7 @@ from app.jurisdictions.ca.catalog import (
     T657_T2048_LINE_17217_FOR_2024,
     T776_STATEMENTS,
     T2042_STATEMENTS,
+    T2121_STATEMENTS,
     T2125_STATEMENTS,
     T5013_DIVIDEND_TAX_CREDIT,
     T5013_INVESTMENT_INCOME,
@@ -1503,6 +1504,27 @@ def fish_cca_classes(
     return Artifact(kind, RecordList(kind.fields, records))
 
 
+def t2121_statement(
+    *,
+    fish: Mapping[str, str] | None = None,
+    fish_partner: int = 0,
+    fish_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+) -> dict[ArtifactKind[Any], object]:
+    """One Form T2121 statement, a record of `ca/t2121_statements`: its inputs, as given or 0."""
+    artifacts: list[Artifact[Any]] = [
+        *fish_amount_artifacts(fish or {}),
+        Artifact(FISH_PARTNER, fish_partner),
+        fish_cca_classes(*fish_cca_classes_rows),
+    ]
+    return {artifact.kind: artifact.value for artifact in artifacts}
+
+
+def t2121_statements(statements: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
+    """The statements of Form T2121, one record for each mapping of `t2121_statement` arguments."""
+    records = [t2121_statement(**statement) for statement in statements]
+    return Artifact(T2121_STATEMENTS, RecordList(T2121_STATEMENTS.fields, records))
+
+
 def trip(individual: int, zone: int, column_3: str, column_4: str, column_5: str) -> dict[Any, Any]:
     """A Form T2222 Chart B record: the individual, the zone (1 for A, 2 for B), columns 3 to 5."""
     return {
@@ -1731,6 +1753,7 @@ def starting(
     farm: Mapping[str, str] | None = None,
     farm_partner: int = 0,
     farm_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    fish_statements: tuple[Mapping[str, Any], ...] | None = None,
     fish: Mapping[str, str] | None = None,
     fish_partner: int = 0,
     fish_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
@@ -2178,6 +2201,17 @@ def starting(
             },
         )
     )
+    fish_statement_list: tuple[Mapping[str, Any], ...] = (
+        fish_statements
+        if fish_statements is not None
+        else (
+            {
+                "fish": fish,
+                "fish_partner": fish_partner,
+                "fish_cca_classes_rows": fish_cca_classes_rows,
+            },
+        )
+    )
     return (
         Artifact(EMPLOYMENT_INCOME, D(employment_income)),
         dispositions(QSBCS_DISPOSITIONS, *qsbcs_dispositions),
@@ -2256,9 +2290,7 @@ def starting(
         t776_statements(statements),
         t2125_statements(business_statement_list),
         t2042_statements(farm_statement_list),
-        *fish_amount_artifacts(fish or {}),
-        Artifact(FISH_PARTNER, fish_partner),
-        fish_cca_classes(*fish_cca_classes_rows),
+        t2121_statements(fish_statement_list),
         Artifact(TAXABLE_SUPPORT_PAYMENTS, D(taxable_support_payments)),
         Artifact(RRSP_INCOME, D(rrsp_income)),
         Artifact(FHSA_INCOME, D(fhsa_income)),

@@ -3,8 +3,7 @@
 # statement's fields are the T2042 inputs. The form exports its line 9946 "Your net income (loss)",
 # which T1 line 14100 "Net" adds over the statements, and the lines nothing on the return reads,
 # which the return declares as outputs, one record for each statement. The five printed constants
-# of Charts B and C are the form's own copies of the steps of the part
-# `03f_t2125_vehicle_limits.yaml`, which Form T2121 still reads from the return.
+# of Charts B and C are the form's own copies of the datasets of the same name.
 form:
   name: ca/t2042
   instances: ca/t2042_statements

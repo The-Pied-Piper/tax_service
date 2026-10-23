@@ -6,8 +6,7 @@ run once for each statement of `ca/t2042_statements`, whose fields are the T2042
 `ca/t2042.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the two
 nothing reads (`OUTPUTS` is empty). The return's own entries are the instances input and the total
 of the net income over the statements that is T1 line 14100 (`STEPS` and `WIRING`); the form has
-its own copy of the five printed constants of Charts B and C, which Form T2121 still reads from the
-return.
+its own copy of the five printed constants of Charts B and C.
 """
 
 from __future__ import annotations

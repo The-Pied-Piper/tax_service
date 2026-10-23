@@ -4,10 +4,9 @@ T2125 is a form of the manifest: its 55 selections belong to the form `ca/t2125`
 run once for each statement of `ca/t2125_statements`, whose fields are the T2125 inputs
 (`FORM_INPUTS`). The form exports three artifacts, each readable by the other forms as
 `ca/t2125.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the two
-nothing reads (`OUTPUTS` is empty). The return's own entries are the instances input, the total of
-the net income over the statements that is T1 line 13500 (`STEPS` and `WIRING`), and the five
-printed constants of Charts B and C that Form T2121 reads (the form has its own copy of
-each).
+nothing reads (`OUTPUTS` is empty). The return's own entries are the instances input and the total
+of the net income over the statements that is T1 line 13500 (`STEPS` and `WIRING`); the form has
+its own copy of the five printed constants of Charts B and C.
 """
 
 from __future__ import annotations
@@ -939,44 +938,13 @@ FORM_EXPORTS = (
 # export nobody reads is fine, so the return declares no output for them.
 OUTPUTS: frozenset[str] = frozenset()
 
-# T1 line 13500 "Net": the total of T2125 line 9946 over the statements; and the five printed
-# constants of Charts B and C that Form T2121 reads from the return.
+# T1 line 13500 "Net": the total of T2125 line 9946 over the statements.
 STEPS = {
     CapabilitySelection(
         name="core/record_total",
         params={},
         consumes={"records": "ca/t2125.business_income"},
         produces={"output": "ca/business_income"},
-    ),
-    CapabilitySelection(
-        name="core/credit_amount",
-        params={"amount": "ca/business_vehicle_interest_limit"},
-        consumes={},
-        produces={"output": "ca/business_vehicle_interest_limit"},
-    ),
-    CapabilitySelection(
-        name="core/credit_amount",
-        params={"amount": "ca/business_vehicle_days_divisor"},
-        consumes={},
-        produces={"output": "ca/business_vehicle_days_divisor"},
-    ),
-    CapabilitySelection(
-        name="core/credit_amount",
-        params={"amount": "ca/business_vehicle_list_price_limit"},
-        consumes={},
-        produces={"output": "ca/business_vehicle_list_price_limit"},
-    ),
-    CapabilitySelection(
-        name="core/credit_amount",
-        params={"amount": "ca/business_vehicle_lease_charge_limit"},
-        consumes={},
-        produces={"output": "ca/business_vehicle_lease_charge_limit"},
-    ),
-    CapabilitySelection(
-        name="core/credit_amount",
-        params={"amount": "ca/business_vehicle_lease_cost_limit"},
-        consumes={},
-        produces={"output": "ca/business_vehicle_lease_cost_limit"},
     ),
 }
 
@@ -1471,9 +1439,4 @@ FORM_WIRING = {
 
 WIRING = {
     (RecordTotal, frozenset({NET_INCOME_PER_STATEMENT}), frozenset({BUSINESS_INCOME})),
-    (CreditAmount, frozenset(), frozenset({BUSINESS_VEHICLE_INTEREST_LIMIT})),
-    (CreditAmount, frozenset(), frozenset({BUSINESS_VEHICLE_DAYS_DIVISOR})),
-    (CreditAmount, frozenset(), frozenset({BUSINESS_VEHICLE_LIST_PRICE_LIMIT})),
-    (CreditAmount, frozenset(), frozenset({BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT})),
-    (CreditAmount, frozenset(), frozenset({BUSINESS_VEHICLE_LEASE_COST_LIMIT})),
 }

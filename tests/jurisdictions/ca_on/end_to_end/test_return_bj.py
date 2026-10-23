@@ -24,7 +24,8 @@ BUSINESS_2: dict[str, Any] = {"business": {"advertising": "2000"}}
 
 def bj_inputs(statements: tuple[dict[str, Any], ...]) -> dict[str, Any]:
     """Return BJ's inputs, as in `returns/2025_return_bj.yaml`: a sole proprietor with the T2125
-    `statements` given (none: no business), no farm, no rental operation and no other income."""
+    `statements` given (none: no business), no farm, no fishing, no rental operation and no
+    other income."""
     return {
         "employment_income": "0",
         "share_dispositions": (),
@@ -36,6 +37,7 @@ def bj_inputs(statements: tuple[dict[str, Any], ...]) -> dict[str, Any]:
         "rental_statements": (),
         "business_statements": statements,
         "farm_statements": (),
+        "fish_statements": (),
     }
 
 
