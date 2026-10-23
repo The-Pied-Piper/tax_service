@@ -135,8 +135,13 @@ class CcaRow:
 
     @property
     def note_3_applies(self) -> bool:
-        """Whether recapture and a terminal loss apply to the row's class."""
-        return self.class_rate.recapture_and_terminal_loss is RecaptureAndTerminalLoss.APPLIES
+        """Whether recapture and a terminal loss apply to the row's class: Note 3 "Recapture and
+        terminal loss do not apply to a Class 10.1 property unless it is a DIEP", so a row of an
+        excluded class with any DIEP additions (column 4) is not excluded."""
+        return (
+            self.class_rate.recapture_and_terminal_loss is RecaptureAndTerminalLoss.APPLIES
+            or self.diep_additions > _ZERO
+        )
 
 
 @dataclass(frozen=True)
@@ -291,9 +296,8 @@ class CcaTable(Capability):
             )
         limit = self._limit(row, maximum)
         if row.claimed > limit:
-            detail = (
-                f" ({maximum} less column 22 {row.column_22})" if row.column_22 != _ZERO else ""
-            )
+            plus = f" plus column 9 {row.immediate_expensing}" if row.immediate_expensing else ""
+            detail = f" ({maximum}{plus} less column 22 {row.column_22})" if row.column_22 else ""
             raise InputAboveBoundError(
                 f"item {row.position}: {CCA_CLAIMED.identifier} {row.claimed} is above the "
                 f"maximum {limit}{detail}"

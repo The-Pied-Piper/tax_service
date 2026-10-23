@@ -512,3 +512,44 @@ def test_terminal_loss_depends_only_on_column_7() -> None:
     (output,) = capability.compute((diep_classes(last),)).outputs
 
     assert output == Artifact(TERMINAL_LOSS, D("4000"))
+
+
+def test_a_class_10_1_row_with_a_diep_has_a_recapture() -> None:
+    # Note 3: "Recapture and terminal loss do not apply to a Class 10.1 property unless it is a
+    # DIEP". Column 7 is 0 + 10,000 - 12,000 = -2,000: a recapture of 2,000.
+    row_10_1 = diep_row(
+        "10.1", "0", "10000", "12000", diep_additions="10000", diep_proceeds="10000"
+    )
+    capability = RecapturedCca(class_rates(), DIEP_CLASSES, RECAPTURED_CCA)
+
+    (output,) = capability.compute((diep_classes(row_10_1),)).outputs
+
+    assert output == Artifact(RECAPTURED_CCA, D("2000"))
+
+
+def test_a_class_10_1_row_without_a_diep_has_no_recapture_or_terminal_loss() -> None:
+    row_10_1 = diep_row("10.1", "0", "10000", "12000")
+    last = diep_row("10.1", "0", "4000", no_property_left=1)
+
+    (recapture,) = (
+        RecapturedCca(class_rates(), DIEP_CLASSES, RECAPTURED_CCA)
+        .compute((diep_classes(row_10_1),))
+        .outputs
+    )
+    (loss,) = (
+        TerminalLoss(class_rates(), DIEP_CLASSES, TERMINAL_LOSS)
+        .compute((diep_classes(last),))
+        .outputs
+    )
+
+    assert recapture == Artifact(RECAPTURED_CCA, D("0"))
+    assert loss == Artifact(TERMINAL_LOSS, D("0"))
+
+
+def test_a_class_10_1_row_with_a_diep_and_no_property_left_has_a_terminal_loss() -> None:
+    last = diep_row("10.1", "0", "4000", diep_additions="4000", no_property_left=1)
+    capability = TerminalLoss(class_rates(), DIEP_CLASSES, TERMINAL_LOSS)
+
+    (output,) = capability.compute((diep_classes(last),)).outputs
+
+    assert output == Artifact(TERMINAL_LOSS, D("4000"))
