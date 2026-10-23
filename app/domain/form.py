@@ -28,6 +28,7 @@ forms always have instances (each can never hold).
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from decimal import Decimal
 from typing import Any
@@ -246,8 +247,9 @@ class FormSet:
         group, are a ValidationError naming the form or the group, before any form runs.
         """
         kinds = [artifact.kind for artifact in artifacts]
+        counts = Counter(kinds)
         for kind in kinds:
-            if kinds.count(kind) > 1:
+            if counts[kind] > 1:
                 raise DuplicateArtifactError(f"two starting values for {kind.label!r}")
         given = {artifact.kind: artifact for artifact in artifacts}
         self._check_given(given)
