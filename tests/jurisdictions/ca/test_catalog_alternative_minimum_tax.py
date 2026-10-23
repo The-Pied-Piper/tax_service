@@ -9,6 +9,7 @@ import pytest
 from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
 from app.domain.errors import NegativeArtifactError
 from app.jurisdictions.ca.catalog import (
+    AMT_ADDITIONAL_TAXES_FOR_CARRYOVER,
     AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
     AMT_ADJUSTED_TAXABLE_INCOME,
@@ -26,6 +27,9 @@ from app.jurisdictions.ca.catalog import (
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CARRYOVER_AVAILABLE_FOR_2026,
+    AMT_CARRYOVER_BALANCE,
+    AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
@@ -109,6 +113,13 @@ from app.jurisdictions.ca.catalog import (
     AMT_PART_6_SURTAX_IF_NON_RESIDENT,
     AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_PART_6_TAX_WITH_SURTAX,
+    AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+    AMT_PART_7_CREDITS_TOTAL,
+    AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE,
+    AMT_PART_7_FOREIGN_CREDIT_SHARE,
+    AMT_PART_7_FOREIGN_TAXES_PAID,
+    AMT_PART_7_TAX_LESS_CREDITS,
+    AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
@@ -153,6 +164,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_TAX_SHELTER_LOSSES,
     AMT_TOTAL_FOREIGN_INCOME,
     AMT_TREATY_EXEMPT_CAPITAL_GAINS,
+    AMT_UNAPPLIED_2018_CARRYOVER,
 )
 from tests.jurisdictions.ca.catalog_snapshot import SIGNED
 
@@ -333,6 +345,29 @@ PART_6_KINDS: tuple[ArtifactKind[Decimal], ...] = (
 )
 # Part 6 line 11: the count of the condition "you have an amount on line 10".
 PART_6_COUNTS: tuple[ArtifactKind[int], ...] = (AMT_PART_6_HAS_AMOUNT_ON_LINE_10,)
+
+# Part 7 lines 1 to 14: the additional taxes paid for minimum tax carryover, from the basic federal
+# tax with the recapture to the foreign credit share, the tax less the credits plus the share, and
+# line 14, the additional taxes that Part 8 line 14 reads.
+PART_7_KINDS: tuple[ArtifactKind[Decimal], ...] = (
+    AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+    AMT_PART_7_CREDITS_TOTAL,
+    AMT_PART_7_TAX_LESS_CREDITS,
+    AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE,
+    AMT_PART_7_FOREIGN_TAXES_PAID,
+    AMT_PART_7_FOREIGN_CREDIT_SHARE,
+    AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
+    AMT_ADDITIONAL_TAXES_FOR_CARRYOVER,
+)
+
+# Part 8 lines 13 to 17: the balance of the minimum tax carryover available for later years, with
+# the additional 2025 taxes, and the total available for 2026, less the unapplied 2018 carryover.
+PART_8_KINDS: tuple[ArtifactKind[Decimal], ...] = (
+    AMT_CARRYOVER_BALANCE,
+    AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
+    AMT_UNAPPLIED_2018_CARRYOVER,
+    AMT_CARRYOVER_AVAILABLE_FOR_2026,
+)
 
 
 # Part 2 lines 1 to 7 and Part 8 lines 1 to 12: the basic federal tax and the minimum tax
@@ -753,6 +788,40 @@ def test_the_part_6_counts_are_the_registered_ones(registry: ArtifactRegistry) -
         assert registry.get(kind.identifier) is kind
 
 
+def test_the_part_7_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert (
+        registry.get("ca/amt_part_7_basic_tax_with_recapture")
+        is AMT_PART_7_BASIC_TAX_WITH_RECAPTURE
+    )
+    assert registry.get("ca/amt_part_7_credits_total") is AMT_PART_7_CREDITS_TOTAL
+    assert registry.get("ca/amt_part_7_tax_less_credits") is AMT_PART_7_TAX_LESS_CREDITS
+    assert (
+        registry.get("ca/amt_part_7_foreign_credit_difference")
+        is AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE
+    )
+    assert registry.get("ca/amt_part_7_foreign_taxes_paid") is AMT_PART_7_FOREIGN_TAXES_PAID
+    assert registry.get("ca/amt_part_7_foreign_credit_share") is AMT_PART_7_FOREIGN_CREDIT_SHARE
+    assert (
+        registry.get("ca/amt_part_7_tax_less_credits_plus_share")
+        is AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE
+    )
+    assert (
+        registry.get("ca/amt_additional_taxes_for_carryover") is AMT_ADDITIONAL_TAXES_FOR_CARRYOVER
+    )
+
+
+def test_the_part_8_kinds_after_line_12_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    assert registry.get("ca/amt_carryover_balance") is AMT_CARRYOVER_BALANCE
+    assert (
+        registry.get("ca/amt_carryover_balance_with_additional_taxes")
+        is AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES
+    )
+    assert registry.get("ca/amt_unapplied_2018_carryover") is AMT_UNAPPLIED_2018_CARRYOVER
+    assert registry.get("ca/amt_carryover_available_for_2026") is AMT_CARRYOVER_AVAILABLE_FOR_2026
+
+
 def test_the_alternative_minimum_tax_kinds_are_money() -> None:
     for kind in (
         PART_1_KINDS
@@ -765,6 +834,8 @@ def test_the_alternative_minimum_tax_kinds_are_money() -> None:
         + PART_4_KINDS
         + PART_5_KINDS
         + PART_6_KINDS
+        + PART_7_KINDS
+        + PART_8_KINDS
     ):
         assert kind.value_type is Decimal, kind.identifier
 
@@ -781,6 +852,8 @@ def test_the_bracketed_lines_are_signed_and_the_rest_are_not_below_zero() -> Non
         + PART_4_KINDS
         + PART_5_KINDS
         + PART_6_KINDS
+        + PART_7_KINDS
+        + PART_8_KINDS
     ):
         assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier
 
@@ -819,6 +892,45 @@ def test_the_federal_tax_payable_under_minimum_tax_refuses_a_negative_amount() -
         match="ca/amt_federal_tax_payable_under_minimum_tax cannot be negative",
     ):
         Artifact(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX, Decimal("-1"))
+
+
+def test_the_part_7_basic_tax_with_recapture_holds_a_negative_amount() -> None:
+    # Part 7 line 4, "Line 2 plus line 3": line 2 is the basic federal tax of Part 2 line 7, which
+    # is negative when the credits exceed the tax, so the sum can be negative; the form prints no
+    # floor on it, and the kind holds it.
+    assert Artifact(AMT_PART_7_BASIC_TAX_WITH_RECAPTURE, Decimal("-512.40")).value == Decimal(
+        "-512.40"
+    )
+
+
+def test_the_part_7_tax_less_credits_holds_a_negative_amount() -> None:
+    # Part 7 line 8, "Line 4 minus line 7": the form prints no floor, so a credit above the tax
+    # gives a negative difference, and the kind holds it.
+    assert Artifact(AMT_PART_7_TAX_LESS_CREDITS, Decimal("-80.00")).value == Decimal("-80.00")
+
+
+def test_the_carryover_available_for_2026_holds_a_negative_amount() -> None:
+    # Part 8 line 17, "Total minimum tax carryover available for 2026: line 15 minus line 16": the
+    # form prints no floor, so an unapplied 2018 carryover above line 15 gives a negative total.
+    assert Artifact(AMT_CARRYOVER_AVAILABLE_FOR_2026, Decimal("-25.00")).value == Decimal("-25.00")
+
+
+def test_the_unapplied_2018_carryover_refuses_a_negative_amount() -> None:
+    # Part 8 line 16, "unapplied 2018 minimum tax carryover": the caller's figure is never below
+    # zero, so a negative figure is an input error, refused and not taken as 0.
+    with pytest.raises(
+        NegativeArtifactError, match="ca/amt_unapplied_2018_carryover cannot be negative"
+    ):
+        Artifact(AMT_UNAPPLIED_2018_CARRYOVER, Decimal("-1"))
+
+
+def test_the_part_7_foreign_credit_share_refuses_a_negative_amount() -> None:
+    # Part 7 line 12, "Line 11 × [...] / [...]": line 11 is not below zero and the share is the
+    # product over the denominator, so a negative share is an input error, refused and not 0.
+    with pytest.raises(
+        NegativeArtifactError, match="ca/amt_part_7_foreign_credit_share cannot be negative"
+    ):
+        Artifact(AMT_PART_7_FOREIGN_CREDIT_SHARE, Decimal("-1"))
 
 
 def test_the_part_d_amount_15_refuses_a_negative_amount() -> None:

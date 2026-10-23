@@ -55,12 +55,16 @@ from app.jurisdictions.ca.catalog import (
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CARRYOVER_AVAILABLE_FOR_2026,
+    AMT_CARRYOVER_BALANCE,
+    AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
     AMT_CREDITS_TOTAL,
     AMT_FEDERAL_SURTAX_AT_48_PERCENT,
     AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
@@ -69,6 +73,9 @@ from app.jurisdictions.ca.catalog import (
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_PART_6_SURTAX_AT_48_PERCENT,
     AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+    AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+    AMT_PART_7_CREDITS_TOTAL,
+    AMT_PART_7_TAX_LESS_CREDITS,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
     AMT_PUBLICLY_LISTED_GIFTS_TOTAL,
@@ -78,6 +85,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
     AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
+    AMT_UNAPPLIED_2018_CARRYOVER,
     ANNUAL_GAINS_LINE_3,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -660,6 +668,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # Form T691 Part 7 line 8 "Line 4 minus line 7": line 4, 16951.38, less line 7, 0.00:
+        # 16951.38.
+        AMT_PART_7_TAX_LESS_CREDITS: SubtractedLine(
+            output=AMT_PART_7_TAX_LESS_CREDITS,
+            minuend=AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_PART_7_CREDITS_TOTAL,
+            subtrahend_amount=D("0.00"),
+            result=D("16951.38"),
+        ),
+        # Form T691 Part 8 line 13 "Balance of minimum tax carryover available for later years, if
+        # any: line 1 minus line 12": line 1 (0) less line 12 (0): 0.
+        AMT_CARRYOVER_BALANCE: SubtractedLine(
+            output=AMT_CARRYOVER_BALANCE,
+            minuend=AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+            minuend_amount=D("0"),
+            subtrahend=AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T691 Part 8 line 17 "Total minimum tax carryover available for 2026: line 15 minus
+        # line 16": line 15 (0) less line 16, the unapplied 2018 carryover (0): 0.
+        AMT_CARRYOVER_AVAILABLE_FOR_2026: SubtractedLine(
+            output=AMT_CARRYOVER_AVAILABLE_FOR_2026,
+            minuend=AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
+            minuend_amount=D("0"),
+            subtrahend=AMT_UNAPPLIED_2018_CARRYOVER,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Form RC381 Part 3 line 16 "Line 11 minus line 15": both are 0.
         RC381_PART_3_LINE_16: SubtractedLine(
             output=RC381_PART_3_LINE_16,

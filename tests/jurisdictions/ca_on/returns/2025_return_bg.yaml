@@ -1,10 +1,11 @@
 # Return BG: a filer with employment income who has film property, rental and leasing
 # property, tax shelter amounts, resource property, a capital gain and gifts of publicly
 # listed securities, computed on Form T691 (alternative minimum tax) Parts 1 and 9 as far as
-# line 103, Parts 2 and 8 as far as line 12 (no carryover is claimed), Part 3 lines 1 to 15
+# line 103, Parts 2 and 8 (no carryover is claimed), Part 3 lines 1 to 15
 # (no tax is payable to multiple jurisdictions), Part 4 lines 1 to 11 (no foreign income, tax
-# or claim), Part 5 lines 1 to 11 (no minimum tax payable), and Part 6 lines 1 to 14 (no split
-# income, so lines 2 and 6 are 0.00). The Part 1 and
+# or claim), Part 5 lines 1 to 11 (no minimum tax payable), Part 6 lines 1 to 14 (no split
+# income, so lines 2 and 6 are 0.00), and Part 7 lines 1 to 14 and Part 8 lines 13 to 17 (no
+# carryover from earlier years and no unapplied 2018 carryover). The Part 1 and
 # Part 9 amounts that are not lines of this return are chosen
 # figures, entered as the form takes them; the adjustments and the sums are computed from them.
 jurisdiction: CA-ON
@@ -147,7 +148,26 @@ description: >-
   "Amount from line 24 of Form T1206", is 0.00, so line 14, "Enter whichever is more: amount from
   line 12 or line 13", is 0.00. Line 11 of Part 5 is 0.00, so the amount is not entered on line
   41700 of the return: line 41700 is the line 139 figure, 5846.47 (line 132, 5846.47, less line
-  138, 0.00). Not yet computed: Part 7 of Form T691 and Part 8 lines 13 to 17.
+  138, 0.00). Part 7, additional taxes paid for minimum tax carryover, lines 1 to 14: line 1, "Minimum amount
+  from line 103 of Part 1", is 0.00, and line 2, "Basic federal tax from line 7 of Part 2", is
+  5846.47. Line 3, "Recapture of investment tax credit from line 3 of Part C of Form T2038(IND)",
+  is 0.00, so line 4, "Line 2 plus line 3", is 5846.47. Line 5, "Federal logging tax credit", is
+  0.00, and line 6, "Amount from line 41600 of your return", is 0.00, so line 7, "Line 5 plus line
+  6", is 0.00. Line 8, "Line 4 minus line 7", is 5846.47 minus 0.00, 5846.47. Line 9, "Special
+  foreign tax credit from line 11 of Part 4", is 0.00, and line 10, "Federal foreign tax credit
+  from line 7 of Part 3", is 0.00, so line 11, "Line 9 minus line 10 (if negative, enter "0")",
+  is 0.00. Line 12 multiplies line 11 by the foreign taxes paid for the special foreign tax credit
+  (line 9 of Part 4, 0.00) over the foreign taxes paid (non-business income tax paid to a foreign
+  country, 0.00, plus business income tax paid to a foreign country, 0.00): the denominator is 0.00,
+  so line 12 is 0.00. Line 13, "Line 8 plus line 12", is 5846.47 plus 0.00, 5846.47. Line 14,
+  "Additional taxes paid for minimum tax carryover", is "Line 1 minus line 13 (if negative, enter
+  "0")": 0.00 minus 5846.47, below zero, so 0.00. Part 8, lines 13 to 17: with no carryover from
+  earlier years, line 1 is 0.00 and line 12, "Minimum tax carryover applied in 2025", is 0.00, so
+  line 13, "Balance of minimum tax carryover available for later years, if any: line 1 minus line
+  12", is 0.00. Line 14, "Additional 2025 taxes for carryover to later years from line 14 of Part
+  7", is 0.00, so line 15, "Line 13 plus line 14", is 0.00. Line 16, "Unapplied 2018 minimum tax
+  carryover", is 0.00, so line 17, "Total minimum tax carryover available for 2026: line 15 minus
+  line 16", is 0.00.
   Amounts are quoted decimals, and the count of CPP months is a quoted digit string.
 sources:
   - >-
@@ -337,3 +357,14 @@ expected:
   ca/amt_part_6_federal_surtax: "0.00"
   ca/amt_part_6_tax_with_surtax: "0.00"
   ca/amt_federal_tax_payable_under_minimum_tax: "0.00"
+  ca/amt_part_7_basic_tax_with_recapture: "5846.47"
+  ca/amt_part_7_credits_total: "0.00"
+  ca/amt_part_7_tax_less_credits: "5846.47"
+  ca/amt_part_7_foreign_credit_difference: "0.00"
+  ca/amt_part_7_foreign_taxes_paid: "0.00"
+  ca/amt_part_7_foreign_credit_share: "0.00"
+  ca/amt_part_7_tax_less_credits_plus_share: "5846.47"
+  ca/amt_additional_taxes_for_carryover: "0.00"
+  ca/amt_carryover_balance: "0.00"
+  ca/amt_carryover_balance_with_additional_taxes: "0.00"
+  ca/amt_carryover_available_for_2026: "0.00"

@@ -454,3 +454,4 @@ expected:
   ca/rc381_part_3_line_21: "445.00"
   ca/amt_alternative_minimum_tax_payable: "0"
   ca/amt_federal_tax_payable_under_minimum_tax: "0"
+  ca/amt_carryover_available_for_2026: "0"

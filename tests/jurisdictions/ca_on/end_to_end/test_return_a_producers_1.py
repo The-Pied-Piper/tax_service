@@ -27,6 +27,7 @@ from app.domain.capabilities.times_count import TimesCount
 from app.jurisdictions.ca.capabilities.amount_when_more import AmountWhenMore
 from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
+from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZero
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
 from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
@@ -79,6 +80,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_REDUCTION,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_ADDITIONAL_TAXES_FOR_CARRYOVER,
     AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
     AMT_ADJUSTED_TAXABLE_INCOME,
@@ -96,6 +98,9 @@ from app.jurisdictions.ca.catalog import (
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CARRYOVER_AVAILABLE_FOR_2026,
+    AMT_CARRYOVER_BALANCE,
+    AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
     AMT_CREDITS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
@@ -159,6 +164,13 @@ from app.jurisdictions.ca.catalog import (
     AMT_PART_6_SURTAX_IF_NON_RESIDENT,
     AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_PART_6_TAX_WITH_SURTAX,
+    AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+    AMT_PART_7_CREDITS_TOTAL,
+    AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE,
+    AMT_PART_7_FOREIGN_CREDIT_SHARE,
+    AMT_PART_7_FOREIGN_TAXES_PAID,
+    AMT_PART_7_TAX_LESS_CREDITS,
+    AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
@@ -184,6 +196,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
     AMT_TAX_SHELTER_ADJUSTMENTS,
     AMT_TOTAL_FOREIGN_INCOME,
+    AMT_UNAPPLIED_2018_CARRYOVER,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
     BUSINESS_INCOME,
@@ -2394,3 +2407,28 @@ def test_the_part_6_amounts_are_produced_by_their_capabilities() -> None:
     # The T2203 percentage and the non-resident count are the caller's figures.
     assert worksheet.producer_of(AMT_T2203_COLUMN_5_PERCENTAGE) is None
     assert worksheet.producer_of(AMT_NON_RESIDENT_OR_DEEMED_RESIDENT) is None
+
+
+def test_the_part_7_and_8_amounts_are_produced_by_their_capabilities() -> None:
+    worksheet = return_a()
+
+    # Part 7 lines 4 and 7 are sums, line 8 a difference, line 11 a difference not below zero, line
+    # 12 the share, a ratio over the foreign taxes paid, line 13 a sum and line 14 a difference not
+    # below zero; Part 8 line 13 a difference, line 15 a sum and line 17 a difference.
+    assert isinstance(worksheet.producer_of(AMT_PART_7_BASIC_TAX_WITH_RECAPTURE), Sum)
+    assert isinstance(worksheet.producer_of(AMT_PART_7_CREDITS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_PART_7_TAX_LESS_CREDITS), Subtract)
+    assert isinstance(
+        worksheet.producer_of(AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(AMT_PART_7_FOREIGN_TAXES_PAID), Sum)
+    assert isinstance(worksheet.producer_of(AMT_PART_7_FOREIGN_CREDIT_SHARE), ApplyRatioOrZero)
+    assert isinstance(worksheet.producer_of(AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE), Sum)
+    assert isinstance(
+        worksheet.producer_of(AMT_ADDITIONAL_TAXES_FOR_CARRYOVER), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(AMT_CARRYOVER_BALANCE), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES), Sum)
+    assert isinstance(worksheet.producer_of(AMT_CARRYOVER_AVAILABLE_FOR_2026), Subtract)
+    # The 2018 carryover left unapplied is the caller's figure.
+    assert worksheet.producer_of(AMT_UNAPPLIED_2018_CARRYOVER) is None
