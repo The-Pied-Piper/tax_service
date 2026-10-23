@@ -15,21 +15,21 @@ As printed: column 7 is column 2 plus column 3 minus column 5; column 14 is colu
 (Note 7); column 16 is column 14 minus column 11; column 17 is column 12 minus column 16 times the
 class's RIIP factor (Note 8); column 18 is one half of column 10 minus columns 11, 12 and 5, or 0
 for a class exempt from the half-year rule; each "If negative, enter "0"". Column 19 is column 13
-plus columns 15 and 17 minus column 18, and the maximum, column 21 ("Available CCA for the
-year"), is column 19 times the class's rate (column 9 is taken as 0).
+plus columns 15 and 17 minus column 18, and the maximum is column 19 times the class's rate.
 Columns 15, 17 and 18 and the maximum are worked as exact fractions and rounded once each with the
 dataset's rule. Guide T4036 "Column 7": "You cannot claim CCA when the amount in column 7 is:
 negative ... positive and you do not have any property left in that class ... In either case,
 enter "0" in column 24", so the maximum and column 24 are 0 for those rows, for the recorded
-`CcaZeroReason`. Note 3: a negative column 7 is a recapture, and a positive one with no property
-left a terminal loss, neither for a class the dataset excludes from them. A subclass is one
-capability for each form line the table gives, building its own trace lines and output.
+`CcaZeroReason`. The claim is the caller's election, refused above the maximum
+(`InputAboveBoundError`). Note 3: a negative column 7 is a recapture, and a positive one with no
+property left a terminal loss, neither for a class the dataset excludes from them. A subclass is
+one capability for each form line the table gives, building its own trace lines and output.
 
-CcaClaimTable, also not registered, is the base of the capabilities that refuse a claim. Column 22
-is "Non-compliant amount of CCA (see Chart B below)", the amount of the class in the consumed
-`non_compliant` record list (0 for a class it does not list), and column 23 is "CCA claim for the
-year (column 21 minus column 22)": the most a claim may be, 0 if column 22 is above column 21. The
-claim is the caller's election, refused above that limit (`InputAboveBoundError`).
+AfterColumn22, also not registered, is mixed in before a capability of the table to refuse a claim
+above column 23 as well. Column 22 is "Non-compliant amount of CCA (see Chart B below)", the amount
+of the class in the consumed `non_compliant` record list (0 for a class it does not list), and
+column 23 is "CCA claim for the year (column 21 minus column 22)": the most a claim may be, 0 if
+column 22 is above column 21 (`InputAboveBoundError`).
 """
 
 from __future__ import annotations
@@ -173,8 +173,8 @@ class CcaTable(Capability):
         )
 
     def _columns(self, row: CcaRow) -> CcaColumns:
-        """Columns 14 to 19 of `row` and its maximum (column 21), rounded with the dataset's
-        rule."""
+        """Columns 14 to 19 of `row` and its maximum, rounded with the dataset's rule; a claim
+        above the maximum is an InputAboveBoundError naming the item."""
         rounding = self._class_rates.rounding
         rate = row.class_rate
         column_10 = row.additions
@@ -204,6 +204,11 @@ class CcaTable(Capability):
             if row.zero_reason is not CcaZeroReason.NONE
             else rounding.apply(column_19 * rate.rate.value)
         )
+        if row.claimed > maximum:
+            raise InputAboveBoundError(
+                f"item {row.position}: {CCA_CLAIMED.identifier} {row.claimed} is above the "
+                f"maximum {maximum}"
+            )
         return CcaColumns(column_14, column_15, column_16, column_17, column_18, column_19, maximum)
 
     @staticmethod
@@ -213,9 +218,10 @@ class CcaTable(Capability):
         return _ZERO if exact < 0 else rounding.apply(exact)
 
 
-class CcaClaimTable(CcaTable):
-    """Reads the consumed `non_compliant` record list besides the `classes`, for the capabilities
-    that refuse a claim above the maximum less the class's column 22."""
+class AfterColumn22(CcaTable):
+    """Reads the consumed `non_compliant` record list besides the `classes`, and refuses a claim
+    above the maximum less the class's column 22 (0 if negative), naming the item. A capability
+    mixes it in before the capability of the table it limits, and keeps `output`."""
 
     CONSUMES: ClassVar[Mapping[str, type]] = {"classes": RecordList, "non_compliant": RecordList}
 
@@ -226,37 +232,28 @@ class CcaClaimTable(CcaTable):
         non_compliant: ArtifactKind[RecordList],
         output: ArtifactKind[Any],
     ) -> None:
-        """Wire the class-rate dataset, the record list read, the record list of column 22
-        amounts; the subclass keeps `output`."""
+        """Wire the class-rate dataset, the record list read and the record list of column 22
+        amounts; the capability keeps `output`."""
         Capability.__init__(self, classes=classes, non_compliant=non_compliant, output=output)
         self._class_rates = class_rates
         self._classes = classes
         self._non_compliant = non_compliant
 
-    def _column_22(self, inputs: tuple[Artifact[Any], ...]) -> dict[Decimal, Decimal]:
-        """The column 22 amount of each class of the consumed `non_compliant` list, summed over
-        its records."""
-        amounts: dict[Decimal, Decimal] = {}
+    def _rows(self, inputs: tuple[Artifact[Any], ...]) -> tuple[CcaRow, ...]:
+        """The rows as the table reads them, each checked against its column 23."""
+        rows = super()._rows(inputs)
+        column_22: dict[Decimal, Decimal] = {}
         for record in self._input(inputs, self._non_compliant).value.records:
             number = Decimal(record[CCA_CLASS_NUMBER])
-            amounts[number] = amounts.get(number, _ZERO) + Decimal(record[NON_COMPLIANT_CCA])
-        return amounts
-
-    def _checked_columns(self, row: CcaRow, column_22: Mapping[Decimal, Decimal]) -> CcaColumns:
-        """The columns of `row` as `_columns` gives them; a claim above the maximum less the
-        class's amount in `column_22` (0 if negative) is an InputAboveBoundError naming the
-        item."""
-        columns = self._columns(row)
-        class_column_22 = column_22.get(row.class_number, _ZERO)
-        limit = max(_ZERO, columns.maximum - class_column_22)
-        if row.claimed > limit:
-            detail = (
-                f" ({columns.maximum} less column 22 {class_column_22})"
-                if class_column_22 != _ZERO
-                else ""
-            )
-            raise InputAboveBoundError(
-                f"item {row.position}: {CCA_CLAIMED.identifier} {row.claimed} is above the "
-                f"maximum {limit}{detail}"
-            )
-        return columns
+            column_22[number] = column_22.get(number, _ZERO) + Decimal(record[NON_COMPLIANT_CCA])
+        for row in rows:
+            amount = column_22.get(row.class_number, _ZERO)
+            maximum = self._columns(row).maximum
+            limit = max(_ZERO, maximum - amount)
+            if row.claimed > limit:
+                detail = f" ({maximum} less column 22 {amount})" if amount != _ZERO else ""
+                raise InputAboveBoundError(
+                    f"item {row.position}: {CCA_CLAIMED.identifier} {row.claimed} is above the "
+                    f"maximum {limit}{detail}"
+                )
+        return rows

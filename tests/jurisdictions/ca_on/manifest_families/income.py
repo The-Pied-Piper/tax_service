@@ -18,7 +18,9 @@ from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZero
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
+from app.jurisdictions.ca.capabilities.cca_claim_after_column_22 import CcaClaimAfterColumn22
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
+from app.jurisdictions.ca.capabilities.closing_ucc_after_column_22 import ClosingUccAfterColumn22
 from app.jurisdictions.ca.capabilities.disposition_gains import DispositionGains
 from app.jurisdictions.ca.capabilities.disposition_gains_only import DispositionGainsOnly
 from app.jurisdictions.ca.capabilities.disposition_proceeds import DispositionProceeds
@@ -1633,7 +1635,7 @@ STEPS = {
     # on each class of the Area A list, at most its maximum (column 19 multiplied by column 20)
     # less its column 22 (the Chart B total of the class), totalled.
     CapabilitySelection(
-        name="ca/cca_claim",
+        name="ca/cca_claim_after_column_22",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
             "classes": "ca/rental_cca_classes",
@@ -1703,7 +1705,7 @@ STEPS = {
     # number and column 24 of each class of the Area A list, a product of the return for next
     # year's column 2.
     CapabilitySelection(
-        name="ca/closing_ucc",
+        name="ca/closing_ucc_after_column_22",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
             "classes": "ca/rental_cca_classes",
@@ -3997,7 +3999,7 @@ WIRING = {
         frozenset({RENTAL_TERMINAL_LOSS}),
     ),
     (
-        CcaClaim,
+        CcaClaimAfterColumn22,
         frozenset({RENTAL_CCA_CLASSES, SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS}),
         frozenset({RENTAL_CCA_TABLE_CLAIM}),
     ),
@@ -4027,7 +4029,7 @@ WIRING = {
         frozenset({RENTAL_CCA_CLAIM}),
     ),
     (
-        ClosingUcc,
+        ClosingUccAfterColumn22,
         frozenset({RENTAL_CCA_CLASSES, SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS}),
         frozenset({RENTAL_CLOSING_UCC}),
     ),
