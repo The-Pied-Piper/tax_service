@@ -483,6 +483,7 @@ from app.jurisdictions.ca.catalog import (
     QFFP_FORECLOSURE_DISPOSITIONS,
     QPP_MONTHS,
     QSBCS_DISPOSITIONS,
+    RC381_INSTANCES,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_DISPOSITIONS,
@@ -1771,6 +1772,7 @@ def starting(
     farm_statements: tuple[Mapping[str, Any], ...] | None = None,
     fish_statements: tuple[Mapping[str, Any], ...] | None = None,
     schedule_8_copies: int = 1,
+    rc381_copies: int = 0,
     taxable_support_payments: str = "0",
     rrsp_income: str = "0",
     fhsa_income: str = "0",
@@ -2268,6 +2270,10 @@ def starting(
         Artifact(
             SCHEDULE_8_INSTANCES,
             RecordList(SCHEDULE_8_INSTANCES.fields, [{} for _ in range(schedule_8_copies)]),
+        ),
+        Artifact(
+            RC381_INSTANCES,
+            RecordList(RC381_INSTANCES.fields, [{} for _ in range(rc381_copies)]),
         ),
         Artifact(TAXABLE_SUPPORT_PAYMENTS, D(taxable_support_payments)),
         Artifact(RRSP_INCOME, D(rrsp_income)),
@@ -2934,6 +2940,31 @@ def compute_with_schedule_8(*args: Any, **kwargs: Any) -> ReturnAndSchedule8:
     return ReturnAndSchedule8(run(*args, **kwargs))
 
 
+def rc381_own_trace(worksheet: Worksheet) -> tuple[TraceLine, ...]:
+    """The trace lines of Form RC381's own steps (the kinds `ca/rc381_...`) in `worksheet`.
+
+    Not the form's copies of the return's steps (the Part 2 table, Part 4 line 1 and the net
+    self-employment income it adds), which are checked with the return. The trace lines have no
+    common base that carries an output, so it is read by name.
+    """
+    return tuple(
+        line
+        for line in worksheet.trace
+        if str(getattr(getattr(line, "output", None), "identifier", "")).startswith("ca/rc381_")
+    )
+
+
+def compute_form(form: str, *args: Any, **kwargs: Any) -> Worksheet:
+    """The worksheet of the one copy of `form` that `starting(...)` gives, the return carrying one
+    copy of Form RC381 and no Schedule 8.
+
+    The return carries Schedule 8 or Form RC381, not both (the exclusive group
+    `ca/cpp_calculation`). `form` is `ca/rc381` or the return's own form `ca-on/return`.
+    """
+    (worksheet,) = run(*args, schedule_8_copies=0, rc381_copies=1, **kwargs)[form]
+    return worksheet
+
+
 def rental_return(
     statement: Mapping[str, Any],
     changes: Mapping[str, Any] | None = None,
@@ -2958,8 +2989,12 @@ def return_a() -> Worksheet:
     return run_a()["ca-on/return"][0]
 
 
-def run_a() -> dict[str, tuple[Worksheet, ...]]:
-    """Return A's inputs, as in `returns/2025_return_a.yaml`, with its chosen tax deducted."""
+def run_a(*, schedule_8_copies: int = 1, rc381_copies: int = 0) -> dict[str, tuple[Worksheet, ...]]:
+    """Return A's inputs, as in `returns/2025_return_a.yaml`, with its chosen tax deducted.
+
+    The return carries Schedule 8 (one copy) or, with `schedule_8_copies=0, rc381_copies=1`, Form
+    RC381 instead.
+    """
     return run(
         "110000",
         (("20000", "0", "0"),),
@@ -2969,6 +3004,8 @@ def run_a() -> dict[str, tuple[Worksheet, ...]]:
         "1926",
         "2000",
         income_tax_deducted="25000",
+        schedule_8_copies=schedule_8_copies,
+        rc381_copies=rc381_copies,
     )
 
 

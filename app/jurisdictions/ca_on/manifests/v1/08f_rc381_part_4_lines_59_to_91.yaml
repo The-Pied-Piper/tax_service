@@ -10,6 +10,9 @@
 # line 31 of Part 3), 75 (the amount from line D of Part 2), 78 (the amount from line 4), 79 (the
 # amount from line 65) and 81 (the amount from line 70) only copy other artifacts, so they have no
 # step of their own.
+# Form RC381 (ca/rc381): see 08a_rc381_part_2_and_3.yaml.
+form:
+  name: ca/rc381
 capabilities:
   # Line 59 "Line 57 minus line 58 (if negative, enter "0") (maximum $67,800)", line 57 "Amount from
   # line C of Part 2" and line 58 "Amount from line F of Part 2".

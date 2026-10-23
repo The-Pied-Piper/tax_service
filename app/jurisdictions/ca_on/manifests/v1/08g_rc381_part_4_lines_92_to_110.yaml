@@ -5,6 +5,9 @@
 # to 110, the amount for line 22215). Lines 1 to 27 are in 08d_rc381_part_4_lines_1_to_27.yaml,
 # lines 28 to 56 in 08e_rc381_part_4_lines_31_to_56.yaml and lines 59 to 91 in
 # 08f_rc381_part_4_lines_59_to_91.yaml. Every line of 92 to 110 has a step of its own.
+# Form RC381 (ca/rc381): see 08a_rc381_part_2_and_3.yaml.
+form:
+  name: ca/rc381
 capabilities:
   # Line 92 "If line 53 of Part 3 is positive or "0", enter the amount from line 52 of Part 3 at
   # line 92 and line 98, and continue at line 99. If not, enter the amount from line 49 of Part 3

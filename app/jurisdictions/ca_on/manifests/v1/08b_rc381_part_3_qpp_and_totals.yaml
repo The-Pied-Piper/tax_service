@@ -1,13 +1,11 @@
 # Form RC381 (2025), "Inter-Provincial Calculation for CPP and QPP Contributions and
 # Overpayments", Part 3 lines 27 to 69: the QPP side of the calculation on employment income and
 # the totals. Lines 43 and 46 print the figures of lines 23 and 26, so they read the same
-# datasets. Lines 25, 39 and 45 (boxes 16A, 17 and 17A) are the filer's entries, declared here
-# (01_inputs.yaml is at its size cap). Part 2 lines G to J and Part 3 lines 1 to 26 are in
-# 08a_rc381_part_2_and_3.yaml.
-inputs:
-  - ca/t4_cpp_second_additional_box_16a
-  - ca/t4_qpp_contributions_box_17
-  - ca/t4_qpp_second_additional_box_17a
+# datasets. Lines 25, 39 and 45 (boxes 16A, 17 and 17A) are the filer's entries (01_inputs.yaml).
+# Part 2 lines G to J and Part 3 lines 1 to 26 are in 08a_rc381_part_2_and_3.yaml.
+# Form RC381 (ca/rc381): see 08a_rc381_part_2_and_3.yaml.
+form:
+  name: ca/rc381
 capabilities:
   # Lines 27 to 30 "Amount from line I of Part 2 minus the amount from line 7", "Amount from
   # line G of Part 2 minus the amount from line 8", "Amount from line J of Part 2 minus the

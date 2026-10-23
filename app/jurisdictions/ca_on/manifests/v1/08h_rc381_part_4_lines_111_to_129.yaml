@@ -8,6 +8,9 @@
 # 08g_rc381_part_4_lines_92_to_110.yaml. Lines 117, 119, 120, 122, 123 and 126 only copy the
 # amount of another line, so they have no step of their own; every other line of 111 to 129 has
 # one, as has the amount lettered A.
+# Form RC381 (ca/rc381): see 08a_rc381_part_2_and_3.yaml.
+form:
+  name: ca/rc381
 capabilities:
   # Line 111 "Base CPP contributions through self-employment income and other earnings: Enter the
   # result of the following calculation (in dollars and cents) on line 31000 of your return:

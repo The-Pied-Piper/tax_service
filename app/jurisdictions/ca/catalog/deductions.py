@@ -411,6 +411,13 @@ form reads is a starting amount of the return. The form `ca/schedule_8` runs onc
 the return reads its lines through totals, which are 0 with no record. A field is not an artifact
 of the return."""
 
+RC381_INSTANCES = RecordListKind.declare(CATALOG, "rc381_instances", fields=())
+"""Copies of Form RC381, Inter-Provincial Calculation for CPP and QPP Contributions and
+Overpayments, one record for each copy of the form the return carries (none or one): a record has
+no fields, because every figure the form reads is a starting amount of the return. The form
+`ca/rc381` runs once for each record; the return reads its results through totals, which are 0
+with no record. The return carries Schedule 8 or Form RC381, not both."""
+
 CPP_ACTUAL_BASE_CONTRIBUTIONS = CATALOG.declare(
     "cpp_actual_base_contributions", Decimal, non_negative=True
 )

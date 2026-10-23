@@ -97,6 +97,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_SPLIT_INCOME,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
+    RC381_INSTANCES,
     RDSP_INCOME_REPAYMENT,
     RESIDENCY_AMOUNT,
     RESIDENCY_DEDUCTION,
@@ -774,6 +775,7 @@ def test_the_cpp_t4_box_totals_are_non_negative_money_the_filer_enters(
         is CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS
     )
     assert registry.kind("ca/schedule_8_instances") is SCHEDULE_8_INSTANCES
+    assert registry.kind("ca/rc381_instances") is RC381_INSTANCES
 
 
 def test_the_cpp_part_3_lines_that_print_no_brackets_are_non_negative(

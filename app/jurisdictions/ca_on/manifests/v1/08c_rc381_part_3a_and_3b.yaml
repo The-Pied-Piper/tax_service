@@ -3,6 +3,9 @@
 # contributions from employment income only. Lines 70, 71, 72 and 74 only copy lines 52, 59,
 # 67 and 69, so they have no step of their own. Part 2 and Part 3 lines 1 to 26 are in
 # 08a_rc381_part_2_and_3.yaml, lines 27 to 69 in 08b_rc381_part_3_qpp_and_totals.yaml.
+# Form RC381 (ca/rc381): see 08a_rc381_part_2_and_3.yaml.
+form:
+  name: ca/rc381
 capabilities:
   # Part 3a, line 73 "Deduction for enhanced contributions on employment income: Line 71 plus
   # line 72", line 71 "Enter the amount from line 59." and line 72 "Enter the amount from line 67

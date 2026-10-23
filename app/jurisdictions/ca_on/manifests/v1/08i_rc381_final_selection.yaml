@@ -9,6 +9,9 @@
 # overpayment for the contributions on your employment income." Part 4 lines 1 to 110 are in 08d
 # to 08g and lines 111 to 129 in 08h_rc381_part_4_lines_111_to_129.yaml. The six results are the
 # amounts RC381 gives for lines 30800, 22215, 44800, 42100, 31000 and 22200 of the return.
+# Form RC381 (ca/rc381): see 08a_rc381_part_2_and_3.yaml.
+form:
+  name: ca/rc381
 capabilities:
   # The "self-employment income and other earnings subject to contributions" of the instruction
   # above, lines 70 and 83 of Part 4 added: above zero when Part 4 has earnings to contribute on,
