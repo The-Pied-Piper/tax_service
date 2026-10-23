@@ -14,8 +14,9 @@ UCC alone. Guide T4002, "Column 18": "most of those in Class 12, such as small t
 subject to the half-year rule, but "Class 12 tools that are subject to the half-year rule include
 dies, jigs, patterns, moulds, and lasts" and software in Class 12 is; a row also holds whether its
 additions are treated the opposite way from their class for that rule when the kind lists it, else
-not, so a non-arm's length addition or one the available-for-use rules deny until the second year is
-exempt despite a subject class. Column 8 is column 4 minus column 6, at most column 7 and at least 0
+not, so an addition the Guide's conditions exempt (a non-arm's length purchase of property the
+seller owned continuously, or one the available-for-use rules deny until the second year) is exempt
+despite a subject class. Column 8 is column 4 minus column 6, at most column 7 and at least 0
 (Note 4); column 10 is column 3 minus column 9 and column 13 is column 7 minus column 9. A row whose
 column 4 is above its column 3, whose column 6 is above its column 5 or whose column 9 is above its
 column 8 is refused. Columns 11 and 12 are "Cost of remaining additions from column 10", so a row

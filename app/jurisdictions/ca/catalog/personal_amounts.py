@@ -826,9 +826,13 @@ property that the seller continuously owned"; "The half-year rule does not apply
 for use rules ... denies a CCA claim until the second tax year after you acquire the property".
 1 if the row's additions are treated the opposite way from their class for the half-year rule
 (Class 12 dies, jigs, patterns, moulds, lasts, cutting or shaping parts and software are subject
-despite an exempt class; non-arm's length additions and additions whose CCA is denied until the
-second year are exempt despite a subject class), else 0, taken as a count like the forms' other
-yes or no questions; a field of each record of a list of capital cost allowance classes."""
+despite an exempt class; additions the Guide's conditions exempt, as a non-arm's length purchase of
+property the seller owned continuously for at least 364 days before the end of the fiscal period,
+and additions whose CCA is denied until the second year, are exempt despite a subject class), else
+0, taken as a count like the forms' other yes or no questions; a field of each record of a list of
+capital cost allowance classes. The caller decides whether the Guide's conditions are met. The
+columns of a record work on the record alone (proceeds, no property left), so a class whose
+additions are treated both ways is entered as several records with its proceeds in one of them."""
 
 CCA_UCC_AT_END = CATALOG.declare("cca_ucc_at_end", Decimal, non_negative=True)
 """UCC at the end of the year, T776 Area A "Column 24: UCC at the end of the year (column 7 minus
