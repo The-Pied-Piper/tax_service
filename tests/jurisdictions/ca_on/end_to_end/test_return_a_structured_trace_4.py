@@ -651,31 +651,15 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_2,
     POLITICAL_CREDIT_COLUMN_3_LINE_3,
     PRE_1986_CAPITAL_LOSS_BALANCE,
-    QBT_2025_RESERVE,
-    QBT_ABIL_AND_NET_INVESTMENT_LOSS,
     QBT_ABIL_REDUCTION,
-    QBT_ALLOCATION_LIMIT,
+    QBT_ALLOCATION_TOTAL,
     QBT_CAPITAL_GAINS_DEDUCTION,
-    QBT_CAPITAL_GAINS_WITH_2024_RESERVE,
-    QBT_CHART_A_NET_CAPITAL_LOSSES_USED,
-    QBT_CHART_A_NET_INVESTMENT_LOSS,
-    QBT_DEDUCTION_AVAILABLE,
-    QBT_DEDUCTION_BASE,
-    QBT_DEDUCTION_CLAIMED,
-    QBT_DEDUCTION_LIMIT,
-    QBT_INVESTMENT_EXPENSES,
-    QBT_INVESTMENT_INCOME,
-    QBT_MAXIMUM_DEDUCTION,
-    QBT_NET_CAPITAL_LOSSES_REMAINING,
-    QBT_NET_RENTAL_INCOME,
-    QBT_PRIOR_YEARS_CLAIMS,
-    QBT_REDUCTION_AMOUNT,
-    QBT_REDUCTIONS_FROM_LOSSES,
-    QBT_TAXABLE_AMOUNT_ALLOCATED,
+    QBT_ELECTION_DEDUCTION,
+    QBT_NET_INVESTMENT_LOSS_REDUCTION,
     QBT_TAXABLE_CAPITAL_GAINS,
-    QBT_TAXABLE_GAINS_LIMIT,
-    QBT_TAXABLE_GAINS_NOT_LIMITED,
-    QBT_TOTAL_CAPITAL_GAINS,
+    QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
+    QCC_ELECTION_DEDUCTION,
+    QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
@@ -1813,28 +1797,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             result=D("0"),
         ),
-        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
-        # are 0 (or, where they read another line, that line's figure).
-        QBT_TAXABLE_GAINS_LIMIT: LesserOfLine(
-            QBT_TAXABLE_GAINS_LIMIT,
-            ((TAXABLE_CAPITAL_GAINS, D("10000.00")), (QBT_TAXABLE_CAPITAL_GAINS, D("0.00"))),
-            D("0.00"),
-        ),
-        QBT_DEDUCTION_BASE: LesserOfLine(
-            QBT_DEDUCTION_BASE,
-            ((QBT_DEDUCTION_AVAILABLE, D("0")), (QBT_TAXABLE_GAINS_LIMIT, D("0.00"))),
-            D("0"),
-        ),
-        QBT_MAXIMUM_DEDUCTION: LesserOfLine(
-            QBT_MAXIMUM_DEDUCTION,
-            ((QBT_DEDUCTION_AVAILABLE, D("0")), (QBT_DEDUCTION_LIMIT, D("0"))),
-            D("0"),
-        ),
-        QBT_ALLOCATION_LIMIT: LesserOfLine(
-            QBT_ALLOCATION_LIMIT,
-            ((QBT_REDUCTION_AMOUNT, D("0")), (QBT_ABIL_AND_NET_INVESTMENT_LOSS, D("0.00"))),
-            D("0"),
-        ),
         # T2125 Part 7 amount 7P "Amount 7M or 7N above, whichever is less": 0 for no
         # business-use-of-home expenses.
         BUSINESS_HOME_ALLOWABLE_CLAIM: LesserOfLine(
@@ -1984,15 +1946,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             amount_value=D("0"),
             bound=TUITION_AVAILABLE_TO_TRANSFER,
             bound_value=D("0"),
-        ),
-        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
-        # are 0 (or, where they read another line, that line's figure).
-        QBT_CAPITAL_GAINS_DEDUCTION: AtMostLine(
-            QBT_CAPITAL_GAINS_DEDUCTION,
-            QBT_DEDUCTION_CLAIMED,
-            D("0"),
-            QBT_MAXIMUM_DEDUCTION,
-            D("0"),
         ),
         # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
         # where they read another line, that line's figure).
@@ -3753,64 +3706,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
-        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
-        # are 0 (or, where they read another line, that line's figure).
-        QBT_DEDUCTION_AVAILABLE: SubtractedNotBelowZeroLine(
-            QBT_DEDUCTION_AVAILABLE,
-            QBT_TAXABLE_AMOUNT_ALLOCATED,
-            D("0.00"),
-            QBT_PRIOR_YEARS_CLAIMS,
-            D("0"),
-            D("0"),
-        ),
-        QBT_TOTAL_CAPITAL_GAINS: SubtractedNotBelowZeroLine(
-            QBT_TOTAL_CAPITAL_GAINS,
-            QBT_CAPITAL_GAINS_WITH_2024_RESERVE,
-            D("0"),
-            QBT_2025_RESERVE,
-            D("0"),
-            D("0"),
-        ),
-        QBT_TAXABLE_GAINS_NOT_LIMITED: SubtractedNotBelowZeroLine(
-            QBT_TAXABLE_GAINS_NOT_LIMITED,
-            TAXABLE_CAPITAL_GAINS,
-            D("10000.00"),
-            QBT_TAXABLE_GAINS_LIMIT,
-            D("0.00"),
-            D("10000.00"),
-        ),
-        QBT_NET_CAPITAL_LOSSES_REMAINING: SubtractedNotBelowZeroLine(
-            QBT_NET_CAPITAL_LOSSES_REMAINING,
-            NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
-            D("0"),
-            QBT_TAXABLE_GAINS_NOT_LIMITED,
-            D("10000.00"),
-            D("0"),
-        ),
-        QBT_CHART_A_NET_CAPITAL_LOSSES_USED: SubtractedNotBelowZeroLine(
-            QBT_CHART_A_NET_CAPITAL_LOSSES_USED,
-            NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
-            D("0"),
-            QBT_NET_CAPITAL_LOSSES_REMAINING,
-            D("0"),
-            D("0"),
-        ),
-        QBT_CHART_A_NET_INVESTMENT_LOSS: SubtractedNotBelowZeroLine(
-            QBT_CHART_A_NET_INVESTMENT_LOSS,
-            QBT_INVESTMENT_EXPENSES,
-            D("0.00"),
-            QBT_INVESTMENT_INCOME,
-            D("10000.00"),
-            D("0"),
-        ),
-        QBT_DEDUCTION_LIMIT: SubtractedNotBelowZeroLine(
-            QBT_DEDUCTION_LIMIT,
-            QBT_TAXABLE_GAINS_LIMIT,
-            D("0.00"),
-            QBT_REDUCTIONS_FROM_LOSSES,
-            D("0.00"),
-            D("0"),
-        ),
         # T2125 Part 7 amount 7O "Amount 7M minus amount 7N (if negative, enter "0")": Return A
         # has no business-use-of-home expenses, so it is 0.
         BUSINESS_HOME_CARRY_FORWARD: SubtractedNotBelowZeroLine(
@@ -4151,11 +4046,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         RENTAL_CCA_LIMIT: SumNotBelowZeroLine(
             RENTAL_CCA_LIMIT, ((RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS, D("0")),), D("0")
         ),
-        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
-        # are 0 (or, where they read another line, that line's figure).
-        QBT_NET_RENTAL_INCOME: SumNotBelowZeroLine(
-            QBT_NET_RENTAL_INCOME, ((NET_RENTAL_INCOME, D("0")),), D("0")
-        ),
         # T2125 Part 7 amount 7N "Net income (loss) after adjustments (amount 5D) (if negative,
         # enter "0")": amount 5D alone, floored, 0.
         BUSINESS_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
@@ -4324,6 +4214,38 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
             (),
             D("0"),
+        ),
+        # Form T2048 (line 25395): Return A enters no disposition, so each export is 0.
+        QBT_ALLOCATION_TOTAL: RecordTotalLine(
+            QBT_ALLOCATION_TOTAL, QBT_ALLOCATION_TOTAL, (), D("0")
+        ),
+        QCC_ELECTION_DEDUCTION: RecordTotalLine(
+            QCC_ELECTION_DEDUCTION, QCC_ELECTION_DEDUCTION, (), D("0")
+        ),
+        QBT_ELECTION_DEDUCTION: RecordTotalLine(
+            QBT_ELECTION_DEDUCTION, QBT_ELECTION_DEDUCTION, (), D("0")
+        ),
+        QBT_TAXABLE_CAPITAL_GAINS: RecordTotalLine(
+            QBT_TAXABLE_CAPITAL_GAINS, QBT_TAXABLE_CAPITAL_GAINS, (), D("0")
+        ),
+        QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION: RecordTotalLine(
+            QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
+            QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
+            (),
+            D("0"),
+        ),
+        QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION: RecordTotalLine(
+            QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
+            QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
+            (),
+            D("0"),
+        ),
+        QBT_ABIL_REDUCTION: RecordTotalLine(QBT_ABIL_REDUCTION, QBT_ABIL_REDUCTION, (), D("0")),
+        QBT_NET_INVESTMENT_LOSS_REDUCTION: RecordTotalLine(
+            QBT_NET_INVESTMENT_LOSS_REDUCTION, QBT_NET_INVESTMENT_LOSS_REDUCTION, (), D("0")
+        ),
+        QBT_CAPITAL_GAINS_DEDUCTION: RecordTotalLine(
+            QBT_CAPITAL_GAINS_DEDUCTION, QBT_CAPITAL_GAINS_DEDUCTION, (), D("0")
         ),
     }
     assert quotients == {

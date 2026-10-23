@@ -399,21 +399,10 @@ inputs:
   - ca-on/property_tax_paid
   - ca-on/reserve_home_energy_costs
   - ca-on/public_long_term_care_paid
-  # Form T2048 (line 25395): the starting amounts and 0 or 1 answers of Parts 2 to 5 and Chart A,
-  # read by `06a_capital_gains_deduction_qbt.yaml`.
-  - ca/qbt_election_eligible_amount
-  - ca/qbt_percentage_allocated
-  - ca/qbt_prior_years_claims
-  - ca/qbt_capital_gains
-  - ca/qbt_2024_reserve
-  - ca/qbt_2025_reserve
-  - ca/qbt_has_investment_expenses
-  - ca/qbt_deduction_claimed
-  - ca/qbt_election_is_qbt
-  - ca/qbt_gains_are_qsbcs_or_qffp
-  - ca/qbt_partnership_losses
-  - ca/qbt_other_investment_expenses
-  - ca/qbt_other_property_income
+  # Form T2048 (line 25395): the qualifying dispositions, one record for each (any number; none
+  # included); the form ca/t2048 reads their fields, the starting amounts and 0 or 1 answers of
+  # Parts 2 to 5 and Chart A, as `06a_capital_gains_deduction_qbt.yaml` takes them.
+  - ca/t2048_dispositions
   # Form T657 (line 25400)
   - ca/t657_t2017_line_13
   - ca/t657_net_non_eligible_taxable_capital_gains
