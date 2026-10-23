@@ -402,15 +402,15 @@ def test_a_return_without_the_list_is_unchanged_by_the_foreign_tax_credit() -> N
     assert worksheet.get(TOTAL_PAYABLE).value == D("6447.70")
 
 
-def test_note_3_net_income_takes_line_23500_off_line_23400_but_not_off_the_split_income() -> None:
+def test_note_3_net_income_and_tosi_adjusted_net_income_take_line_23500_off() -> None:
     # Return AS's filer, employment income of 92074 and old age security of 9000 (line 11300), with
     # no dividends or foreign income and no tax deducted. Total income is 92074 + 9000 = 101074; the
     # enhanced CPP contributions (678.00 + 396.00 = 1074.00) come off it, so line 23400 is
     # 100000.00. The social benefits repayment (line 23500) is 15% x (100000.00 - 93343.00) =
     # 998.55, so line 23600 is 99001.45 and note (3) starts from it: 100000.00 - 998.55 =
     # 99001.45, plus a line 68360 of 0 and less deductions of 0, so net income is 99001.45. The
-    # TOSI-adjusted net income is 0 + 100000.00 = 100000.00, which line 23500 is not taken off, so
-    # it is not note (3)'s starting point: the ratio would then be 100000.00, not 99001.45.
+    # TOSI-adjusted net income is 0 + 99001.45 = 99001.45, line 23600 before its floor plus the
+    # split income, so it is note (3)'s starting point too.
     # Taxable income is 99001.45: the federal tax is 8319.38 + (99001.45 - 57375) x 20.5% =
     # 8319.38 + 8533.42225, 16852.80; the credits are (16129 + 3356.10 + 1077.48 + 1471) x 14.5% =
     # 22033.58 x 14.5% = 3194.87, so line 42900 is 13657.93, the basic federal tax (note 4) with no
@@ -439,7 +439,7 @@ def test_note_3_net_income_takes_line_23500_off_line_23400_but_not_off_the_split
     assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("100000.00")
     assert worksheet.get(SOCIAL_BENEFITS_REPAYMENT).value == D("998.55")
     assert worksheet.get(NET_INCOME).value == D("99001.45")
-    assert worksheet.get(TOSI_ADJUSTED_NET_INCOME).value == D("100000.00")
+    assert worksheet.get(TOSI_ADJUSTED_NET_INCOME).value == D("99001.45")
     assert worksheet.get(FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME).value == D("99001.45")
     assert worksheet.get(FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME).value == D("99001.45")
     assert worksheet.get(FOREIGN_TAX_CREDIT_NET_INCOME).value == D("99001.45")

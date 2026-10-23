@@ -608,6 +608,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
+    NET_INCOME_SIGNED,
     NET_RENTAL_INCOME,
     OAS_AND_FEDERAL_SUPPLEMENTS,
     OAS_BENEFITS_BASE_AMOUNT,
@@ -4019,7 +4020,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO: SumNotBelowZeroLine(
             output=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
-            parts=((TOTAL_SPLIT_INCOME, D("0")), (NET_INCOME_BEFORE_ADJUSTMENTS, D("115000"))),
+            parts=((TOTAL_SPLIT_INCOME, D("0")), (NET_INCOME_SIGNED, D("115000"))),
             total=D("115000"),
         ),
         SPLIT_INCOME_LINE_24: SumNotBelowZeroLine(
@@ -4040,10 +4041,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS, D("0")), (CPT20_EARNINGS, D("0"))),
             D("0"),
         ),
-        # Schedule ON479-A line 4 "Add lines 1 to 3 (if negative, enter "0"). Adjusted income".
+        # Schedule ON479-A line 4 "Add lines 1 to 3 (if negative, enter "0"). Adjusted income":
+        # line 1 (the TOSI-adjusted net income, line 6 of Form T1206), line 2 (child care
+        # expenses) and line 3 (the social benefits repayment of line 23500), in line order.
         CARE_ADJUSTED_INCOME: SumNotBelowZeroLine(
             CARE_ADJUSTED_INCOME,
-            ((TOSI_ADJUSTED_NET_INCOME, D("115000")), (CHILD_CARE_EXPENSES, D("0"))),
+            (
+                (TOSI_ADJUSTED_NET_INCOME, D("115000")),
+                (CHILD_CARE_EXPENSES, D("0")),
+                (SOCIAL_BENEFITS_REPAYMENT, D("0")),
+            ),
             D("115000"),
         ),
         # Guide T4036 "You cannot use CCA to create or increase a rental loss": the most line 9936

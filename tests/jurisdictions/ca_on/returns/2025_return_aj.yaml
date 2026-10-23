@@ -65,8 +65,7 @@
 # the total payable, less the total credits, here the chosen income tax deducted plus the
 # Canada workers benefit, to the refund or balance owing, negative for a refund and positive
 # for a balance owing. There is no capital gain, unused or new RRSP contribution or union
-# dues. Not yet computed, so not in this file: any deduction from net income, the social
-# benefits repayment and capital losses. Line 82 (the provincial foreign tax credit) is not
+# dues. Not yet computed, so not in this file: any deduction from net income and capital losses (the social benefits repayment, line 23500, is 0, as the chart does not apply). Line 82 (the provincial foreign tax credit) is not
 # triggered by this return, and the qualifying donations for line 87 (the community food
 # program donation tax credit for farmers) are a chosen $0, so line 87 is $0 and line 88 is
 # line 86.
@@ -109,7 +108,7 @@
 # 23100, the net self-employment lines, the wage-loss replacement plan amounts and the
 # spouse's column) are $0. The working income is $30,000 (employment income less lines
 # 20700, 21200, 22900 and 23100); line 6, the adjusted family net income, is the net income,
-# $29,735.00 (column 1 alone, as the spouse's column is 0 and line 23500 is not wired yet);
+# $29,735.00 (column 1 alone, as the spouse's column is 0 and line 23500 is 0, the chart not applying);
 # line 8 is line 6 less 33,294.00, negative, so 0; and line 16 and the supplement are $0,
 # because line 9 (line 21500, a chosen $0) and line 10 (line 33200, $0 with no medical
 # expenses) are 0.
@@ -380,7 +379,7 @@ sources:
     (Schedule 7 line 20 is 0) and no union dues, and the child care expenses deduction is 0
     (as the T778 entry derives), so the enhanced CPP contributions are the only deduction:
     total deductions, which take amounts already in cents, are 0 + 0 + 0 + 265.00 = 265.00;
-    line 55 (line 23500, social benefits repayment) is not wired yet, so net income, which
+    line 55 (line 23500, social benefits repayment) is 0 (the chart does not apply), so net income, which
     takes amounts already in cents, is total income less total deductions, not below zero:
     30,000 - 265.00 = 29,735.00.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
@@ -865,9 +864,8 @@ sources:
     to calculate this amount." Under "No supporting person for any eligible children": "If
     none of the eligible children has a supporting person, calculate your adjusted income
     and enter it on line 4 of column 1". Line 23600 before the floor at 0 is line 23400
-    less line 23500, and line 23500 is not yet computed, so line 1 is the net income
-    before adjustments (line 23400), 29,735.00, which is not negative; line 2 is the child
-    care expenses deduction (line 21400), 0; line 3 is left out (not yet computed); so
+    less line 23500, and line 23500 is 0 (the chart does not apply), so line 1 is line 23600 before the floor, equal to line 23400, 29,735.00, which is not negative; line 2 is the child
+    care expenses deduction (line 21400), 0; line 3 (the social benefits repayment from line 23500) is 0; so
     line 4 is 29,735.00 + 0 = 29,735.00. No eligible child has a supporting person (to be
     confirmed), so only column 1 is completed, column 2 line 4 (line 63047) is 0 and line
     5 is 29,735.00 + 0 = 29,735.00. Line 7: 29,735.00 is in the table row "more than
@@ -966,6 +964,7 @@ expected:
   ca/child_care_expenses: "0"
   ca/deductions_from_total_income: "265.00"
   ca/net_income: "29735.00"
+  ca/net_income_signed: "29735.00"
   ca/net_income_before_adjustments: "29735.00"
   ca/other_payments_limit_income: "29735.00"
   ca/total_adjusted_net_capital_losses: "0.00"

@@ -216,6 +216,7 @@ expected:
   ca/child_care_expenses: "0.00"
   ca/deductions_from_total_income: "445.00"
   ca/net_income: "57555.00"
+  ca/net_income_signed: "57555.00"
   ca/net_income_before_adjustments: "57555.00"
   ca/other_payments_limit_income: "57555.00"
   ca/adjusted_gross_capital_losses_1985_to_1987: "0.00"

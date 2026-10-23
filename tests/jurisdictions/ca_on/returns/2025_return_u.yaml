@@ -96,8 +96,8 @@ description: >-
   development expenses (line 22400) or other deductions (line 23200): each $0. Total
   deductions (line 23300) are the deduction on self-employment income alone, $3,231.75, so
   the net income before adjustments (line 23400) is 50,000.00 - 3,231.75 = $46,768.25, and
-  net income (line 23600) is that same $46,768.25 (it is not below zero and line 23500 is
-  not modelled); the unused FHSA contributions carried forward are $0. There are no
+  net income (line 23600) is that same $46,768.25 (it is not below zero and line 23500 is 0,
+  the chart not applying); the unused FHSA contributions carried forward are $0. There are no
   deductions from net income (lines 24400 to 25600), so taxable income (line 26000) is
   $46,768.25, in the lowest federal bracket and the first Ontario bracket. The
   non-refundable credit amounts are the basic personal amount (federal line 30000 $16,129,
@@ -302,7 +302,7 @@ sources:
     22100, 22400 and 23200) each 0; line 54 (line 23400) "Line 34 minus line 53 (if
     negative, show in brackets) Net income before adjustments" is total income less them,
     50,000.00 - 3,231.75 = 46,768.25; net income (line 23600) is that, not below zero, the
-    same 46,768.25 (line 55, line 23500, is not modelled), and taxable income (line 26000)
+    same 46,768.25 (line 55, line 23500, is 0, the chart not applying), and taxable income (line 26000)
     is the same, with no deductions from net income.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
   - >-
@@ -546,7 +546,7 @@ sources:
     benefit (line 140) and no special taxes (line 141), line 142 (line 42000) "Add lines 139
     to 141. Net federal tax" is 3,990.04. Step 6: line 143 "Amount from line 42000"; line
     144 and line 42100, 5,533.50 (Schedule 8); line 145 and line 42120, 820.00 (Schedule
-    13); line 146 and line 42200, the social benefits repayment, not yet computed; line 147
+    13); line 146 and line 42200, the social benefits repayment, 0 (the chart does not apply); line 147
     and line 42800 "Provincial or territorial tax", the Ontario tax, 2,010.43; line 148 and
     line 43500 "Add lines 143 to 147. Total payable", 3,990.04 + 5,533.50 + 820.00 +
     2,010.43 = 12,353.97; line 150 and line 43700 "Total income tax deducted (amounts from
@@ -576,9 +576,9 @@ sources:
     calculate this amount." Under "No supporting person for any eligible children": "If none
     of the eligible children has a supporting person, calculate your adjusted income and
     enter it on line 4 of column 1". Line 23600 before the floor at 0 is line 23400 less
-    line 23500, and line 23500 is not yet computed, so line 1 is the net income before
-    adjustments (line 23400), 46,768.25, which is not negative; line 2 is the child care
-    expenses deduction (line 21400), 0; line 3 is left out (not yet computed); so line 4 is
+    line 23500, and line 23500 is 0 (the chart does not apply), so line 1 is line 23600 before
+    the floor, equal to line 23400, 46,768.25, which is not negative; line 2 is the child care
+    expenses deduction (line 21400), 0; line 3 (the social benefits repayment from line 23500) is 0; so line 4 is
     46,768.25 + 0 = 46,768.25. No eligible child has a supporting person (to be confirmed),
     so only column 1 is completed, column 2 line 4 (line 63047) is 0 and line 5 is 46,768.25
     + 0 = 46,768.25. Line 7: 46,768.25 is in the table row "more than $45,000 but not more
@@ -651,6 +651,7 @@ expected:
   ca/child_care_expenses: "0.00"
   ca/deductions_from_total_income: "3231.75"
   ca/net_income: "46768.25"
+  ca/net_income_signed: "46768.25"
   ca/net_income_before_adjustments: "46768.25"
   ca/other_payments_limit_income: "46768.25"
   ca/taxable_income: "46768.25"

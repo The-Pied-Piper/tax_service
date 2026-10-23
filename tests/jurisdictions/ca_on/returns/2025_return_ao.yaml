@@ -175,9 +175,8 @@ sources:
     to calculate this amount." Under "No supporting person for any eligible children": "If
     none of the eligible children has a supporting person, calculate your adjusted income
     and enter it on line 4 of column 1". Line 23600 before the floor at 0 is line 23400
-    less line 23500, and line 23500 is not yet computed, so line 1 is the net income
-    before adjustments (line 23400), 21,953.37, which is not negative; line 2 is the child
-    care expenses deduction (line 21400), 0; line 3 is left out (not yet computed); so
+    less line 23500, and line 23500 is 0 (the chart does not apply), so line 1 is line 23600 before the floor, equal to line 23400, 21,953.37, which is not negative; line 2 is the child
+    care expenses deduction (line 21400), 0; line 3 (the social benefits repayment from line 23500) is 0; so
     line 4 is 21,953.37 + 0 = 21,953.37. No eligible child has a supporting person (to be
     confirmed), so only column 1 is completed, column 2 line 4 (line 63047) is 0 and line
     5 is 21,953.37 + 0 = 21,953.37. Line 7: 21,953.37 is in the table row "more than
@@ -227,6 +226,7 @@ expected:
   ca/child_care_expenses: "0.00"
   ca/deductions_from_total_income: "186.40"
   ca/net_income: "21953.37"
+  ca/net_income_signed: "21953.37"
   ca/net_income_before_adjustments: "21953.37"
   ca/other_payments_limit_income: "21953.37"
   ca/deductions_from_net_income: "0"

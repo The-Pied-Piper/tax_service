@@ -209,6 +209,7 @@ expected:
   ca/child_care_expenses: "0.00"
   ca/deductions_from_total_income: "0.00"
   ca/net_income: "15000.00"
+  ca/net_income_signed: "15000.00"
   ca/net_income_before_adjustments: "15000.00"
   ca/other_payments_limit_income: "15000.00"
   ca/total_adjusted_net_capital_losses: "0.00"

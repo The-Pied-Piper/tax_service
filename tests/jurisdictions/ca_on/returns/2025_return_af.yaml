@@ -68,10 +68,9 @@
 # and 21 and T1 line 47900 are $0. The federal political contributions (T1 line 135 and line
 # 40900) are a chosen $0, so the Federal Worksheet's line 41000 is $0 (column 1 applies).
 # The ON428 community food program donation tax credit for farmers is not claimed: the
-# qualifying donations (line 87) are a chosen $0. Not yet computed, so not in this file: any
-# other deduction from net income, the social benefits repayment, the net capital losses
+# qualifying donations (line 87) are a chosen $0. Not yet computed, so not in this file: any other deduction from net income, the net capital losses
 # from before May 23, 1985 (Form T1436 lines 1 to 3 and 8 to 12) and those of 2000 (Chart A,
-# whose factors need the 2000 inclusion rate), the filer having none. Line 82 (the
+# whose factors need the 2000 inclusion rate), the filer having none. The social benefits repayment (line 23500) is 0, as the chart does not apply. Line 82 (the
 # provincial foreign tax credit) is not triggered by this return, nor are Schedule 5 line 2,
 # T1 lines 30425 and 30450, the Ontario caregiver amount (ON428 line 58185), Form T778 line
 # 8 and Parts C and D, and Schedule 6's disability supplement (Step 3) and advance payments
@@ -86,7 +85,7 @@
 # 23100, the net self-employment lines, the wage-loss replacement plan amounts and the
 # spouse's column) are $0. The working income is $48,000 (employment income less lines
 # 20700, 21200, 22900 and 23100); line 6, the adjusted family net income, is the net income,
-# $50,055.00 (column 1 alone, as the spouse's column is 0 and line 23500 is not wired yet);
+# $50,055.00 (column 1 alone, as the spouse's column is 0 and line 23500 is 0, the chart not applying);
 # line 8 is line 6 less 33,294.00, $16,761.00; and line 16 and the supplement are $0,
 # because line 9 (line 21500, a chosen $0) and line 10 (line 33200, $0 with no medical
 # expenses) are 0.
@@ -355,7 +354,7 @@ sources:
     (Schedule 7 line 20 is 0) and no union dues, and the child care expenses deduction is 0
     (as the T778 entry derives), so the enhanced CPP contributions are the only deduction:
     total deductions, which take amounts already in cents, are 0 + 0 + 0 + 445.00 = 445.00;
-    line 55 (line 23500, social benefits repayment) is not wired yet, so net income, which
+    line 55 (line 23500, social benefits repayment) is 0 (the chart does not apply), so net income, which
     takes amounts already in cents, is total income less total deductions, not below zero:
     50,500.00 - 445.00 = 50,055.00.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
@@ -738,9 +737,8 @@ sources:
     to calculate this amount." Under "No supporting person for any eligible children": "If
     none of the eligible children has a supporting person, calculate your adjusted income
     and enter it on line 4 of column 1". Line 23600 before the floor at 0 is line 23400
-    less line 23500, and line 23500 is not yet computed, so line 1 is the net income
-    before adjustments (line 23400), 50,055.00, which is not negative; line 2 is the child
-    care expenses deduction (line 21400), 0; line 3 is left out (not yet computed); so
+    less line 23500, and line 23500 is 0 (the chart does not apply), so line 1 is line 23600 before the floor, equal to line 23400, 50,055.00, which is not negative; line 2 is the child
+    care expenses deduction (line 21400), 0; line 3 (the social benefits repayment from line 23500) is 0; so
     line 4 is 50,055.00 + 0 = 50,055.00. No eligible child has a supporting person (to be
     confirmed), so only column 1 is completed, column 2 line 4 (line 63047) is 0 and line
     5 is 50,055.00 + 0 = 50,055.00. Line 7: 50,055.00 is in the table row "more than
@@ -926,6 +924,7 @@ expected:
   ca/child_care_expenses: "0.00"
   ca/deductions_from_total_income: "445.00"
   ca/net_income: "50055.00"
+  ca/net_income_signed: "50055.00"
   ca/net_income_before_adjustments: "50055.00"
   ca/other_payments_limit_income: "50055.00"
   ca/adjusted_gross_capital_losses_1985_to_1987: "0.00"

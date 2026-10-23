@@ -84,6 +84,7 @@ expected:
   ca/taxable_capital_gains: "14175.00"
   ca/total_income: "74175.00"
   ca/net_income: "73610.00"
+  ca/net_income_signed: "73610.00"
   ca/taxable_income: "73610.00"
   ca/total_payable: "13029.69"
   ca/refund_or_balance_owing: "-970.31"

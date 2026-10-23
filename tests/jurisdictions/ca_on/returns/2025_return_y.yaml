@@ -72,7 +72,7 @@
 # credits (line 47900), to the refund or balance owing, negative for a refund and positive for
 # a balance owing. There is no capital
 # gain, unused or new RRSP contribution or union dues. Not yet computed, so not in this
-# file: any deduction from net income, the social benefits repayment and capital losses.
+# file: any deduction from net income and capital losses (the social benefits repayment, line 23500, is 0, as the chart does not apply).
 # Line 82 (the provincial foreign tax credit) is not triggered by this return, and the
 # qualifying donations for line 87 (the community food program donation tax credit for
 # farmers) are a chosen $0, so line 87 is $0 and line 88 is line 86.
@@ -110,8 +110,8 @@
 # ON479's line 16 is $0 (column 1 applies). Return Y is Return F's taxpayer with a supporting
 # person for the eligible child. It claims the Ontario childcare access and relief from
 # expenses (CARE) tax credit (Schedule ON479-A, Form ON479 line 2 and line 63050): the net
-# income before adjustments of $54,435.00 (line 1; line 23500 is not yet computed) plus the
-# child care expenses deduction of $5,000 (line 2; line 3 is left out) is $59,435.00, the
+# income before adjustments of $54,435.00 (line 1; line 23500 is 0, the chart not applying, so line 23600 equals line 23400) plus the
+# child care expenses deduction of $5,000 (line 2; line 3, the social benefits repayment from line 23500, is 0) is $59,435.00, the
 # adjusted income (line 4); a supporting person's adjusted income (column 2 line 4, line
 # 63047) of $30,000, a chosen figure: it comes from that person's own return, which nothing on
 # this return determines (the person is the eligible child's other parent, not a spouse), and
@@ -132,7 +132,7 @@
 # 23100, the net self-employment lines, the wage-loss replacement plan amounts and the
 # spouse's column) are $0. The working income is $60,000 (employment income less lines
 # 20700, 21200, 22900 and 23100); line 6, the adjusted family net income, is the net income,
-# $54,435.00 (column 1 alone, as the spouse's column is 0 and line 23500 is not wired yet);
+# $54,435.00 (column 1 alone, as the spouse's column is 0 and line 23500 is 0, the chart not applying);
 # line 8 is line 6 less 33,294.00, $21,141.00; and line 16 and the supplement are $0,
 # because line 9 (line 21500, a chosen $0) and line 10 (line 33200, $0 with no medical
 # expenses) are 0.
@@ -213,8 +213,8 @@ description: >-
   $0 too; the one eligible dependant chooses the amounts with one. The Ontario credits
   (Form ON479) are the Ontario childcare access and relief from expenses (CARE) tax credit
   (Schedule ON479-A, Form ON479 line 2 and line 63050): the net income before adjustments
-  of $54,435.00 (line 1; line 23500 is not yet computed) plus the child care expenses
-  deduction of $5,000 (line 2; line 3 is left out) is $59,435.00, the adjusted income
+  of $54,435.00 (line 1; line 23500 is 0, the chart not applying, so line 23600 equals line 23400) plus the child care expenses
+  deduction of $5,000 (line 2; line 3, the social benefits repayment from line 23500, is 0) is $59,435.00, the adjusted income
   (line 4); a supporting person's adjusted income (column 2 line 4, line 63047) of
   $30,000, a chosen figure: it comes from that person's own return, which nothing on this
   return determines (the person is the eligible child's other parent, not a spouse), and
@@ -416,8 +416,7 @@ sources:
     54 minus line 55 (if negative, enter "0") Net income". There is no RRSP deduction
     (Schedule 7 line 20 is 0) and no union dues; the child care expenses deduction (line
     21400) is 5,000, as the T778 entry derives. Total deductions, which take amounts already
-    in cents, are 0 + 0 + 5,000 + 565.00 = 5,565.00; line 55 (line 23500, social benefits
-    repayment) is not wired yet, so net income, which takes amounts already in cents, is
+    in cents, are 0 + 0 + 5,000 + 565.00 = 5,565.00; line 55 (line 23500, social benefits repayment) is 0 (the chart does not apply), so net income, which takes amounts already in cents, is
     total income less total deductions, not below zero: 60,000 - 5,565.00 = 54,435.00.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.pdf
@@ -936,10 +935,8 @@ sources:
     ON479." Form ON479 (form 5006-TC): "Line 2 and line 63050: Complete Schedule ON479-A
     to calculate this amount." Under "One supporting person for all eligible children":
     "Calculate the adjusted income of the supporting person and enter it on line 4 of
-    column 2". Line 23600 before the floor at 0 is line 23400 less line 23500, and line
-    23500 is not yet computed, so line 1 is the net income before adjustments (line
-    23400), 54,435.00, which is not negative; line 2 is the child care expenses deduction
-    (line 21400), 5,000; line 3 is left out (not yet computed); so line 4 is 54,435.00 +
+    column 2". Line 23600 before the floor at 0 is line 23400 less line 23500, and line 23500 is 0 (the chart does not apply), so line 1 is line 23600 before the floor, equal to line 23400, 54,435.00, which is not negative; line 2 is the child care expenses deduction
+    (line 21400), 5,000; line 3 (the social benefits repayment from line 23500) is 0; so line 4 is 54,435.00 +
     5,000 = 59,435.00. A supporting person's adjusted income of 30,000 (column 2 line 4,
     line 63047) is a chosen figure: it comes from that person's own return, which nothing
     on this return determines, and that the person meets the conditions of a supporting
@@ -1021,6 +1018,7 @@ expected:
   ca/child_care_expenses: "5000"
   ca/deductions_from_total_income: "5565.00"
   ca/net_income: "54435.00"
+  ca/net_income_signed: "54435.00"
   ca/net_income_before_adjustments: "54435.00"
   ca/other_payments_limit_income: "54435.00"
   ca/total_adjusted_net_capital_losses: "0.00"

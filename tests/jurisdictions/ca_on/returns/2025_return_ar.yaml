@@ -65,6 +65,7 @@ expected:
   ca/net_income_before_adjustments: "89435.00"
   ca/other_payments_limit_income: "89435.00"
   ca/net_income: "89435.00"
+  ca/net_income_signed: "89435.00"
   ca/taxable_income: "89435.00"
   ca/net_federal_tax: "11791.47"
   ca-on/ontario_tax_less_dividend_credit: "5180.32"

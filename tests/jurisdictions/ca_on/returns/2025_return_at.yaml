@@ -181,6 +181,7 @@ expected:
   ca/ei_premiums: "656.00"
   ca/deductions_from_total_income: "365.00"
   ca/net_income: "39635.00"
+  ca/net_income_signed: "39635.00"
   ca/net_income_before_adjustments: "39635.00"
   ca/other_payments_limit_income: "39635.00"
   ca/taxable_income: "39635.00"

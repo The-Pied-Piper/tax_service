@@ -35,6 +35,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FEDERAL_TAX,
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
+    NET_INCOME_SIGNED,
     REFUND_OR_BALANCE_OWING,
     SPECIAL_TAXES,
     SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -97,11 +98,13 @@ def test_return_al_pays_the_tax_on_split_income_of_3795_on_line_40424() -> None:
     worksheet = return_al()
 
     # Form T1206 Part 1: line 4 is line 1 plus line 3, all of it a deduction of line 23300 (so the
-    # net income is 0.00), and line 6 adds line 5 back: 11500 + 0.00.
+    # net income is 0.00), and line 6 adds line 5 back: 11500 + 0.00, line 5 being line 23600
+    # before its floor (line 23400 less line 23500, which is 0).
     assert worksheet.get(TOTAL_INCOME).value == D("11500.00")
     assert worksheet.get(TOTAL_SPLIT_INCOME).value == D("11500")
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("11500.00")
     assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("0.00")
+    assert worksheet.get(NET_INCOME_SIGNED).value == D("0.00")
     assert worksheet.get(NET_INCOME).value == D("0.00")
     assert worksheet.get(TOSI_ADJUSTED_NET_INCOME).value == D("11500.00")
     assert worksheet.get(TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO).value == D("11500.00")
@@ -208,10 +211,10 @@ def test_return_als_trace_follows_form_t1206_line_by_line() -> None:
 
     for line in (
         "total_split_income: split_income_dividends 11500 + other_split_income 0 = 11500",
-        "tosi_adjusted_net_income: total_split_income 11500 + net_income_before_adjustments 0 "
-        "= 11500",
+        "net_income_signed: net_income_before_adjustments 0 less social_benefits_repayment 0 = 0",
+        "tosi_adjusted_net_income: total_split_income 11500 + net_income_signed 0 = 11500",
         "tosi_adjusted_net_income_not_below_zero: total_split_income 11500 "
-        "+ net_income_before_adjustments 0, not below 0 = 11500",
+        "+ net_income_signed 0, not below 0 = 11500",
         "federal_tax_on_split_income: 33% of total_split_income 11500 (half-up to 0.01)",
         "federal_tax_with_split_income: federal_basic_tax 0 + federal_tax_on_split_income 3795 "
         "= 3795",
@@ -299,7 +302,7 @@ def test_return_als_trace_records_the_split_income_lines_as_structured_lines() -
     assert (
         SumNotBelowZeroLine(
             output=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
-            parts=((TOTAL_SPLIT_INCOME, D("11500")), (NET_INCOME_BEFORE_ADJUSTMENTS, D("0.00"))),
+            parts=((TOTAL_SPLIT_INCOME, D("11500")), (NET_INCOME_SIGNED, D("0.00"))),
             total=D("11500.00"),
         )
         in trace
@@ -411,8 +414,10 @@ def test_a_negative_tosi_adjusted_net_income_is_zero_in_the_twin_and_negative_on
 ):
     # 1150 of split income (1000 of dividends grossed up) is the only income; the other deductions
     # of 5000 (line 23200) are larger than it: line 23300 is 5000 + 1150 = 6150, line 23400 is
-    # 1150 - 6150 = -5000.00 and the net income (line 23600) is 0. Form T1206 line 6 is
-    # 1150 + (-5000.00) = -3850.00.
+    # 1150 - 6150 = -5000.00 and the net income (line 23600) is 0. Form T1206 line 5 "Net income
+    # from line 23600 of your tax return (or the amount you would have entered if the instructions
+    # on line 23600 read "if negative, show in brackets")" is the signed -5000.00 (line 23400 less
+    # line 23500, which is 0), so line 6 is 1150 + (-5000.00) = -3850.00.
     worksheet = compute(
         "0",
         (),
@@ -429,6 +434,7 @@ def test_a_negative_tosi_adjusted_net_income_is_zero_in_the_twin_and_negative_on
 
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("6150")
     assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("-5000.00")
+    assert worksheet.get(NET_INCOME_SIGNED).value == D("-5000.00")
     assert worksheet.get(NET_INCOME).value == D("0")
     assert worksheet.get(TOSI_ADJUSTED_NET_INCOME).value == D("-3850.00")
     # "(If the TOSI-adjusted net income at line 6 is negative, use the negative value when it is
@@ -444,7 +450,7 @@ def test_a_negative_tosi_adjusted_net_income_is_zero_in_the_twin_and_negative_on
     assert (
         SumLine(
             output=TOSI_ADJUSTED_NET_INCOME,
-            parts=((TOTAL_SPLIT_INCOME, D("1150")), (NET_INCOME_BEFORE_ADJUSTMENTS, D("-5000.00"))),
+            parts=((TOTAL_SPLIT_INCOME, D("1150")), (NET_INCOME_SIGNED, D("-5000.00"))),
             total=D("-3850.00"),
         )
         in trace
@@ -452,7 +458,7 @@ def test_a_negative_tosi_adjusted_net_income_is_zero_in_the_twin_and_negative_on
     assert (
         SumNotBelowZeroLine(
             output=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
-            parts=((TOTAL_SPLIT_INCOME, D("1150")), (NET_INCOME_BEFORE_ADJUSTMENTS, D("-5000.00"))),
+            parts=((TOTAL_SPLIT_INCOME, D("1150")), (NET_INCOME_SIGNED, D("-5000.00"))),
             total=D("0"),
         )
         in trace
@@ -467,6 +473,7 @@ def test_line_23200_other_deductions_and_the_total_split_income_are_both_in_line
 
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("11800")
     assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("-300.00")
+    assert worksheet.get(NET_INCOME_SIGNED).value == D("-300.00")
     assert worksheet.get(NET_INCOME).value == D("0")
     assert worksheet.get(TOSI_ADJUSTED_NET_INCOME).value == D("11200.00")
     assert worksheet.get(TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO).value == D("11200.00")

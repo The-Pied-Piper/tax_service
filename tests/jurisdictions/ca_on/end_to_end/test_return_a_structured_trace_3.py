@@ -417,6 +417,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+    NET_INCOME_SIGNED,
     NET_RENTAL_INCOME,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     OAS_BENEFITS_BASE_AMOUNT,
@@ -1382,6 +1383,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend_amount=D("120000"),
             subtrahend=DEDUCTIONS_FROM_TOTAL_INCOME,
             subtrahend_amount=D("5000"),
+            result=D("115000"),
+        ),
+        # Line 23600 before its floor, which Form T1206 Part 1 line 5 and Schedule ON479-A column 1
+        # line 1 read: line 23400 less line 23500, which is 0 for Return A.
+        NET_INCOME_SIGNED: SubtractedLine(
+            output=NET_INCOME_SIGNED,
+            minuend=NET_INCOME_BEFORE_ADJUSTMENTS,
+            minuend_amount=D("115000"),
+            subtrahend=SOCIAL_BENEFITS_REPAYMENT,
+            subtrahend_amount=D("0"),
             result=D("115000"),
         ),
         # Form T1436 line 3 "Pre-1986 capital loss balance available for 2025: line 1 minus line

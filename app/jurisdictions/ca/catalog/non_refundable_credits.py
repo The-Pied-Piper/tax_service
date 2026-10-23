@@ -636,7 +636,7 @@ FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME = CATALOG.declare(
 )
 """Net income with the split income, Form T2209 note (3) "plus the amount on line 68360 of Form
 T1206, Total split income": the amount of note (3) before the split income plus line 68360. It is
-not the TOSI-adjusted net income, which adds line 68360 to line 23400, not to line 23400 less line
+the same figure as the TOSI-adjusted net income, which adds line 68360 to line 23400 less line
 23500."""
 
 FOREIGN_TAX_CREDIT_NET_INCOME = CATALOG.declare("foreign_tax_credit_net_income", Decimal)

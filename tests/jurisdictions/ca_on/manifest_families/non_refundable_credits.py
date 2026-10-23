@@ -982,8 +982,8 @@ STEPS = {
         produces={"output": "ca/foreign_tax_credit_net_income_before_split_income"},
     ),
     # Note (3), "plus the amount on line 68360 of Form T1206, Total split income": that amount
-    # added. It is not the TOSI-adjusted net income, which adds line 68360 to line 23400, not to
-    # line 23400 less line 23500.
+    # added. It is the same figure as the TOSI-adjusted net income, which adds line 68360 to line
+    # 23400 less line 23500.
     CapabilitySelection(
         name="core/sum",
         params={},

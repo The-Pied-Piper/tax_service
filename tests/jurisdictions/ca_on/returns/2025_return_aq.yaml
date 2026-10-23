@@ -149,6 +149,7 @@ expected:
   ca/deductions_from_total_income: "565.00"
   ca/net_income_before_adjustments: "59435.00"
   ca/net_income: "59435.00"
+  ca/net_income_signed: "59435.00"
   ca/other_payments_limit_income: "59435.00"
   ca/taxable_income: "59435.00"
   ca/federal_basic_tax: "8741.68"

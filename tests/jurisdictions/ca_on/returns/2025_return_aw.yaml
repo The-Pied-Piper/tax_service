@@ -373,8 +373,7 @@ sources:
     credit rate that applies to your family adjusted income from the table below." under
     "Family adjusted income and Tax credit rate"; line 8 "Line 6 multiplied by the
     percentage from line 7 Enter this amount on line 63050 of your Form ON479." Line 1 is
-    the net income before adjustments (line 23400), 66,990.00; lines 2 and 3 are 0 (line
-    23500 is not wired), so line 4 is 66,990.00 and, with no supporting person (to be
+    line 23600 before its floor (line 23400 less line 23500, which is 0), 66,990.00; lines 2 and 3 are 0, so line 4 is 66,990.00 and, with no supporting person (to be
     confirmed), line 5 is 66,990.00 + 0 = 66,990.00. Line 7: 66,990.00 is in the table row
     "more than $63,600 but not more than $67,200: 47%", so the rate is 47%; line 6 is the
     child care expenses deduction, 0, and line 8 is 0 x 47% = 0.00. Form ON479 (form
@@ -491,6 +490,7 @@ expected:
   ca/child_care_expenses: "0.00"
   ca/deductions_from_total_income: "465.00"
   ca/net_income: "66990.00"
+  ca/net_income_signed: "66990.00"
   ca/net_income_before_adjustments: "66990.00"
   ca/other_payments_limit_income: "66990.00"
   ca/total_adjusted_net_capital_losses: "0.00"
