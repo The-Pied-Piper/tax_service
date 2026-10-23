@@ -638,7 +638,9 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_CREDITED_NOT_RECEIVED,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    INVESTMENT_TAX_CREDIT,
     ITC_AGRICULTURAL_SRED_CREDIT,
+    ITC_AMOUNT_H,
     ITC_APPRENTICESHIP_CREDIT,
     ITC_APPRENTICESHIP_T3_BOX_40,
     ITC_APPRENTICESHIP_WAGES_TOTAL,
@@ -646,6 +648,10 @@ from app.jurisdictions.ca.catalog import (
     ITC_CRITICAL_MINERAL_CREDIT,
     ITC_MINERAL_EXPLORATION_CREDIT,
     ITC_NONREFUNDABLE_CREDITS,
+    ITC_OPENING_BALANCE,
+    ITC_PART_D_AMOUNT_5,
+    ITC_PART_D_AMOUNT_13,
+    ITC_PART_D_SUBTOTAL,
     ITC_QUALIFIED_PROPERTY_CREDIT,
     ITC_RECAPTURE,
     ITC_RECAPTURE_AT_15_PERCENT,
@@ -1346,6 +1352,28 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ITC_SRED_REPAYMENT_CREDIT, D("0")),
             ),
             D("0"),
+        ),
+        # Form T2038(IND) Part D amount 4 "Subtotal (add amounts 2 and 3)": amount 2, the
+        # refundable credit of amount A (0.00), and amount 3, the non-refundable credit of amount F
+        # (0.00): 0.00.
+        ITC_PART_D_SUBTOTAL: SumLine(
+            ITC_PART_D_SUBTOTAL,
+            ((ITC_REFUNDABLE_CREDITS, D("0.00")), (ITC_NONREFUNDABLE_CREDITS, D("0.00"))),
+            D("0.00"),
+        ),
+        # Form T2038(IND) Part D amount 5 "Amount 1 plus amount 4": amount 1, the opening balance
+        # (0), and amount 4 (0.00): 0.00.
+        ITC_PART_D_AMOUNT_5: SumLine(
+            ITC_PART_D_AMOUNT_5,
+            ((ITC_OPENING_BALANCE, D("0")), (ITC_PART_D_SUBTOTAL, D("0.00"))),
+            D("0.00"),
+        ),
+        # Form T2038(IND) Part D amount 13 "Subtotal (add amounts 11 and 12)": amount 11, amount H
+        # (16951.38), and amount 12, the federal foreign tax credit of line 40500 (0): 16951.38.
+        ITC_PART_D_AMOUNT_13: SumLine(
+            ITC_PART_D_AMOUNT_13,
+            ((ITC_AMOUNT_H, D("16951.38")), (FEDERAL_FOREIGN_TAX_CREDIT, D("0"))),
+            D("16951.38"),
         ),
         # Form T691 Part 7 line 4 "Line 2 plus line 3": line 2, the basic federal tax (16951.38),
         # and line 3, the recapture of investment tax credit (0.00): 16951.38.
@@ -2947,10 +2975,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")), (DIVIDEND_TAX_CREDIT, D("0"))),
             D("16951.38"),
         ),
-        # T1 line 138 (line 41600) "Add lines 135 to 137.": lines 135 and 137, in line order.
+        # T1 line 138 (line 41600) "Add lines 135 to 137.": lines 135, 136 (the investment tax
+        # credit of line 41200, Form T2038(IND) Part D amount 15, 0) and 137, in line order.
         CREDITS_AGAINST_FEDERAL_TAX: SumLine(
             CREDITS_AGAINST_FEDERAL_TAX,
-            ((POLITICAL_CREDIT, D("0.00")), (LABOUR_SPONSORED_FUNDS_CREDIT, D("0"))),
+            (
+                (POLITICAL_CREDIT, D("0.00")),
+                (INVESTMENT_TAX_CREDIT, D("0")),
+                (LABOUR_SPONSORED_FUNDS_CREDIT, D("0")),
+            ),
             D("0.00"),
         ),
         # Federal Worksheet column 1 line 7 "Line 5 plus line 6 =": line 5 is 0.
