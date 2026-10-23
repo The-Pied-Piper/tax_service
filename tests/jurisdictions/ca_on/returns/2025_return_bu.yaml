@@ -95,7 +95,7 @@ sources:
   - >-
     CRA, Form T2042 (2025), Statement of Farming Activities (docs/cra-forms-2025/t2042-25e.pdf,
     confirmed from the PDF with pdftotext; https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2042/t2042-25e.pdf),
-    Area A (page 4), "Calculation of capital cost allowance (CCA) claim": "Column 2: Undepreciated
+    Area A (page 5), "Calculation of capital cost allowance (CCA) claim": "Column 2: Undepreciated
     capital cost (UCC) at the start of the year", "Column 3: Cost of additions in the year (see
     Areas B and C below)", "Column 4: Cost of additions from column 3 that are DIEPs (property
     must be available for use before 2025)", "Column 5: Proceeds of dispositions in the year (see
@@ -129,7 +129,7 @@ sources:
   - >-
     CRA, Form T2042 (2025), Statement of Farming Activities (docs/cra-forms-2025/t2042-25e.pdf,
     confirmed from the PDF with pdftotext; https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2042/t2042-25e.pdf),
-    Area A endnote 5 (page 7) "The immediate expensing applies to DIEPs included in column 8. The
+    Area A endnote 5 (page 8) "The immediate expensing applies to DIEPs included in column 8. The
     total immediate expensing amount for the tax year (total of column 9) is limited to the lesser
     of: - the immediate expensing limit, which is equal to one of the following, whichever is
     applicable: -- $1.5 million, if you are not associated with any other eligible person or
@@ -140,7 +140,7 @@ sources:
     1104(3.4) of the Regulations - the UCC of DIEPs in column 8 - the amount of income, if any,
     earned from the source of income that is a business (before any CCA deductions) in which the
     relevant DIEP is used for the tax year For more information, see Guide T4002."; Area G (page
-    6) "Are you associated in the fiscal period with one or more EPOPs that you have entered into
+    7) "Are you associated in the fiscal period with one or more EPOPs that you have entered into
     an agreement with under subsection 1104(3.3) of the Regulations? Yes or No"; "Enter the
     percentage assigned to each associated EPOP (including your business) as determined in the
     agreement. This percentage will be used to allocate the immediate expensing limit. The total

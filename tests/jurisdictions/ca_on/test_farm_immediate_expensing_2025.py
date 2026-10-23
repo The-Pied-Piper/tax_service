@@ -1,7 +1,7 @@
 """The 2025 immediate expensing limit datasets of Form T2042, checked against CRA's form.
 
 2025 Form T2042 (Statement of Farming Activities; confirmed from the PDF,
-docs/cra-forms-2025/t2042-25e.pdf; no .txt published), Area A endnote 5 (page 7): "The immediate
+docs/cra-forms-2025/t2042-25e.pdf; no .txt published), Area A endnote 5 (page 8): "The immediate
 expensing applies to DIEPs included in column 8. The total immediate expensing amount for the tax
 year (total of column 9) is limited to the lesser of: the immediate expensing limit, which is equal
 to one of the following, whichever is applicable: $1.5 million, if you are not associated with any
@@ -9,7 +9,7 @@ other eligible person or partnership (EPOP) in the tax year; amount iv of Area G
 associated with one or more EPOPs in the tax year; zero, if you are associated with one or more
 EPOPs and an agreement that assigns a percentage to one or more of the associated EPOPs was not
 filed with the minister in a prescribed form; any amount allocated by the minister under
-subsection 1104(3.4) of the Regulations". Area G (page 6): "The total of all percentages assigned
+subsection 1104(3.4) of the Regulations". Area G (page 7): "The total of all percentages assigned
 under the agreement should not be more than 100%. If the total is more than 100%, then the
 associated group has an immediate expensing limit of zero."; "Immediate expensing limit allocated
 to your business: Multiply $1.5 million by the percentage assigned to your business in column 3**"
