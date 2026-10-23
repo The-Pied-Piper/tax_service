@@ -38,10 +38,11 @@ class CcaClaim(CcaTable):
         class_rates: ParameterDataset[ClassRates],
         classes: ArtifactKind[RecordList],
         output: Money,
+        **consumed: ArtifactKind[RecordList],
     ) -> None:
         """Wire the capability: its class-rate dataset, the record list it reads, the kind
-        produced."""
-        super().__init__(class_rates, classes, output)
+        produced. A subclass consuming more record lists passes them by slot name."""
+        super().__init__(class_rates, classes, output, **consumed)
         self._output = output
 
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:

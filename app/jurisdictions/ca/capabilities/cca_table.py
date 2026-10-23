@@ -24,6 +24,12 @@ enter "0" in column 24", so the maximum and column 24 are 0 for those rows, for 
 (`InputAboveBoundError`). Note 3: a negative column 7 is a recapture, and a positive one with no
 property left a terminal loss, neither for a class the dataset excludes from them. A subclass is
 one capability for each form line the table gives, building its own trace lines and output.
+
+The most a claim may be is one overridable step, `_limit`: the maximum itself here. A subclass
+that consumes a `non_compliant` record list besides the `classes` (column 22, "Non-compliant
+amount of CCA (see Chart B below)", summed per class, 0 for a class it does not list) limits it
+to column 23, "CCA claim for the year (column 21 minus column 22)": 0 if column 22 is above the
+maximum.
 """
 
 from __future__ import annotations
@@ -57,6 +63,7 @@ from app.jurisdictions.ca.catalog import (
     CCA_PROCEEDS,
     CCA_RIIP_ADDITIONS,
     CCA_UCC_AT_START,
+    NON_COMPLIANT_CCA,
 )
 from app.jurisdictions.ca.trace import CcaZeroReason
 
@@ -67,7 +74,8 @@ _ZERO = Decimal(0)
 class CcaRow:
     """One row of the table as the caller entered it, the class at `position` (from 1): its
     `class_number` (column 1), its `class_rate` from the dataset, columns 2, 3, 5, 11 and 12, the
-    `claimed` CCA and `no_property_left` (1 if none, else 0); and `column_7`."""
+    `claimed` CCA and `no_property_left` (1 if none, else 0); `column_22` (0 unless the table
+    consumes it); and `column_7`."""
 
     position: int
     class_number: Decimal
@@ -79,6 +87,7 @@ class CcaRow:
     riip_additions: Decimal
     claimed: Decimal
     no_property_left: int
+    column_22: Decimal = _ZERO
 
     @property
     def column_7(self) -> Decimal:
@@ -126,18 +135,35 @@ class CcaTable(Capability):
         class_rates: ParameterDataset[ClassRates],
         classes: ArtifactKind[RecordList],
         output: ArtifactKind[Any],
+        **consumed: ArtifactKind[RecordList],
     ) -> None:
-        """Wire the class-rate dataset and the record list read; the subclass keeps `output`."""
-        super().__init__(classes=classes, output=output)
+        """Wire the class-rate dataset and the record list read; the subclass keeps `output`. A
+        subclass that consumes more kinds (`non_compliant`, the record list of column 22 amounts)
+        passes them by slot name."""
+        super().__init__(classes=classes, output=output, **consumed)
         self._class_rates = class_rates
         self._classes = classes
+        self._non_compliant = consumed.get("non_compliant")
 
     def _rows(self, inputs: tuple[Artifact[Any], ...]) -> tuple[CcaRow, ...]:
         """Each consumed record, in order, as a row with its class found in the dataset."""
         records = self._input(inputs, self._classes).value.records
-        return tuple(self._row(position, record) for position, record in enumerate(records, 1))
+        column_22 = self._column_22(inputs)
+        return tuple(
+            self._row(position, record, column_22) for position, record in enumerate(records, 1)
+        )
 
-    def _row(self, position: int, record: Record) -> CcaRow:
+    def _column_22(self, inputs: tuple[Artifact[Any], ...]) -> dict[Decimal, Decimal]:
+        """The column 22 amount of each class in the consumed `non_compliant` record list, summed
+        over its records; empty when the table does not consume it."""
+        amounts: dict[Decimal, Decimal] = {}
+        if self._non_compliant is not None:
+            for record in self._input(inputs, self._non_compliant).value.records:
+                number = Decimal(record[CCA_CLASS_NUMBER])
+                amounts[number] = amounts.get(number, _ZERO) + Decimal(record[NON_COMPLIANT_CCA])
+        return amounts
+
+    def _row(self, position: int, record: Record, column_22: Mapping[Decimal, Decimal]) -> CcaRow:
         item = f"item {position}"
         class_number = Decimal(record[CCA_CLASS_NUMBER])
         class_rate = self._class_rates.values.for_class(class_number)
@@ -163,11 +189,12 @@ class CcaTable(Capability):
             # A non-negative field, so only a claim of -0 changes: it is 0.
             claimed=Decimal(record[CCA_CLAIMED]).copy_abs(),
             no_property_left=1 if record[CCA_NO_PROPERTY_LEFT] else 0,
+            column_22=column_22.get(class_number, _ZERO),
         )
 
     def _columns(self, row: CcaRow) -> CcaColumns:
         """Columns 14 to 19 of `row` and its maximum, rounded with the dataset's rule; a claim
-        above the maximum is an InputAboveBoundError naming the item."""
+        above its limit is an InputAboveBoundError naming the item."""
         rounding = self._class_rates.rounding
         rate = row.class_rate
         column_10 = row.additions
@@ -197,12 +224,20 @@ class CcaTable(Capability):
             if row.zero_reason is not CcaZeroReason.NONE
             else rounding.apply(column_19 * rate.rate.value)
         )
-        if row.claimed > maximum:
+        limit = self._limit(row, maximum)
+        if row.claimed > limit:
+            detail = (
+                f" ({maximum} less column 22 {row.column_22})" if row.column_22 != _ZERO else ""
+            )
             raise InputAboveBoundError(
                 f"item {row.position}: {CCA_CLAIMED.identifier} {row.claimed} is above the "
-                f"maximum {maximum}"
+                f"maximum {limit}{detail}"
             )
         return CcaColumns(column_14, column_15, column_16, column_17, column_18, column_19, maximum)
+
+    def _limit(self, row: CcaRow, maximum: Decimal) -> Decimal:
+        """The most the claim of `row` may be: its maximum (column 21)."""
+        return maximum
 
     @staticmethod
     def _rounded(rounding: RoundingRule, exact: ExactFraction) -> Decimal:

@@ -11,11 +11,13 @@ half (Class 55), 1 (Class 53), 9 divided by 11 (Class 50), and 0 (Classes 12, 13
 from the half-year rule and Class 10.1 excluded from recapture and terminal loss, as decided on the
 ticket.
 
-The list of classes and the produced kinds are made-up `ex/` kinds, declared here and not in the
-catalog: the rental and the business lists are declared when T776 and T2125 are wired. The
-fields are the catalog's own `ca/` kinds. Each record holds one Area A row:
-column 1 (the class number), column 2, column 3, column 5, column 11, column 12, the CCA claimed
-and whether no property is left in the class (Note 3).
+The list of classes, the list of column 22 amounts ("Column 22: Non-compliant amount of CCA (see
+Chart B below)", one record of the class number and the amount per class) and the produced kinds
+are made-up `ex/` kinds, declared here and not in the catalog: the rental and the business lists
+are declared when T776 and T2125 are wired. The fields are the catalog's own `ca/` kinds. Each
+record of the classes holds one Area A row: column 1 (the class number), column 2, column 3,
+column 5, column 11, column 12, the CCA claimed and whether no property is left in the class
+(Note 3).
 """
 
 from __future__ import annotations
@@ -53,6 +55,7 @@ from app.jurisdictions.ca.catalog import (
     CCA_RIIP_ADDITIONS,
     CCA_UCC_AT_END,
     CCA_UCC_AT_START,
+    NON_COMPLIANT_CCA,
 )
 
 D = Decimal
@@ -74,6 +77,7 @@ CLASS_FIELDS = (
     CCA_NO_PROPERTY_LEFT,
 )
 CLASSES = RecordListKind("ex/cca_classes", fields=CLASS_FIELDS)
+NON_COMPLIANT = RecordListKind("ex/non_compliant_cca", fields=(CCA_CLASS_NUMBER, NON_COMPLIANT_CCA))
 CCA_CLAIM = ArtifactKind("ex/cca_claim", Decimal, non_negative=True)
 RECAPTURED_CCA = ArtifactKind("ex/recaptured_cca", Decimal, non_negative=True)
 TERMINAL_LOSS = ArtifactKind("ex/terminal_loss", Decimal, non_negative=True)
@@ -143,6 +147,24 @@ def classes(*rows: dict[ArtifactKind[Any], Decimal | int]) -> Artifact[Any]:
     return Artifact(CLASSES, RecordList(CLASSES.fields, rows))
 
 
+def non_compliant_cca(*amounts: tuple[str, str]) -> Artifact[Any]:
+    """An `ex/non_compliant_cca` artifact of one record per (class number, column 22) pair, in
+    order."""
+    return Artifact(
+        NON_COMPLIANT,
+        RecordList(
+            NON_COMPLIANT.fields,
+            [
+                {CCA_CLASS_NUMBER: D(number), NON_COMPLIANT_CCA: D(amount)}
+                for number, amount in amounts
+            ],
+        ),
+    )
+
+
+# No class has a column 22.
+NO_COLUMN_22 = non_compliant_cca()
+
 # The ticket's acceptance rows. A class with additions: Class 8, UCC 10,000 at the start and
 # 3,000 of additions, so column 7 is 13,000, column 18 one half of 3,000 = 1,500, column 19
 # 11,500 and the maximum 20% of it, 2,300.00.
@@ -177,14 +199,22 @@ def service(
     capability: str,
     output: ArtifactKind[Any],
     dataset: ParameterDataset[ClassRates] | None = None,
+    checks_claim: bool = False,
 ) -> TaxComputationService:
-    """A computation of the one `capability` over `ex/cca_classes`, producing `output`."""
+    """A computation of the one `capability` over `ex/cca_classes`, producing `output`; one that
+    refuses a claim (`checks_claim`) also consumes `ex/non_compliant_cca` as `non_compliant`."""
     dataset = dataset or class_rates()
     code = JurisdictionCode("CA-ON")
+    consumes = {"classes": CLASSES.identifier}
+    if checks_claim:
+        consumes["non_compliant"] = NON_COMPLIANT.identifier
+    inputs = frozenset(
+        {CLASSES.identifier} | ({NON_COMPLIANT.identifier} if checks_claim else set())
+    )
     selection = CapabilitySelection(
         name=capability,
         params={"class_rates": dataset.family},
-        consumes={"classes": CLASSES.identifier},
+        consumes=consumes,
         produces={"output": output.identifier},
     )
     manifest = Manifest(
@@ -192,11 +222,11 @@ def service(
         version=1,
         valid_from_tax_year=2025,
         capabilities=(selection,),
-        inputs=frozenset({CLASSES.identifier}),
+        inputs=inputs,
         outputs=frozenset({output.identifier}),
     )
     artifacts = ArtifactRegistry()
-    for kind in (CLASSES, output):
+    for kind in (CLASSES, NON_COMPLIANT, output):
         artifacts.register(kind.identifier, kind)
     return TaxComputationService(
         _Jurisdictions(Jurisdiction(code=code, manifests=(manifest,))),

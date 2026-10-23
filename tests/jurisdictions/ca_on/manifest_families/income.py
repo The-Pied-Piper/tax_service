@@ -18,7 +18,9 @@ from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZero
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
+from app.jurisdictions.ca.capabilities.cca_claim_after_column_22 import CcaClaimAfterColumn22
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
+from app.jurisdictions.ca.capabilities.closing_ucc_after_column_22 import ClosingUccAfterColumn22
 from app.jurisdictions.ca.capabilities.disposition_gains import DispositionGains
 from app.jurisdictions.ca.capabilities.disposition_gains_only import DispositionGainsOnly
 from app.jurisdictions.ca.capabilities.disposition_proceeds import DispositionProceeds
@@ -1630,12 +1632,15 @@ STEPS = {
         produces={"output": "ca/rental_net_income_after_terminal_loss"},
     ),
     # T776 Area A "Line ii: Total CCA claim for the year *: Total of column 23": the CCA claimed
-    # on each class of the Area A list, at most its maximum (column 19 multiplied by column 20),
-    # totalled.
+    # on each class of the Area A list, at most its maximum (column 19 multiplied by column 20)
+    # less its column 22 (the Chart B total of the class), totalled.
     CapabilitySelection(
-        name="ca/cca_claim",
+        name="ca/cca_claim_after_column_22",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/rental_cca_classes"},
+        consumes={
+            "classes": "ca/rental_cca_classes",
+            "non_compliant": "ca/short_term_rental_non_compliant_cca_by_class",
+        },
         produces={"output": "ca/rental_cca_table_claim"},
     ),
     # T776 Area A "* Sole proprietors and partnerships: Enter the total CCA claim for the year
@@ -1700,9 +1705,12 @@ STEPS = {
     # number and column 24 of each class of the Area A list, a product of the return for next
     # year's column 2.
     CapabilitySelection(
-        name="ca/closing_ucc",
+        name="ca/closing_ucc_after_column_22",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/rental_cca_classes"},
+        consumes={
+            "classes": "ca/rental_cca_classes",
+            "non_compliant": "ca/short_term_rental_non_compliant_cca_by_class",
+        },
         produces={"output": "ca/rental_closing_ucc"},
     ),
     # T776 "Line 6: Net income (loss) (amount 5 minus line 9936)": line 9936 is computed above.
@@ -3990,7 +3998,11 @@ WIRING = {
         frozenset({RENTAL_COOWNER, RENTAL_CCA_TABLE_TERMINAL_LOSS, RENTAL_COOWNER_TERMINAL_LOSS}),
         frozenset({RENTAL_TERMINAL_LOSS}),
     ),
-    (CcaClaim, frozenset({RENTAL_CCA_CLASSES}), frozenset({RENTAL_CCA_TABLE_CLAIM})),
+    (
+        CcaClaimAfterColumn22,
+        frozenset({RENTAL_CCA_CLASSES, SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS}),
+        frozenset({RENTAL_CCA_TABLE_CLAIM}),
+    ),
     (
         ChooseByCount,
         frozenset({RENTAL_COOWNER, RENTAL_CCA_TABLE_CLAIM, RENTAL_COOWNER_CCA_CLAIM}),
@@ -4016,7 +4028,11 @@ WIRING = {
         frozenset({RENTAL_CCA_CLAIM_BEFORE_LIMIT, RENTAL_CCA_LIMIT}),
         frozenset({RENTAL_CCA_CLAIM}),
     ),
-    (ClosingUcc, frozenset({RENTAL_CCA_CLASSES}), frozenset({RENTAL_CLOSING_UCC})),
+    (
+        ClosingUccAfterColumn22,
+        frozenset({RENTAL_CCA_CLASSES, SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS}),
+        frozenset({RENTAL_CLOSING_UCC}),
+    ),
     (
         Sum,
         frozenset({RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES, RENTAL_RECAPTURED_CCA}),

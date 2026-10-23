@@ -39,10 +39,12 @@ class ClosingUcc(CcaTable):
         class_rates: ParameterDataset[ClassRates],
         classes: ArtifactKind[RecordList],
         output: ArtifactKind[RecordList],
+        **consumed: ArtifactKind[RecordList],
     ) -> None:
         """Wire the capability: its class-rate dataset, the record list it reads, the record list
-        kind produced, of the class number and the UCC at the end of the year."""
-        super().__init__(class_rates, classes, output)
+        kind produced, of the class number and the UCC at the end of the year. A subclass
+        consuming more record lists passes them by slot name."""
+        super().__init__(class_rates, classes, output, **consumed)
         self._output = output
 
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
