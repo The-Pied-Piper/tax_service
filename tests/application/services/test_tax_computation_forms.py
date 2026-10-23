@@ -1057,11 +1057,9 @@ def test_a_minimum_of_zero_on_a_default_list_is_a_no_op() -> None:
     assert service(manifest).compute(EX_ON, 2025, TWO_RENTALS)["ex-on/return"]
 
 
-def test_a_minimum_above_one_on_a_default_list_is_refused_when_composed() -> None:
-    manifest = with_default_limits(rental_manifest(), min_instances=2)
-
-    with pytest.raises(InvalidCompositionError) as caught:
-        service(manifest).compose(EX_ON, 2025)
+def test_a_minimum_above_one_on_a_default_list_is_refused_when_the_manifest_is_built() -> None:
+    with pytest.raises(InvalidManifestError) as caught:
+        with_default_limits(rental_manifest(), min_instances=2)
 
     assert str(caught.value) == (
         "form 'ex-on/return': min_instances 2 can never hold: "

@@ -1535,22 +1535,22 @@ def test_the_limits_come_from_the_part_that_declares_them_whatever_its_place(
         ),
         pytest.param(
             "  max_instances: '1'\n",
-            "form 'ex/rental': max_instances must be an integer, got str",
+            "form\\.max_instances must be an integer, got str",
             id="str",
         ),
         pytest.param(
             "  max_instances: 1.5\n",
-            "form 'ex/rental': max_instances must be an integer, got float",
+            "form\\.max_instances must be an integer, got float",
             id="float",
         ),
         pytest.param(
             "  max_instances: true\n",
-            "form 'ex/rental': max_instances must be an integer, got bool",
+            "form\\.max_instances must be an integer, got bool",
             id="bool",
         ),
         pytest.param(
             "  max_instances: [1]\n",
-            "form 'ex/rental': max_instances must be an integer, got list",
+            "form\\.max_instances must be an integer, got list",
             id="list",
         ),
         pytest.param(
@@ -1560,17 +1560,17 @@ def test_the_limits_come_from_the_part_that_declares_them_whatever_its_place(
         ),
         pytest.param(
             "  min_instances: '1'\n",
-            "form 'ex/rental': min_instances must be an integer, got str",
+            "form\\.min_instances must be an integer, got str",
             id="min-str",
         ),
         pytest.param(
             "  min_instances: true\n",
-            "form 'ex/rental': min_instances must be an integer, got bool",
+            "form\\.min_instances must be an integer, got bool",
             id="min-bool",
         ),
         pytest.param(
             "  min_instances: 1.5\n",
-            "form 'ex/rental': min_instances must be an integer, got float",
+            "form\\.min_instances must be an integer, got float",
             id="min-float",
         ),
         pytest.param(
@@ -1601,6 +1601,23 @@ def test_a_bad_limit_is_rejected_naming_the_part_file(
     write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-bad.yaml": limited(extra)})
 
     with pytest.raises(InvalidManifestError, match=message) as caught:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(part_path(tmp_path, "01-bad.yaml")) in str(caught.value)
+
+
+def test_a_minimum_above_one_without_instances_is_rejected_naming_the_part(tmp_path: Path) -> None:
+    text = (
+        "form:\n  name: ex/rental\n  exports: [ex/n]\n  min_instances: 2\n"
+        "capabilities:\n  - {name: ex/a, produces: {output: ex/n}}\n"
+    )
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-bad.yaml": text})
+
+    with pytest.raises(
+        InvalidManifestError,
+        match=r"form 'ex/rental': min_instances 2 can never hold: "
+        "a form without an instances list has one instance",
+    ) as caught:
         source(tmp_path).get_jurisdiction(EX_ON)
 
     assert str(part_path(tmp_path, "01-bad.yaml")) in str(caught.value)

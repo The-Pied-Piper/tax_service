@@ -12,9 +12,9 @@ For each export `X` of the form `B` the engine derives the kind `B.X`: a record 
 `X`, with a record per instance in instance order (one record for a form without an instances list).
 Every form reads any such kind by its identifier; an export nobody reads is fine.
 
-A `FormSet` holds the forms of one computation. It orders them by their imports, runs each once
-per instance record (a form without an instances list has one) on its own `Worksheet`, keeps
-every form's exports in one store and hands each run its imports as starting artifacts. It
+A `FormSet` holds the forms of one computation. It orders them by their imports and runs each
+once per instance record (a form without an instances list has one) on its own `Worksheet`. It
+keeps every form's exports in one store, hands each run its imports as starting artifacts and
 returns a plain mapping: form name to one `Worksheet` per instance, in instance order.
 
 A form without an instances list has a default instance list of exactly one instance, and the
@@ -61,7 +61,8 @@ class FormComposition:
     Any breach of the rules of `Composition`, an empty `exports`, an export that is another form's,
     a `max_instances` below 1, a `min_instances` below 0 or above `max_instances`, or a
     `min_instances` above 1 on a form without an instances list (its default list has one instance)
-    is an InvalidCompositionError. The form is always named in the message (`form 'x': ...`).
+    or a malformed `exclusive_group` is an InvalidCompositionError. The form is always named in the
+    message (`form 'x': ...`).
     `max_instances`, `min_instances` and `exclusive_group` are the limits the `FormSet` enforces on
     the instances.
     """
@@ -96,29 +97,12 @@ class FormComposition:
                 raise InvalidCompositionError(
                     f"form {name!r}: export {export.identifier!r} is another form's export"
                 )
-        for field, value, least in (
-            ("max_instances", max_instances, 1),
-            ("min_instances", min_instances, 0),
-        ):
-            if value is not None:
-                try:
-                    Form.check_count(field, value, least)
-                except InvalidManifestError as exc:
-                    raise InvalidCompositionError(f"form {name!r}: {exc}") from None
-        if (
-            min_instances is not None
-            and max_instances is not None
-            and min_instances > max_instances
-        ):
-            raise InvalidCompositionError(
-                f"form {name!r}: min_instances {min_instances} "
-                f"is above max_instances {max_instances}"
-            )
-        if instances is None and min_instances is not None and min_instances > 1:
-            raise InvalidCompositionError(
-                f"form {name!r}: min_instances {min_instances} can never hold: "
-                "a form without an instances list has one instance"
-            )
+        try:
+            Form.check_limits(max_instances, min_instances, instances is not None)
+            if exclusive_group is not None:
+                Form.check_identifier("exclusive_group", exclusive_group)
+        except InvalidManifestError as exc:
+            raise InvalidCompositionError(f"form {name!r}: {exc}") from None
         wired = tuple(capabilities)
         produced = {kind for capability in wired for kind in capability.produces}
         read = {kind for capability in wired for kind in capability.consumes} | set(listed)

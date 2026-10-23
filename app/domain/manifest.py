@@ -85,34 +85,48 @@ class Form:
         if not self.exports:
             raise InvalidManifestError("exports must name at least one artifact")
         self.check_exports("exports", self.exports)
-        for field, value, least in (
-            ("max_instances", self.max_instances, 1),
-            ("min_instances", self.min_instances, 0),
-        ):
-            if value is not None:
-                try:
-                    self.check_count(field, value, least)
-                except InvalidManifestError as exc:
-                    raise InvalidManifestError(f"form {self.name!r}: {exc}") from None
-        if (
-            self.min_instances is not None
-            and self.max_instances is not None
-            and self.min_instances > self.max_instances
-        ):
-            raise InvalidManifestError(
-                f"form {self.name!r}: min_instances {self.min_instances} "
-                f"is above max_instances {self.max_instances}"
-            )
+        try:
+            self.check_limits(self.max_instances, self.min_instances, self.instances is not None)
+        except InvalidManifestError as exc:
+            raise InvalidManifestError(f"form {self.name!r}: {exc}") from None
         if self.exclusive_group is not None:
             self.check_identifier("exclusive_group", self.exclusive_group)
 
     @staticmethod
-    def check_count(field: str, value: object, least: int) -> None:
-        """Refuse a `field` that is not an integer (a boolean is not) of at least `least`."""
-        if not isinstance(value, int) or isinstance(value, bool):
-            raise InvalidManifestError(f"{field} must be an integer, got {type(value).__name__}")
-        if value < least:
-            raise InvalidManifestError(f"{field} must be at least {least}, got {value}")
+    def check_limits(
+        max_instances: object, min_instances: object, has_instances_list: bool
+    ) -> None:
+        """Refuse limits no instance count could satisfy; the message does not name the form.
+
+        Each given limit must be an integer (a boolean is not): `max_instances` at least 1,
+        `min_instances` at least 0 and not above the maximum. A form without an instances list has
+        one instance, so a `min_instances` above 1 can never hold.
+        """
+        for field, value, least in (
+            ("max_instances", max_instances, 1),
+            ("min_instances", min_instances, 0),
+        ):
+            if value is None:
+                continue
+            if not isinstance(value, int) or isinstance(value, bool):
+                raise InvalidManifestError(
+                    f"{field} must be an integer, got {type(value).__name__}"
+                )
+            if value < least:
+                raise InvalidManifestError(f"{field} must be at least {least}, got {value}")
+        if (
+            isinstance(min_instances, int)
+            and isinstance(max_instances, int)
+            and min_instances > max_instances
+        ):
+            raise InvalidManifestError(
+                f"min_instances {min_instances} is above max_instances {max_instances}"
+            )
+        if isinstance(min_instances, int) and min_instances > 1 and not has_instances_list:
+            raise InvalidManifestError(
+                f"min_instances {min_instances} can never hold: "
+                "a form without an instances list has one instance"
+            )
 
     @staticmethod
     def check_exports(field: str, exports: Iterable[str]) -> None:

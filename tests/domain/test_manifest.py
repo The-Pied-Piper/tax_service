@@ -398,6 +398,15 @@ def test_a_minimum_that_is_not_an_integer_is_refused(bad: object) -> None:
         form(min_instances=bad)
 
 
+def test_a_minimum_above_one_without_instances_is_refused_naming_the_form() -> None:
+    with pytest.raises(
+        InvalidManifestError,
+        match=r"^form 'ex/rental': min_instances 2 can never hold: "
+        "a form without an instances list has one instance$",
+    ):
+        form(instances=None, min_instances=2)
+
+
 def test_manifest_fields_end_with_forms() -> None:
     assert [field.name for field in dataclasses.fields(Manifest)][-1] == "forms"
 

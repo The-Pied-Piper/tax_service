@@ -43,7 +43,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import NamedTuple, cast
+from typing import NamedTuple
 
 import yaml
 
@@ -82,6 +82,18 @@ class _Declaration(NamedTuple):
     max_instances: int | None
     min_instances: int | None
     exclusive_group: str | None
+
+    def form(self, name: str, selections: tuple[CapabilitySelection, ...]) -> Form:
+        """The form `name` with this declaration and `selections`, which checks the declaration."""
+        return Form(
+            name=name,
+            instances=self.instances,
+            exports=self.exports,
+            capabilities=selections,
+            max_instances=self.max_instances,
+            min_instances=self.min_instances,
+            exclusive_group=self.exclusive_group,
+        )
 
 
 class YamlJurisdictionSource:
@@ -231,15 +243,7 @@ class YamlJurisdictionSource:
             raise InvalidManifestError(
                 f"{part}: form {name!r}: the name is reserved for the parts without a `form:` key"
             )
-        return Form(
-            name=name,
-            instances=declared.instances,
-            exports=declared.exports,
-            capabilities=tuple(selections),
-            max_instances=declared.max_instances,
-            min_instances=declared.min_instances,
-            exclusive_group=declared.exclusive_group,
-        )
+        return declared.form(name, tuple(selections))
 
     @classmethod
     def _form_header(cls, node: YamlNode) -> tuple[str, _Declaration | None]:
@@ -271,21 +275,12 @@ class YamlJurisdictionSource:
         declared = _Declaration(
             instances=None if instances is None else instances.require_non_empty_string(),
             exports=tuple(item.require_string() for item in exports.items()),
-            # Unchecked here: the `Form` below refuses a non-integer, naming the form.
-            max_instances=None if maximum is None else cast(int, maximum.value),
-            min_instances=None if minimum is None else cast(int, minimum.value),
+            max_instances=None if maximum is None else maximum.require_integer(),
+            min_instances=None if minimum is None else minimum.require_integer(),
             exclusive_group=None if group is None else group.require_non_empty_string(),
         )
         # Built to check the declaration; the form's selections are added when the parts merge.
-        Form(
-            name=name,
-            instances=declared.instances,
-            exports=declared.exports,
-            capabilities=(),
-            max_instances=declared.max_instances,
-            min_instances=declared.min_instances,
-            exclusive_group=declared.exclusive_group,
-        )
+        declared.form(name, ())
         return name, declared
 
     @classmethod
