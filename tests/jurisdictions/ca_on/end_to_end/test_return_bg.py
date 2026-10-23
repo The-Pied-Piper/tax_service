@@ -67,6 +67,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
+    AMT_PART_5_LINE_11_IS_POSITIVE,
     AMT_PART_6_FEDERAL_SURTAX,
     AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
     AMT_PART_6_SURTAX_AT_48_PERCENT,
@@ -99,8 +100,14 @@ from app.jurisdictions.ca.catalog import (
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
+    FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LINE_41700,
+    NET_FEDERAL_TAX,
+    REFUND_OR_BALANCE_OWING,
     SPLIT_INCOME_LINE_22,
     SPLIT_INCOME_LINE_24,
+    SPLIT_INCOME_LINE_29,
+    SPLIT_INCOME_LINE_30,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
 )
@@ -1310,3 +1317,55 @@ def test_return_bg_part_6_line_3_is_floored_for_a_non_resident_with_negative_bas
     assert worksheet.get(AMT_PART_6_SURTAX_AT_48_PERCENT).value == D("0")
     assert worksheet.get(AMT_PART_6_FEDERAL_SURTAX).value == D("0")
     assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("0")
+
+
+def test_return_bg_line_41700_is_the_line_139_figure_when_part_5_line_11_is_zero() -> None:
+    # Part 5 line 11 is 0.00 (the Part 5 case above), so the condition "line 11 is positive" counts
+    # 0 and T1 line 41700 is the line 139 figure: line 132 (the federal tax with the ITC recapture,
+    # 5846.47) less line 138 (0.00), 5846.47. Part 6 line 14, 0.00, is not entered on the return.
+    # Line 29 of Form T1206 Part 2 is then 5846.47 plus 0.00, and the net federal tax is the same.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_PART_5_LINE_11_IS_POSITIVE).value == 0
+    assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("5846.47")
+    assert worksheet.get(FEDERAL_TAX_LINE_41700).value == D("5846.47")
+    assert worksheet.get(SPLIT_INCOME_LINE_29).value == D("5846.47")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("5846.47")
+
+
+def test_return_bg_line_41700_is_part_6_line_14_when_part_5_line_11_is_positive() -> None:
+    # The security options of boxes 39 and 91 at 150000.00 and a non-resident (a count of 1): Part 5
+    # line 11 is 1558.95 (line 7, 7405.42 less 5846.47 of line 6, with line 10 at 0.00), which is
+    # positive, so the condition "line 11 is positive" counts 1 and T1 line 41700 takes Part 6 line
+    # 14 of 10960.02 (the Part 6 case above) in place of the line 139 figure of 5846.47. Line 29 of
+    # Form T1206 Part 2 is 10960.02 plus 0.00, and line 30 is the greater of line 24 (0.00) and line
+    # 29, 10960.02, so the net federal tax is 10960.02 plus the special taxes of 0.00. The balance
+    # owing rises by the change in the net federal tax, 10960.02 less 5846.47, 5113.55: from 8973.29
+    # to 14086.84, as nothing else in the total payable or the credits changes.
+    worksheet = return_bg(security_t4_39_and_91="150000", non_resident=1)
+
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1558.95")
+    assert worksheet.get(AMT_PART_5_LINE_11_IS_POSITIVE).value == 1
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("10960.02")
+    assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("5846.47")
+    assert worksheet.get(FEDERAL_TAX_LINE_41700).value == D("10960.02")
+    assert worksheet.get(SPLIT_INCOME_LINE_29).value == D("10960.02")
+    assert worksheet.get(SPLIT_INCOME_LINE_30).value == D("10960.02")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("10960.02")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("14086.84")
+
+
+def test_return_bg_line_41700_keeps_line_139_when_regular_tax_is_more_than_minimum() -> None:
+    # Employment income of 200000.00: the minimum amount on line 103 of Part 1 is 5494.59, but the
+    # regular net federal tax less the surtax, line 6 of Part 5, is 39760.79, more than the minimum,
+    # so line 7 and line 11 are 0.00 and the condition "line 11 is positive" counts 0. Part 6 line
+    # 14 is still computed, 5494.59 (line 12 is the net minimum tax of 5494.59, with no amount on
+    # line 11), but it is not entered on line 41700: the line 139 figure, 39760.79, is.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(AMT_MINIMUM_AMOUNT).value == D("5494.59")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
+    assert worksheet.get(AMT_PART_5_LINE_11_IS_POSITIVE).value == 0
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("5494.59")
+    assert worksheet.get(FEDERAL_TAX_LINE_41700).value == D("39760.79")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("39760.79")

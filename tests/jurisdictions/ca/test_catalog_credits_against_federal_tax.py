@@ -7,12 +7,13 @@ from typing import Any
 
 import pytest
 
-from app.domain.artifact import ArtifactKind, ArtifactRegistry
+from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
 from app.domain.errors import InvalidRecordError, NegativeArtifactError
 from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
     CREDITS_AGAINST_FEDERAL_TAX,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LINE_41700,
     FOREIGN_NON_BUSINESS_TAX_PAID,
     FOREIGN_TAX_COUNTRIES,
     FOREIGN_TAX_CREDIT_SHEET_LINE_3,
@@ -78,6 +79,23 @@ def test_the_credits_against_federal_tax_kinds_are_the_registered_ones(
     assert registry.get("ca/labour_sponsored_funds_credit") is LABOUR_SPONSORED_FUNDS_CREDIT
     assert registry.get("ca/credits_against_federal_tax") is CREDITS_AGAINST_FEDERAL_TAX
     assert registry.get("ca/federal_tax_less_credits") is FEDERAL_TAX_LESS_CREDITS
+    assert registry.get("ca/federal_tax_line_41700") is FEDERAL_TAX_LINE_41700
+
+
+def test_the_federal_tax_line_41700_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:
+    # T1 line 139 and line 41700 "Line 134 minus line 138 (if negative, enter "0")", or, when Part 5
+    # line 11 of Form T691 is positive, Part 6 line 14 "Enter this amount on line 41700 of your
+    # return.": the figure entered on line 41700, never below 0.
+    assert FEDERAL_TAX_LINE_41700.identifier == "ca/federal_tax_line_41700"
+    assert FEDERAL_TAX_LINE_41700.value_type is Decimal
+    assert FEDERAL_TAX_LINE_41700.non_negative is True
+    assert registry.kind("ca/federal_tax_line_41700") is FEDERAL_TAX_LINE_41700
+
+
+def test_a_negative_federal_tax_line_41700_is_refused() -> None:
+    # A negative figure is an input error on the line 41700 entry, refused and not taken as 0.
+    with pytest.raises(NegativeArtifactError, match="ca/federal_tax_line_41700 cannot be negative"):
+        Artifact(FEDERAL_TAX_LINE_41700, Decimal("-1"))
 
 
 def test_the_credits_against_federal_tax_kinds_are_money() -> None:
@@ -107,6 +125,7 @@ def test_the_credits_against_federal_tax_kinds_are_money() -> None:
         LABOUR_SPONSORED_FUNDS_CREDIT,
         CREDITS_AGAINST_FEDERAL_TAX,
         FEDERAL_TAX_LESS_CREDITS,
+        FEDERAL_TAX_LINE_41700,
     ):
         assert kind.value_type is Decimal, kind.identifier
 

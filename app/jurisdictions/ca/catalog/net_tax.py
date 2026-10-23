@@ -80,7 +80,7 @@ NET_FEDERAL_TAX = CATALOG.declare("net_federal_tax", Decimal, non_negative=True)
 """Net federal tax, T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": by Form T1206
 Part 2 "Add the amount from line 30 to the amount from line 41800 of your return, and enter the
 result on line 42000 of your return.", line 30 (`split_income_line_30`, the more of line 24 and line
-29, line 29 being line 139, `federal_tax_less_credits`, plus line 140, the advanced Canada workers
+29, line 29 being line 41700, `federal_tax_line_41700`, plus line 140, the advanced Canada workers
 benefit) plus the special taxes (`special_taxes`, line 141), in line order. With no split income,
 line 24 is at most line 29, so line 30 is line 29 and the sum is lines 139 to 141.
 

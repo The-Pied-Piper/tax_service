@@ -145,8 +145,9 @@ description: >-
   enter the amount from line 9. Otherwise, enter "0".", is 0.00: line 10 is 0.00, and the filer
   is not a non-resident (a chosen figure of 0). Line 12, "Line 8 plus line 11", is 0.00. Line 13,
   "Amount from line 24 of Form T1206", is 0.00, so line 14, "Enter whichever is more: amount from
-  line 12 or line 13", is 0.00. The amount is not yet entered on line 41700 of the return.
-  Not yet computed: Part 7 of Form T691 and Part 8 lines 13 to 17.
+  line 12 or line 13", is 0.00. Line 11 of Part 5 is 0.00, so the amount is not entered on line
+  41700 of the return: line 41700 is the line 139 figure, 5846.47 (line 132, 5846.47, less line
+  138, 0.00). Not yet computed: Part 7 of Form T691 and Part 8 lines 13 to 17.
   Amounts are quoted decimals, and the count of CPP months is a quoted digit string.
 sources:
   - >-

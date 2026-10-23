@@ -176,6 +176,12 @@ FEDERAL_TAX_LESS_CREDITS = CATALOG.declare("federal_tax_less_credits", Decimal, 
 "0")": line 134 (40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax", here line
 132 (`federal_tax_with_itc_recapture`) as line 133 is not wired, less line 138, not below zero."""
 
+FEDERAL_TAX_LINE_41700 = CATALOG.declare("federal_tax_line_41700", Decimal, non_negative=True)
+"""Federal tax, T1 line 139 and line 41700 "Line 134 minus line 138 (if negative, enter "0")", or,
+when Part 5 line 11 of Form T691 is positive, Part 6 line 14 "Enter this amount on line 41700 of
+your return.": the figure entered on line 41700, the federal tax less credits when the count of
+"line 11 is positive" is 0, else the Part 6 line 14 amount, never below zero."""
+
 FOREIGN_NON_BUSINESS_TAX_PAID = CATALOG.declare(
     "foreign_non_business_tax_paid", Decimal, non_negative=True
 )

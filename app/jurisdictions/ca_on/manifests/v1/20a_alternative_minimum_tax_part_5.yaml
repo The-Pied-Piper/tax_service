@@ -35,7 +35,7 @@ capabilities:
     produces:
       output: ca/amt_investment_tax_credit_less_part_d
   # Part 5 line 11 "Line 7 minus line 10 (if negative, enter "0")": line 7 less line 10, never
-  # below zero. Nothing reads it until Parts 6 and 7 land.
+  # below zero. The count of the condition "line 11 is positive" reads it for T1 line 41700.
   - name: core/subtract_not_below_zero
     consumes:
       amount: ca/amt_minimum_tax_after_regular_tax

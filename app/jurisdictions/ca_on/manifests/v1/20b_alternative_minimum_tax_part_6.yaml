@@ -85,8 +85,10 @@ capabilities:
     produces:
       output: ca/amt_part_6_tax_with_surtax
   # Part 6 line 14 "Enter whichever is more: amount from line 12 or line 13. Enter this amount on
-  # line 41700 of your return.": the greater of line 12 and line 13, "Amount from line 24 of Form
-  # T1206". The entry on line 41700 of the return is not wired in this change.
+  # line 41700 of your return." "Federal tax payable (under alternative minimum tax)": the greater
+  # of line 12 and line 13, "Amount from line 24 of Form T1206". The entry on line 41700 of the
+  # return is made by the choice of the line 41700 entry, which takes this amount only when Part 5
+  # line 11 is positive.
   - name: core/greater_of
     consumes:
       amounts:

@@ -208,3 +208,25 @@ capabilities:
       less: ca/credits_against_federal_tax
     produces:
       output: ca/federal_tax_less_credits
+  # T691 Part 5 "If line 11 is positive, complete parts 6 and 7." The condition "line 11 is
+  # positive" counts 1 when line 11 (the alternative minimum tax payable) is more than 0, and 0
+  # otherwise.
+  - name: ca/count_by_conditions
+    params:
+      conditions: ca/amt_line_11_is_positive_conditions
+    consumes:
+      counts: []
+      amounts:
+        - ca/amt_alternative_minimum_tax_payable
+    produces:
+      output: ca/amt_part_5_line_11_is_positive
+  # T1 line 139 and line 41700 "Line 134 minus line 138 (if negative, enter "0")", or, when Part 5
+  # line 11 is positive, Form T691 Part 6 line 14 "Enter this amount on line 41700 of your
+  # return.": the federal tax less credits when the count is 0, else the Part 6 line 14 amount.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/amt_part_5_line_11_is_positive
+      when_none: ca/federal_tax_less_credits
+      when_any: ca/amt_federal_tax_payable_under_minimum_tax
+    produces:
+      output: ca/federal_tax_line_41700

@@ -113,12 +113,3 @@ outputs:
   # Form T1206 Part 3 line 33C "Amount from line 33A divided by the tax rate you entered on line
   # 33B": Ontario's provincial Schedule does not add it, so nothing on the return reads it.
   - ca-on/tosi_adjusted_taxable_income
-  # Form T691 Part 5 line 11 "Line 7 minus line 10 (if negative, enter "0")", which nothing else
-  # on the return reads yet; Part 5 lines 1 to 10 are read by the lines after them, and Part 3
-  # line 15 and Part 4 line 11 are read by Part 5 lines 4 and 2, so they are no longer declared
-  # outputs.
-  - ca/amt_alternative_minimum_tax_payable
-  # Form T691 Part 6 line 14 "Enter whichever is more: amount from line 12 or line 13. Enter this
-  # amount on line 41700 of your return.", which nothing on the return reads yet (the line 41700
-  # wiring is a later change); Part 6 lines 1 to 13 are read by the lines after them.
-  - ca/amt_federal_tax_payable_under_minimum_tax

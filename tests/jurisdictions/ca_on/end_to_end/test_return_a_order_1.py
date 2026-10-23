@@ -53,6 +53,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_NET_MINIMUM_TAX_PAYABLE,
+    AMT_PART_5_LINE_11_IS_POSITIVE,
     AMT_PART_6_FEDERAL_SURTAX,
     AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
     AMT_PART_6_SURTAX_AT_48_PERCENT,
@@ -238,6 +239,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
@@ -529,8 +531,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1288
-    assert len(order) == 1288
+    assert len(order) == 1290
+    assert len(order) == 1290
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
@@ -620,6 +622,13 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         position[AMT_PART_6_TAX_WITH_SURTAX] < position[AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX]
     )
     assert position[SPLIT_INCOME_LINE_24] < position[AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX]
+    # Part 5 line 11 is counted by "line 11 is positive" (T1 line 41700); line 41700 then takes
+    # either the federal tax less credits or Part 6 line 14, and line 29 reads line 41700.
+    assert position[AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE] < position[AMT_PART_5_LINE_11_IS_POSITIVE]
+    assert position[AMT_PART_5_LINE_11_IS_POSITIVE] < position[FEDERAL_TAX_LINE_41700]
+    assert position[FEDERAL_TAX_LESS_CREDITS] < position[FEDERAL_TAX_LINE_41700]
+    assert position[AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX] < position[FEDERAL_TAX_LINE_41700]
+    assert position[FEDERAL_TAX_LINE_41700] < position[SPLIT_INCOME_LINE_29]
     assert (
         position[INVESTMENT_INCOME_BEFORE_PRIOR_YEARS]
         < position[INTEREST_AND_OTHER_INVESTMENT_INCOME]

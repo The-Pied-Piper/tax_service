@@ -4,13 +4,19 @@ from __future__ import annotations
 
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.capped_amount import CappedAmount
+from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.manifest import CapabilitySelection
+from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.catalog import (
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
+    AMT_PART_5_LINE_11_IS_POSITIVE,
     CREDITS_AGAINST_FEDERAL_TAX,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
@@ -288,6 +294,31 @@ STEPS = {
         },
         produces={"output": "ca/federal_tax_less_credits"},
     ),
+    # T691 Part 5 "If line 11 is positive, complete parts 6 and 7." The condition "line 11 is
+    # positive" counts 1 when line 11 (the alternative minimum tax payable) is more than 0, and 0
+    # otherwise.
+    CapabilitySelection(
+        name="ca/count_by_conditions",
+        params={"conditions": "ca/amt_line_11_is_positive_conditions"},
+        consumes={
+            "counts": (),
+            "amounts": ("ca/amt_alternative_minimum_tax_payable",),
+        },
+        produces={"output": "ca/amt_part_5_line_11_is_positive"},
+    ),
+    # T1 line 139 and line 41700 "Line 134 minus line 138 (if negative, enter "0")", or, when Part 5
+    # line 11 is positive, Form T691 Part 6 line 14 "Enter this amount on line 41700 of your
+    # return.": the federal tax less credits when the count is 0, else the Part 6 line 14 amount.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/amt_part_5_line_11_is_positive",
+            "when_none": "ca/federal_tax_less_credits",
+            "when_any": "ca/amt_federal_tax_payable_under_minimum_tax",
+        },
+        produces={"output": "ca/federal_tax_line_41700"},
+    ),
 }
 
 WIRING = {
@@ -392,5 +423,21 @@ WIRING = {
         SubtractNotBelowZero,
         frozenset({FEDERAL_TAX_WITH_ITC_RECAPTURE, CREDITS_AGAINST_FEDERAL_TAX}),
         frozenset({FEDERAL_TAX_LESS_CREDITS}),
+    ),
+    (
+        CountByConditions,
+        frozenset({AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE}),
+        frozenset({AMT_PART_5_LINE_11_IS_POSITIVE}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                AMT_PART_5_LINE_11_IS_POSITIVE,
+                FEDERAL_TAX_LESS_CREDITS,
+                AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
+            }
+        ),
+        frozenset({FEDERAL_TAX_LINE_41700}),
     ),
 }

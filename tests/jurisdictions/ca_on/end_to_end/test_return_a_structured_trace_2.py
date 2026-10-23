@@ -555,8 +555,8 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
-    FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
@@ -2120,7 +2120,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         SPLIT_INCOME_LINE_29: SumLine(
             SPLIT_INCOME_LINE_29,
-            ((FEDERAL_TAX_LESS_CREDITS, D("16951.38")), (ADVANCED_CANADA_WORKERS_BENEFIT, D("0"))),
+            ((FEDERAL_TAX_LINE_41700, D("16951.38")), (ADVANCED_CANADA_WORKERS_BENEFIT, D("0"))),
             D("16951.38"),
         ),
         # The Federal Worksheet's "Line 25000 - Other payments deduction" lines 4, 8 and 9, each
