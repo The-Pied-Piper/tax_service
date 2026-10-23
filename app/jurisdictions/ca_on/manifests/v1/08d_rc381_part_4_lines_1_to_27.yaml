@@ -2,6 +2,9 @@
 # Overpayments", Part 4 (for residents of a province or territory other than Quebec), lines 1 to
 # 27. Part 2 and Part 3 lines 1 to 26 are in 08a_rc381_part_2_and_3.yaml, lines 27 to 69 in
 # 08b_rc381_part_3_qpp_and_totals.yaml, Part 3a and Part 3b in 08c_rc381_part_3a_and_3b.yaml.
+# Form RC381 (ca/rc381): see 08a_rc381_part_2_and_3.yaml.
+form:
+  name: ca/rc381
 capabilities:
   # Part 4 (for residents of a province or territory other than Quebec), lines 1 to 27. Line 1
   # "Pensionable net self-employment earnings: amount from line 12200 of your return plus line

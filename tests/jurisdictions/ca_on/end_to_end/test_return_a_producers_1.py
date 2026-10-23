@@ -1134,6 +1134,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     result = run_a()
     (worksheet,) = result["ca-on/return"]
     (schedule_8,) = result["ca/schedule_8"]
+    # The return carries Schedule 8 or Form RC381, so the form's amounts are those of a copy of it
+    # on the same return carrying Form RC381 instead.
+    (rc381,) = run_a(schedule_8_copies=0, rc381_copies=1)["ca/rc381"]
     assert worksheet.producer_of(EMPLOYMENT_INCOME) is None
     assert isinstance(worksheet.producer_of(CAPITAL_GAIN), Sum)
     assert worksheet.producer_of(UNUSED_RRSP_CONTRIBUTIONS) is None
@@ -1214,83 +1217,81 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(AMT_RENTAL_PROPERTY_ADJUSTMENT), SubtractNotBelowZero)
     assert isinstance(worksheet.producer_of(AMT_TAX_SHELTER_ADJUSTMENTS), Sum)
     assert isinstance(worksheet.producer_of(AMT_PART_1_SUBTOTAL), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_2_LINE_B), CountAtLeast)
-    assert isinstance(worksheet.producer_of(RC381_PART_2_LINE_G), AmountForCount)
-    assert isinstance(worksheet.producer_of(RC381_PART_2_LINE_H), AmountForCount)
-    assert isinstance(worksheet.producer_of(RC381_PART_2_LINE_I), AmountForCount)
-    assert isinstance(worksheet.producer_of(RC381_PART_2_LINE_J), AmountForCount)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_3), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_6), RatioTruncated)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_11), LesserOf)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_14), SubtractNotBelowZero)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_15_LESSER), LesserOf)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_15), AmountWhenMore)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_16), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_18), SubtractNotBelowZero)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_20), ApplyRate)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_21), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_22), TieredContribution)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_23), TieredContribution)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_24), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_26), TieredContribution)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_27), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_28), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_29), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_30), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_31), LesserOf)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_34), SubtractNotBelowZero)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_35_LESSER), LesserOf)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_35), AmountWhenMore)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_36), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_38), SubtractNotBelowZero)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_40), ApplyRate)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_41), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_42), TieredContribution)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_43), TieredContribution)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_44), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_46), TieredContribution)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_49), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_52), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_53), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_56), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_59), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_60), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_61), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_64), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_67), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_68), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_69), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_73), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_75), ChooseBySign)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_76), PositivePartOfNegation)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_77), LesserOfWhenPositive)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_78), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_79), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_80), LesserOfWhenPositive)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_81), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_82), ChooseBySign)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_83), PositivePartOfNegation)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_84), LesserOfWhenPositive)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_85), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_86), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_87_DIFFERENCE), Subtract)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_87), LesserOfWhenPositive)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_88), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_89), ChooseBySign)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_90), PositivePartOfNegation)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_91), LesserOfWhenPositive)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_92), Sum)
-    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_93), Sum)
-    assert isinstance(worksheet.producer_of(RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS), ChooseBySign)
-    assert isinstance(
-        worksheet.producer_of(RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS), ChooseBySign
-    )
-    assert isinstance(worksheet.producer_of(RC381_CPP_OVERPAYMENT), SumNotBelowZero)
+    assert isinstance(rc381.producer_of(RC381_PART_2_LINE_B), CountAtLeast)
+    assert isinstance(rc381.producer_of(RC381_PART_2_LINE_G), AmountForCount)
+    assert isinstance(rc381.producer_of(RC381_PART_2_LINE_H), AmountForCount)
+    assert isinstance(rc381.producer_of(RC381_PART_2_LINE_I), AmountForCount)
+    assert isinstance(rc381.producer_of(RC381_PART_2_LINE_J), AmountForCount)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_3), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_6), RatioTruncated)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_11), LesserOf)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_14), SubtractNotBelowZero)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_15_LESSER), LesserOf)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_15), AmountWhenMore)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_16), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_18), SubtractNotBelowZero)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_20), ApplyRate)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_21), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_22), TieredContribution)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_23), TieredContribution)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_24), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_26), TieredContribution)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_27), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_28), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_29), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_30), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_31), LesserOf)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_34), SubtractNotBelowZero)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_35_LESSER), LesserOf)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_35), AmountWhenMore)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_36), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_38), SubtractNotBelowZero)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_40), ApplyRate)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_41), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_42), TieredContribution)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_43), TieredContribution)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_44), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_46), TieredContribution)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_49), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_52), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_53), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_56), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_59), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_60), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_61), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_64), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_67), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_68), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_69), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_73), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_75), ChooseBySign)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_76), PositivePartOfNegation)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_77), LesserOfWhenPositive)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_78), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_79), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_80), LesserOfWhenPositive)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_81), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_82), ChooseBySign)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_83), PositivePartOfNegation)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_84), LesserOfWhenPositive)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_85), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_86), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_87_DIFFERENCE), Subtract)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_87), LesserOfWhenPositive)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_88), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_89), ChooseBySign)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_90), PositivePartOfNegation)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_91), LesserOfWhenPositive)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_92), Sum)
+    assert isinstance(rc381.producer_of(RC381_PART_3_LINE_93), Sum)
+    assert isinstance(rc381.producer_of(RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS), ChooseBySign)
+    assert isinstance(rc381.producer_of(RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS), ChooseBySign)
+    assert isinstance(rc381.producer_of(RC381_CPP_OVERPAYMENT), SumNotBelowZero)
     # Form RC381 Part 4 lines 1 to 27: the sums and differences, the signs read by "If line 61 of
     # Part 3 is ...", the helpers printed inside lines 13, 21 and 23, the truncated ratio of line
     # 22 and the gross-up of line 27.
     for kind in (RC381_PART_4_LINE_4, RC381_PART_4_LINE_12, RC381_PART_4_LINE_26):
-        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+        assert isinstance(rc381.producer_of(kind), Sum), kind.identifier
     for kind in (
         RC381_PART_4_LINE_8,
         RC381_PART_4_LINE_11,
@@ -1298,9 +1299,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         RC381_PART_4_LINE_17,
         RC381_PART_4_LINE_20,
     ):
-        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+        assert isinstance(rc381.producer_of(kind), Subtract), kind.identifier
     for kind in (RC381_PART_4_LINE_14, RC381_PART_4_LINE_17A):
-        assert isinstance(worksheet.producer_of(kind), PositivePartOfNegation), kind.identifier
+        assert isinstance(rc381.producer_of(kind), PositivePartOfNegation), kind.identifier
     for kind in (
         RC381_PART_4_LINE_13,
         RC381_PART_4_LINE_21,
@@ -1308,16 +1309,16 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         RC381_PART_4_LINE_24,
         RC381_PART_4_LINE_25A,
     ):
-        assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_21_LESSER), LesserOfWhenPositive)
+        assert isinstance(rc381.producer_of(kind), ChooseBySign), kind.identifier
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_21_LESSER), LesserOfWhenPositive)
     assert isinstance(
-        worksheet.producer_of(RC381_PART_4_LINE_21_FROM_LINE_17), LesserOfWhenPositiveInBrackets
+        rc381.producer_of(RC381_PART_4_LINE_21_FROM_LINE_17), LesserOfWhenPositiveInBrackets
     )
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_22), RatioTruncatedAtMostOne)
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_22), RatioTruncatedAtMostOne)
     for kind in (RC381_PART_4_LINE_23_LESSER, RC381_PART_4_LINE_24_LESSER):
-        assert isinstance(worksheet.producer_of(kind), LesserOf), kind.identifier
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_23_MULTIPLIED), ApplyChosenRate)
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_27), ApplyFraction)
+        assert isinstance(rc381.producer_of(kind), LesserOf), kind.identifier
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_23_MULTIPLIED), ApplyChosenRate)
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_27), ApplyFraction)
     # Form RC381 Part 4 lines 31 to 56: the sums and differences, the signs read by "If line 61 of
     # Part 3 is ..." and "If line 68 of Part 3 is positive ...", the helpers printed inside lines
     # 31, 35A, 46 and 51, the positive parts of lines 33 and 54, the gross-up of line 41.
@@ -1328,7 +1329,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         RC381_PART_4_LINE_53,
         RC381_PART_4_LINE_56,
     ):
-        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+        assert isinstance(rc381.producer_of(kind), Sum), kind.identifier
     for kind in (
         RC381_PART_4_LINE_31_DIFFERENCE,
         RC381_PART_4_LINE_32,
@@ -1339,9 +1340,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         RC381_PART_4_LINE_51_DIFFERENCE,
         RC381_PART_4_LINE_52,
     ):
-        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+        assert isinstance(rc381.producer_of(kind), Subtract), kind.identifier
     for kind in (RC381_PART_4_LINE_33, RC381_PART_4_LINE_54):
-        assert isinstance(worksheet.producer_of(kind), PositivePartOfNegation), kind.identifier
+        assert isinstance(rc381.producer_of(kind), PositivePartOfNegation), kind.identifier
     for kind in (
         RC381_PART_4_LINE_31,
         RC381_PART_4_LINE_35AA,
@@ -1350,17 +1351,17 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         RC381_PART_4_LINE_46,
         RC381_PART_4_LINE_51,
     ):
-        assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
+        assert isinstance(rc381.producer_of(kind), ChooseBySign), kind.identifier
     # "Whichever is less ... when positive" (lines 34, 35A's amount from line 17 and 55) and its
     # "show in brackets" sibling (35A's amount from line 20).
     for kind in (RC381_PART_4_LINE_34, RC381_PART_4_LINE_35AA_FROM_LINE_17, RC381_PART_4_LINE_55):
-        assert type(worksheet.producer_of(kind)) is LesserOfWhenPositive, kind.identifier
+        assert type(rc381.producer_of(kind)) is LesserOfWhenPositive, kind.identifier
     assert isinstance(
-        worksheet.producer_of(RC381_PART_4_LINE_35AB_FROM_LINE_20), LesserOfWhenPositiveInBrackets
+        rc381.producer_of(RC381_PART_4_LINE_35AB_FROM_LINE_20), LesserOfWhenPositiveInBrackets
     )
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_36), SumNotBelowZero)
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_39), LesserOf)
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_41), ApplyFraction)
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_36), SumNotBelowZero)
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_39), LesserOf)
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_41), ApplyFraction)
     # Form RC381 Part 4 lines 57 to 91: the floored differences of lines 59, 61, 65, 68, 69 and 77,
     # the unfloored differences of lines 70, 80, 82 and 90, the sum of line 74 (lines 71 to 73),
     # the "whichever is less" of lines 62 and 83 with the gate "If line 74 is more than line 57"
@@ -1375,38 +1376,36 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         RC381_PART_4_LINE_69,
         RC381_PART_4_LINE_77,
     ):
-        assert isinstance(worksheet.producer_of(kind), SubtractNotBelowZero), kind.identifier
+        assert isinstance(rc381.producer_of(kind), SubtractNotBelowZero), kind.identifier
     for kind in (
         RC381_PART_4_LINE_70,
         RC381_PART_4_LINE_80,
         RC381_PART_4_LINE_82,
         RC381_PART_4_LINE_90,
     ):
-        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+        assert isinstance(rc381.producer_of(kind), Subtract), kind.identifier
     for kind in (RC381_PART_4_LINE_74, RC381_PART_4_LINE_87, RC381_PART_4_LINE_88):
-        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+        assert isinstance(rc381.producer_of(kind), Sum), kind.identifier
     for kind in (RC381_PART_4_LINE_62, RC381_PART_4_LINE_83_LESSER):
-        assert isinstance(worksheet.producer_of(kind), LesserOf), kind.identifier
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_83), AmountWhenMore)
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_76), DividedByRate)
+        assert isinstance(rc381.producer_of(kind), LesserOf), kind.identifier
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_83), AmountWhenMore)
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_76), DividedByRate)
     for kind in (RC381_PART_4_LINE_84, RC381_PART_4_LINE_85, RC381_PART_4_LINE_86):
-        assert isinstance(worksheet.producer_of(kind), TieredContribution), kind.identifier
+        assert isinstance(rc381.producer_of(kind), TieredContribution), kind.identifier
     for kind in (RC381_PART_4_LINE_89_FROM_LINE_69, RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS):
-        assert isinstance(worksheet.producer_of(kind), SumNotBelowZero), kind.identifier
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_89), ApplyFraction)
-    assert isinstance(
-        worksheet.producer_of(RC381_PART_4_LINE_91_FROM_LINE_90), PositivePartOfNegation
-    )
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_91), ApplyRate)
+        assert isinstance(rc381.producer_of(kind), SumNotBelowZero), kind.identifier
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_89), ApplyFraction)
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_91_FROM_LINE_90), PositivePartOfNegation)
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_91), ApplyRate)
     # Form RC381 Part 4 lines 92 to 110: the choices by the sign of line 53, 60 and 68 of Part 3
     # (lines 92, 99 and 106), the positive amounts of lines 93, 100 and 107, the "whichever is
     # less" of lines 94, 97, 101, 104 and 108 when the lines are positive, the differences of
     # lines 95 and 102 and the one printed inside line 104, and the sums of lines 96, 98, 103, 105,
     # 109 and 110.
     for kind in (RC381_PART_4_LINE_92, RC381_PART_4_LINE_99, RC381_PART_4_LINE_106):
-        assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
+        assert isinstance(rc381.producer_of(kind), ChooseBySign), kind.identifier
     for kind in (RC381_PART_4_LINE_93, RC381_PART_4_LINE_100, RC381_PART_4_LINE_107):
-        assert isinstance(worksheet.producer_of(kind), PositivePartOfNegation), kind.identifier
+        assert isinstance(rc381.producer_of(kind), PositivePartOfNegation), kind.identifier
     for kind in (
         RC381_PART_4_LINE_94,
         RC381_PART_4_LINE_97,
@@ -1414,13 +1413,13 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         RC381_PART_4_LINE_104,
         RC381_PART_4_LINE_108,
     ):
-        assert isinstance(worksheet.producer_of(kind), LesserOfWhenPositive), kind.identifier
+        assert isinstance(rc381.producer_of(kind), LesserOfWhenPositive), kind.identifier
     for kind in (
         RC381_PART_4_LINE_95,
         RC381_PART_4_LINE_102,
         RC381_PART_4_LINE_104_DIFFERENCE,
     ):
-        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+        assert isinstance(rc381.producer_of(kind), Subtract), kind.identifier
     for kind in (
         RC381_PART_4_LINE_96,
         RC381_PART_4_LINE_98,
@@ -1429,7 +1428,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         RC381_PART_4_LINE_109,
         RC381_PART_4_LINE_110,
     ):
-        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+        assert isinstance(rc381.producer_of(kind), Sum), kind.identifier
     # Form RC381 Part 4 lines 111 to 129: "× 50%" of lines 84, 85 and 86 (lines 111, 112 and 125)
     # and "A × 83.1933%" (line 116) are rates of an amount; line 114 is line 69 of Part 3 not below
     # zero; A is the lesser of lines 113 and 114; lines 115, 118, 121 and 124 are differences; line
@@ -1442,24 +1441,24 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         RC381_PART_4_LINE_116,
         RC381_PART_4_LINE_125,
     ):
-        assert isinstance(worksheet.producer_of(kind), ApplyRate), kind.identifier
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_114), SumNotBelowZero)
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_116_LESSER), LesserOf)
+        assert isinstance(rc381.producer_of(kind), ApplyRate), kind.identifier
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_114), SumNotBelowZero)
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_116_LESSER), LesserOf)
     for kind in (
         RC381_PART_4_LINE_115,
         RC381_PART_4_LINE_118,
         RC381_PART_4_LINE_121,
         RC381_PART_4_LINE_124,
     ):
-        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_127), PositivePartOfNegation)
-    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_128), SubtractNotBelowZero)
+        assert isinstance(rc381.producer_of(kind), Subtract), kind.identifier
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_127), PositivePartOfNegation)
+    assert isinstance(rc381.producer_of(RC381_PART_4_LINE_128), SubtractNotBelowZero)
     for kind in (
         RC381_PART_4_LINE_113,
         RC381_PART_4_LINE_129,
         RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
     ):
-        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+        assert isinstance(rc381.producer_of(kind), Sum), kind.identifier
     for kind in (
         RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
         RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
@@ -1468,13 +1467,23 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
         RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     ):
-        assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
+        assert isinstance(rc381.producer_of(kind), ChooseBySign), kind.identifier
     # Line 3 (box 50399) is a starting amount, so nothing produces it.
-    assert worksheet.producer_of(CPT20_T4_EARNINGS) is None
-    assert worksheet.producer_of(RC381_PART_3_LINE_7) is not None
-    assert worksheet.producer_of(RC381_PART_3_LINE_8) is not None
-    assert worksheet.producer_of(RC381_PART_3_LINE_9) is not None
-    assert worksheet.producer_of(RC381_PART_3_LINE_10) is not None
+    assert rc381.producer_of(CPT20_T4_EARNINGS) is None
+    assert rc381.producer_of(RC381_PART_3_LINE_7) is not None
+    assert rc381.producer_of(RC381_PART_3_LINE_8) is not None
+    assert rc381.producer_of(RC381_PART_3_LINE_9) is not None
+    assert rc381.producer_of(RC381_PART_3_LINE_10) is not None
+    # The return totals the six results of the form over its copies.
+    for kind in (
+        RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        RC381_CPP_OVERPAYMENT_ON_RETURN,
+        RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+        RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    ):
+        assert isinstance(worksheet.producer_of(kind), RecordTotal), kind.identifier
     assert isinstance(worksheet.producer_of(AMT_RESOURCE_INCOME_TOTAL), Sum)
     assert isinstance(
         worksheet.producer_of(AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES), SubtractNotBelowZero

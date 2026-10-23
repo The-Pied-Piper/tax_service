@@ -1,14 +1,32 @@
 # Form RC381 (2025), "Inter-Provincial Calculation for CPP and QPP Contributions and
 # Overpayments", Part 2 and Part 3 lines 1 to 26. Part 2 lines C to F are Schedule 8 Part 2's
-# lines B to E, the same table read with the same months (line A), so no step repeats them.
+# lines B to E, the same table read with the same months (line A): the form has its own copy of the
+# four steps (08k_rc381_cpp_limits.yaml), as Schedule 8 has.
 # Part 2 line B and the Part 3 lines 1, 2 and 19 are the filer's entries; line 25 (box 16A)
-# is read by Part 3 line 64, which a later PR wires, and the composition refuses an input
-# that nothing consumes, so it is declared there. Part 3 line 19 is the T4 box 16 input of Schedule 8 Part 3 line 8
-# (in 01_inputs.yaml); the other inputs are declared here.
-inputs:
-  - ca/qpp_months
-  - ca/t4_cpp_pensionable_earnings_outside_quebec
-  - ca/t4_qpp_pensionable_earnings_in_quebec
+# is read by Part 3 line 64. Part 3 line 19 is the T4 box 16 input of Schedule 8 Part 3 line 8
+# (in 01_inputs.yaml, with the other inputs of the form).
+#
+# Form RC381: the form ca/rc381, run once for the copy of the form the return carries (the record
+# list ca/rc381_instances: none or one; the record has no fields, because every figure the form
+# reads is a starting amount of the return). The form is in the exclusive group ca/cpp_calculation
+# with Schedule 8 (ca/schedule_8): the return carries one of the two. Parts 2, 3, 3a, 3b and 4 of
+# the form are this part and 08b to 08i, with 08k_rc381_cpp_limits.yaml. The form exports the six
+# results of its final selection, which the return totals in 08j_rc381_totals.yaml and which are 0
+# with no copy of the form.
+form:
+  name: ca/rc381
+  instances: ca/rc381_instances
+  # The return carries at most one copy of Form RC381, and not with Schedule 8.
+  max_instances: 1
+  min_instances: 0
+  exclusive_group: ca/cpp_calculation
+  exports:
+    - ca/rc381_cpp_base_contributions_on_return
+    - ca/rc381_cpp_enhanced_contributions_on_return
+    - ca/rc381_cpp_overpayment_on_return
+    - ca/rc381_cpp_payable_on_self_employment
+    - ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings
+    - ca/rc381_cpp_deduction_on_self_employment_and_other_earnings
 capabilities:
   # Part 2 "The number you enter on line A cannot be more than the number you enter on line
   # B.": line B is the QPP months, produced unchanged when it is at least line A's months and

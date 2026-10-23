@@ -25,9 +25,16 @@ copy another line, so they have no step of their own, and the amount lettered A 
 final selection (`08i_rc381_final_selection.yaml`, the ninth): the earnings subject to
 contributions (lines 70 and 83 of Part 4 added) and, by its sign, the six results for lines 30800,
 22215, 44800, 42100, 31000 and 22200 of the return, Part 4's or Part 3's. Part 2 lines C to F are
-Schedule 8 Part 2's lines B to E, the same table read with the same months (line A), so they are
-the existing artifacts and no step is repeated for them.
+Schedule 8 Part 2's lines B to E, the same table read with the same months (line A): the form has
+its own copy of the four steps, as of the steps behind Part 4 line 1, which the return keeps.
 Lines 43 and 46 print the figures of lines 23 and 26, so they read the same datasets.
+
+Form RC381 is a form of the manifest (see `test_manifest_rc381.py`): its selections belong to the
+form `ca/rc381` (`FORM_STEPS` and `FORM_WIRING`), run once for the one copy of the form the return
+carries (none, with an empty `ca/rc381_instances`), in the exclusive group `ca/cpp_calculation`
+with Schedule 8. The record has no fields: every figure the form reads is a starting amount of the
+return. The form exports its six results, which the return totals over the copies (`STEPS` and
+`WIRING`, 0 with no copy).
 """
 
 from __future__ import annotations
@@ -37,11 +44,13 @@ from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.lesser_of import LesserOf
+from app.domain.capabilities.record_total import RecordTotal
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.manifest import CapabilitySelection
+from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.capabilities.amount_when_more import AmountWhenMore
 from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
@@ -57,6 +66,8 @@ from app.jurisdictions.ca.capabilities.ratio_truncated import (
     RatioTruncatedAtMostOne,
 )
 from app.jurisdictions.ca.catalog import (
+    BUSINESS_INCOME,
+    COMMISSION_INCOME,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASIC_EXEMPTION,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
@@ -65,7 +76,12 @@ from app.jurisdictions.ca.catalog import (
     CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPT20_EARNINGS,
     CPT20_T4_EARNINGS,
+    FARMING_INCOME,
+    FISHING_INCOME,
+    NET_PARTNERSHIP_INCOME,
+    NET_SELF_EMPLOYMENT_INCOME,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
+    PROFESSIONAL_INCOME,
     QPP_MONTHS,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
@@ -263,6 +279,11 @@ from app.jurisdictions.ca.catalog import (
     T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC,
     T4_QPP_SECOND_ADDITIONAL_BOX_17A,
 )
+from tests.jurisdictions.ca_on.manifest_families.schedule_8 import (
+    BUSINESS_INCOME_PER_STATEMENT,
+    FARMING_INCOME_PER_STATEMENT,
+    FISHING_INCOME_PER_STATEMENT,
+)
 
 # Part 2 line B and the Part 3 lines 1, 2, 19, 25, 39 and 45 are the filer's entries: line 25
 # (box 16A, 50341) and line 45 (box 17A, 50331) are read by line 64, line 39 (box 17, 50330) by
@@ -270,6 +291,7 @@ from app.jurisdictions.ca.catalog import (
 # does not have (line 1 and line 2, 50373, are Schedule 8 Part 4's), read by line 4.
 INPUTS = frozenset(
     {
+        "ca/rc381_instances",
         "ca/qpp_months",
         "ca/t4_cpp_pensionable_earnings_outside_quebec",
         "ca/t4_qpp_pensionable_earnings_in_quebec",
@@ -305,7 +327,7 @@ OUTPUTS = frozenset(
     }
 )
 
-STEPS = {
+FORM_STEPS = {
     # Part 2 "The number you enter on line A cannot be more than the number you enter on line
     # B.": line B is the QPP months, produced unchanged when it is at least line A's months and
     # refused (an input error) when it is less; the QPP lookups below read this checked line B.
@@ -2236,9 +2258,77 @@ STEPS = {
         },
         produces={"output": "ca/rc381_cpp_deduction_on_self_employment_and_other_earnings"},
     ),
+    # Form RC381 Part 2 lines C to F, the "Monthly proration table" read with line A (box A of
+    # Schedule 8 Part 2): the form's own copy of the four steps, which the return keeps.
+    CapabilitySelection(
+        name="core/amount_by_count",
+        params={"table": "ca/cpp_maximum_pensionable_earnings"},
+        consumes={"count": "ca/cpp_months"},
+        produces={"output": "ca/cpp_maximum_pensionable_earnings"},
+    ),
+    CapabilitySelection(
+        name="core/amount_by_count",
+        params={"table": "ca/cpp_second_additional_earnings_maximum"},
+        consumes={"count": "ca/cpp_months"},
+        produces={"output": "ca/cpp_second_additional_earnings_maximum"},
+    ),
+    CapabilitySelection(
+        name="core/amount_by_count",
+        params={"table": "ca/cpp_additional_maximum_pensionable_earnings"},
+        consumes={"count": "ca/cpp_months"},
+        produces={"output": "ca/cpp_additional_maximum_pensionable_earnings"},
+    ),
+    CapabilitySelection(
+        name="core/amount_by_count",
+        params={"table": "ca/cpp_basic_exemption"},
+        consumes={"count": "ca/cpp_months"},
+        produces={"output": "ca/cpp_basic_exemption"},
+    ),
+    # Form RC381 Part 4 line 1 "Pensionable net self-employment earnings: amount from line 12200
+    # of your return plus line 27 of your return", with the net self-employment income it adds
+    # and the three totals that income reads (T1 lines 22, 25 and 26): the form's own copies of the
+    # steps the return keeps.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/net_partnership_income", "ca/net_self_employment_income")},
+        produces={"output": "ca/pensionable_net_self_employment_earnings"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_income",
+                "ca/professional_income",
+                "ca/commission_income",
+                "ca/farming_income",
+                "ca/fishing_income",
+            ),
+        },
+        produces={"output": "ca/net_self_employment_income"},
+    ),
+    CapabilitySelection(
+        name="core/record_total",
+        params={},
+        consumes={"records": "ca/t2125.business_income"},
+        produces={"output": "ca/business_income"},
+    ),
+    CapabilitySelection(
+        name="core/record_total",
+        params={},
+        consumes={"records": "ca/t2042.farming_income"},
+        produces={"output": "ca/farming_income"},
+    ),
+    CapabilitySelection(
+        name="core/record_total",
+        params={},
+        consumes={"records": "ca/t2121.fishing_income"},
+        produces={"output": "ca/fishing_income"},
+    ),
 }
 
-WIRING = {
+FORM_WIRING = {
     (CountAtLeast, frozenset({QPP_MONTHS, CPP_MONTHS}), frozenset({RC381_PART_2_LINE_B})),
     (AmountForCount, frozenset({RC381_PART_2_LINE_B}), frozenset({RC381_PART_2_LINE_G})),
     (AmountForCount, frozenset({RC381_PART_2_LINE_B}), frozenset({RC381_PART_2_LINE_H})),
@@ -3156,4 +3246,83 @@ WIRING = {
         frozenset({RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS, RC381_PART_4_LINE_129}),
         frozenset({RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
     ),
+    (
+        AmountForCount,
+        frozenset({CPP_MONTHS}),
+        frozenset({CPP_MAXIMUM_PENSIONABLE_EARNINGS}),
+    ),
+    (
+        AmountForCount,
+        frozenset({CPP_MONTHS}),
+        frozenset({CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM}),
+    ),
+    (
+        AmountForCount,
+        frozenset({CPP_MONTHS}),
+        frozenset({CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS}),
+    ),
+    (
+        AmountForCount,
+        frozenset({CPP_MONTHS}),
+        frozenset({CPP_BASIC_EXEMPTION}),
+    ),
+    (
+        Sum,
+        frozenset({NET_PARTNERSHIP_INCOME, NET_SELF_EMPLOYMENT_INCOME}),
+        frozenset({PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_INCOME,
+                PROFESSIONAL_INCOME,
+                COMMISSION_INCOME,
+                FARMING_INCOME,
+                FISHING_INCOME,
+            }
+        ),
+        frozenset({NET_SELF_EMPLOYMENT_INCOME}),
+    ),
+    (RecordTotal, frozenset({BUSINESS_INCOME_PER_STATEMENT}), frozenset({BUSINESS_INCOME})),
+    (RecordTotal, frozenset({FARMING_INCOME_PER_STATEMENT}), frozenset({FARMING_INCOME})),
+    (RecordTotal, frozenset({FISHING_INCOME_PER_STATEMENT}), frozenset({FISHING_INCOME})),
+}
+
+# The six results of the form, which the return totals over the copies of the form (0 with none).
+FORM_EXPORTS = (
+    "ca/rc381_cpp_base_contributions_on_return",
+    "ca/rc381_cpp_enhanced_contributions_on_return",
+    "ca/rc381_cpp_overpayment_on_return",
+    "ca/rc381_cpp_payable_on_self_employment",
+    "ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings",
+    "ca/rc381_cpp_deduction_on_self_employment_and_other_earnings",
+)
+
+PER_INSTANCE = {
+    kind: RecordListKind(f"ca/rc381.{kind.identifier.removeprefix('ca/')}", fields=(kind,))
+    for kind in (
+        RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        RC381_CPP_OVERPAYMENT_ON_RETURN,
+        RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+        RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    )
+}
+
+# The return's totals of the form's results.
+STEPS = {
+    CapabilitySelection(
+        name="core/record_total",
+        params={},
+        consumes={"records": f"ca/rc381.{export.removeprefix('ca/')}"},
+        produces={"output": export},
+    )
+    for export in FORM_EXPORTS
+}
+
+WIRING = {
+    (RecordTotal, frozenset({per_instance}), frozenset({kind}))
+    for kind, per_instance in PER_INSTANCE.items()
 }

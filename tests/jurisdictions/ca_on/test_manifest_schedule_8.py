@@ -89,13 +89,12 @@ def composed() -> FormComposition:
 def test_the_first_part_declares_the_form_with_its_instances_limits_and_exports() -> None:
     declared = yaml.safe_load((PARTS / FORM_PARTS[0]).read_text())["form"]
 
-    # The exclusive group of Schedule 8 and Form RC381 is added with RC381's form: a group naming a
-    # single form is refused.
     assert declared == {
         "name": "ca/schedule_8",
         "instances": "ca/schedule_8_instances",
         "max_instances": 1,
         "min_instances": 0,
+        "exclusive_group": "ca/cpp_calculation",
         "exports": list(schedule_8.FORM_EXPORTS),
     }
 
@@ -111,7 +110,11 @@ def test_the_manifest_has_the_form_schedule_8_beside_the_other_forms() -> None:
     assert found.name == "ca/schedule_8"
     assert found.instances == "ca/schedule_8_instances"
     assert found.exports == schedule_8.FORM_EXPORTS
-    assert (found.min_instances, found.max_instances, found.exclusive_group) == (0, 1, None)
+    assert (found.min_instances, found.max_instances, found.exclusive_group) == (
+        0,
+        1,
+        "ca/cpp_calculation",
+    )
 
 
 def test_the_form_holds_the_145_schedule_8_selections() -> None:

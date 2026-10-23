@@ -8,9 +8,10 @@
 form:
   name: ca/schedule_8
   instances: ca/schedule_8_instances
-  # The return carries at most one copy of Schedule 8.
+  # The return carries at most one copy of Schedule 8, and not with Form RC381.
   max_instances: 1
   min_instances: 0
+  exclusive_group: ca/cpp_calculation
   exports:
     - ca/cpp_base_contributions_on_return
     - ca/cpp_enhanced_contributions_on_return

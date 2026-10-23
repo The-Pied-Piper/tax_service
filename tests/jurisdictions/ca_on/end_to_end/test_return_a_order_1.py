@@ -398,6 +398,24 @@ from app.jurisdictions.ca.catalog import (
     PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
     PRE_1986_DEDUCTIONS_TOTAL,
     PROVINCIAL_CREDITS,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    RC381_CPP_OVERPAYMENT_ON_RETURN,
+    RC381_PART_2_LINE_B,
+    RC381_PART_2_LINE_G,
+    RC381_PART_3_LINE_3,
+    RC381_PART_3_LINE_6,
+    RC381_PART_3_LINE_7,
+    RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+    RC381_PART_4_LINE_4,
+    RC381_PART_4_LINE_59,
+    RC381_PART_4_LINE_70,
+    RC381_PART_4_LINE_83,
+    RC381_PART_4_LINE_91,
+    RC381_PART_4_LINE_98,
+    RC381_PART_4_LINE_110,
+    RC381_PART_4_LINE_129,
     REFUND,
     REFUND_OR_BALANCE_OWING,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
@@ -583,8 +601,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1203
-    assert len(order) == 1203
+    assert len(order) == 1019
+    assert len(order) == 1019
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     # Part 8 line 12: the check is ordered after the cap it is made against. The claim is an input,
@@ -1842,6 +1860,38 @@ def test_each_schedule_8_capability_runs_after_what_it_consumes() -> None:
     )
     assert position[CPP_PART_5_LINE_69] < position[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
     assert position[CPP_PART_5_LINE_50] < position[CPP_OVERPAYMENT]
+
+
+def test_each_rc381_capability_runs_after_what_it_consumes() -> None:
+    order = service().compose(CA_ON, 2025).form("ca/rc381").composition.order
+    assert len(order) == 199
+    position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
+    # Part 2 line B (the checked QPP months) is read by lines G to J; Part 3 line 3 adds lines 1 and
+    # 2, line 6 is the share of line 1 in line 3 and line 7 is that share of line E.
+    assert position[RC381_PART_2_LINE_B] < position[RC381_PART_2_LINE_G]
+    assert position[RC381_PART_3_LINE_3] < position[RC381_PART_3_LINE_6]
+    assert position[RC381_PART_3_LINE_6] < position[RC381_PART_3_LINE_7]
+    assert position[CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS] < position[RC381_PART_3_LINE_7]
+    # Part 4 line 59 is line C less line F of Part 2, each the form's own copy of the table.
+    assert position[CPP_MAXIMUM_PENSIONABLE_EARNINGS] < position[RC381_PART_4_LINE_59]
+    assert position[CPP_BASIC_EXEMPTION] < position[RC381_PART_4_LINE_59]
+    # Part 4 line 4 adds the pensionable net self-employment earnings (line 1), the form's own copy.
+    assert position[NET_SELF_EMPLOYMENT_INCOME] < position[PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS]
+    assert position[PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS] < position[RC381_PART_4_LINE_4]
+    # The final selection: lines 70 and 83 of Part 4 added decide each of the six results.
+    assert (
+        position[RC381_PART_4_LINE_70]
+        < position[RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS]
+        < position[RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN]
+    )
+    assert position[RC381_PART_4_LINE_83] < position[RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS]
+    assert position[RC381_PART_4_LINE_98] < position[RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN]
+    assert position[RC381_PART_4_LINE_110] < position[RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+    assert position[RC381_PART_4_LINE_91] < position[RC381_CPP_OVERPAYMENT_ON_RETURN]
+    assert (
+        position[RC381_PART_4_LINE_129]
+        < position[RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS]
+    )
 
 
 def test_each_t776_capability_runs_after_what_it_consumes() -> None:

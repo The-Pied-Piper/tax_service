@@ -114,7 +114,3 @@ expected:
       ca/credits_against_federal_tax: "0.00"
       ca/amt_carryover_available_for_2026: "2338.71"
       ca/cpp_second_additional_earnings_maximum: "9900.00"
-      ca/rc381_part_2_line_g: "71300.00"
-      ca/rc381_part_2_line_h: "9900.00"
-      ca/rc381_part_2_line_i: "81200.00"
-      ca/rc381_part_2_line_j: "3500.00"
