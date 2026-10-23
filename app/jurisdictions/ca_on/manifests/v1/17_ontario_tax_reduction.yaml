@@ -64,7 +64,7 @@ capabilities:
     produces:
       output: ca-on/tax_reduction_amounts
   # ON428 line 73 "Line 71 plus line 72 =": line 71 is the Ontario tax after the dividend
-  # credit and line 72 the additional tax for minimum tax purposes, as entered.
+  # credit and line 72 the additional tax for minimum tax purposes (Worksheet ON428).
   - name: core/sum
     consumes:
       parts:

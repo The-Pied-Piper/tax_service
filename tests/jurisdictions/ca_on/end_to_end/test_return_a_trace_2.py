@@ -365,8 +365,23 @@ def test_the_trace_explains_the_computation() -> None:
         "+ ontario_tax_on_split_income 0 = 7671.98",
         "7671.98",
     )
+    carryover_credit = position(
+        "minimum_tax_carryover_credit: 24.63% of amt_minimum_tax_carryover_applied 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    carryover_applied = position(
+        "ontario_minimum_tax_carryover_applied: lesser of ontario_tax_less_dividend_credit "
+        "7671.98 and minimum_tax_carryover_credit 0 = 0",
+        "0",
+    )
+    after_carryover = position(
+        "ontario_tax_after_minimum_tax_carryover: ontario_tax_with_split_income 7671.98 "
+        "less ontario_minimum_tax_carryover_applied 0, not below 0 = 7671.98",
+        "7671.98",
+    )
     surtax_base = position(
-        "ontario_surtax_base: ontario_tax_with_split_income 7671.98 "
+        "ontario_surtax_base: ontario_tax_after_minimum_tax_carryover 7671.98 "
         "less ontario_tax_on_split_income_for_surtax 0, not below 0 = 7671.98",
         "7671.98",
     )
@@ -379,9 +394,38 @@ def test_the_trace_explains_the_computation() -> None:
         "131.39",
     )
     with_surtax = position(
-        "ontario_tax_with_surtax: ontario_tax_with_split_income 7671.98 "
+        "ontario_tax_with_surtax: ontario_tax_after_minimum_tax_carryover 7671.98 "
         "+ ontario_surtax 523.79 = 8195.77",
         "8195.77",
+    )
+    worksheet_line_1 = position(
+        "worksheet_on428_line_1: 24.63% of amt_alternative_minimum_tax_payable 0 (half-up to 0.01)",
+        "0",
+    )
+    worksheet_line_2 = position(
+        "worksheet_on428_line_2: ontario_surtax_base 7671.98 = 7671.98", "7671.98"
+    )
+    worksheet_line_3 = position(
+        "worksheet_on428_line_3: worksheet_on428_line_1 0 + worksheet_on428_line_2 7671.98 "
+        "= 7671.98",
+        "7671.98",
+    )
+    worksheet_line_6_first = position(
+        "worksheet_on428_line_6: 20% of worksheet_on428_line_3 7671.98 over 5710 (half-up to 0.01)",
+        "392.40",
+    )
+    worksheet_line_6_second = position(
+        "worksheet_on428_line_6: 36% of worksheet_on428_line_3 7671.98 over 7307 (half-up to 0.01)",
+        "131.39",
+    )
+    worksheet_line_7 = position("worksheet_on428_line_7: ontario_surtax 523.79 = 523.79", "523.79")
+    worksheet_line_8 = position(
+        "worksheet_on428_line_8: worksheet_on428_line_6 523.79 less worksheet_on428_line_7 "
+        "523.79 = 0",
+        "0",
+    )
+    line_72 = position(
+        "ontario_minimum_tax: worksheet_on428_line_1 0 + worksheet_on428_line_8 0 = 0", "0"
     )
     dividend_a = position("dividends_amount_a: taxable_dividends 0 = 0", "0")
     dividend_b = position("dividends_amount_b: taxable_dividends_other_than_eligible 0 = 0", "0")
@@ -1055,8 +1099,15 @@ def test_the_trace_explains_the_computation() -> None:
     assert ontario_amount < ontario_amounts < ontario_credit < ontario_line_50 < ontario_after
     assert first_tier < ontario_first_tier_credit < ontario_donations_credit < ontario_line_50
     assert over_first_tier < ontario_over_first_tier_credit < ontario_donations_credit
-    assert ontario_after < with_split_income < surtax_base < surtax_first
+    assert ontario_after < with_split_income < after_carryover < surtax_base < surtax_first
     assert surtax_first < surtax_second < with_surtax
+    assert line_58 < carryover_applied < after_carryover
+    assert carryover_credit < carryover_applied
+    assert surtax_base < worksheet_line_2 < worksheet_line_3 < worksheet_line_6_first
+    assert worksheet_line_1 < worksheet_line_3
+    assert worksheet_line_6_first < worksheet_line_6_second < worksheet_line_8
+    assert surtax_second < worksheet_line_7 < worksheet_line_8 < line_72 < line_73
+    assert worksheet_line_1 < line_72
     assert reduction_basic < reduction_amounts
     assert children_before_rule < reduction_children < reduction_amounts
     assert dependants_before_rule < reduction_dependants < reduction_amounts

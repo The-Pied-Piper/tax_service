@@ -531,8 +531,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1301
-    assert len(order) == 1301
+    assert len(order) == 1311
+    assert len(order) == 1311
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
@@ -1262,10 +1262,53 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert (
         position[ONTARIO_TAX_AFTER_CREDITS]
         < position[ontario.ONTARIO_TAX_WITH_SPLIT_INCOME]
+        < position[ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER]
         < position[ontario.ONTARIO_SURTAX_BASE]
         < position[ONTARIO_SURTAX]
         < position[ONTARIO_TAX_WITH_SURTAX]
     )
+    # ON428 lines 59 to 61: line 59 is the rate times the carryover applied on the T1 (T691 Part 8
+    # line 12), line 60 the lesser of line 58 and line 59, and line 61 takes line 60 off line 55;
+    # the surtax base and line 69 start from line 61.
+    assert (
+        position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
+        < position[ontario.MINIMUM_TAX_CARRYOVER_CREDIT]
+        < position[ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED]
+        < position[ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER]
+        < position[ontario.ONTARIO_SURTAX_BASE]
+    )
+    assert (
+        position[ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT]
+        < position[ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED]
+    )
+    assert (
+        position[ontario.ONTARIO_TAX_WITH_SPLIT_INCOME]
+        < position[ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER]
+        < position[ONTARIO_TAX_WITH_SURTAX]
+    )
+    # Worksheet ON428 (line 72): line 1 is the rate times T691 Part 5 line 11, line 2 the surtax
+    # base, line 3 their sum, line 6 the surtax on line 3, line 7 the surtax of line 68 and line 8
+    # their difference; line 9 is ON428 line 72, which line 73 adds to line 71.
+    assert (
+        position[AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE]
+        < position[ontario.WORKSHEET_ON428_LINE_1]
+        < position[ontario.WORKSHEET_ON428_LINE_3]
+        < position[ontario.WORKSHEET_ON428_LINE_6]
+        < position[ontario.WORKSHEET_ON428_LINE_8]
+        < position[ontario.ONTARIO_MINIMUM_TAX]
+        < position[ontario.ONTARIO_TAX_BEFORE_REDUCTION]
+    )
+    assert (
+        position[ontario.ONTARIO_SURTAX_BASE]
+        < position[ontario.WORKSHEET_ON428_LINE_2]
+        < position[ontario.WORKSHEET_ON428_LINE_3]
+    )
+    assert (
+        position[ONTARIO_SURTAX]
+        < position[ontario.WORKSHEET_ON428_LINE_7]
+        < position[ontario.WORKSHEET_ON428_LINE_8]
+    )
+    assert position[ontario.WORKSHEET_ON428_LINE_1] < position[ontario.ONTARIO_MINIMUM_TAX]
     # Form T1206 Part 3 line 33C divides line 33A, the Ontario tax on split income.
     assert (
         position[ontario.ONTARIO_TAX_ON_SPLIT_INCOME]

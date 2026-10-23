@@ -8,7 +8,7 @@ import pytest
 
 from app.domain.trace import ConditionsCountLine
 from app.domain.worksheet import Worksheet
-from app.jurisdictions.ca.catalog import NET_INCOME
+from app.jurisdictions.ca.catalog import AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE, NET_INCOME
 from app.jurisdictions.ca_on.catalog import (
     ONTARIO_MINIMUM_TAX,
     ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
@@ -24,6 +24,12 @@ from app.jurisdictions.ca_on.catalog import (
     TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE,
     TAX_REDUCTION_FOR_DEPENDANTS,
     TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE,
+    WORKSHEET_ON428_LINE_1,
+    WORKSHEET_ON428_LINE_2,
+    WORKSHEET_ON428_LINE_3,
+    WORKSHEET_ON428_LINE_6,
+    WORKSHEET_ON428_LINE_7,
+    WORKSHEET_ON428_LINE_8,
 )
 from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 
@@ -43,6 +49,14 @@ def return_ao(**overrides: Any) -> Worksheet:
         "spouse_net_income": "15000",
     }
     return compute("22139.77", (), "0", "0", "0", "0", "0", **{**inputs, **overrides})
+
+
+# Security option benefits of T4 boxes 39 and 91 (Form T691 Part 1 line 28), a chosen figure, make
+# the minimum amount more than the regular tax: Part 5 line 11 is then 7239.72 (the engine's figure
+# for the unchanged Form T691 lines). At 150000.00 the minimum amount is still below the regular
+# tax, so Part 5 line 11 is 0.00.
+SECURITY_OPTIONS_FOR_AMT = "200000"
+SECURITY_OPTIONS_BELOW_AMT = "150000"
 
 
 def counted(worksheet: Worksheet, kind: Any) -> ConditionsCountLine:
@@ -101,23 +115,38 @@ def test_the_lower_income_spouse_claims_neither_line_and_line_80_is_188() -> Non
 
 
 def test_an_amount_on_line_72_makes_line_80_zero_and_is_part_of_line_73() -> None:
-    # "There is an amount on line 72" is one of the six conditions: line 72 of 120.00 makes line
-    # 73 400.00 + 120.00 = 520.00, and line 80 "0" however large twice lines 74 to 76 are (here
-    # 2764.00 - 520.00 = 2244.00 before the conditions), so line 81 is line 73, 520.00.
-    worksheet = return_ao(ontario_minimum_tax="120.00")
+    # "There is an amount on line 72" is one of the six conditions. Part 5 line 11 of Form T691 is
+    # 7239.72, so Worksheet ON428 line 1 is 24.63% x 7239.72 = 1783.143036, 1783.14; line 2 (line
+    # 65) is 400.00 and line 3 is 1783.14 + 400.00 = 2183.14, not more than $5,710, so lines 4 to 8
+    # are 0 (line 7 is the surtax on 400.00, 0) and line 72 is line 1, 1783.14. Line 73 is 400.00 +
+    # 1783.14 = 2183.14, and line 80 is "0" however large twice lines 74 to 76 are (here 2764.00 -
+    # 2183.14 = 580.86 before the conditions), so line 81 is line 73, 2183.14.
+    worksheet = return_ao(amt_t4_security_options_boxes_39_and_91=SECURITY_OPTIONS_FOR_AMT)
 
-    assert worksheet.get(ONTARIO_MINIMUM_TAX).value == D("120.00")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("7239.72")
+    assert worksheet.get(WORKSHEET_ON428_LINE_1).value == D("1783.14")
+    assert worksheet.get(WORKSHEET_ON428_LINE_2).value == D("400.00")
+    assert worksheet.get(WORKSHEET_ON428_LINE_3).value == D("2183.14")
+    assert worksheet.get(WORKSHEET_ON428_LINE_6).value == D("0")
+    assert worksheet.get(WORKSHEET_ON428_LINE_7).value == D("0")
+    assert worksheet.get(WORKSHEET_ON428_LINE_8).value == D("0")
+    assert worksheet.get(ONTARIO_MINIMUM_TAX).value == D("1783.14")
     assert worksheet.get(ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("400.00")
-    assert worksheet.get(ONTARIO_TAX_BEFORE_REDUCTION).value == D("520.00")
-    assert worksheet.get(ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS).value == D("2244.00")
+    assert worksheet.get(ONTARIO_TAX_BEFORE_REDUCTION).value == D("2183.14")
+    assert worksheet.get(ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS).value == D("580.86")
     assert worksheet.get(TAX_REDUCTION_CLAIMABLE).value == 0
     assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("0")
-    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("520.00")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("2183.14")
 
 
 def test_a_line_72_of_zero_is_not_an_amount_on_line_72() -> None:
-    worksheet = return_ao(ontario_minimum_tax="0.00")
+    # Security options of 150000 leave the minimum amount under the regular tax: Part 5 line 11 is
+    # 0.00, so Worksheet ON428 line 1 is 0.00 and line 72 is 0.00 (line 3 is line 65, 400.00, so
+    # lines 4 to 8 are 0), which is not "an amount on line 72".
+    worksheet = return_ao(amt_t4_security_options_boxes_39_and_91=SECURITY_OPTIONS_BELOW_AMT)
 
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
+    assert worksheet.get(ONTARIO_MINIMUM_TAX).value == D("0.00")
     assert worksheet.get(TAX_REDUCTION_CLAIMABLE).value == 1
     assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("2364.00")
 
@@ -154,7 +183,7 @@ def test_the_trace_names_the_conditions_that_apply_by_position_in_the_form_s_ord
     # "You were bankrupt at any time in 2025" is the fourth of the six printed conditions, and
     # "There is an amount on line 72" the third.
     bankrupt = return_ao(bankrupt_in_year=1)
-    minimum_tax = return_ao(ontario_minimum_tax="120.00")
+    minimum_tax = return_ao(amt_t4_security_options_boxes_39_and_91=SECURITY_OPTIONS_FOR_AMT)
     neither = return_ao()
 
     assert counted(bankrupt, TAX_REDUCTION_CLAIMABLE) == ConditionsCountLine(

@@ -678,6 +678,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0.00"),
             result=D("16951.38"),
         ),
+        # Worksheet ON428 line 8 "Line 6 minus line 7": line 6, the surtax on line 3 (523.79), less
+        # line 7, the surtax on line 65 of the form (523.79): 0.
+        ontario.WORKSHEET_ON428_LINE_8: SubtractedLine(
+            output=ontario.WORKSHEET_ON428_LINE_8,
+            minuend=ontario.WORKSHEET_ON428_LINE_6,
+            minuend_amount=D("523.79"),
+            subtrahend=ontario.WORKSHEET_ON428_LINE_7,
+            subtrahend_amount=D("523.79"),
+            result=D("0"),
+        ),
         # Form T691 Part 8 line 13 "Balance of minimum tax carryover available for later years, if
         # any: line 1 minus line 12": line 1 (0) less line 12 (0): 0.
         AMT_CARRYOVER_BALANCE: SubtractedLine(

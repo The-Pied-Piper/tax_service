@@ -494,7 +494,7 @@ income from line 54": the Ontario tax on split income, carried."""
 
 ONTARIO_SURTAX_BASE = CATALOG.declare("ontario_surtax_base", Decimal, non_negative=True)
 """Ontario surtax base, ON428 line 65 "Line 63 minus line 64 (if negative, enter "0")": line 63
-(the Ontario tax with the tax on split income, lines 55, 61 and 62 carrying line 55) less line 64
+(the Ontario tax with the tax on split income, lines 62 and 63 carrying line 61) less line 64
 (the Ontario tax on split income), not below zero."""
 
 ONTARIO_SURTAX = CATALOG.declare("ontario_surtax", Decimal, non_negative=True)
@@ -502,14 +502,14 @@ ONTARIO_SURTAX = CATALOG.declare("ontario_surtax", Decimal, non_negative=True)
 plus the 36% tier over $7,307 (line 67), each on line 65, the surtax base.
 
 Line 65 is "Line 63 minus line 64 (if negative, enter "0")", with line 64 the Ontario tax on split
-income (`ontario_surtax_base`). The minimum tax carryover (line 60) is not modelled, so lines 61, 62
-and 63 carry line 55.
+income (`ontario_surtax_base`). Lines 62 and 63 carry line 61, the Ontario tax with the tax on split
+income less the minimum tax carryover (line 60).
 """
 
 ONTARIO_TAX_WITH_SURTAX = CATALOG.declare("ontario_tax_with_surtax", Decimal, non_negative=True)
 """Ontario tax with surtax, 2025 ON428 line 69 "Line 62 plus line 68": the Ontario tax with the tax
-on split income (line 62, which carries line 55 while the minimum tax carryover is not modelled)
-plus the Ontario surtax."""
+on split income less the minimum tax carryover (line 62, which carries line 61) plus the Ontario
+surtax."""
 
 DIVIDENDS_AMOUNT_A = CATALOG.declare("dividends_amount_a", Decimal, non_negative=True)
 """Dividends amount A, Worksheet ON428 line 61520 line A "Amount from line 12000 of your
@@ -547,8 +547,7 @@ ONTARIO_TAX_LESS_DIVIDEND_CREDIT = CATALOG.declare(
 )
 """Ontario tax less the dividend tax credit, ON428 line 58 "Line 56 minus line 57 (if negative,
 enter "0")": the Ontario tax after credits less the Ontario dividend tax credit (line 57), not
-below zero. Nothing else on the return reads it, as the surtax and line 69 read line 53, so the
-manifest returns it."""
+below zero. Line 60 reads it, and the manifest also returns it."""
 
 DIVIDEND_CREDIT_FROM_LINE_57 = CATALOG.declare(
     "dividend_credit_from_line_57", Decimal, non_negative=True
@@ -608,7 +607,54 @@ and 76 is applied in lines 75 and 76.
 ONTARIO_MINIMUM_TAX = CATALOG.declare("ontario_minimum_tax", Decimal, non_negative=True)
 """Ontario additional tax for minimum tax purposes, ON428 line 72 "If you entered an amount on line
 11 of Part 5 of Form T691, use Worksheet ON428 to calculate your additional tax for minimum tax
-purposes": a starting amount, as entered."""
+purposes": Worksheet ON428 line 9 "Line 1 plus line 8 Enter this amount on line 72 of your Form
+ON428."."""
+
+MINIMUM_TAX_CARRYOVER_CREDIT = CATALOG.declare(
+    "minimum_tax_carryover_credit", Decimal, non_negative=True
+)
+"""Ontario minimum tax carryover credit, ON428 line 59 "Amount from line 40427 of your return
+multiplied by 24.63% =": the minimum tax carryover applied on the T1, at the Ontario minimum tax
+rate."""
+
+ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED = CATALOG.declare(
+    "ontario_minimum_tax_carryover_applied", Decimal, non_negative=True
+)
+"""Ontario minimum tax carryover applied, ON428 line 60 and line 61540 "Enter whichever is less:
+amount from line 58 or line 59.": the lesser of the Ontario tax after the dividend tax credit and
+the carryover credit."""
+
+ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER = CATALOG.declare(
+    "ontario_tax_after_minimum_tax_carryover", Decimal, non_negative=True
+)
+"""Ontario tax after the minimum tax carryover, ON428 line 61 "Line 55 minus line 60 (if negative,
+enter "0")", the amount on lines 62 and 63."""
+
+WORKSHEET_ON428_LINE_1 = CATALOG.declare("worksheet_on428_line_1", Decimal, non_negative=True)
+"""Worksheet ON428 "Line 72 - Ontario additional tax for minimum tax purposes" line 1 "Amount from
+line 11 of Part 5 of your Form T691 multiplied by 24.63% =": the Ontario share of the additional
+federal minimum tax."""
+
+WORKSHEET_ON428_LINE_2 = CATALOG.declare("worksheet_on428_line_2", Decimal, non_negative=True)
+"""Worksheet ON428 line 72 line 2 "Amount from line 65 of your Form ON428": the base of the
+surtax."""
+
+WORKSHEET_ON428_LINE_3 = CATALOG.declare("worksheet_on428_line_3", Decimal, non_negative=True)
+"""Worksheet ON428 line 72 line 3 "Line 1 plus line 2 =": the surtax base with the additional
+tax."""
+
+WORKSHEET_ON428_LINE_6 = CATALOG.declare("worksheet_on428_line_6", Decimal, non_negative=True)
+"""Worksheet ON428 line 72 line 6 "Line 4 plus line 5 =": the surtax on line 3, lines 4 and 5 being
+each tier "if negative, enter "0"" (line 4 on the amount over $5,710 at 20%, line 5 on the amount
+over $7,307 at 36%)."""
+
+WORKSHEET_ON428_LINE_7 = CATALOG.declare("worksheet_on428_line_7", Decimal, non_negative=True)
+"""Worksheet ON428 line 72 line 7 "Amount from line 68 of your Form ON428": the Ontario surtax."""
+
+WORKSHEET_ON428_LINE_8 = CATALOG.declare("worksheet_on428_line_8", Decimal)
+"""Worksheet ON428 line 72 line 8 "Line 6 minus line 7 =": the surtax on the additional tax. The
+form prints no "(if negative, enter "0")", so it is signed (it is never negative, as line 65 is at
+most line 3)."""
 
 ONTARIO_TAX_BEFORE_REDUCTION = CATALOG.declare(
     "ontario_tax_before_reduction", Decimal, non_negative=True

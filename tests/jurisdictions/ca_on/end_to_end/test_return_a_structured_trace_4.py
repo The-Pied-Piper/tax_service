@@ -906,6 +906,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         for line in trace
         if isinstance(line, SurchargeTierLine) and line.output == ONTARIO_SURTAX
     ]
+    worksheet_surcharged = [
+        line
+        for line in trace
+        if isinstance(line, SurchargeTierLine) and line.output == ontario.WORKSHEET_ON428_LINE_6
+    ]
     lift_tiers = [
         line
         for line in trace
@@ -984,6 +989,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (AMT_MAXIMUM_CARRYOVER_APPLIED, D("16951.38")),
             ),
             result=D("0"),
+        ),
+        # ON428 line 60 and line 61540 "Enter whichever is less: amount from line 58 or line 59.":
+        # line 58 (7671.98) and line 59 (0), the lesser of them, 0.
+        ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED: LesserOfLine(
+            ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED,
+            (
+                (ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT, D("7671.98")),
+                (ontario.MINIMUM_TAX_CARRYOVER_CREDIT, D("0")),
+            ),
+            D("0"),
         ),
         # Form T2209 line 13 "should not be more than" line 42900: the line 3 total, 0 with no
         # country, against line 42900, 16951.38.
@@ -2182,6 +2197,27 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             part=D("131.39"),
         ),
     ]
+    # Worksheet ON428 lines 4 and 5, inside line 6: 20% over 5710 and 36% over 7307 of line 3.
+    assert worksheet_surcharged == [
+        SurchargeTierLine(
+            output=ontario.WORKSHEET_ON428_LINE_6,
+            base=ontario.WORKSHEET_ON428_LINE_3,
+            base_amount=D("7671.98"),
+            threshold=D("5710"),
+            rate=Rate(D("0.20")),
+            rounding=CENT,
+            part=D("392.40"),
+        ),
+        SurchargeTierLine(
+            output=ontario.WORKSHEET_ON428_LINE_6,
+            base=ontario.WORKSHEET_ON428_LINE_3,
+            base_amount=D("7671.98"),
+            threshold=D("7307"),
+            rate=Rate(D("0.36")),
+            rounding=CENT,
+            part=D("131.39"),
+        ),
+    ]
     assert premium_tiers == [
         SurchargeTierLine(
             output=ONTARIO_HEALTH_PREMIUM,
@@ -3319,9 +3355,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # with the tax on split income, less that tax again (line 64 is line 54), here 0.
         ontario.ONTARIO_SURTAX_BASE: SubtractedNotBelowZeroLine(
             output=ontario.ONTARIO_SURTAX_BASE,
-            minuend=ontario.ONTARIO_TAX_WITH_SPLIT_INCOME,
+            minuend=ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER,
             minuend_amount=D("7671.98"),
             subtrahend=ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
+            subtrahend_amount=D("0"),
+            result=D("7671.98"),
+        ),
+        # ON428 line 61 "Line 55 minus line 60 (if negative, enter "0")": the tax with the tax on
+        # split income, less the minimum tax carryover applied (0).
+        ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER: SubtractedNotBelowZeroLine(
+            output=ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER,
+            minuend=ontario.ONTARIO_TAX_WITH_SPLIT_INCOME,
+            minuend_amount=D("7671.98"),
+            subtrahend=ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED,
             subtrahend_amount=D("0"),
             result=D("7671.98"),
         ),
