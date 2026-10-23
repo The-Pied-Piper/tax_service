@@ -52,6 +52,15 @@ def test_every_inner_sentence_is_prefixed_with_the_form_and_the_instance_positio
     )
 
 
+def test_a_form_without_instances_is_prefixed_with_its_name_only() -> None:
+    text = render(FormInstanceLine("ex/return", None, (SUBTRACTED, TOTAL)))
+
+    assert text == (
+        "ex/return: net_income: gross_rent 12000 less expenses 2000 = 10000\n"
+        "ex/return: unit_total: item 1 unit_amount 100 + item 2 unit_amount 250.5 = 350.5"
+    )
+
+
 def test_the_position_counts_from_1() -> None:
     text = render(FormInstanceLine("ex/rental", 1, (TOTAL,)))
 

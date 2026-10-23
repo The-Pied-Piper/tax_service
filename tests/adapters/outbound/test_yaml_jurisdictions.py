@@ -1223,19 +1223,18 @@ def test_several_forms_are_kept_in_the_order_their_names_first_appear(tmp_path: 
     assert [c.name for c in business.capabilities] == ["ex/c", "ex/d"]
 
 
-def test_a_form_part_may_carry_the_manifests_inputs_and_outputs(tmp_path: Path) -> None:
-    write_parts(
-        tmp_path,
-        {
-            "00-header.yaml": SCALARS,
-            "01-rental.yaml": FORM_RENTAL + "inputs: [ex/rentals]\noutputs: [ex/y]\n",
-        },
-    )
+@pytest.mark.parametrize("extra", ["inputs: [ex/rentals]\n", "outputs: [ex/y]\n"])
+def test_a_form_part_with_inputs_or_outputs_is_rejected_naming_the_part(
+    tmp_path: Path, extra: str
+) -> None:
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-rental.yaml": FORM_RENTAL + extra})
 
-    manifest = only_manifest(tmp_path)
+    with pytest.raises(
+        InvalidManifestError, match="form 'ex/rental'.*inputs are derived"
+    ) as caught:
+        source(tmp_path).get_jurisdiction(EX_ON)
 
-    assert manifest.inputs == frozenset({"ex/rentals"})
-    assert frozenset(returned(manifest).exports) == frozenset({"ex/y"})
+    assert str(part_path(tmp_path, "01-rental.yaml")) in str(caught.value)
 
 
 def test_a_form_part_with_no_capabilities_is_allowed(tmp_path: Path) -> None:
@@ -1430,11 +1429,21 @@ def test_a_bad_selection_in_a_form_part_names_the_part_file(tmp_path: Path) -> N
     assert str(part_path(tmp_path, "01-rental.yaml")) in str(caught.value)
 
 
-def test_a_part_naming_the_return_form_is_rejected_naming_the_folder(tmp_path: Path) -> None:
+def test_a_part_naming_the_return_form_is_rejected_naming_the_part(tmp_path: Path) -> None:
     named = FORM_RENTAL.replace("name: ex/rental", "name: ex-on/return")
     write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-return.yaml": named})
 
-    with pytest.raises(InvalidManifestError, match=r"ex-on/return.*more than once") as caught:
+    with pytest.raises(
+        InvalidManifestError, match=r"ex-on/return.*reserved for the parts"
+    ) as caught:
         source(tmp_path).get_jurisdiction(EX_ON)
 
-    assert str(tmp_path / "ex-on" / "manifests" / "v1") in str(caught.value)
+    assert str(part_path(tmp_path, "01-return.yaml")) in str(caught.value)
+
+
+def test_two_outputs_with_one_local_id_are_refused_as_outputs_not_exports(tmp_path: Path) -> None:
+    clash = HEADER.replace("outputs: [ex/y]", "outputs: [ex/y, ca/y]")
+    write(tmp_path, "ex-on/manifests/v1.yaml", clash + "capabilities: []\n")
+
+    with pytest.raises(InvalidManifestError, match=r"outputs: local id 'y'.*more than once"):
+        source(tmp_path).get_jurisdiction(EX_ON)

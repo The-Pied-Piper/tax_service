@@ -6,6 +6,7 @@ Every failure names the file and the key that is wrong, so a reviewer editing a 
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -1568,6 +1569,19 @@ def test_an_expectation_of_a_form_the_manifest_lacks_fails_naming_the_file_and_f
 
     with pytest.raises(WorkedReturnError, match=r"per\.yaml: expected: 'ex/rental' is not a form"):
         worked.with_forms([business_form()], lines)
+
+
+def test_an_expectation_of_a_form_without_instances_says_so_not_that_it_is_missing(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    worked = per_instance(tmp_path, lines)
+    once = replace(rental_form(), instances=None)
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=r"per\.yaml: expected: 'ex/rental' is a form without instances; only the default",
+    ):
+        worked.with_forms([once], lines)
 
 
 def test_an_expectation_with_no_forms_at_all_fails_naming_the_form(

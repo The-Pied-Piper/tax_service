@@ -13,14 +13,14 @@ __all__ = ["FormInstanceLine"]
 @dataclass(frozen=True)
 class FormInstanceLine(TraceLine):
     """The `lines` of the run of the form named `form` on its instance at `position` (from 1;
-    1 for a form that runs once), in the order they were recorded.
+    `None` for a form that runs once, which has no instances), in the order they were recorded.
 
     Its own class: the form is a group of capabilities, not a capability, so the lines of a run
     are kept together here rather than among the lines of another form's.
     """
 
     form: str
-    position: int
+    position: int | None
     lines: tuple[TraceLine, ...]
 
     @property

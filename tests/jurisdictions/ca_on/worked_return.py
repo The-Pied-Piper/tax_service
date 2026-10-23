@@ -144,7 +144,9 @@ class WorkedReturn:
         file for an instances identifier that is not a record list, for an expectation of a form
         not in `forms` and for one with other than an entry per instance.
         """
+        forms = tuple(forms)
         named = {form.name: form for form in forms if form.instances is not None}
+        once = {form.name for form in forms if form.instances is None}
         inputs = self.inputs
         for form in named.values():
             kind = self._instances_kind(form, artifacts)
@@ -162,12 +164,19 @@ class WorkedReturn:
             instances = RecordList(kind.fields, [record] if flat else [])
             inputs += (Artifact(kind, instances),)
         converted = replace(self, inputs=inputs)
-        converted._check_expectations(named, artifacts)
+        converted._check_expectations(named, once, artifacts)
         return converted
 
-    def _check_expectations(self, forms: dict[str, Form], artifacts: ArtifactRegistry) -> None:
+    def _check_expectations(
+        self, forms: dict[str, Form], once: set[str], artifacts: ArtifactRegistry
+    ) -> None:
         """Each expectation names a form of the manifest with instances, an entry per instance."""
         for expectation in self.form_expected:
+            if expectation.form in once:
+                raise WorkedReturnError(
+                    f"{self.path}: expected: {expectation.form!r} is a form without instances; "
+                    "only the default form is expected, as the flat `expected` lines"
+                )
             if expectation.form not in forms:
                 raise WorkedReturnError(
                     f"{self.path}: expected: {expectation.form!r} is not a form of the manifest"

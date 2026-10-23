@@ -435,6 +435,18 @@ def test_a_forms_inputs_are_only_the_starting_artifacts_it_reads() -> None:
         inner.compute(Artifact(SALES, D(3)), Artifact(COSTS, D(1)), audits("1"))
 
 
+def test_a_derived_kind_among_the_inputs_is_refused_when_the_set_is_built() -> None:
+    with pytest.raises(
+        InvalidCompositionError, match="'shop.profit' is exported by a form, not an input"
+    ):
+        flat(
+            [RecordTotal(AUDIT_AUDITED, GRAND)],
+            inputs=frozenset({SHOPS, AUDITS, SHOP_PROFIT}),
+            outputs=frozenset({GRAND}),
+            forms=[shop(), audit()],
+        )
+
+
 def test_a_cycle_between_forms_without_instances_is_refused_naming_them() -> None:
     first = FormComposition("ex/first", [RecordTotal(SECOND_TOTAL, FEE_TOTAL)], exports=[FEE_TOTAL])
     second = FormComposition(
@@ -622,7 +634,7 @@ def test_a_form_of_no_instances_has_no_worksheets_and_no_trace_line() -> None:
     assert result["ex/audit"] == ()
     assert result[RETURN][0].get(GRAND).value == D(0)
     assert [(line.form, line.position) for line in instance_lines(forms.trace(result))] == [
-        (RETURN, 1)
+        (RETURN, None)
     ]
 
 
@@ -696,7 +708,7 @@ def test_the_trace_has_one_line_per_worksheet_in_run_order_the_default_form_amon
         ("ex/shop", 2),
         ("ex/audit", 1),
         ("ex/audit", 2),
-        (RETURN, 1),
+        (RETURN, None),
     ]
     last = lines[-1]
     assert isinstance(last, FormInstanceLine)

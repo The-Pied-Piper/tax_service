@@ -531,7 +531,7 @@ def test_each_worksheets_trace_is_grouped_in_one_line_named_by_form_and_position
     assert isinstance(returned, FormInstanceLine)
     assert (first.form, first.position) == ("ex/rental", 1)
     assert (second.form, second.position) == ("ex/rental", 2)
-    assert (returned.form, returned.position) == (RETURN, 1)
+    assert (returned.form, returned.position) == (RETURN, None)
     assert returned.lines == (
         RecordTotalLine(TOTAL_NET_INCOME, NET_INCOME, (D("10000"), D("4000")), D("14000")),
     )

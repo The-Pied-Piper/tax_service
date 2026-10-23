@@ -150,8 +150,9 @@ class FormSet:
     """The forms of a computation, run in the order of their imports.
 
     Construction fails with InvalidCompositionError naming the forms for a form listed twice, an
-    instances kind that is not among `inputs`, an import that no form exports, a cycle of imports,
-    or an input that no form reads (an instances kind is read by its form).
+    instances kind that is not among `inputs`, an input that is a form's derived `<form>.<export>`
+    kind, an import that no form exports, a cycle of imports, or an input that no form reads (an
+    instances kind is read by its form).
     """
 
     def __init__(
@@ -164,6 +165,7 @@ class FormSet:
         self._producers: dict[ArtifactKind[Any], str] = {
             kind: form.name for form in listed for kind in form.derived
         }
+        self._check_not_derived(inputs)
         self._check_imports(listed)
         self._check_inputs_are_read(listed, inputs)
         self._inputs = inputs
@@ -209,9 +211,14 @@ class FormSet:
         return worksheets
 
     def trace(self, worksheets: Mapping[str, Sequence[Worksheet]]) -> tuple[TraceLine, ...]:
-        """A `FormInstanceLine` per worksheet of `worksheets`, in the order the forms run."""
+        """A `FormInstanceLine` per worksheet of `worksheets`, in the order the forms run.
+
+        The line of a form without instances has no position (`None`): it runs once.
+        """
         return tuple(
-            FormInstanceLine(form.name, position, worksheet.trace)
+            FormInstanceLine(
+                form.name, None if form.instances is None else position, worksheet.trace
+            )
             for form in self._forms
             for position, worksheet in enumerate(worksheets.get(form.name, ()), start=1)
         )
@@ -245,11 +252,7 @@ class FormSet:
             raise
 
     def _check_given(self, given: Mapping[ArtifactKind[Any], Artifact[Any]]) -> None:
-        derived = given.keys() & self._producers.keys()
-        if derived:
-            labels = self._labels(derived)
-            verb = "is" if len(derived) == 1 else "are"
-            raise InvalidCompositionError(f"{labels} {verb} exported by a form, not an input")
+        self._check_not_derived(given.keys())
         extra = given.keys() - self._inputs
         if extra:
             verb = "is not an input" if len(extra) == 1 else "are not inputs"
@@ -260,6 +263,14 @@ class FormSet:
         if missing:
             noun = "input" if len(missing) == 1 else "inputs"
             raise InvalidCompositionError(f"missing {noun} {self._labels(missing)}")
+
+    def _check_not_derived(self, kinds: Iterable[ArtifactKind[Any]]) -> None:
+        derived = set(kinds) & self._producers.keys()
+        if derived:
+            verb = "is" if len(derived) == 1 else "are"
+            raise InvalidCompositionError(
+                f"{self._labels(derived)} {verb} exported by a form, not an input"
+            )
 
     def _value_type_hints(self, extra: Iterable[ArtifactKind[Any]]) -> str:
         """A hint for each extra kind that has an input's identifier but another value type."""
