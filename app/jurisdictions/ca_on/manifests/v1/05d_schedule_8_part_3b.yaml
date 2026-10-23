@@ -1,3 +1,6 @@
+# Form Schedule 8 (ca/schedule_8), Parts 3a to 5: see 05c_schedule_8_part_3.yaml.
+form:
+  name: ca/schedule_8
 capabilities:
   # Schedule 8 Part 3b "Line 24 is "0" or negative" and Part 3a "Amount from line 24 is positive":
   # the zero that the form's "enter "0"" alternatives and the floors of "as a positive amount"

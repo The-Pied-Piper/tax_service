@@ -70,7 +70,7 @@ INPUTS = frozenset({"ca/cpt20_t4_earnings"})
 # lines 30800, 22215, 31000, 22200, 42100 and 44800 follow), so they are declared outputs.
 OUTPUTS = frozenset[str]()
 
-STEPS = {
+FORM_STEPS = {
     # Schedule 8 Part 3 line 2 "Enter whichever is less: amount from line D of Part 2 or line
     # 1.": line 1 is the employment income. Part 5 line 32 is "Amount from line 2 of Part 3".
     CapabilitySelection(
@@ -406,7 +406,7 @@ STEPS = {
     ),
 }
 
-WIRING = {
+FORM_WIRING = {
     (
         LesserOf,
         frozenset({CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS, EMPLOYMENT_INCOME}),

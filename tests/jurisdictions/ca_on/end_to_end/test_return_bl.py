@@ -132,6 +132,7 @@ def test_the_trace_keeps_the_lines_of_each_statement_under_its_position() -> Non
     assert [(group.form, group.position) for group in groups] == [
         ("ca/t2121", 1),
         ("ca/t2121", 2),
+        ("ca/schedule_8", 1),
         ("ca-on/return", 1),
     ]
     assert all(group.lines for group in groups)

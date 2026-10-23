@@ -56,6 +56,9 @@ inputs:
   # Form T776: the statements, one record for each rental operation (any number); the form
   # ca/t776 reads their fields.
   - ca/t776_statements
+  # Form Schedule 8: the copies of the form, none or one (a record has no fields); the form
+  # ca/schedule_8 reads the starting amounts it needs from the inputs below, like the return.
+  - ca/schedule_8_instances
   # Form T2125: the statements, one record for each business (any number); the form ca/t2125
   # reads their fields.
   - ca/t2125_statements

@@ -42,7 +42,6 @@ from app.jurisdictions.ca.catalog import (
     CHARITABLE_DONATIONS,
     CHARITABLE_DONATIONS_CLAIMED,
     CHARITABLE_DONATIONS_LIMIT,
-    CPP_BASE_CONTRIBUTIONS,
     CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
@@ -211,16 +210,6 @@ INPUTS = frozenset(
 OUTPUTS = frozenset({"ca/tuition_carried_forward", "ca/foreign_tax_credit_sheets"})
 
 STEPS = {
-    # Schedule 8 Part 3, each contribution on employment income: line 11 (base, 4.95% of the
-    # earnings between the $3,500 exemption and the $71,300 ceiling, lines 2 to 7), line 12
-    # (first additional, 1% of the same band) and line 22 (second additional, 4% of the
-    # earnings between the $71,300 and $81,200 ceilings, lines 2 to 4).
-    CapabilitySelection(
-        name="core/contribution_tier",
-        params={"tier": "ca/cpp_base_contribution"},
-        consumes={"earnings": "ca/employment_income"},
-        produces={"output": "ca/cpp_base_contributions"},
-    ),
     # T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
     # $1,077.48)": the EI premiums, 1.64% of the employment income up to the $65,700
     # maximum insurable earnings, with no exemption (the EI premium rates and maximums,
@@ -1091,11 +1080,6 @@ STEPS = {
 }
 
 WIRING = {
-    (
-        TieredContribution,
-        frozenset({EMPLOYMENT_INCOME}),
-        frozenset({CPP_BASE_CONTRIBUTIONS}),
-    ),
     (TieredContribution, frozenset({EMPLOYMENT_INCOME}), frozenset({EI_PREMIUMS})),
     (CappedAmount, frozenset({EMPLOYMENT_INCOME}), frozenset({CANADA_EMPLOYMENT_AMOUNT})),
     (

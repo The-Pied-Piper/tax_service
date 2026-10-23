@@ -477,6 +477,8 @@ inputs:
   ca/spouse_universal_child_care_benefit: "0"
   ca/spouse_rdsp_income: "0"
   ca-on/lift_spouse_at_year_end: "0"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca-on/return:
     - ca/taxable_capital_gains: "0"
@@ -493,13 +495,6 @@ expected:
       ca/cpp_deduction_on_self_employment: "0"
       ca/ei_premiums_on_self_employment: "0"
       ca/ei_payable_on_self_employment: "0"
-      ca/cpp_base_contributions: "321.75"
-      ca/cpp_first_additional_contributions: "65.00"
-      ca/cpp_second_additional_contributions: "0"
-      ca/cpp_enhanced_contributions: "65.00"
-      ca/cpp_required_base_and_first_additional_contributions: "386.75"
-      ca/cpp_part_5_line_57: "321.75"
-      ca/cpp_part_5_line_69: "65.00"
       ca/ei_premiums: "164.00"
       ca/rrsp_contributions_available: "0"
       ca/rrsp_deduction_maximum: "0"
@@ -687,6 +682,14 @@ expected:
       ca/amt_alternative_minimum_tax_payable: "0"
       ca/amt_federal_tax_payable_under_minimum_tax: "0"
       ca/amt_carryover_available_for_2026: "1181.85"
+  ca/schedule_8:
+    - ca/cpp_base_contributions: "321.75"
+      ca/cpp_first_additional_contributions: "65.00"
+      ca/cpp_second_additional_contributions: "0"
+      ca/cpp_enhanced_contributions: "65.00"
+      ca/cpp_required_base_and_first_additional_contributions: "386.75"
+      ca/cpp_part_5_line_57: "321.75"
+      ca/cpp_part_5_line_69: "65.00"
   ca/t776:
     - ca/short_term_rental_gross_rents: "0"
       ca/rental_gross_rents: "0"

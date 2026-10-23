@@ -58,7 +58,7 @@ from app.jurisdictions.ca_on.catalog import (
     TAX_REDUCTION_FOR_CHILDREN,
     TAX_REDUCTION_FOR_DEPENDANTS,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import D, compute, compute_with_schedule_8
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
@@ -68,7 +68,7 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     # 10000 = 164.00; no unused or new RRSP contributions, so the most that may be deducted is
     # the lesser of 0 and the deduction limit of 1800, and the amount deducted is 0; the Canada
     # employment amount is the lesser of 10000 and 1471.
-    worksheet = compute("10000", (), "0", "0", "1800", "0", "0")
+    worksheet = compute_with_schedule_8("10000", (), "0", "0", "1800", "0", "0")
 
     assert worksheet.get(TOTAL_INCOME).value == D("10000")
     assert worksheet.get(CPP_BASE_CONTRIBUTIONS).value == D("321.75")

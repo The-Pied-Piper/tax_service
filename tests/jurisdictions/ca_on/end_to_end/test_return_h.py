@@ -30,7 +30,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import D, compute_with_schedule_8
 
 
 def test_return_hs_pension_and_benefit_income_is_all_of_its_total_income() -> None:
@@ -42,7 +42,7 @@ def test_return_hs_pension_and_benefit_income_is_all_of_its_total_income() -> No
     # employment income, so no CPP contributions, EI premiums, Canada employment amount, LIFT
     # credit or Canada workers benefit. With no amount entered on line 14600, line 25000 is line
     # 14700, 2000, so taxable income is 45400 - 2000 = 43400.
-    worksheet = compute(
+    worksheet = compute_with_schedule_8(
         "0",
         (),
         "0",

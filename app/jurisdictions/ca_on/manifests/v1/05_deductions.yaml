@@ -1,28 +1,4 @@
 capabilities:
-  - name: core/contribution_tier
-    params:
-      tier: ca/cpp_first_additional_contribution
-    consumes:
-      earnings: ca/employment_income
-    produces:
-      output: ca/cpp_first_additional_contributions
-  - name: core/contribution_tier
-    params:
-      tier: ca/cpp_second_additional_contribution
-    consumes:
-      earnings: ca/employment_income
-    produces:
-      output: ca/cpp_second_additional_contributions
-  # Schedule 8 Part 3a line 28 "Line 26 plus line 27": the first and second additional
-  # contributions together. The T1 line 22215 deduction is routed from this and Part 3b line 48
-  # by ca/cpp_enhanced_contributions_on_return (05d_schedule_8_part_3b.yaml).
-  - name: core/sum
-    consumes:
-      parts:
-        - ca/cpp_first_additional_contributions
-        - ca/cpp_second_additional_contributions
-    produces:
-      output: ca/cpp_enhanced_contributions
   # Schedule 8 Part 2 "Box A: Enter the number of months that CPP applied in 2025." and the
   # "Monthly proration for 2025" table, a row for each number of months (1 to 12): line B
   # (maximum pensionable earnings), line C (maximum amount subject to second additional

@@ -463,6 +463,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_66,
     CPP_PART_5_LINE_67,
     CPP_PART_5_LINE_67_LESSER,
+    CPP_PART_5_LINE_70,
     CPP_PART_5_LINE_72,
     CPP_PART_5_LINE_73,
     CPP_PART_5_LINE_74,
@@ -470,6 +471,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_84,
     CPP_PART_5_LINE_86,
     CPP_PART_5_LINE_87,
+    CPP_PART_5_LINE_88,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
@@ -942,6 +944,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         *result["ca/t2042"][0].trace,
         *result["ca/t2121"][0].trace,
         *result["ca/t776"][0].trace,
+        *result["ca/schedule_8"][0].trace,
         *result["ca-on/return"][0].trace,
     )
     floored = {line.output: line for line in trace if isinstance(line, SubtractedNotBelowZeroLine)}
@@ -4614,6 +4617,31 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         FARMING_INCOME: RecordTotalLine(FARMING_INCOME, FARMING_INCOME, (D("0"),), D("0")),
         # T1 line 14300 "Net": the lines 9946 of Return A's one T2121 statement, a blank one.
         FISHING_INCOME: RecordTotalLine(FISHING_INCOME, FISHING_INCOME, (D("0"),), D("0")),
+        # T1 lines 30800, 22215, 44800, 42100, 31000 and 22200 and the zero of Schedule 8: the
+        # lines of Return A's one Schedule 8.
+        CPP_BASE_CONTRIBUTIONS_ON_RETURN: RecordTotalLine(
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+            (D("3356.10"),),
+            D("3356.10"),
+        ),
+        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: RecordTotalLine(
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            (D("1074.00"),),
+            D("1074.00"),
+        ),
+        CPP_OVERPAYMENT: RecordTotalLine(CPP_OVERPAYMENT, CPP_OVERPAYMENT, (D("0.00"),), D("0.00")),
+        CPP_PART_5_LINE_49: RecordTotalLine(
+            CPP_PART_5_LINE_49, CPP_PART_5_LINE_49, (D("0.00"),), D("0.00")
+        ),
+        CPP_PART_5_LINE_70: RecordTotalLine(
+            CPP_PART_5_LINE_70, CPP_PART_5_LINE_70, (D("0.00"),), D("0.00")
+        ),
+        CPP_PART_5_LINE_88: RecordTotalLine(
+            CPP_PART_5_LINE_88, CPP_PART_5_LINE_88, (D("0.00"),), D("0.00")
+        ),
+        CPP_ZERO: RecordTotalLine(CPP_ZERO, CPP_ZERO, (D("0.00"),), D("0.00")),
     }
     assert quotients == {
         COOP_EDUCATION_PHASE_OUT_SHARE: QuotientLine(

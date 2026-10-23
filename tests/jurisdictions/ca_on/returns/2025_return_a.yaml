@@ -984,6 +984,8 @@ inputs:
       ca/rental_partner_share: "0"
       ca/rental_partner_gst_hst_rebate: "0"
       ca/rental_partner_other_expenses: "0"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca-on/return:
     - ca/share_proceeds: "20000"
@@ -994,14 +996,6 @@ expected:
       ca/net_rental_income: "0"
       ca/total_income: "120000"
       ca/cpp_second_additional_earnings_maximum: "9900.00"
-      ca/cpp_base_contributions: "3356.10"
-      ca/cpp_first_additional_contributions: "678.00"
-      ca/cpp_required_base_and_first_additional_contributions: "4034.10"
-      ca/cpp_second_additional_contributions: "396.00"
-      ca/cpp_contributions_difference: "0.00"
-      ca/cpp_part_5_line_57: "3356.10"
-      ca/cpp_part_5_line_69: "1074.00"
-      ca/cpp_enhanced_contributions: "1074.00"
       ca/ei_premiums: "1077.48"
       ca/rrsp_contributions_available: "1926"
       ca/rrsp_deduction_maximum: "1926"
@@ -1187,6 +1181,15 @@ expected:
       ca/amt_carryover_available_for_2026: "0"
       ca/rc381_part_4_line_91: "4034.10"
       ca/rc381_cpp_overpayment_on_return: "4034.10"
+  ca/schedule_8:
+    - ca/cpp_base_contributions: "3356.10"
+      ca/cpp_first_additional_contributions: "678.00"
+      ca/cpp_required_base_and_first_additional_contributions: "4034.10"
+      ca/cpp_second_additional_contributions: "396.00"
+      ca/cpp_contributions_difference: "0.00"
+      ca/cpp_part_5_line_57: "3356.10"
+      ca/cpp_part_5_line_69: "1074.00"
+      ca/cpp_enhanced_contributions: "1074.00"
 
   ca/t776:
     - ca/rental_gross_rents: "0"

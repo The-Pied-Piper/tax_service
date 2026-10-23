@@ -198,6 +198,8 @@ inputs:
   ca/spouse_net_income_before_adjustments: "15000"
   ca-on/lift_spouse_at_year_end: "1"
   ca/unapplied_net_capital_losses_2000: "0"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca-on/return:
     - ca/taxable_capital_gains: "0.00"
@@ -206,14 +208,6 @@ expected:
       ca/income_support_benefits: "0"
       ca/total_income: "22139.77"
       ca/cpp_second_additional_earnings_maximum: "9900.00"
-      ca/cpp_base_contributions: "922.67"
-      ca/cpp_first_additional_contributions: "186.40"
-      ca/cpp_required_base_and_first_additional_contributions: "1109.07"
-      ca/cpp_second_additional_contributions: "0.00"
-      ca/cpp_contributions_difference: "0.00"
-      ca/cpp_part_5_line_57: "922.67"
-      ca/cpp_part_5_line_69: "186.40"
-      ca/cpp_enhanced_contributions: "186.40"
       ca/ei_premiums: "363.09"
       ca/rrsp_contributions_available: "0"
       ca/rrsp_deduction_maximum: "0"
@@ -408,3 +402,12 @@ expected:
       ca/amt_carryover_available_for_2026: "0"
       ca/rc381_part_4_line_91: "1109.07"
       ca/rc381_cpp_overpayment_on_return: "1109.07"
+  ca/schedule_8:
+    - ca/cpp_base_contributions: "922.67"
+      ca/cpp_first_additional_contributions: "186.40"
+      ca/cpp_required_base_and_first_additional_contributions: "1109.07"
+      ca/cpp_second_additional_contributions: "0.00"
+      ca/cpp_contributions_difference: "0.00"
+      ca/cpp_part_5_line_57: "922.67"
+      ca/cpp_part_5_line_69: "186.40"
+      ca/cpp_enhanced_contributions: "186.40"
