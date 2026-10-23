@@ -21,14 +21,14 @@ Line 15 is "Amount from line 11"; Part 3b line 30 "If line 16 is positive or "0"
 from line 15 at line 30 and line 36, and continue at line 37." and line 36 "Line 34 plus line 35.
 Enter this amount (in dollars and cents) on line 30800 of your return and line 58240 of your Form
 428." carry it to T1 line 30800 and ON428 line 58240 when line 24 is "0" or negative
-(cpp_base_contributions_on_return). When line 24 is positive, Part 3a line 25 "Enter the amount
-from line 15." carries the same amount to the same lines.
+(schedule_8_cpp_base_contributions_on_return). When line 24 is positive, Part 3a line 25 "Enter the
+amount from line 15." carries the same amount to the same lines.
 
 Line 1 (50339) is "Total CPP pensionable earnings from box 26 of all of your T4 slips (if box 26
 is blank, enter the amount from box 14)", so the three contributions read employment income.
 Not triggered by the returns modelled: Part 2's proration for fewer than 12 months, and box 26
 differing from box 14. The slips' contributions differing from the required ones are line 24, which
-routes to the T1 line 44800 overpayment when positive (cpp_overpayment).
+routes to the T1 line 44800 overpayment when positive (schedule_8_cpp_overpayment).
 """
 
 CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT = CATALOG.declare(

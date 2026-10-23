@@ -161,12 +161,17 @@ capabilities:
       count: ca/cpp_part_5_completed
     produces:
       output: ca/cpp_part_5_deduction_on_self_employment
-  # T1 line 22200: the Part 4 amount plus the Part 5 amount.
+  # T1 line 22200: the Part 4 amount plus the Part 5 amount, plus Form RC381 Part 4 line 129
+  # "Deduction for CPP enhanced contributions on self-employment income and other earnings: Add
+  # lines 121, 122, 124, 125, and 128. Enter this amount (in dollar and cents) on line 22200 of
+  # your return." (08j, 0 with no Form RC381). Schedule 8 Part 4 and Part 5 are the filer's choices
+  # (counts 1 or 0); the return carries Schedule 8 or Form RC381, never both.
   - name: core/sum
     consumes:
       parts:
         - ca/cpp_deduction_on_self_employment
         - ca/cpp_part_5_deduction_on_self_employment
+        - ca/rc381_cpp_deduction_on_self_employment_and_other_earnings
     produces:
       output: ca/cpp_deduction_on_self_employment_and_other_earnings
   # Schedule 13 line 1 "Enter the total amount from line 1 1 plus line 27 of your return", read

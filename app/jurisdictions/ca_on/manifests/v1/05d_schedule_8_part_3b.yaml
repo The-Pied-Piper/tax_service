@@ -383,7 +383,7 @@ capabilities:
       when_none: ca/cpp_part_3_base_contributions_on_return
       when_any: ca/cpp_part_5_line_57
     produces:
-      output: ca/cpp_base_contributions_on_return
+      output: ca/schedule_8_cpp_base_contributions_on_return
   # T1 line 22215: Schedule 8 Part 5 line 69 when Part 5 is completed, else the Part 3a or Part
   # 3b amount.
   - name: core/choose_by_count
@@ -392,7 +392,7 @@ capabilities:
       when_none: ca/cpp_part_3_enhanced_contributions_on_return
       when_any: ca/cpp_part_5_line_69
     produces:
-      output: ca/cpp_enhanced_contributions_on_return
+      output: ca/schedule_8_cpp_enhanced_contributions_on_return
   # T1 line 44800: Schedule 8 Part 5 line 50 when Part 5 is completed, else the Part 3a line 29
   # amount or 0.
   - name: core/choose_by_count
@@ -401,4 +401,4 @@ capabilities:
       when_none: ca/cpp_part_3_overpayment
       when_any: ca/cpp_part_5_line_50
     produces:
-      output: ca/cpp_overpayment
+      output: ca/schedule_8_cpp_overpayment

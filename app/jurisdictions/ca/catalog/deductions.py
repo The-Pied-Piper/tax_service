@@ -351,8 +351,8 @@ CPP_ENHANCED_CONTRIBUTIONS = CATALOG.declare(
 contributions together (lines 12 and 22).
 
 It is the figure Part 3a carries to T1 line 22215 when line 24 is positive. The deduction from
-total income is `cpp_enhanced_contributions_on_return`, which is this sum when line 24 is positive
-and Part 3b line 48 otherwise.
+total income is `schedule_8_cpp_enhanced_contributions_on_return`, which is this sum when line 24
+is positive and Part 3b line 48 otherwise.
 """
 
 EXPLORATION_AND_DEVELOPMENT_EXPENSES = CATALOG.declare(
@@ -1201,7 +1201,8 @@ enter "0".": the candidate above when both are positive, else "0"."""
 CPP_PART_3B_LINE_36 = CATALOG.declare("cpp_part_3b_line_36", Decimal, non_negative=True)
 """Part 3b line 36 "Line 34 plus line 35. Enter this amount (in dollars and cents) on line 30800 of
 your return and line 58240 of your Form 428.": the base contributions of the Part 3b branch, which
-cpp_base_contributions_on_return carries to line 30800 when line 24 is "0" or negative."""
+schedule_8_cpp_base_contributions_on_return carries to line 30800 when line 24 is "0" or
+negative."""
 
 CPP_PART_3B_LINE_37 = CATALOG.declare("cpp_part_3b_line_37", Decimal, non_negative=True)
 """Part 3b line 37 (printed as "Line 36" on the form's second page), "If line 19 is positive or "0",
@@ -1269,7 +1270,8 @@ CPP_PART_3B_LINE_47 = CATALOG.declare("cpp_part_3b_line_47", Decimal, non_negati
 CPP_PART_3B_LINE_48 = CATALOG.declare("cpp_part_3b_line_48", Decimal, non_negative=True)
 """Part 3b line 48 "Line 43 plus line 47 Enter this amount (in dollars and cents) on line 22215 of
 your return.": the enhanced contributions of the Part 3b branch, which
-cpp_enhanced_contributions_on_return carries to line 22215 when line 24 is "0" or negative."""
+schedule_8_cpp_enhanced_contributions_on_return carries to line 22215 when line 24 is "0" or
+negative."""
 
 CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
     "cpp_part_3_base_contributions_on_return", Decimal, non_negative=True
@@ -1278,7 +1280,8 @@ CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
 "Enter the amount from line 15. Enter this amount (in dollars and cents) on line 30800 of your
 return and line 58240 of your Form 428." when line 24 is positive (the required base contributions,
 line 11), else Part 3b line 36 (the same instruction), chosen by the count of line 24 being
-positive. cpp_base_contributions_on_return takes it on line 30800 unless Part 5 is completed."""
+positive. schedule_8_cpp_base_contributions_on_return takes it on line 30800 unless Part 5 is
+completed."""
 
 CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
     "cpp_part_3_enhanced_contributions_on_return", Decimal, non_negative=True
@@ -1286,13 +1289,13 @@ CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
 """Part 3 route of the enhanced CPP contributions, T1 line 22215: Part 3a line 28 "Line 26 plus line
 27 Enter this amount (in dollars and cents) on line 22215 of your return." when line 24 is positive,
 else Part 3b line 48 (the same instruction), chosen by the count of line 24 being positive.
-cpp_enhanced_contributions_on_return takes it on line 22215 unless Part 5 is completed. A deduction
-from total income, not a credit."""
+schedule_8_cpp_enhanced_contributions_on_return takes it on line 22215 unless Part 5 is completed.
+A deduction from total income, not a credit."""
 
 CPP_PART_3_OVERPAYMENT = CATALOG.declare("cpp_part_3_overpayment", Decimal, non_negative=True)
 """Part 3 route of the CPP overpayment, T1 line 44800: Part 3a line 29 "Enter the amount from line
 24. Enter this amount (in dollars and cents) on line 44800 of your return." when line 24 is
-positive, else "0". cpp_overpayment takes it on line 44800 unless Part 5 is completed."""
+positive, else "0". schedule_8_cpp_overpayment takes it on line 44800 unless Part 5 is completed."""
 
 CPP_PART_3_LINE_2 = CATALOG.declare("cpp_part_3_line_2", Decimal, non_negative=True)
 """Part 3 line 2 "Line 2: Enter whichever is less: amount from line D of Part 2 or line 1.": the
@@ -1704,25 +1707,54 @@ CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
 """T1 line 22200: the Part 4 deduction (cpp_deduction_on_self_employment) plus the Part 5 deduction
 (cpp_part_5_deduction_on_self_employment), read by 05_deductions and 20_alternative_minimum_tax."""
 
+SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
+    "schedule_8_cpp_base_contributions_on_return", Decimal, non_negative=True
+)
+"""Base CPP contributions of Schedule 8, for T1 line 30800 and ON428 line 58240: Part 5 line 57
+"Base CPP contributions through employment income: Line 55 plus line 56 Enter this amount (in
+dollars and cents) on line 30800 of your return." when Part 5 is completed, else the Part 3 route,
+cpp_part_3_base_contributions_on_return. The choice is by the count of cpp_part_5_completed. The
+form's total over its copies, 0 with none, is added to Form RC381's
+(rc381_cpp_base_contributions_on_return) in cpp_base_contributions_on_return."""
+
+SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
+    "schedule_8_cpp_enhanced_contributions_on_return", Decimal, non_negative=True
+)
+"""Enhanced CPP contributions of Schedule 8, for T1 line 22215: Part 5 line 69 "Deduction for CPP
+enhanced contributions on employment income: Line 64 plus line 68 Enter this amount (in dollars and
+cents) on line 22215 of your return." when Part 5 is completed, else the Part 3 route,
+cpp_part_3_enhanced_contributions_on_return. A deduction from total income, not a credit. The
+form's total over its copies, 0 with none, is added to Form RC381's
+(rc381_cpp_enhanced_contributions_on_return) in cpp_enhanced_contributions_on_return."""
+
+SCHEDULE_8_CPP_OVERPAYMENT = CATALOG.declare(
+    "schedule_8_cpp_overpayment", Decimal, non_negative=True
+)
+"""CPP overpayment of Schedule 8, for T1 line 44800: Part 5 line 50 "CPP overpayment: Enter the
+result of the following calculation (in dollars and cents) on line 44800 of your return: amount
+from line 49 entered as a positive amount multiplied by 50% =" when Part 5 is completed, else the
+Part 3 route, cpp_part_3_overpayment. The form's total over its copies, 0 with none, is added to
+Form RC381's (rc381_cpp_overpayment_on_return) in cpp_overpayment."""
+
 CPP_BASE_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
     "cpp_base_contributions_on_return", Decimal, non_negative=True
 )
-"""Base CPP contributions on the return, T1 line 30800 and ON428 line 58240: Part 5 line 57 "Base
-CPP contributions through employment income: Line 55 plus line 56 Enter this amount (in dollars and
-cents) on line 30800 of your return." when Part 5 is completed, else the Part 3 route,
-cpp_part_3_base_contributions_on_return. The choice is by the count of cpp_part_5_completed."""
+"""Base CPP contributions on the return, T1 line 30800 and ON428 line 58240: the total of
+Schedule 8 (schedule_8_cpp_base_contributions_on_return) plus the total of Form RC381
+(rc381_cpp_base_contributions_on_return, Part 4 line 98 or Part 3a line 70 or Part 3b line 81).
+The return carries one of the two forms, so one of the two totals is 0."""
 
 CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
     "cpp_enhanced_contributions_on_return", Decimal, non_negative=True
 )
-"""Enhanced CPP contributions on the return, T1 line 22215: Part 5 line 69 "Deduction for CPP
-enhanced contributions on employment income: Line 69: Line 64 plus line 68 Enter this amount (in
-dollars and cents) on line 22215 of your return." when Part 5 is completed, else the Part 3 route,
-cpp_part_3_enhanced_contributions_on_return. A deduction from total income, not a credit."""
+"""Enhanced CPP contributions on the return, T1 line 22215: the total of Schedule 8
+(schedule_8_cpp_enhanced_contributions_on_return) plus the total of Form RC381
+(rc381_cpp_enhanced_contributions_on_return, Part 4 line 110 or Part 3a line 73 or Part 3b line
+93). A deduction from total income, not a credit. The return carries one of the two forms, so one
+of the two totals is 0."""
 
 CPP_OVERPAYMENT = CATALOG.declare("cpp_overpayment", Decimal, non_negative=True)
-"""CPP overpayment, T1 line 44800: Part 5 line 50 "CPP overpayment: Enter the result of the
-following calculation (in dollars and cents) on line 44800 of your return: amount from line 49
-entered as a positive amount multiplied by 50% =" when Part 5 is completed, else the Part 3 route,
-cpp_part_3_overpayment. The return's refund total reads it at line 152 "CPP or QPP overpayment"
-(Form 5006-R, line 152 and line 44800)."""
+"""CPP overpayment, T1 line 44800: the total of Schedule 8 (schedule_8_cpp_overpayment) plus the
+total of Form RC381 (rc381_cpp_overpayment_on_return, Part 4 line 91 or Part 3a line 74). The
+return carries one of the two forms, so one of the two totals is 0. The return's refund total
+reads it at line 152 "CPP or QPP overpayment" (Form 5006-R, line 152 and line 44800)."""

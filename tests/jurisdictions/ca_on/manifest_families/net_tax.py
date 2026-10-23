@@ -27,6 +27,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     NET_FEDERAL_TAX,
+    RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     RESP_AIPS_ADDITIONAL_TAX,
     RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
     SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
@@ -243,7 +244,9 @@ STEPS = {
         produces={"output": "ca/cpp_part_5_payable_on_self_employment"},
     ),
     # T1 line 144 and line 42100: the Part 4 amount plus the Part 5 amount; both are added
-    # when both parts are marked completed, as the form leaves the choice to the filer.
+    # when both parts are marked completed, as the form leaves the choice to the filer. Plus Form
+    # RC381 Part 4 line 90 (the form's total, 0 with no copy; the return carries Schedule 8 or
+    # Form RC381, never both).
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -251,6 +254,7 @@ STEPS = {
             "parts": (
                 "ca/cpp_payable_on_self_employment",
                 "ca/cpp_part_5_payable_on_self_employment",
+                "ca/rc381_cpp_payable_on_self_employment",
             ),
         },
         produces={"output": "ca/cpp_payable_on_self_employment_and_other_earnings"},
@@ -371,7 +375,13 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({CPP_PAYABLE_ON_SELF_EMPLOYMENT, CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT}),
+        frozenset(
+            {
+                CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+                CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
+                RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+            }
+        ),
         frozenset({CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
     ),
     (

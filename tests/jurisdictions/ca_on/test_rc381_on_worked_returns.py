@@ -1,10 +1,11 @@
 """Form RC381 on the worked returns: the form's lines on each return's inputs, one copy.
 
 The return carries Schedule 8 or Form RC381, never both (the exclusive group
-`ca/cpp_calculation`), and a worked return in `returns/` carries Schedule 8, so the lines of the
-form `ca/rc381` are checked here instead: for each return listed in `rc381_lines.yaml`, the return
-with its Schedule 8 left out and one copy of Form RC381 carried, expecting the lines listed for the
-form's one copy. A line the file leaves out is not checked.
+`ca/cpp_calculation`), and a worked return in `returns/` carries Schedule 8 (except Returns BO and
+BP, which carry Form RC381 and expect its lines themselves), so the lines of the form `ca/rc381` are
+checked here instead: for each return listed in `rc381_lines.yaml`, the return with its Schedule 8
+left out and one copy of Form RC381 carried, expecting the lines listed for the form's one copy. A
+line the file leaves out is not checked.
 """
 
 from __future__ import annotations

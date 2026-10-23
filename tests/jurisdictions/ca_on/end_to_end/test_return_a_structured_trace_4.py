@@ -364,13 +364,11 @@ from app.jurisdictions.ca.catalog import (
     CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
     CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
-    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASIC_EXEMPTION,
     CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
     CPP_EARNINGS_UP_TO_MAXIMUM,
-    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE,
@@ -384,7 +382,6 @@ from app.jurisdictions.ca.catalog import (
     CPP_LINE_24_POSITIVE,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
-    CPP_OVERPAYMENT,
     CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_PART_3_LINE_2,
@@ -709,6 +706,9 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
     SCHEDULE_3_LINE_17600_NOT_BELOW_ZERO,
+    SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    SCHEDULE_8_CPP_OVERPAYMENT,
     SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
@@ -4242,19 +4242,21 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         FISHING_INCOME: RecordTotalLine(FISHING_INCOME, FISHING_INCOME, (D("0"),), D("0")),
         # T1 lines 30800, 22215, 44800, 42100, 31000 and 22200 and the zero of Schedule 8: the
         # lines of Return A's one Schedule 8.
-        CPP_BASE_CONTRIBUTIONS_ON_RETURN: RecordTotalLine(
-            CPP_BASE_CONTRIBUTIONS_ON_RETURN,
-            CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN: RecordTotalLine(
+            SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+            SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
             (D("3356.10"),),
             D("3356.10"),
         ),
-        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: RecordTotalLine(
-            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
-            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: RecordTotalLine(
+            SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
             (D("1074.00"),),
             D("1074.00"),
         ),
-        CPP_OVERPAYMENT: RecordTotalLine(CPP_OVERPAYMENT, CPP_OVERPAYMENT, (D("0.00"),), D("0.00")),
+        SCHEDULE_8_CPP_OVERPAYMENT: RecordTotalLine(
+            SCHEDULE_8_CPP_OVERPAYMENT, SCHEDULE_8_CPP_OVERPAYMENT, (D("0.00"),), D("0.00")
+        ),
         CPP_PART_5_LINE_49: RecordTotalLine(
             CPP_PART_5_LINE_49, CPP_PART_5_LINE_49, (D("0.00"),), D("0.00")
         ),
@@ -5286,24 +5288,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         # T1 line 30800 from Part 3b line 36: line 24 is 0.00 for Return A, so Part 3b applies (and
         # equals the required line 11).
-        CPP_BASE_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
-            output=CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
             count_kind=CPP_PART_5_COMPLETED,
             count=0,
             chosen_kind=CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
             chosen_value=D("3356.10"),
         ),
         # T1 line 22215 from Part 3b line 48: 678.00 + 396.00 for Return A.
-        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
-            output=CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
             count_kind=CPP_PART_5_COMPLETED,
             count=0,
             chosen_kind=CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
             chosen_value=D("1074.00"),
         ),
         # T1 line 44800 "CPP overpayment": "0" for Return A, as line 24 is not positive.
-        CPP_OVERPAYMENT: ChosenByCountLine(
-            output=CPP_OVERPAYMENT,
+        SCHEDULE_8_CPP_OVERPAYMENT: ChosenByCountLine(
+            output=SCHEDULE_8_CPP_OVERPAYMENT,
             count_kind=CPP_PART_5_COMPLETED,
             count=0,
             chosen_kind=CPP_PART_3_OVERPAYMENT,
