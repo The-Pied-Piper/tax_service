@@ -141,13 +141,13 @@ class Composition:
         if extra:
             verb = "is not an input" if len(extra) == 1 else "are not inputs"
             raise InvalidCompositionError(
-                f"{Composition.labels(extra)} {verb} of this composition"
+                f"{ArtifactKind.labels(extra)} {verb} of this composition"
                 f"{Composition.value_type_hints(extra, inputs)}"
             )
         missing = inputs - kinds
         if missing:
             noun = "input" if len(missing) == 1 else "inputs"
-            raise InvalidCompositionError(f"missing {noun} {Composition.labels(missing)}")
+            raise InvalidCompositionError(f"missing {noun} {ArtifactKind.labels(missing)}")
 
     @staticmethod
     def value_type_hints(
@@ -173,7 +173,7 @@ class Composition:
             chosen = next((c for c in pending if c.consumes <= done), None)
             if chosen is None:
                 raise InvalidCompositionError(
-                    f"cycle involving {Composition.labels(self._cycle_kinds(pending))}"
+                    f"cycle involving {ArtifactKind.labels(self._cycle_kinds(pending))}"
                 )
             pending.remove(chosen)
             order.append(chosen)
@@ -219,8 +219,3 @@ class Composition:
     def sort_key(kind: ArtifactKind[Any]) -> tuple[str, str]:
         """Its identifier, then its value type's name."""
         return (kind.identifier, kind.value_type.__name__)
-
-    @staticmethod
-    def labels(kinds: Iterable[ArtifactKind[Any]]) -> str:
-        """The distinct labels of `kinds`, sorted, quoted and comma-separated."""
-        return ", ".join(repr(label) for label in sorted({kind.label for kind in kinds}))

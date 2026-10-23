@@ -587,6 +587,26 @@ def test_rejects_a_dot_that_is_not_between_two_snake_case_ids(identifier: str) -
         ArtifactKind(identifier, Decimal)
 
 
+def test_labels_are_distinct_sorted_quoted_and_comma_separated() -> None:
+    other = ArtifactKind("ex/another", Decimal)
+
+    assert ArtifactKind.labels([BASE, other]) == "'another', 'taxable_base'"
+    assert ArtifactKind.labels([]) == ""
+    assert ArtifactKind.labels([BASE]) == "'taxable_base'"
+
+
+def test_labels_collapse_kinds_sharing_a_label() -> None:
+    same_label_as_int = ArtifactKind("ex/taxable_base", int)
+    other_namespace = ArtifactKind("ex2/taxable_base", Decimal)
+
+    assert ArtifactKind.labels([BASE, same_label_as_int, other_namespace]) == "'taxable_base'"
+
+
+def test_labels_accept_any_iterable() -> None:
+    assert ArtifactKind.labels(iter([BASE, BASE])) == "'taxable_base'"
+    assert ArtifactKind.labels(frozenset({BASE})) == "'taxable_base'"
+
+
 def test_the_label_of_a_dotted_identifier_is_its_whole_local_part() -> None:
     assert ArtifactKind("ex/rental.net_income", Decimal).label == "rental.net_income"
 
