@@ -23,12 +23,24 @@ amounts, 0 when there are no vehicles. A vehicle works these lines, in this orde
   amount 2 is 0; and line 16, line 13 plus amount 14 (parking fees) and amount 15 (supplementary
   business insurance).
 
-The printed $350, 30, $44,706, $1,100, $38,000 and 85% are the datasets `interest_limit`,
-`days_divisor`, `list_price_limit`, `lease_charge_limit`, `lease_cost_limit` and
-`lease_price_rate`. The form states no rounding rule, but each line is a dollars-and-cents box, so
-each quotient or product (lines 13, 18, 24, 25 and 27 and the tax on a printed amount) is worked as
-an exact fraction and rounded once with the `rounding` dataset's rule. It records one
-`BusinessVehicleLine` for each vehicle, by position from 1, then an `ItemsTotalLine`.
+Charts B and C print other figures for earlier years (T2125 2025, Chart B footnote "***": "For
+passenger vehicles bought after 2023. For passenger vehicles bought after 2000 and before 2024, the
+amount is $300"; Chart C endnotes 11 to 13: leases entered into in 2024, 2023, 2022 and before
+2022). Each vehicle record holds the year the vehicle was bought (`purchase_year`, Chart B) and the
+year the lease was entered into (`lease_year`, Chart C); a year that does not apply is 0. Chart B's
+limit is the `interest_limits` row for the purchase year, not looked up when the vehicle has no
+interest days; with interest days, a purchase year in 2000 or earlier (or 0) is refused
+(`InvalidRecordError`), as the form prints no limit for it. Chart C's three limits are the
+`lease_limits` row for the lease year (2025 or later the 2025 set; 0 or any year before 2022 the
+"before 2022" set).
+
+The printed $350, 30, $44,706, $1,100, $38,000 and 85% are the datasets `interest_limits` (the
+`interest_limit` of each row), `days_divisor`, `lease_limits` (the `list_price_limit`,
+`lease_charge_limit` and `lease_cost_limit` of each row) and `lease_price_rate`. The form states no
+rounding rule, but each line is a dollars-and-cents box, so each quotient or product (lines 13, 18,
+24, 25 and 27 and the tax on a printed amount) is worked as an exact fraction and rounded once with
+the `rounding` dataset's rule. It records one `BusinessVehicleLine` for each vehicle, by position
+from 1, then an `ItemsTotalLine`.
 """
 
 from __future__ import annotations
@@ -40,13 +52,14 @@ from typing import Any, ClassVar
 
 from app.domain.artifact import Artifact, ArtifactKind, Money
 from app.domain.capability import Capability, CapabilityResult, capability
-from app.domain.errors import CapabilityContractError, ValidationError
+from app.domain.errors import CapabilityContractError, InvalidRecordError, ValidationError
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import RoundingRule
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
+from app.domain.parameters.year_amounts import YEAR_AMOUNTS, YearAmounts
 from app.domain.record_list import Record, RecordList
 from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.catalog import (
@@ -59,12 +72,14 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_VEHICLE_LEASE_CHARGES,
     BUSINESS_VEHICLE_LEASE_DAYS,
     BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    BUSINESS_VEHICLE_LEASE_YEAR,
     BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,
     BUSINESS_VEHICLE_LIST_PRICE,
     BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,
     BUSINESS_VEHICLE_OTHER_EXPENSES_10,
     BUSINESS_VEHICLE_OTHER_EXPENSES_11,
     BUSINESS_VEHICLE_PARKING_FEES,
+    BUSINESS_VEHICLE_PURCHASE_YEAR,
     BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,
     BUSINESS_VEHICLE_TOTAL_KILOMETRES,
 )
@@ -77,11 +92,9 @@ class BusinessVehicleExpenses(Capability):
     motor vehicle expenses (Chart A line 16), at the consumed `sales_tax_rate`."""
 
     PARAMETERS: ClassVar[Mapping[str, ParameterKind[Any]]] = {
-        "interest_limit": CREDIT,
+        "interest_limits": YEAR_AMOUNTS,
+        "lease_limits": YEAR_AMOUNTS,
         "days_divisor": CREDIT,
-        "list_price_limit": CREDIT,
-        "lease_charge_limit": CREDIT,
-        "lease_cost_limit": CREDIT,
         "lease_price_rate": RATE,
         "rounding": ROUNDING_ONLY,
     }
@@ -90,25 +103,21 @@ class BusinessVehicleExpenses(Capability):
 
     def __init__(
         self,
-        interest_limit: ParameterDataset[Credit],
+        interest_limits: ParameterDataset[YearAmounts],
+        lease_limits: ParameterDataset[YearAmounts],
         days_divisor: ParameterDataset[Credit],
-        list_price_limit: ParameterDataset[Credit],
-        lease_charge_limit: ParameterDataset[Credit],
-        lease_cost_limit: ParameterDataset[Credit],
         lease_price_rate: ParameterDataset[Rate],
         rounding: ParameterDataset[RoundingOnly],
         vehicles: ArtifactKind[RecordList],
         sales_tax_rate: Money,
         output: Money,
     ) -> None:
-        """Wire the capability: its seven datasets, the record list of vehicles and the sales tax
+        """Wire the capability: its five datasets, the record list of vehicles and the sales tax
         rate it reads, the kind produced."""
         super().__init__(vehicles=vehicles, sales_tax_rate=sales_tax_rate, output=output)
-        self._interest_limit = interest_limit.values.amount
+        self._interest_limits = interest_limits.values
+        self._lease_limits = lease_limits.values
         self._days_divisor = days_divisor.values.amount
-        self._list_price_limit = list_price_limit.values.amount
-        self._lease_charge_limit = lease_charge_limit.values.amount
-        self._lease_cost_limit = lease_cost_limit.values.amount
         self._lease_price_rate = lease_price_rate.values.value
         self._rate_rounding: RoundingRule = lease_price_rate.rounding
         self._rounding: RoundingRule = rounding.rounding
@@ -132,24 +141,41 @@ class BusinessVehicleExpenses(Capability):
     def _vehicle(self, position: int, record: Record, rate: Decimal) -> BusinessVehicleLine:
         """The lines of one vehicle's Charts A to C."""
         # Chart B.
-        line_18 = self._quotient(
-            self._interest_limit, record[BUSINESS_VEHICLE_INTEREST_DAYS], self._days_divisor
-        )
+        interest_days = record[BUSINESS_VEHICLE_INTEREST_DAYS]
+        if interest_days == 0:
+            line_18 = self._rounding.apply(ExactFraction(0))
+        else:
+            purchase_year = record[BUSINESS_VEHICLE_PURCHASE_YEAR]
+            interest_row = self._interest_limits.row_for(purchase_year)
+            if interest_row is None:
+                raise InvalidRecordError(
+                    f"item {position}: interest days are given but "
+                    f"the form prints no limit for a vehicle bought in {purchase_year}"
+                )
+            line_18 = self._quotient(
+                interest_row.amount("interest_limit"), interest_days, self._days_divisor
+            )
         line_19 = min(Decimal(record[BUSINESS_VEHICLE_INTEREST_PAYABLE]), line_18)
         # Chart C.
-        price_with_tax = self._list_price_limit + self._tax(self._list_price_limit, rate)
+        lease_row = self._lease_limits.row_for(record[BUSINESS_VEHICLE_LEASE_YEAR])
+        if lease_row is None:
+            raise InvalidRecordError(f"item {position}: the form prints no lease limits")
+        list_price_limit = lease_row.amount("list_price_limit")
+        lease_charge_limit = lease_row.amount("lease_charge_limit")
+        lease_cost_limit = lease_row.amount("lease_cost_limit")
+        price_with_tax = list_price_limit + self._tax(list_price_limit, rate)
         line_23 = max(Decimal(record[BUSINESS_VEHICLE_LIST_PRICE]), price_with_tax)
         line_24 = self._rate_rounding.apply(
             ExactFraction(line_23) * ExactFraction(self._lease_price_rate)
         )
-        charge_with_tax = self._lease_charge_limit + self._tax(self._lease_charge_limit, rate)
+        charge_with_tax = lease_charge_limit + self._tax(lease_charge_limit, rate)
         line_25 = self._quotient(
             charge_with_tax, record[BUSINESS_VEHICLE_LEASE_DAYS], self._days_divisor
         )
         line_26 = line_25 - Decimal(record[BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE])
         if line_26 < 0:
             raise CapabilityContractError(f"item {position}: line 26 ({line_26}) is below 0")
-        cost_with_tax = self._lease_cost_limit + self._tax(self._lease_cost_limit, rate)
+        cost_with_tax = lease_cost_limit + self._tax(lease_cost_limit, rate)
         line_27 = self._quotient(cost_with_tax, record[BUSINESS_VEHICLE_LEASE_CHARGES], line_24)
         line_28 = min(line_26, line_27)
         # Chart A.

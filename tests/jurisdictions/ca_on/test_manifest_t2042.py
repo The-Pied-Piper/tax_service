@@ -34,11 +34,7 @@ INCOME_PART = PART.with_name("03_income.yaml")
 INPUTS_PART = PART.with_name("01_inputs.yaml")
 VEHICLE_CONSTANTS = frozenset(
     {
-        "ca/business_vehicle_interest_limit",
         "ca/business_vehicle_days_divisor",
-        "ca/business_vehicle_list_price_limit",
-        "ca/business_vehicle_lease_charge_limit",
-        "ca/business_vehicle_lease_cost_limit",
     }
 )
 
@@ -107,11 +103,9 @@ def test_the_form_selects_one_vehicles_step_over_the_printed_constants_datasets(
     (own,) = [step for step in form().capabilities if step.name == "ca/business_vehicle_expenses"]
 
     assert own.params == {
-        "interest_limit": "ca/business_vehicle_interest_limit",
+        "interest_limits": "ca/business_vehicle_interest_limits",
+        "lease_limits": "ca/business_vehicle_lease_limits",
         "days_divisor": "ca/business_vehicle_days_divisor",
-        "list_price_limit": "ca/business_vehicle_list_price_limit",
-        "lease_charge_limit": "ca/business_vehicle_lease_charge_limit",
-        "lease_cost_limit": "ca/business_vehicle_lease_cost_limit",
         "lease_price_rate": "ca/business_vehicle_lease_price_rate",
         "rounding": "ca/business_vehicle_rounding",
     }

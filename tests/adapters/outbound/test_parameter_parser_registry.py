@@ -2,8 +2,8 @@
 
 Parsers are keyed by their kind's plain name (`amount`, `amount_by_count`, `brackets`,
 `claim_reduction`, `class_rates`, `conditions`, `contribution_tier`, `credit`, `factor`,
-`fraction`, `rate`, `rate_table`, `rounding_only`, `surcharge_tiers`, `taper`, `threshold_rate`),
-not namespaced yet.
+`fraction`, `rate`, `rate_table`, `rounding_only`, `surcharge_tiers`, `taper`, `threshold_rate`,
+`year_amounts`), not namespaced yet.
 Lookups are typed: `for_kind(kind)` for a `ParameterKind[T]` gives a `ParameterParser[T]`; the
 `assert_type` checks below make `mypy .` fail if a lookup returned `Any` or another type.
 Made-up kinds and parsers are never registered in the shared registry: the decorator test
@@ -39,6 +39,7 @@ from app.adapters.outbound.parameter_parsers.rounding_only import RoundingOnlyPa
 from app.adapters.outbound.parameter_parsers.surcharge_tiers import SurchargeTiersParser
 from app.adapters.outbound.parameter_parsers.taper import TaperParser
 from app.adapters.outbound.parameter_parsers.threshold_rate import ThresholdRateParser
+from app.adapters.outbound.parameter_parsers.year_amounts import YearAmountsParser
 from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.capability import CapabilityRegistry
 from app.domain.errors import DuplicateRegistrationError, UnknownRegistrationError
@@ -75,6 +76,7 @@ from app.domain.parameters.surcharge_tiers import (
 )
 from app.domain.parameters.taper import TAPER, Taper
 from app.domain.parameters.threshold_rate import THRESHOLD_RATE, ThresholdRate
+from app.domain.parameters.year_amounts import YEAR_AMOUNTS, YearAmounts, YearAmountsRow
 from app.domain.registry import Registry
 
 D = Decimal
@@ -141,6 +143,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     registry.register_class(SurchargeTiersParser)
     registry.register_class(TaperParser)
     registry.register_class(ThresholdRateParser)
+    registry.register_class(YearAmountsParser)
     registry.register_class(FactorParser)
     registry.register_class(FractionParser)
     registry.register_class(RateTableParser)
@@ -174,6 +177,17 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     )
     threshold_rate = registry.for_kind(THRESHOLD_RATE).parse(
         YamlNode.root({"threshold": "52886", "rate": "0.0505"}, "dataset")
+    )
+    year_amounts = registry.for_kind(YEAR_AMOUNTS).parse(
+        YamlNode.root(
+            {
+                "rows": [
+                    {"from_year": 2024, "amounts": {"interest_limit": "350"}},
+                    {"amounts": {"interest_limit": "300"}},
+                ]
+            },
+            "dataset",
+        )
     )
     factor = registry.for_kind(FACTOR).parse(YamlNode.root({"value": "2"}, "dataset"))
     fraction = registry.for_kind(FRACTION).parse(
@@ -246,6 +260,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     assert_type(surcharge_tiers, SurchargeTiers)
     assert_type(taper, Taper)
     assert_type(threshold_rate, ThresholdRate)
+    assert_type(year_amounts, YearAmounts)
     assert_type(factor, Factor)
     assert_type(fraction, Fraction)
     assert_type(rate_table, RateTable)
@@ -263,6 +278,12 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     assert surcharge_tiers == SurchargeTiers((SurchargeTier(D("100"), Rate(D("0.2"))),))
     assert taper == Taper(D("1000"), D("500"), D("20000"), D("10000"))
     assert threshold_rate == ThresholdRate(Rate(D("0.0505")), D("52886"))
+    assert year_amounts == YearAmounts(
+        (
+            YearAmountsRow(2024, {"interest_limit": D("350")}),
+            YearAmountsRow(None, {"interest_limit": D("300")}),
+        )
+    )
     assert factor == Factor(D("2"))
     assert fraction == Fraction(2, 3)
     assert rate_table == RateTable(
@@ -409,6 +430,7 @@ def test_decorating_a_second_parser_for_one_kind_fails(fresh: ParameterParserReg
         (SURCHARGE_TIERS, SurchargeTiersParser),
         (TAPER, TaperParser),
         (THRESHOLD_RATE, ThresholdRateParser),
+        (YEAR_AMOUNTS, YearAmountsParser),
     ],
 )
 def test_built_in_parsers_are_registered_in_the_shared_registry(
@@ -438,6 +460,7 @@ def test_built_in_parsers_are_registered_in_the_shared_registry(
         (SurchargeTiersParser, frozenset({"tiers"})),
         (TaperParser, frozenset({"base", "supplement", "threshold", "range"})),
         (ThresholdRateParser, frozenset({"threshold", "rate"})),
+        (YearAmountsParser, frozenset({"rows"})),
     ],
 )
 def test_built_in_parsers_read_their_body_keys(
@@ -464,4 +487,5 @@ def test_the_shared_registry_holds_exactly_the_built_in_parsers() -> None:
         "surcharge_tiers",
         "taper",
         "threshold_rate",
+        "year_amounts",
     }

@@ -133,12 +133,14 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_VEHICLE_LEASE_CHARGES,
     BUSINESS_VEHICLE_LEASE_DAYS,
     BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    BUSINESS_VEHICLE_LEASE_YEAR,
     BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,
     BUSINESS_VEHICLE_LIST_PRICE,
     BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,
     BUSINESS_VEHICLE_OTHER_EXPENSES_10,
     BUSINESS_VEHICLE_OTHER_EXPENSES_11,
     BUSINESS_VEHICLE_PARKING_FEES,
+    BUSINESS_VEHICLE_PURCHASE_YEAR,
     BUSINESS_VEHICLE_SALES_TAX_RATE,
     BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,
     BUSINESS_VEHICLE_TOTAL_KILOMETRES,
@@ -1146,7 +1148,8 @@ def business_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decim
 
 # The fields of one Form T2125 vehicle, a record of `ca/business_vehicles`: Chart A amounts 1, 2,
 # 3, 5 to 7 and 9 to 11, 14 and 15, Chart B amount 17 and its days, and Chart C amounts 20 to 23,
-# in the form's order.
+# in the form's order, then the year the vehicle was bought (Chart B footnote) and the year the
+# lease was entered into (Chart C endnotes 11 to 13).
 BUSINESS_VEHICLE_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
     BUSINESS_VEHICLE_BUSINESS_KILOMETRES,  # business_kilometres
     BUSINESS_VEHICLE_TOTAL_KILOMETRES,  # total_kilometres
@@ -1165,12 +1168,15 @@ BUSINESS_VEHICLE_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
     BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,  # lease_payments_before
     BUSINESS_VEHICLE_LEASE_DAYS,  # lease_days
     BUSINESS_VEHICLE_LIST_PRICE,  # list_price
+    BUSINESS_VEHICLE_PURCHASE_YEAR,  # purchase_year
+    BUSINESS_VEHICLE_LEASE_YEAR,  # lease_year
 )
 
 
 def business_vehicles(*vehicles: Mapping[str, str]) -> Artifact[RecordList]:
     """The vehicles of a Form T2125, T2042 or T2121 statement, one record per mapping, keyed by the
-    name after `ca/business_vehicle_` (the amounts not given are 0)."""
+    name after `ca/business_vehicle_` (the amounts not given are 0, and the years `purchase_year`
+    and `lease_year` not given are 2025, the figure set printed in the chart body)."""
     kind = BUSINESS_VEHICLES
     assert isinstance(kind, RecordListKind)
     by_name = {
@@ -1180,7 +1186,16 @@ def business_vehicles(*vehicles: Mapping[str, str]) -> Artifact[RecordList]:
     records: list[dict[ArtifactKind[Any], object]] = []
     for vehicle in vehicles:
         assert set(vehicle) <= set(by_name), set(vehicle) - set(by_name)
-        records.append({field: D(vehicle.get(name, "0")) for name, field in by_name.items()})
+        records.append(
+            {
+                field: (
+                    int(vehicle.get(name, "2025"))
+                    if field.value_type is int
+                    else D(vehicle.get(name, "0"))
+                )
+                for name, field in by_name.items()
+            }
+        )
     return Artifact(kind, RecordList(kind.fields, records))
 
 

@@ -1,12 +1,15 @@
 """Shared test data for the BusinessVehicleExpenses capability, Form T2125 Charts A to C.
 
-The six printed figures and the rounding are made-up `example.org` datasets with the 2025 figures
-of the chart lines: "($350*** ÷ 30)" (Chart B line 18), "$44,706" (Chart C line 23), "$1,100"
-(line 25) and "$38,000" (line 27), the 85% of line 24 and a half-up rounding to the cent. The
-sales tax rate is the artifact of the caller's province, "Use a GST rate of 5% or HST rate
-applicable to your province.", given in percent. The record list of vehicles and the produced kind
-are the catalog's own `ca/business_vehicles` and `ca/business_motor_vehicle_expenses`; each record
-of the vehicles holds the amounts of one vehicle's Charts A to C that the caller enters.
+The five datasets are made-up `example.org` datasets with the printed figures of the chart lines:
+the `year_amounts` tables of Chart B line 18 "($350*** ÷ 30)" with its footnote "For passenger
+vehicles bought after 2023. For passenger vehicles bought after 2000 and before 2024, the amount is
+$300", and of Chart C lines 23, 25 and 27 ("$44,706", "$1,100" and "$38,000") with endnotes 11 to
+13 for leases entered into in 2024, 2023, 2022 and before 2022; the 30 of lines 18 and 25, the 85%
+of line 24 and a half-up rounding to the cent. The sales tax rate is the artifact of the caller's
+province, "Use a GST rate of 5% or HST rate applicable to your province.", given in percent. The
+record list of vehicles and the produced kind are the catalog's own `ca/business_vehicles` and
+`ca/business_motor_vehicle_expenses`; each record of the vehicles holds the amounts of one
+vehicle's Charts A to C that the caller enters, and the years that choose the figure set.
 """
 
 from __future__ import annotations
@@ -27,6 +30,7 @@ from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
+from app.domain.parameters.year_amounts import YEAR_AMOUNTS, YearAmounts, YearAmountsRow
 from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.capabilities.business_vehicle_expenses import BusinessVehicleExpenses
 from app.jurisdictions.ca.catalog import (
@@ -40,12 +44,14 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_VEHICLE_LEASE_CHARGES,
     BUSINESS_VEHICLE_LEASE_DAYS,
     BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    BUSINESS_VEHICLE_LEASE_YEAR,
     BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,
     BUSINESS_VEHICLE_LIST_PRICE,
     BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,
     BUSINESS_VEHICLE_OTHER_EXPENSES_10,
     BUSINESS_VEHICLE_OTHER_EXPENSES_11,
     BUSINESS_VEHICLE_PARKING_FEES,
+    BUSINESS_VEHICLE_PURCHASE_YEAR,
     BUSINESS_VEHICLE_SALES_TAX_RATE,
     BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,
     BUSINESS_VEHICLE_TOTAL_KILOMETRES,
@@ -62,11 +68,9 @@ MOTOR_VEHICLE_EXPENSES = BUSINESS_MOTOR_VEHICLE_EXPENSES
 
 # The slot names and the dataset families they are wired to, in the capability's slot order.
 FAMILIES = {
-    "interest_limit": "ca/business_vehicle_interest_limit",
+    "interest_limits": "ca/business_vehicle_interest_limits",
+    "lease_limits": "ca/business_vehicle_lease_limits",
     "days_divisor": "ca/business_vehicle_days_divisor",
-    "list_price_limit": "ca/business_vehicle_list_price_limit",
-    "lease_charge_limit": "ca/business_vehicle_lease_charge_limit",
-    "lease_cost_limit": "ca/business_vehicle_lease_cost_limit",
     "lease_price_rate": "ca/business_vehicle_lease_price_rate",
     "rounding": "ca/business_vehicle_rounding",
 }
@@ -76,14 +80,64 @@ def credit(family: str, amount: str) -> ParameterDataset[Credit]:
     return ParameterDataset(family, 2025, CREDIT, Credit(amount=D(amount)), CENT, SOURCES)
 
 
+def year_amounts(
+    family: str, *rows: tuple[int | None, dict[str, str]]
+) -> ParameterDataset[YearAmounts]:
+    """A `year_amounts` dataset of rows, newest first: (from_year or None, amounts by name)."""
+    table = YearAmounts(
+        tuple(
+            YearAmountsRow(from_year, {name: D(value) for name, value in amounts.items()})
+            for from_year, amounts in rows
+        )
+    )
+    return ParameterDataset(family, 2025, YEAR_AMOUNTS, table, CENT, SOURCES)
+
+
+def interest_limits(*rows: tuple[int | None, str]) -> ParameterDataset[YearAmounts]:
+    """The Chart B limit by year of purchase: (from_year or None, the `interest_limit`)."""
+    return year_amounts(
+        FAMILIES["interest_limits"], *((year, {"interest_limit": value}) for year, value in rows)
+    )
+
+
+def lease_limits(
+    *rows: tuple[int | None, str, str, str],
+) -> ParameterDataset[YearAmounts]:
+    """The Chart C limits by year of lease: (from_year or None, `list_price_limit`,
+    `lease_charge_limit`, `lease_cost_limit`)."""
+    return year_amounts(
+        FAMILIES["lease_limits"],
+        *(
+            (
+                year,
+                {
+                    "list_price_limit": list_price,
+                    "lease_charge_limit": charge,
+                    "lease_cost_limit": cost,
+                },
+            )
+            for year, list_price, charge, cost in rows
+        ),
+    )
+
+
 def datasets() -> dict[str, ParameterDataset[Any]]:
-    """The seven datasets, by slot name: the five printed amounts, the 85% and the rounding."""
+    """The five datasets, by slot name: the two tables by year as the form prints them (the
+    $350/$300 of Chart B and the five sets of Chart C), the 30, the 85% and the rounding."""
     return {
-        "interest_limit": credit(FAMILIES["interest_limit"], "350"),
+        # Chart B footnote: $350 for a vehicle bought after 2023, $300 after 2000 and before 2024,
+        # nothing printed for 2000 or earlier.
+        "interest_limits": interest_limits((2024, "350"), (2001, "300")),
+        # Chart C line 23, 25 and 27 and endnotes 11 to 13: the 2025 set, then the leases entered
+        # into in 2024, 2023, 2022 and before 2022.
+        "lease_limits": lease_limits(
+            (2025, "44706", "1100", "38000"),
+            (2024, "43529", "1050", "37000"),
+            (2023, "42353", "950", "36000"),
+            (2022, "40000", "900", "34000"),
+            (None, "35294", "800", "30000"),
+        ),
         "days_divisor": credit(FAMILIES["days_divisor"], "30"),
-        "list_price_limit": credit(FAMILIES["list_price_limit"], "44706"),
-        "lease_charge_limit": credit(FAMILIES["lease_charge_limit"], "1100"),
-        "lease_cost_limit": credit(FAMILIES["lease_cost_limit"], "38000"),
         "lease_price_rate": ParameterDataset(
             FAMILIES["lease_price_rate"], 2025, RATE, Rate(D("0.85")), CENT, SOURCES
         ),
@@ -121,9 +175,12 @@ def vehicle(
     lease_payments_before: str = "0",
     lease_days: str = "0",
     list_price: str = "0",
-) -> dict[ArtifactKind[Any], Decimal]:
+    purchase_year: str = "2025",
+    lease_year: str = "2025",
+) -> dict[ArtifactKind[Any], Decimal | int]:
     """One vehicle: Chart A amounts 1, 2, 3, 5, 6, 7, 9, 10, 11, 14 and 15, Chart B amount 17 and
-    its days, and Chart C amounts 20, 21, 22 and 23."""
+    its days, Chart C amounts 20, 21, 22 and 23, and the year the vehicle was bought and the year
+    the lease was entered into (2025 unless given, the figure set printed in the chart body)."""
     return {
         BUSINESS_VEHICLE_BUSINESS_KILOMETRES: D(business_kilometres),
         BUSINESS_VEHICLE_TOTAL_KILOMETRES: D(total_kilometres),
@@ -142,10 +199,12 @@ def vehicle(
         BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE: D(lease_payments_before),
         BUSINESS_VEHICLE_LEASE_DAYS: D(lease_days),
         BUSINESS_VEHICLE_LIST_PRICE: D(list_price),
+        BUSINESS_VEHICLE_PURCHASE_YEAR: int(purchase_year),
+        BUSINESS_VEHICLE_LEASE_YEAR: int(lease_year),
     }
 
 
-def vehicles(*records: dict[ArtifactKind[Any], Decimal]) -> Artifact[Any]:
+def vehicles(*records: dict[ArtifactKind[Any], Decimal | int]) -> Artifact[Any]:
     """A `ca/business_vehicles` artifact of one record per vehicle, in order."""
     assert isinstance(VEHICLES, RecordListKind)
     return Artifact(VEHICLES, RecordList(VEHICLES.fields, records))
