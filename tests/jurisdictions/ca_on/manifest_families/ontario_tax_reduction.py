@@ -60,7 +60,6 @@ INPUTS = frozenset(
     {
         "ca-on/dependent_children",
         "ca-on/dependants",
-        "ca-on/ontario_minimum_tax",
         "ca-on/not_resident_of_canada_at_start_of_year",
         "ca-on/not_resident_of_ontario_at_year_end",
         "ca-on/bankrupt_in_year",
@@ -148,7 +147,7 @@ STEPS = {
         produces={"output": "ca-on/tax_reduction_amounts"},
     ),
     # ON428 line 73 "Line 71 plus line 72 =": line 71 is the Ontario tax after the dividend
-    # credit and line 72 the additional tax for minimum tax purposes, as entered.
+    # credit and line 72 the additional tax for minimum tax purposes (Worksheet ON428).
     CapabilitySelection(
         name="core/sum",
         params={},

@@ -486,7 +486,6 @@ inputs:
   - ca/spouse_not_separated_90_days
   - ca-on/dependent_children
   - ca-on/dependants
-  - ca-on/ontario_minimum_tax
   - ca-on/not_resident_of_canada_at_start_of_year
   - ca-on/not_resident_of_ontario_at_year_end
   - ca-on/bankrupt_in_year

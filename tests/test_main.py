@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1301
+        == 1311
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1301
+        == 1311
     )
 
 
@@ -2007,6 +2007,15 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/tax_reduction_amounts",
         "ca-on/ontario_tax_reduction",
         "ca-on/ontario_minimum_tax",
+        "ca-on/minimum_tax_carryover_credit",
+        "ca-on/ontario_minimum_tax_carryover_applied",
+        "ca-on/ontario_tax_after_minimum_tax_carryover",
+        "ca-on/worksheet_on428_line_1",
+        "ca-on/worksheet_on428_line_2",
+        "ca-on/worksheet_on428_line_3",
+        "ca-on/worksheet_on428_line_6",
+        "ca-on/worksheet_on428_line_7",
+        "ca-on/worksheet_on428_line_8",
         "ca-on/ontario_tax_before_reduction",
         "ca-on/not_resident_of_canada_at_start_of_year",
         "ca-on/not_resident_of_ontario_at_year_end",
@@ -2175,7 +2184,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1301
+        == 1311
     )
     assert (
         len(
@@ -2183,7 +2192,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1301
+        == 1311
     )
 
 
@@ -2196,7 +2205,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1301
+        == 1311
     )
     assert (
         len(
@@ -2204,7 +2213,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1301
+        == 1311
     )
 
 

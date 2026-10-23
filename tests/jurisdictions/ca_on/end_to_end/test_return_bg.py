@@ -122,6 +122,7 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
 )
+from app.jurisdictions.ca_on import catalog as ontario
 from tests.jurisdictions.ca_on.end_to_end.support import D, Disposition, compute
 
 
@@ -175,6 +176,8 @@ def return_bg(
     split_income_dividends: str = "0",
     split_income_dividends_other_than_eligible: str = "0",
     unapplied_2018_carryover: str = "0",
+    t5_taxable_dividends: str = "0",
+    t5_dividend_tax_credit: str = "0",
 ) -> Worksheet:
     """Return BG's inputs (`returns/2025_return_bg.yaml`), with the Part 1 amounts given."""
     return compute(
@@ -231,6 +234,8 @@ def return_bg(
         split_income_dividends=split_income_dividends,
         split_income_dividends_other_than_eligible=split_income_dividends_other_than_eligible,
         amt_unapplied_2018_carryover=unapplied_2018_carryover,
+        t5_taxable_dividends=t5_taxable_dividends,
+        t5_dividend_tax_credit=t5_dividend_tax_credit,
     )
 
 
@@ -1356,8 +1361,10 @@ def test_return_bg_line_41700_is_part_6_line_14_when_part_5_line_11_is_positive(
     # 14 of 10960.02 (the Part 6 case above) in place of the line 139 figure of 5846.47. Line 29 of
     # Form T1206 Part 2 is 10960.02 plus 0.00, and line 30 is the greater of line 24 (0.00) and line
     # 29, 10960.02, so the net federal tax is 10960.02 plus the special taxes of 0.00. The balance
-    # owing rises by the change in the net federal tax, 10960.02 less 5846.47, 5113.55: from 8973.29
-    # to 14086.84, as nothing else in the total payable or the credits changes.
+    # owing rises by the change in the net federal tax, 10960.02 less 5846.47, 5113.55, and by the
+    # Ontario line 72, 24.63% of the Part 5 line 11 of 1558.95, 383.97 (the worksheet line 3 is
+    # under 5710.00, so line 72 is the worksheet line 1): from 8973.29 to 14470.81, as nothing else
+    # in the total payable or the credits changes.
     worksheet = return_bg(security_t4_39_and_91="150000", non_resident=1)
 
     assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1558.95")
@@ -1368,7 +1375,7 @@ def test_return_bg_line_41700_is_part_6_line_14_when_part_5_line_11_is_positive(
     assert worksheet.get(SPLIT_INCOME_LINE_29).value == D("10960.02")
     assert worksheet.get(SPLIT_INCOME_LINE_30).value == D("10960.02")
     assert worksheet.get(NET_FEDERAL_TAX).value == D("10960.02")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("14086.84")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("14470.81")
 
 
 def test_return_bg_line_41700_keeps_line_139_when_regular_tax_is_more_than_minimum() -> None:
@@ -1494,3 +1501,172 @@ def test_return_bg_part_8_line_14_adds_the_additional_taxes_when_no_carryover_is
     assert worksheet.get(AMT_CARRYOVER_BALANCE).value == D("1000.00")
     assert worksheet.get(AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES).value == D("2558.95")
     assert worksheet.get(AMT_CARRYOVER_AVAILABLE_FOR_2026).value == D("2458.95")
+
+
+def test_return_bg_on428_lines_59_to_61_and_72_are_zero_and_line_61_is_line_55_by_default() -> None:
+    # No minimum tax carryover is applied (line 40427 is 0.00), so line 59 is 24.63% x 0.00, 0.00,
+    # and line 60, the lesser of line 58 (2526.82) and line 59, is 0.00. Line 61 is line 55 less
+    # line 60: 2526.82, which lines 62 and 63 carry; line 65 is line 63 less line 64 (0.00), and
+    # the surtax on 2526.82 is 0.00. Part 5 line 11 is 0.00, so Worksheet ON428 line 1 is 0.00, line
+    # 2 is line 65 (2526.82), line 3 is 2526.82, not more than $5,710, so lines 4 to 6 are 0.00,
+    # line 7 (line 68) is 0.00, line 8 is 0.00 less 0.00 and line 9, ON428 line 72, is 0.00 plus
+    # 0.00: line 73 is 2526.82 plus 0.00, 2526.82.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("0")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("2526.82")
+    assert worksheet.get(ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT).value == D("2526.82")
+    assert worksheet.get(ontario.MINIMUM_TAX_CARRYOVER_CREDIT).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER).value == D("2526.82")
+    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("2526.82")
+    assert worksheet.get(ontario.ONTARIO_SURTAX).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SURTAX).value == D("2526.82")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_2).value == D("2526.82")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("2526.82")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_6).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_7).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_8).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("2526.82")
+
+
+def test_return_bg_on428_line_59_is_24_63_percent_of_the_carryover_applied() -> None:
+    # A carryover from previous years of 3000.00 with a claim of 2000.00 (within line 1, 3000.00,
+    # and Part 8 line 11, 5846.47): line 40427 is 2000.00. Line 59 is 24.63% x 2000.00 = 492.60;
+    # line 58 is 2526.82 (the federal carryover claim does not change the Ontario tax), so line 60,
+    # the lesser, is line 59, 492.60, and line 61 is 2526.82 - 492.60 = 2034.22. Lines 62 and 63
+    # carry it, line 64 is 0.00 so line 65 is 2034.22, under $5,710, with no surtax: line 69 is
+    # 2034.22, line 71 the same (no dividend tax credit), and Worksheet ON428 (Part 5 line 11 is
+    # 0.00) gives line 72 of 0.00 whose line 2 is the new line 65, 2034.22, so line 73 is 2034.22.
+    worksheet = return_bg(carryover_from_previous_years="3000", carryover_claim="2000")
+
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("2000")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("2526.82")
+    assert worksheet.get(ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT).value == D("2526.82")
+    assert worksheet.get(ontario.MINIMUM_TAX_CARRYOVER_CREDIT).value == D("492.60")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("492.60")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER).value == D("2034.22")
+    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("2034.22")
+    assert worksheet.get(ontario.ONTARIO_SURTAX).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SURTAX).value == D("2034.22")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("2034.22")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_2).value == D("2034.22")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("2034.22")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("2034.22")
+
+
+def test_return_bg_on428_line_60_is_line_58_when_line_58_is_less_than_line_59() -> None:
+    # No employment income and 300000.00 of eligible taxable dividends (T5, with the federal credit
+    # of 15.0198% x 300000.00 = 45059.40): taxable income is 301000.00 and the Ontario tax of line
+    # 55 is 30973.48. The Ontario dividend tax credit (10% x 300000.00 = 30000.00) leaves line 58 at
+    # 973.48. A carryover from previous years of 20000.00 with a claim of 10000.00 (within line 1
+    # and Part 8 line 11, 17256.15) makes line 40427 10000.00, so line 59 is 24.63% x 10000.00 =
+    # 2463.00, more than line 58: line 60 is line 58, 973.48 (the Ontario tax less the dividend
+    # credit, not the whole of line 59). Line 61 is 30973.48 - 973.48 = 30000.00. Line 65 is
+    # 30000.00 (line 64 is 0.00): line 66 is 20% x (30000.00 - 5710) = 4858.00, line 67 is 36% x
+    # (30000.00 - 7307) = 8169.48 and line 68 is 13027.48, so line 69 is 30000.00 + 13027.48 =
+    # 43027.48 and line 71 is that less the dividend tax credit of 30000.00, 13027.48. Part 5 line
+    # 11 is 0.00: Worksheet ON428 line 1 is 0.00, line 3 is line 2 (30000.00), line 6 is line 4
+    # (4858.00) plus line 5 (8169.48), 13027.48, line 7 is 13027.48 and line 8 is 0.00, so line 72
+    # is 0.00 and line 73 is 13027.48.
+    worksheet = return_bg(
+        employment_income="0",
+        carryover_from_previous_years="20000",
+        carryover_claim="10000",
+        t5_taxable_dividends="300000",
+        t5_dividend_tax_credit="45059.40",
+    )
+
+    assert worksheet.get(TAXABLE_INCOME).value == D("301000.00")
+    assert worksheet.get(AMT_MAXIMUM_CARRYOVER_CLAIM).value == D("17256.15")
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("10000")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("30973.48")
+    assert worksheet.get(ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT).value == D("973.48")
+    assert worksheet.get(ontario.MINIMUM_TAX_CARRYOVER_CREDIT).value == D("2463.00")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("973.48")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER).value == D("30000.00")
+    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("30000.00")
+    assert worksheet.get(ontario.ONTARIO_SURTAX).value == D("13027.48")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SURTAX).value == D("43027.48")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("13027.48")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_2).value == D("30000.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("30000.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_6).value == D("13027.48")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_7).value == D("13027.48")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_8).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("13027.48")
+
+
+def test_return_bg_worksheet_on428_line_72_is_line_1_when_line_3_is_not_more_than_5710() -> None:
+    # The security options of boxes 39 and 91 at 150000.00 make Part 5 line 11 1558.95 (the Part 7
+    # case above). Worksheet ON428 line 1 is 24.63% x 1558.95 = 383.969385, 383.97; line 2 is line
+    # 65, 2526.82, and line 3 is 383.97 + 2526.82 = 2910.79, not more than $5,710, so lines 4 and
+    # 5 are 0.00 ("if negative, enter "0""), line 6 is 0.00, line 7 (the surtax on line 65) is
+    # 0.00, line 8 is 0.00 and line 9 is 383.97 + 0.00: line 72 is line 1, 383.97. Line 73 is line
+    # 71 (2526.82) plus line 72, 2910.79.
+    worksheet = return_bg(security_t4_39_and_91="150000")
+
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1558.95")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("383.97")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_2).value == D("2526.82")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("2910.79")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_6).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_7).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_8).value == D("0.00")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("383.97")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("2526.82")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("2910.79")
+
+
+def test_return_bg_worksheet_on428_line_3_over_5710_adds_the_surtax_on_the_additional_tax() -> None:
+    # Security options of 210000.00 give Part 5 line 11 of 13858.95. Worksheet ON428 line 1 is
+    # 24.63% x 13858.95 = 3413.459385, 3413.46; line 2 is line 65, 2526.82; line 3 is 3413.46 +
+    # 2526.82 = 5940.28, more than $5,710: line 4 is 20% x (5940.28 - 5710) = 46.056, 46.06; line 5
+    # is 36% x (5940.28 - 7307), negative, so 0.00; line 6 is 46.06. Line 7 is the surtax of ON428
+    # line 68 on 2526.82, 0.00, so line 8 is 46.06 - 0.00 = 46.06 and line 9, line 72, is 3413.46 +
+    # 46.06 = 3459.52. Line 73 is 2526.82 + 3459.52 = 5986.34.
+    worksheet = return_bg(security_t4_39_and_91="210000")
+
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("13858.95")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("3413.46")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_2).value == D("2526.82")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("5940.28")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_6).value == D("46.06")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_7).value == D("0.00")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_8).value == D("46.06")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("3459.52")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("5986.34")
+
+
+def test_return_bg_worksheet_on428_line_8_takes_the_surtax_of_line_68_off_line_6() -> None:
+    # Employment income of 120000.00 with security options of 150000.00: the Ontario tax of line 55
+    # is 8221.72, line 65 is 8221.72 and the surtax of line 68 is 831.64 (20% x 2511.72 = 502.344,
+    # 502.34, plus 36% x 914.72 = 329.2992, 329.30). Part 5 line 11 is 1373.78. Worksheet ON428
+    # line 1 is 24.63% x 1373.78 = 338.362014, 338.36; line 2 is 8221.72; line 3 is 8560.08. Line 4
+    # is 20% x (8560.08 - 5710) = 570.016, 570.02; line 5 is 36% x (8560.08 - 7307) = 451.1088,
+    # 451.11; line 6 is 1021.13. Line 7 is the 831.64 of line 68, so line 8 is 1021.13 - 831.64 =
+    # 189.49 and line 9, line 72, is 338.36 + 189.49 = 527.85. Line 69 is 8221.72 + 831.64 =
+    # 9053.36, line 71 the same, and line 73 is 9053.36 + 527.85 = 9581.21.
+    worksheet = return_bg(employment_income="120000", security_t4_39_and_91="150000")
+
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("8221.72")
+    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("8221.72")
+    assert worksheet.get(ontario.ONTARIO_SURTAX).value == D("831.64")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1373.78")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_1).value == D("338.36")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_2).value == D("8221.72")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_3).value == D("8560.08")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_6).value == D("1021.13")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_7).value == D("831.64")
+    assert worksheet.get(ontario.WORKSHEET_ON428_LINE_8).value == D("189.49")
+    assert worksheet.get(ontario.ONTARIO_MINIMUM_TAX).value == D("527.85")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("9053.36")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_REDUCTION).value == D("9581.21")

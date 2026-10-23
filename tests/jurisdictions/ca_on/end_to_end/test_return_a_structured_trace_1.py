@@ -34,6 +34,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_FEDERAL_TAX,
@@ -48,6 +49,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
     AMT_PART_6_SURTAX_AT_48_PERCENT,
@@ -584,6 +586,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
             D("0"),
             Rate(D("0.029863")),
+            CENT,
+            D("0"),
+        ),
+        # ON428 line 59 "Line 40427 multiplied by 24.63%" on no minimum tax carryover applied, and
+        # Worksheet ON428 line 1 "Amount from line 11 of Part 5 of your Form T691 multiplied by
+        # 24.63%" on no alternative minimum tax payable.
+        ontario.MINIMUM_TAX_CARRYOVER_CREDIT: RateAppliedLine(
+            ontario.MINIMUM_TAX_CARRYOVER_CREDIT,
+            AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+            D("0"),
+            Rate(D("0.2463")),
+            CENT,
+            D("0"),
+        ),
+        ontario.WORKSHEET_ON428_LINE_1: RateAppliedLine(
+            ontario.WORKSHEET_ON428_LINE_1,
+            AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
+            D("0"),
+            Rate(D("0.2463")),
             CENT,
             D("0"),
         ),

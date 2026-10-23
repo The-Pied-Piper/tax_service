@@ -178,8 +178,7 @@ capabilities:
         - ca-on/ontario_tax_on_split_income
     produces:
       output: ca-on/ontario_tax_with_split_income
-  # ON428 lines 56 to 63 carry as before: the Ontario minimum tax carryover (lines 59 to 61) is
-  # not triggered, so line 61 is line 55 and lines 62 and 63 are line 61. Line 64 "Ontario tax on
+  # ON428 lines 62 and 63 are "Amount from line 61" (wired in 20d). Line 64 "Ontario tax on
   # split income from line 54" and line 65 "Line 63 minus line 64 (if negative, enter "0")", the
   # base of the surtax.
   - name: core/sum
@@ -190,7 +189,7 @@ capabilities:
       output: ca-on/ontario_tax_on_split_income_for_surtax
   - name: core/subtract_not_below_zero
     consumes:
-      amount: ca-on/ontario_tax_with_split_income
+      amount: ca-on/ontario_tax_after_minimum_tax_carryover
       less: ca-on/ontario_tax_on_split_income_for_surtax
     produces:
       output: ca-on/ontario_surtax_base
@@ -208,7 +207,7 @@ capabilities:
   - name: core/sum
     consumes:
       parts:
-        - ca-on/ontario_tax_with_split_income
+        - ca-on/ontario_tax_after_minimum_tax_carryover
         - ca-on/ontario_surtax
     produces:
       output: ca-on/ontario_tax_with_surtax

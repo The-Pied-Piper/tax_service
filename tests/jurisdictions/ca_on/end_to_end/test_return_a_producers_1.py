@@ -2238,6 +2238,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     for kind in (ontario.SPLIT_INCOME_LINE_39, ontario.SPLIT_INCOME_LINE_47):
         assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
     assert isinstance(worksheet.producer_of(ontario.ONTARIO_SURTAX_BASE), SubtractNotBelowZero)
+    # ON428 line 61 "Line 55 minus line 60 (if negative, enter "0")".
+    assert isinstance(
+        worksheet.producer_of(ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER), SubtractNotBelowZero
+    )
     assert isinstance(worksheet.producer_of(ontario.SPLIT_INCOME_LINE_52), GreaterOf)
     assert isinstance(worksheet.producer_of(ONTARIO_TAX), Sum)
     assert worksheet.producer_of(ONTARIO_TAX) is not worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX)
@@ -2432,3 +2436,33 @@ def test_the_part_7_and_8_amounts_are_produced_by_their_capabilities() -> None:
     assert isinstance(worksheet.producer_of(AMT_CARRYOVER_AVAILABLE_FOR_2026), Subtract)
     # The 2018 carryover left unapplied is the caller's figure.
     assert worksheet.producer_of(AMT_UNAPPLIED_2018_CARRYOVER) is None
+
+
+def test_the_ontario_minimum_tax_lines_are_produced_by_their_capabilities() -> None:
+    worksheet = return_a()
+
+    # ON428 line 59 is a rate of the carryover applied on the T1, line 60 the lesser of line 58 and
+    # line 59, and line 61 line 55 less line 60, not below zero.
+    assert isinstance(worksheet.producer_of(ontario.MINIMUM_TAX_CARRYOVER_CREDIT), ApplyRate)
+    assert isinstance(
+        worksheet.producer_of(ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED), LesserOf
+    )
+    assert isinstance(
+        worksheet.producer_of(ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER), SubtractNotBelowZero
+    )
+    # Worksheet ON428 line 1 is a rate, lines 2 and 7 are copies of ON428 lines 65 and 68 (a sum of
+    # one part), line 3 a sum, lines 4 to 6 one tiered surcharge, line 8 a difference with no floor
+    # and line 9, ON428 line 72, a sum.
+    assert isinstance(worksheet.producer_of(ontario.WORKSHEET_ON428_LINE_1), ApplyRate)
+    assert isinstance(worksheet.producer_of(ontario.WORKSHEET_ON428_LINE_2), Sum)
+    assert isinstance(worksheet.producer_of(ontario.WORKSHEET_ON428_LINE_3), Sum)
+    assert isinstance(worksheet.producer_of(ontario.WORKSHEET_ON428_LINE_6), TieredSurcharge)
+    assert isinstance(worksheet.producer_of(ontario.WORKSHEET_ON428_LINE_7), Sum)
+    assert isinstance(worksheet.producer_of(ontario.WORKSHEET_ON428_LINE_8), Subtract)
+    assert isinstance(worksheet.producer_of(ontario.ONTARIO_MINIMUM_TAX), Sum)
+    # The rate steps of line 59 and Worksheet ON428 line 1 are two steps, not one.
+    assert worksheet.producer_of(ontario.MINIMUM_TAX_CARRYOVER_CREDIT) is not worksheet.producer_of(
+        ontario.WORKSHEET_ON428_LINE_1
+    )
+    # Line 72 is no longer the caller's amount: Worksheet ON428 produces it.
+    assert worksheet.producer_of(ontario.ONTARIO_MINIMUM_TAX) is not None

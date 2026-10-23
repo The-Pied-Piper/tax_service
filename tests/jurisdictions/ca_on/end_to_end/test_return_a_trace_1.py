@@ -496,7 +496,22 @@ def test_the_trace_explains_the_computation() -> None:
         "7671.98",
     )
     position(
-        "ontario_surtax_base: ontario_tax_with_split_income 7671.98 "
+        "minimum_tax_carryover_credit: 24.63% of amt_minimum_tax_carryover_applied 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    position(
+        "ontario_minimum_tax_carryover_applied: lesser of ontario_tax_less_dividend_credit "
+        "7671.98 and minimum_tax_carryover_credit 0 = 0",
+        "0",
+    )
+    position(
+        "ontario_tax_after_minimum_tax_carryover: ontario_tax_with_split_income 7671.98 "
+        "less ontario_minimum_tax_carryover_applied 0, not below 0 = 7671.98",
+        "7671.98",
+    )
+    position(
+        "ontario_surtax_base: ontario_tax_after_minimum_tax_carryover 7671.98 "
         "less ontario_tax_on_split_income_for_surtax 0, not below 0 = 7671.98",
         "7671.98",
     )
@@ -509,10 +524,35 @@ def test_the_trace_explains_the_computation() -> None:
         "131.39",
     )
     position(
-        "ontario_tax_with_surtax: ontario_tax_with_split_income 7671.98 "
+        "ontario_tax_with_surtax: ontario_tax_after_minimum_tax_carryover 7671.98 "
         "+ ontario_surtax 523.79 = 8195.77",
         "8195.77",
     )
+    position(
+        "worksheet_on428_line_1: 24.63% of amt_alternative_minimum_tax_payable 0 (half-up to 0.01)",
+        "0",
+    )
+    position("worksheet_on428_line_2: ontario_surtax_base 7671.98 = 7671.98", "7671.98")
+    position(
+        "worksheet_on428_line_3: worksheet_on428_line_1 0 + worksheet_on428_line_2 7671.98 "
+        "= 7671.98",
+        "7671.98",
+    )
+    position(
+        "worksheet_on428_line_6: 20% of worksheet_on428_line_3 7671.98 over 5710 (half-up to 0.01)",
+        "392.40",
+    )
+    position(
+        "worksheet_on428_line_6: 36% of worksheet_on428_line_3 7671.98 over 7307 (half-up to 0.01)",
+        "131.39",
+    )
+    position("worksheet_on428_line_7: ontario_surtax 523.79 = 523.79", "523.79")
+    position(
+        "worksheet_on428_line_8: worksheet_on428_line_6 523.79 less worksheet_on428_line_7 "
+        "523.79 = 0",
+        "0",
+    )
+    position("ontario_minimum_tax: worksheet_on428_line_1 0 + worksheet_on428_line_8 0 = 0", "0")
     position("dividends_amount_a: taxable_dividends 0 = 0", "0")
     position("dividends_amount_b: taxable_dividends_other_than_eligible 0 = 0", "0")
     position("other_dividends_credit: 2.9863% of dividends_amount_b 0 (half-up to 0.01)", "0")

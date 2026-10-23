@@ -5,7 +5,8 @@
 # (no tax is payable to multiple jurisdictions), Part 4 lines 1 to 11 (no foreign income, tax
 # or claim), Part 5 lines 1 to 11 (no minimum tax payable), Part 6 lines 1 to 14 (no split
 # income, so lines 2 and 6 are 0.00), and Part 7 lines 1 to 14 and Part 8 lines 13 to 17 (no
-# carryover from earlier years and no unapplied 2018 carryover). The Part 1 and
+# carryover from earlier years and no unapplied 2018 carryover), and Form ON428 lines 59 to 61 and
+# line 72 by Worksheet ON428 (no carryover applied, no alternative minimum tax). The Part 1 and
 # Part 9 amounts that are not lines of this return are chosen
 # figures, entered as the form takes them; the adjustments and the sums are computed from them.
 jurisdiction: CA-ON
@@ -168,6 +169,23 @@ description: >-
   7", is 0.00, so line 15, "Line 13 plus line 14", is 0.00. Line 16, "Unapplied 2018 minimum tax
   carryover", is 0.00, so line 17, "Total minimum tax carryover available for 2026: line 15 minus
   line 16", is 0.00.
+  Form ON428 (Ontario tax), lines 59 to 61, the Ontario minimum tax carryover: line 55 is the
+  Ontario tax of 2526.82 (the tax after credits, with no tax on split income, line 54 being 0.00),
+  and line 58, "Line 56 minus line 57 (if negative, enter "0")", is 2526.82 (no dividend tax credit).
+  Line 59, "Amount from line 40427 of your return multiplied by 24.63%", is 24.63% of the minimum
+  tax carryover applied of 0.00 (line 40427): 0.00. Line 60, "Enter whichever is less: amount from
+  line 58 or line 59.", is the lesser of 2526.82 and 0.00, 0.00, and line 61, "Line 55 minus line 60
+  (if negative, enter "0")", is 2526.82 minus 0.00, 2526.82, which lines 62 and 63 carry. Line 65,
+  the surtax base, is line 63 less line 64 (0.00), 2526.82, below $5,710, so the surtax of line 68
+  is 0.00. Line 72, "Ontario additional tax for minimum tax purposes", is calculated by Worksheet
+  ON428 because line 11 of Part 5 of Form T691 is 0.00 (no alternative minimum tax payable): line
+  1, "Amount from line 11 of Part 5 of your Form T691 multiplied by 24.63%", is 0.00 times 24.63%,
+  0.00; line 2, "Amount from line 65 of your Form ON428", is 2526.82; line 3, "Line 1 plus line
+  2", is 0.00 plus 2526.82, 2526.82, which is not more than $5,710, so lines 4 and 5, each "if
+  negative, enter "0"", are 0.00 and line 6, "Line 4 plus line 5", is 0.00. Line 7, "Amount from
+  line 68 of your Form ON428", is 0.00, so line 8, "Line 6 minus line 7", is 0.00 minus 0.00, 0.00,
+  and line 9, "Line 1 plus line 8 Enter this amount on line 72 of your Form ON428.", is 0.00 plus
+  0.00, 0.00: line 72 is 0.00 and line 73, "Line 71 plus line 72", is 2526.82 plus 0.00, 2526.82.
   Amounts are quoted decimals, and the count of CPP months is a quoted digit string.
 sources:
   - >-
@@ -205,6 +223,23 @@ sources:
     for CPP enhanced contributions on employment income:" "Line 28: Line 26 plus line 27 Enter
     this amount (in dollars and cents) on line 22215 of your return."
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s8/5000-s8-25e.txt
+  - >-
+    CRA, Form ON428 (form 5006-C, 2025), docs/cra-forms-2025/5006-c-25e.txt: "Line 58: Line 56
+    minus line 57 (if negative, enter "0")"; "Line 59: Amount from line 40427 of your return
+    multiplied by 24.63%"; "Line 60 and line 61540: Enter whichever is less: amount from line 58
+    or line 59."; "Line 61: Line 55 minus line 60 (if negative, enter "0")"; "Line 72: If you
+    entered an amount on line 11 of Part 5 of Form T691, use Worksheet ON428 to calculate your
+    additional tax for minimum tax purposes."; "Line 73: Line 71 plus line 72".
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
+  - >-
+    CRA, Worksheet ON428 (form 5006-D, 2025), docs/cra-forms-2025/5006-d-25e.txt: "Line 72 -
+    Ontario additional tax for minimum tax purposes"; "Line 1: Amount from line 11 of Part 5 of
+    your Form T691 multiplied by 24.63%"; "Line 2: Amount from line 65 of your Form ON428"; "Line
+    3: Line 1 plus line 2"; "Line 4: (Line 3 Minus $5,710) multiplied by 20% (if negative, enter
+    "0")"; "Line 5: (Line 3 Minus $7,307) multiplied by 36% (if negative, enter "0")"; "Line 6:
+    Line 4 plus line 5"; "Line 7: Amount from line 68 of your Form ON428"; "Line 8: Line 6 minus
+    line 7"; "Line 9: Line 1 plus line 8 Enter this amount on line 72 of your Form ON428."
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-d/5006-d-25e.txt
 inputs:
   ca/employment_income: "60000"
   ca/cpp_months: "12"
@@ -368,3 +403,17 @@ expected:
   ca/amt_carryover_balance: "0.00"
   ca/amt_carryover_balance_with_additional_taxes: "0.00"
   ca/amt_carryover_available_for_2026: "0.00"
+  ca-on/ontario_tax_with_split_income: "2526.82"
+  ca-on/minimum_tax_carryover_credit: "0.00"
+  ca-on/ontario_minimum_tax_carryover_applied: "0.00"
+  ca-on/ontario_tax_after_minimum_tax_carryover: "2526.82"
+  ca-on/ontario_surtax_base: "2526.82"
+  ca-on/ontario_surtax: "0.00"
+  ca-on/worksheet_on428_line_1: "0.00"
+  ca-on/worksheet_on428_line_2: "2526.82"
+  ca-on/worksheet_on428_line_3: "2526.82"
+  ca-on/worksheet_on428_line_6: "0.00"
+  ca-on/worksheet_on428_line_7: "0.00"
+  ca-on/worksheet_on428_line_8: "0.00"
+  ca-on/ontario_minimum_tax: "0.00"
+  ca-on/ontario_tax_before_reduction: "2526.82"

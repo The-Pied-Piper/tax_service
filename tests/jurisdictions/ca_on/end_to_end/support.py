@@ -1826,7 +1826,6 @@ def compute(
     spouse_return_ontario_line_24: str = "0",
     spouse_return_ontario_unused_tuition_amount: str = "0",
     lift_spouse_at_year_end: int = 0,
-    ontario_minimum_tax: str = "0",
     not_resident_of_canada_at_start_of_year: int = 0,
     not_resident_of_ontario_at_year_end: int = 0,
     bankrupt_in_year: int = 0,
@@ -2484,7 +2483,6 @@ def compute(
             D(spouse_return_ontario_unused_tuition_amount),
         ),
         Artifact(ontario.LIFT_SPOUSE_AT_YEAR_END, lift_spouse_at_year_end),
-        Artifact(ontario.ONTARIO_MINIMUM_TAX, D(ontario_minimum_tax)),
         Artifact(
             ontario.NOT_RESIDENT_OF_CANADA_AT_START_OF_YEAR, not_resident_of_canada_at_start_of_year
         ),

@@ -2489,15 +2489,43 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((TAXABLE_INCOME, D("115000")), (TOTAL_SPLIT_INCOME, D("0"))),
             D("115000"),
         ),
-        # ON428 line 69 "Line 62 plus line 68": line 62 (line 55, the tax with the tax on split
-        # income) plus the surtax.
+        # ON428 line 69 "Line 62 plus line 68": line 62 (the amount from line 61, the tax after the
+        # minimum tax carryover) plus the surtax.
         ONTARIO_TAX_WITH_SURTAX: SumLine(
             ONTARIO_TAX_WITH_SURTAX,
             (
-                (ontario.ONTARIO_TAX_WITH_SPLIT_INCOME, D("7671.98")),
+                (ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER, D("7671.98")),
                 (ONTARIO_SURTAX, D("523.79")),
             ),
             D("8195.77"),
+        ),
+        # Worksheet ON428 (Line 72 - Ontario additional tax for minimum tax purposes): line 2
+        # "Amount from line 65 of your Form ON428", line 3 "Line 1 plus line 2 =" and line 7
+        # "Amount from line 68 of your Form ON428", for no alternative minimum tax payable.
+        ontario.WORKSHEET_ON428_LINE_2: SumLine(
+            ontario.WORKSHEET_ON428_LINE_2,
+            ((ontario.ONTARIO_SURTAX_BASE, D("7671.98")),),
+            D("7671.98"),
+        ),
+        ontario.WORKSHEET_ON428_LINE_3: SumLine(
+            ontario.WORKSHEET_ON428_LINE_3,
+            (
+                (ontario.WORKSHEET_ON428_LINE_1, D("0")),
+                (ontario.WORKSHEET_ON428_LINE_2, D("7671.98")),
+            ),
+            D("7671.98"),
+        ),
+        ontario.WORKSHEET_ON428_LINE_7: SumLine(
+            ontario.WORKSHEET_ON428_LINE_7,
+            ((ONTARIO_SURTAX, D("523.79")),),
+            D("523.79"),
+        ),
+        # Worksheet ON428 line 9 "Line 1 plus line 8 Enter this amount on line 72 of your Form
+        # ON428.": no alternative minimum tax, so 0.
+        ONTARIO_MINIMUM_TAX: SumLine(
+            ONTARIO_MINIMUM_TAX,
+            ((ontario.WORKSHEET_ON428_LINE_1, D("0")), (ontario.WORKSHEET_ON428_LINE_8, D("0"))),
+            D("0"),
         ),
         # Form T2036 note (4): ON428 line 71 and line 73 with "0" on lines 70 and 72, line 69 over
         # one part.
