@@ -57,6 +57,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTED_TAXABLE_INCOME,
     AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_BASIC_EXEMPTION,
+    AMT_CAPITAL_GAINS_ADDED,
+    AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
     AMT_FEDERAL_SURTAX,
@@ -68,6 +70,15 @@ from app.jurisdictions.ca.catalog import (
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
     AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+    AMT_FOREIGN_BUSINESS_INCOME,
+    AMT_FOREIGN_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM,
+    AMT_FOREIGN_INCOME_LIMIT,
+    AMT_FOREIGN_NON_BUSINESS_INCOME,
+    AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+    AMT_FOREIGN_TAX_CREDIT_LESSER,
+    AMT_FOREIGN_TAXES_PAID,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_INVESTMENT_TAX_CREDIT_CLAIM,
@@ -90,8 +101,10 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     AMT_T2038_AMOUNT_I,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
+    AMT_TOTAL_FOREIGN_INCOME,
     ANNUAL_GAINS_LIMIT_2025,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -898,6 +911,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form T691 Part 4 line 10 "Enter whichever is less: amount from line 6 or line 9.": line 6,
+        # 0.00, and line 9, 0, the lesser, 0.
+        AMT_FOREIGN_TAX_CREDIT_LESSER: LesserOfLine(
+            output=AMT_FOREIGN_TAX_CREDIT_LESSER,
+            parts=((AMT_FOREIGN_INCOME_LIMIT, D("0")), (AMT_FOREIGN_TAXES_PAID, D("0"))),
+            result=D("0"),
+        ),
         # Form T691 Part 8 line 12 "Claim an amount that is not more than line 1 or 11, whichever is
         # less.": line 1 (0) and line 11 (16951.38), the lesser of them, 0.
         AMT_MAXIMUM_CARRYOVER_CLAIM: LesserOfLine(
@@ -1852,6 +1872,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert at_most == {
+        # Form T691 Part 4 line 3 "Non-taxable part of foreign capital gains included in adjusted
+        # taxable income (cannot be more than line 23 of Part 1)": the claim, 0 for Return A, at
+        # most line 23 of Part 1, 10000.00: 0.
+        AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE: AtMostLine(
+            output=AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
+            amount_kind=AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM,
+            amount_value=D("0"),
+            bound=AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
+            bound_value=D("10000"),
+        ),
         # Form T691 Part 3 line 12, the investment tax credit claim (0) at most amount I of Form
         # T2038(IND) (0): 0.
         AMT_INVESTMENT_TAX_CREDIT: AtMostLine(
@@ -3787,6 +3817,34 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # rental CCA limit, and the Form T1206 lines floored in Part 1 (the TOSI-adjusted net income)
     # and Part 2 (line 24, on line 22 alone) for a return without split income.
     assert summed_floored == {
+        # Part 1 line 23 with a loss taken as 0, the most Part 4 line 3 may claim: line 23 is
+        # 10000, so the bound is 10000.
+        AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO: SumNotBelowZeroLine(
+            output=AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
+            parts=((AMT_CAPITAL_GAINS_ADDED, D("10000")),),
+            total=D("10000"),
+        ),
+        # Form T691 Part 4 line 4 "Total foreign income: add lines 1 to 3 (if negative, enter "0")":
+        # lines 1, 2 and 3, all 0 for Return A, 0.
+        AMT_TOTAL_FOREIGN_INCOME: SumNotBelowZeroLine(
+            output=AMT_TOTAL_FOREIGN_INCOME,
+            parts=(
+                (AMT_FOREIGN_BUSINESS_INCOME, D("0")),
+                (AMT_FOREIGN_NON_BUSINESS_INCOME, D("0")),
+                (AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE, D("0")),
+            ),
+            total=D("0"),
+        ),
+        # Form T691 Part 4 line 9 "Foreign taxes paid for special foreign tax credit: line 7 plus
+        # line 8 (if negative, enter "0")": line 7, 0, and line 8, the business tax paid, 0: 0.
+        AMT_FOREIGN_TAXES_PAID: SumNotBelowZeroLine(
+            output=AMT_FOREIGN_TAXES_PAID,
+            parts=(
+                (AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS, D("0")),
+                (AMT_FOREIGN_BUSINESS_TAX_PAID, D("0")),
+            ),
+            total=D("0"),
+        ),
         # Form T657 Chart 2016 Part 1 "amount D plus amount E" (signed T2017 lines 6 and 12): 0 for
         # each.
         CHART_2016_PART_1_AMOUNTS_D_AND_E: SumNotBelowZeroLine(
@@ -4045,6 +4103,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert {line.output: line for line in trace if isinstance(line, GreaterOfLine)} == {
+        # Form T691 Part 4 line 11 "Enter whichever is more: amount from line 7 of Part 3 or line
+        # 10." "Special foreign tax credit": the federal foreign tax credit of Part 3 line 7, 0, and
+        # line 10, 0: the greater, 0.
+        AMT_SPECIAL_FOREIGN_TAX_CREDIT: GreaterOfLine(
+            output=AMT_SPECIAL_FOREIGN_TAX_CREDIT,
+            parts=((FEDERAL_FOREIGN_TAX_CREDIT, D("0")), (AMT_FOREIGN_TAX_CREDIT_LESSER, D("0"))),
+            result=D("0"),
+        ),
         # Form T2125 Chart C line 23 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST),
         # whichever is more": the list price is 0, so the printed 44,706 plus 0 tax is the greater.
         BUSINESS_VEHICLE_LEASE_PRICE_BASE: GreaterOfLine(

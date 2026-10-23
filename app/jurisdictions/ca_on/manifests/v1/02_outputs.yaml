@@ -104,3 +104,7 @@ outputs:
   # Form T691 Part 3 line 15 "Line 10 minus line 14 (if negative, enter "0")" "Regular net federal
   # tax payable", which nothing else on the return reads yet.
   - ca/amt_regular_net_federal_tax_payable
+  # Form T691 Part 4 line 11 "Enter whichever is more: amount from line 7 of Part 3 or line 10."
+  # "Special foreign tax credit", which nothing else on the return reads yet; Part 4 lines 1 to 10
+  # are read by the lines after them.
+  - ca/amt_special_foreign_tax_credit

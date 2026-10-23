@@ -7,10 +7,12 @@ from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.credit_amount import CreditAmount
+from app.domain.capabilities.greater_of import GreaterOf
 from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
@@ -28,6 +30,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_BASIC_EXEMPTION,
     AMT_BASIC_FEDERAL_TAX,
     AMT_CAPITAL_GAINS_ADDED,
+    AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
@@ -54,6 +57,16 @@ from app.jurisdictions.ca.catalog import (
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
     AMT_FINANCING_EXPENSES,
     AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+    AMT_FOREIGN_BUSINESS_INCOME,
+    AMT_FOREIGN_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM,
+    AMT_FOREIGN_INCOME_LIMIT,
+    AMT_FOREIGN_NON_BUSINESS_INCOME,
+    AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+    AMT_FOREIGN_TAX_CREDIT_LESSER,
+    AMT_FOREIGN_TAXES_PAID,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
     AMT_GROSS_MINIMUM_AMOUNT,
@@ -118,6 +131,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
@@ -130,6 +144,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_TAX_SHELTER_ADJUSTMENTS,
     AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
     AMT_TAX_SHELTER_LOSSES,
+    AMT_TOTAL_FOREIGN_INCOME,
     AMT_TREATY_EXEMPT_CAPITAL_GAINS,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CAPITAL_GAIN,
@@ -211,12 +226,18 @@ INPUTS = frozenset(
         "ca/amt_non_resident_or_deemed_resident",
         "ca/amt_investment_tax_credit_claim",
         "ca/amt_t2038_amount_i",
+        "ca/amt_foreign_business_income",
+        "ca/amt_foreign_non_business_income",
+        "ca/amt_foreign_capital_gains_non_taxable_claim",
+        "ca/amt_foreign_non_business_tax_paid",
+        "ca/amt_foreign_business_tax_paid",
     }
 )
 
 OUTPUTS = frozenset(
     {
         "ca/amt_regular_net_federal_tax_payable",
+        "ca/amt_special_foreign_tax_credit",
     }
 )
 
@@ -1028,6 +1049,99 @@ STEPS = {
         },
         produces={"output": "ca/amt_regular_net_federal_tax_payable"},
     ),
+    # Part 4 line 3 "Non-taxable part of foreign capital gains included in adjusted taxable income
+    # (cannot be more than line 23 of Part 1)": the bound is line 23 with a loss taken as 0, so that
+    # a loss on line 23 refuses no claim of 0. It is not a form line.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={"parts": ("ca/amt_capital_gains_added",)},
+        produces={"output": "ca/amt_capital_gains_added_not_below_zero"},
+    ),
+    # Part 4 line 3: the claim, the caller's figure, may not be more than the bound, and a claim
+    # above it is refused, not capped.
+    CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={
+            "amount": "ca/amt_foreign_capital_gains_non_taxable_claim",
+            "bound": "ca/amt_capital_gains_added_not_below_zero",
+        },
+        produces={"output": "ca/amt_foreign_capital_gains_non_taxable"},
+    ),
+    # Part 4 line 4 "Total foreign income: add lines 1 to 3 (if negative, enter "0")": lines 1 (the
+    # caller's foreign business income, which may be negative), 2 and 3 in line order, floored at
+    # zero.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={
+            "parts": (
+                "ca/amt_foreign_business_income",
+                "ca/amt_foreign_non_business_income",
+                "ca/amt_foreign_capital_gains_non_taxable",
+            )
+        },
+        produces={"output": "ca/amt_total_foreign_income"},
+    ),
+    # Part 4 line 5 "Applicable rate" "× 20.5%" and line 6 "Foreign income limit for special foreign
+    # tax credit: line 4 multiplied by the percentage on line 5 (if negative, enter "0")": the rate
+    # of Part 1 line 96. Line 4 is never negative (it is floored above), so the printed floor on
+    # line 6 cannot apply.
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/amt_federal_tax_rate"},
+        consumes={"base": "ca/amt_total_foreign_income"},
+        produces={"output": "ca/amt_foreign_income_limit"},
+    ),
+    # Part 4 line 7 "Total non-business income tax paid to a foreign country (12)" "× 66.6666%": the
+    # caller's tax paid (footnote 12 is the caller's definition), times the percentage as printed.
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/amt_special_foreign_tax_credit_rate"},
+        consumes={"base": "ca/amt_foreign_non_business_tax_paid"},
+        produces={"output": "ca/amt_foreign_non_business_tax_two_thirds"},
+    ),
+    # Part 4 line 9 "Foreign taxes paid for special foreign tax credit: line 7 plus line 8 (if
+    # negative, enter "0")": line 7 and line 8 (the caller's business tax paid), floored at zero.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={
+            "parts": (
+                "ca/amt_foreign_non_business_tax_two_thirds",
+                "ca/amt_foreign_business_tax_paid",
+            )
+        },
+        produces={"output": "ca/amt_foreign_taxes_paid"},
+    ),
+    # Part 4 line 10 "Enter whichever is less: amount from line 6 or line 9.": the lesser of the
+    # two.
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/amt_foreign_income_limit",
+                "ca/amt_foreign_taxes_paid",
+            ),
+        },
+        produces={"output": "ca/amt_foreign_tax_credit_lesser"},
+    ),
+    # Part 4 line 11 "Enter whichever is more: amount from line 7 of Part 3 or line 10." "Special
+    # foreign tax credit": the greater of the federal foreign tax credit of Part 3 line 7 (Form
+    # T2209) and line 10. Nothing reads it until Part 5.
+    CapabilitySelection(
+        name="core/greater_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/federal_foreign_tax_credit",
+                "ca/amt_foreign_tax_credit_lesser",
+            ),
+        },
+        produces={"output": "ca/amt_special_foreign_tax_credit"},
+    ),
 }
 
 WIRING = {
@@ -1516,5 +1630,53 @@ WIRING = {
         SubtractNotBelowZero,
         frozenset({AMT_FEDERAL_TAX_PAYABLE, AMT_REGULAR_TAX_CREDITS_TOTAL}),
         frozenset({AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset({AMT_CAPITAL_GAINS_ADDED}),
+        frozenset({AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO}),
+    ),
+    (
+        AtMost,
+        frozenset(
+            {AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM, AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO}
+        ),
+        frozenset({AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset(
+            {
+                AMT_FOREIGN_BUSINESS_INCOME,
+                AMT_FOREIGN_NON_BUSINESS_INCOME,
+                AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
+            }
+        ),
+        frozenset({AMT_TOTAL_FOREIGN_INCOME}),
+    ),
+    (
+        ApplyRate,
+        frozenset({AMT_TOTAL_FOREIGN_INCOME}),
+        frozenset({AMT_FOREIGN_INCOME_LIMIT}),
+    ),
+    (
+        ApplyRate,
+        frozenset({AMT_FOREIGN_NON_BUSINESS_TAX_PAID}),
+        frozenset({AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset({AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS, AMT_FOREIGN_BUSINESS_TAX_PAID}),
+        frozenset({AMT_FOREIGN_TAXES_PAID}),
+    ),
+    (
+        LesserOf,
+        frozenset({AMT_FOREIGN_INCOME_LIMIT, AMT_FOREIGN_TAXES_PAID}),
+        frozenset({AMT_FOREIGN_TAX_CREDIT_LESSER}),
+    ),
+    (
+        GreaterOf,
+        frozenset({FEDERAL_FOREIGN_TAX_CREDIT, AMT_FOREIGN_TAX_CREDIT_LESSER}),
+        frozenset({AMT_SPECIAL_FOREIGN_TAX_CREDIT}),
     ),
 }

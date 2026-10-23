@@ -625,3 +625,79 @@ capabilities:
       less: ca/amt_regular_tax_credits_total
     produces:
       output: ca/amt_regular_net_federal_tax_payable
+  # Part 4 line 3 "Non-taxable part of foreign capital gains included in adjusted taxable income
+  # (cannot be more than line 23 of Part 1)": the bound is line 23 with a loss taken as 0, so that
+  # a loss on line 23 refuses no claim of 0. It is not a form line.
+  - name: core/sum_not_below_zero
+    consumes:
+      parts:
+        - ca/amt_capital_gains_added
+    produces:
+      output: ca/amt_capital_gains_added_not_below_zero
+  # Part 4 line 3, the claim against line 23 of Part 1: the claim may not be more than the bound,
+  # and a claim above it is refused, not capped.
+  - name: core/at_most
+    consumes:
+      amount: ca/amt_foreign_capital_gains_non_taxable_claim
+      bound: ca/amt_capital_gains_added_not_below_zero
+    produces:
+      output: ca/amt_foreign_capital_gains_non_taxable
+  # Part 4 line 4 "Total foreign income: add lines 1 to 3 (if negative, enter "0")": lines 1 (the
+  # caller's foreign business income, which may be negative), 2 and 3 in line order, floored at
+  # zero.
+  - name: core/sum_not_below_zero
+    consumes:
+      parts:
+        - ca/amt_foreign_business_income
+        - ca/amt_foreign_non_business_income
+        - ca/amt_foreign_capital_gains_non_taxable
+    produces:
+      output: ca/amt_total_foreign_income
+  # Part 4 line 5 "Applicable rate" "× 20.5%" and line 6 "Foreign income limit for special foreign
+  # tax credit: line 4 multiplied by the percentage on line 5 (if negative, enter "0")": the rate
+  # of Part 1 line 96. Line 4 is never negative (it is floored above), so the printed floor on
+  # line 6 cannot apply.
+  - name: core/apply_rate
+    params:
+      rate: ca/amt_federal_tax_rate
+    consumes:
+      base: ca/amt_total_foreign_income
+    produces:
+      output: ca/amt_foreign_income_limit
+  # Part 4 line 7 "Total non-business income tax paid to a foreign country (12)" "× 66.6666%": the
+  # caller's tax paid (footnote 12 is the caller's definition), times the percentage as printed.
+  - name: core/apply_rate
+    params:
+      rate: ca/amt_special_foreign_tax_credit_rate
+    consumes:
+      base: ca/amt_foreign_non_business_tax_paid
+    produces:
+      output: ca/amt_foreign_non_business_tax_two_thirds
+  # Part 4 line 9 "Foreign taxes paid for special foreign tax credit: line 7 plus line 8 (if
+  # negative, enter "0")": line 7 and line 8 (the caller's business tax paid), floored at zero.
+  - name: core/sum_not_below_zero
+    consumes:
+      parts:
+        - ca/amt_foreign_non_business_tax_two_thirds
+        - ca/amt_foreign_business_tax_paid
+    produces:
+      output: ca/amt_foreign_taxes_paid
+  # Part 4 line 10 "Enter whichever is less: amount from line 6 or line 9.": the lesser of the
+  # two.
+  - name: core/lesser_of
+    consumes:
+      amounts:
+        - ca/amt_foreign_income_limit
+        - ca/amt_foreign_taxes_paid
+    produces:
+      output: ca/amt_foreign_tax_credit_lesser
+  # Part 4 line 11 "Enter whichever is more: amount from line 7 of Part 3 or line 10." "Special
+  # foreign tax credit": the greater of the federal foreign tax credit of Part 3 line 7 (Form
+  # T2209) and line 10. Nothing reads it until Part 5.
+  - name: core/greater_of
+    consumes:
+      amounts:
+        - ca/federal_foreign_tax_credit
+        - ca/amt_foreign_tax_credit_lesser
+    produces:
+      output: ca/amt_special_foreign_tax_credit

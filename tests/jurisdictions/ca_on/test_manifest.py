@@ -178,14 +178,14 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1241
+    assert len(found.capabilities) == 1249
     # T2125 Area A column 22 "UCC at the end of the year", a record list of each class's closing UCC
     # for next year, and Part 7 line 7O "Business-use-of-home expenses available to carry forward",
     # which nothing else on the return reads.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1241
+    assert len(found.capabilities) == 1249
     # Form T691 Part 1 line 27 "Add lines 13, 14, 23, and 26.", which nothing else on the return
     # reads yet (lines 12, 14, 20 and 26 are read by lines 13, 14, 22, 23 and 27, so they are no
     # longer declared outputs).
@@ -193,10 +193,13 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # tax payable", which nothing else on the return reads yet; Part 2 line 7, the basic federal
     # tax, is read by Part 3 lines 2 and 6, and Part 3 lines 1 to 14 are read by the lines after
     # them.
+    # Form T691 Part 4 line 11 "Enter whichever is more: amount from line 7 of Part 3 or line 10."
+    # "Special foreign tax credit", which nothing else on the return reads yet; Part 4 lines 1 to
+    # 10 are read by the lines after them.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1241
+    assert len(found.capabilities) == 1249
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -206,6 +209,6 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 1241
-    assert len(composition.order) == 1241
+    assert len(composition.order) == 1249
+    assert len(composition.order) == 1249
     assert wiring == WIRING

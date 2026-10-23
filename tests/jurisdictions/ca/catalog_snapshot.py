@@ -1789,6 +1789,7 @@ REGISTERED = frozenset(
         "ca/amt_minimum_tax_carryover_applied",
         "ca/amt_capital_gains_difference",
         "ca/amt_capital_gains_added",
+        "ca/amt_capital_gains_added_not_below_zero",
         "ca/amt_adjusted_income_with_gains",
         "ca/amt_federal_surtax_at_48_percent",
         "ca/amt_t2203_column_5_percentage",
@@ -1805,6 +1806,18 @@ REGISTERED = frozenset(
         "ca/amt_investment_tax_credit",
         "ca/amt_regular_tax_credits_total",
         "ca/amt_regular_net_federal_tax_payable",
+        "ca/amt_foreign_business_income",
+        "ca/amt_foreign_non_business_income",
+        "ca/amt_foreign_capital_gains_non_taxable_claim",
+        "ca/amt_foreign_capital_gains_non_taxable",
+        "ca/amt_total_foreign_income",
+        "ca/amt_foreign_income_limit",
+        "ca/amt_foreign_non_business_tax_paid",
+        "ca/amt_foreign_non_business_tax_two_thirds",
+        "ca/amt_foreign_business_tax_paid",
+        "ca/amt_foreign_taxes_paid",
+        "ca/amt_foreign_tax_credit_lesser",
+        "ca/amt_special_foreign_tax_credit",
     }
 )
 
@@ -2068,6 +2081,7 @@ SIGNED = frozenset(
         "ca/amt_federal_surtax_if_non_resident",
         "ca/amt_federal_surtax",
         "ca/amt_federal_tax_with_surtax_and_recapture",
+        "ca/amt_foreign_business_income",
     }
 )
 

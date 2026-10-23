@@ -27,6 +27,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMT_BASIC_FEDERAL_TAX,
+    AMT_CAPITAL_GAINS_ADDED,
     AMT_FEDERAL_SURTAX,
     AMT_FEDERAL_SURTAX_AT_48_PERCENT,
     AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
@@ -34,12 +35,19 @@ from app.jurisdictions.ca.catalog import (
     AMT_FEDERAL_TAX_PAYABLE,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
+    AMT_FOREIGN_INCOME_LIMIT,
+    AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+    AMT_FOREIGN_TAX_CREDIT_LESSER,
+    AMT_FOREIGN_TAXES_PAID,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_LINE_3_HAS_AMOUNT,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
+    AMT_SPECIAL_FOREIGN_TAX_CREDIT,
+    AMT_TOTAL_FOREIGN_INCOME,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
@@ -504,8 +512,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1241
-    assert len(order) == 1241
+    assert len(order) == 1249
+    assert len(order) == 1249
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
@@ -531,6 +539,17 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[AMT_INVESTMENT_TAX_CREDIT] < position[AMT_REGULAR_TAX_CREDITS_TOTAL]
     assert position[AMT_FEDERAL_TAX_PAYABLE] < position[AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE]
     assert position[AMT_REGULAR_TAX_CREDITS_TOTAL] < position[AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE]
+    # Part 4 line 3 checks the claim against line 23 of Part 1; line 4 sums lines 1 to 3; line 6 is
+    # line 4 at 20.5%; line 7 is the caller's tax paid at 66.6666%; line 9 sums lines 7 and 8; line
+    # 10 is the lesser of lines 6 and 9; line 11 is the greater of Part 3 line 7 and line 10.
+    assert position[AMT_CAPITAL_GAINS_ADDED] < position[AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE]
+    assert position[AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE] < position[AMT_TOTAL_FOREIGN_INCOME]
+    assert position[AMT_TOTAL_FOREIGN_INCOME] < position[AMT_FOREIGN_INCOME_LIMIT]
+    assert position[AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS] < position[AMT_FOREIGN_TAXES_PAID]
+    assert position[AMT_FOREIGN_INCOME_LIMIT] < position[AMT_FOREIGN_TAX_CREDIT_LESSER]
+    assert position[AMT_FOREIGN_TAXES_PAID] < position[AMT_FOREIGN_TAX_CREDIT_LESSER]
+    assert position[AMT_FOREIGN_TAX_CREDIT_LESSER] < position[AMT_SPECIAL_FOREIGN_TAX_CREDIT]
+    assert position[FEDERAL_FOREIGN_TAX_CREDIT] < position[AMT_SPECIAL_FOREIGN_TAX_CREDIT]
     assert (
         position[INVESTMENT_INCOME_BEFORE_PRIOR_YEARS]
         < position[INTEREST_AND_OTHER_INVESTMENT_INCOME]
