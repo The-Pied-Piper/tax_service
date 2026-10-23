@@ -124,6 +124,9 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_108,
     RC381_PART_4_LINE_115,
     RC381_PART_4_LINE_127,
+    RENTAL_EPOP_PERCENTAGE_ROOM,
+    RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
+    RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_NON_COMPLIANT_EXPENSES,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     TAXABLE_INCOME,
@@ -176,6 +179,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # two results are line 52 and line 73, both 0 as Return A enters no pensionable earnings. The
     # overpayment of line 44800 is line 69 not below zero, a floored sum of line 69.
     assert chosen_by_sign == {
+        # Form T776 Area G Note 11 "If the total of column 3 is more than 100%, enter "0."": 100%
+        # less the total of column 3 is 100.00 for Return A, not below zero, so line iii is the
+        # $1.5 million times the percentage assigned to you, 0.00 for Return A.
+        RENTAL_IMMEDIATE_EXPENSING_ALLOCATED: ChosenBySignLine(
+            output=RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
+            sign_kind=RENTAL_EPOP_PERCENTAGE_ROOM,
+            sign=D("100.00"),
+            chosen_kind=RENTAL_IMMEDIATE_EXPENSING_SHARE,
+            chosen_value=D("0.00"),
+        ),
         # The final selection, by the sign of lines 70 and 83 of Part 4 added ("If lines 70 and
         # 83 are both "0", return to Part 3"): Return A's are -3,500.00, not above zero, so lines
         # 30800, 22215 and 44800 are Part 3's results (all 0 for Return A, which has no T4 slips)

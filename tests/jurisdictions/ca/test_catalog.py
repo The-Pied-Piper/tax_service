@@ -502,8 +502,21 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_COOWNER_SHARE,
     RENTAL_COOWNER_TERMINAL_LOSS,
     RENTAL_DEDUCTIBLE_EXPENSES,
+    RENTAL_EPOP_AGREEMENT_FILED,
+    RENTAL_EPOP_ASSOCIATED,
+    RENTAL_EPOP_PERCENTAGE,
+    RENTAL_EPOP_PERCENTAGE_MAXIMUM,
+    RENTAL_EPOP_PERCENTAGE_ROOM,
+    RENTAL_EPOP_PERCENTAGE_TOTAL,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
     RENTAL_GROSS_RENTS,
+    RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
+    RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    RENTAL_IMMEDIATE_EXPENSING_CAP,
+    RENTAL_IMMEDIATE_EXPENSING_CLAIM,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
     RENTAL_INSURANCE_SHORT_TERM_PORTION,
@@ -513,6 +526,8 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES,
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION,
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION,
+    RENTAL_MINISTER_ALLOCATION,
+    RENTAL_MINISTER_ALLOCATION_GIVEN,
     RENTAL_MOTOR_VEHICLE_EXPENSES,
     RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION,
     RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION,
@@ -609,6 +624,7 @@ from app.jurisdictions.ca.catalog import (
     STANDARD_AMOUNT_ALLOCATED_1,
     STANDARD_AMOUNT_ALLOCATED_2,
     STANDARD_AMOUNT_ALLOCATED_3,
+    T776_STATEMENTS,
     T2042_STATEMENTS,
     T2121_STATEMENTS,
     T2125_STATEMENTS,
@@ -1361,6 +1377,23 @@ T776_NON_NEGATIVE_LINES = [
     ("ca/rental_cca_limit", RENTAL_CCA_LIMIT),
     ("ca/rental_partner_gst_hst_rebate", RENTAL_PARTNER_GST_HST_REBATE),
     ("ca/rental_partner_other_expenses", RENTAL_PARTNER_OTHER_EXPENSES),
+    ("ca/rental_epop_percentage", RENTAL_EPOP_PERCENTAGE),
+    ("ca/rental_epop_percentage_total", RENTAL_EPOP_PERCENTAGE_TOTAL),
+    ("ca/rental_minister_allocation", RENTAL_MINISTER_ALLOCATION),
+    ("ca/rental_immediate_expensing_cap", RENTAL_IMMEDIATE_EXPENSING_CAP),
+    ("ca/rental_epop_percentage_maximum", RENTAL_EPOP_PERCENTAGE_MAXIMUM),
+    ("ca/rental_immediate_expensing_share", RENTAL_IMMEDIATE_EXPENSING_SHARE),
+    ("ca/rental_immediate_expensing_allocated", RENTAL_IMMEDIATE_EXPENSING_ALLOCATED),
+    (
+        "ca/rental_immediate_expensing_associated_limit",
+        RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    ),
+    (
+        "ca/rental_immediate_expensing_limit_before_minister",
+        RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    ),
+    ("ca/rental_immediate_expensing_limit", RENTAL_IMMEDIATE_EXPENSING_LIMIT),
+    ("ca/rental_immediate_expensing_claim", RENTAL_IMMEDIATE_EXPENSING_CLAIM),
 ]
 
 
@@ -1390,6 +1423,7 @@ T776_SIGNED_LINES = [
     ("ca/rental_partner_share", RENTAL_PARTNER_SHARE),
     ("ca/rental_partner_share_with_rebate", RENTAL_PARTNER_SHARE_WITH_REBATE),
     ("ca/rental_partnership_net_income", RENTAL_PARTNERSHIP_NET_INCOME),
+    ("ca/rental_epop_percentage_room", RENTAL_EPOP_PERCENTAGE_ROOM),
     ("ca/net_rental_income", NET_RENTAL_INCOME),
 ]
 
@@ -1410,9 +1444,12 @@ def test_the_t776_lines_that_print_a_loss_are_signed_decimals(
     [
         (RENTAL_COOWNER, "ca/rental_coowner"),
         (RENTAL_PARTNER, "ca/rental_partner"),
+        (RENTAL_EPOP_ASSOCIATED, "ca/rental_epop_associated"),
+        (RENTAL_EPOP_AGREEMENT_FILED, "ca/rental_epop_agreement_filed"),
+        (RENTAL_MINISTER_ALLOCATION_GIVEN, "ca/rental_minister_allocation_given"),
     ],
 )
-def test_the_co_owner_and_partner_counts_are_non_negative_int_counts(
+def test_the_co_owner_partner_and_area_g_counts_are_non_negative_int_counts(
     kind: ArtifactKind[int], identifier: str, registry: ArtifactRegistry
 ) -> None:
     # Part 4 line 2 "Co-owners: calculate your share of net income from line 9369" and line 7
@@ -2192,24 +2229,41 @@ def test_the_rental_cca_classes_are_a_record_list_of_the_area_a_columns(
     registry: ArtifactRegistry,
 ) -> None:
     # Form T776 Area A, "Calculation of capital cost allowance (CCA) claim": one row for each
-    # class, holding the columns the caller enters (the nine field kinds of the CCA table).
+    # class, holding the columns the caller enters (the eleven field kinds of the CCA table, the
+    # DIEP columns 4, 6 and 9 among them).
     assert RECORD_LISTS <= REGISTERED
     assert isinstance(RENTAL_CCA_CLASSES, RecordListKind)
     assert RENTAL_CCA_CLASSES.identifier == "ca/rental_cca_classes"
     assert RENTAL_CCA_CLASSES.value_type is RecordList
     assert RENTAL_CCA_CLASSES.non_negative is False
-    assert set(RENTAL_CCA_CLASSES.fields) == {
+    # In the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 23) and the no-property-left
+    # question of Note 3.
+    assert RENTAL_CCA_CLASSES.fields == (
         CCA_CLASS_NUMBER,
         CCA_UCC_AT_START,
         CCA_ADDITIONS,
+        CCA_DIEP_ADDITIONS,
         CCA_PROCEEDS,
+        CCA_DIEP_PROCEEDS,
+        CCA_IMMEDIATE_EXPENSING,
         CCA_AIIP_ADDITIONS,
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
-    }
-    assert len(RENTAL_CCA_CLASSES.fields) == 8
+    )
     assert registry.get("ca/rental_cca_classes") is RENTAL_CCA_CLASSES
+
+
+def test_the_t776_statements_list_the_area_g_and_note_5_inputs_after_the_partner_lines() -> None:
+    # Area G and Note 5 are answered once for each statement: the last inputs of the form.
+    assert T776_STATEMENTS.fields[-6:] == (
+        RENTAL_EPOP_ASSOCIATED,
+        RENTAL_EPOP_AGREEMENT_FILED,
+        RENTAL_EPOP_PERCENTAGE,
+        RENTAL_EPOP_PERCENTAGE_TOTAL,
+        RENTAL_MINISTER_ALLOCATION_GIVEN,
+        RENTAL_MINISTER_ALLOCATION,
+    )
 
 
 def test_the_rental_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(
@@ -2395,12 +2449,23 @@ def test_the_t2125_partner_count_is_a_non_negative_int_count() -> None:
 def test_the_business_cca_classes_are_the_area_a_columns_the_caller_enters(
     registry: ArtifactRegistry,
 ) -> None:
-    # Area A of the T2125 has the columns of the T776's (DIEP columns 4, 6, 8 and 9 left out as on
-    # the T776): the same eight field kinds, one record per class.
+    # Area A of the T2125 has the columns of the T776's without the DIEP columns 4, 6 and 9, which
+    # the T2125 table takes in a later change: the eight field kinds the T776 had, one record per
+    # class.
     assert RECORD_LISTS <= REGISTERED
     assert isinstance(BUSINESS_CCA_CLASSES, RecordListKind)
     assert BUSINESS_CCA_CLASSES.value_type is RecordList
-    assert BUSINESS_CCA_CLASSES.fields == RENTAL_CCA_CLASSES.fields
+    assert BUSINESS_CCA_CLASSES.fields == (
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_NO_PROPERTY_LEFT,
+    )
+    assert len(BUSINESS_CCA_CLASSES.fields) == 8
     assert BUSINESS_CCA_CLASSES is not RENTAL_CCA_CLASSES
     assert registry.get("ca/business_cca_classes") is BUSINESS_CCA_CLASSES
 

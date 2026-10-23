@@ -120,8 +120,21 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_COOWNER_SHARE,
     RENTAL_COOWNER_TERMINAL_LOSS,
     RENTAL_DEDUCTIBLE_EXPENSES,
+    RENTAL_EPOP_AGREEMENT_FILED,
+    RENTAL_EPOP_ASSOCIATED,
+    RENTAL_EPOP_PERCENTAGE,
+    RENTAL_EPOP_PERCENTAGE_MAXIMUM,
+    RENTAL_EPOP_PERCENTAGE_ROOM,
+    RENTAL_EPOP_PERCENTAGE_TOTAL,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
     RENTAL_GROSS_RENTS,
+    RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
+    RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    RENTAL_IMMEDIATE_EXPENSING_CAP,
+    RENTAL_IMMEDIATE_EXPENSING_CLAIM,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
     RENTAL_INSURANCE_SHORT_TERM_PORTION,
@@ -131,6 +144,8 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES,
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION,
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION,
+    RENTAL_MINISTER_ALLOCATION,
+    RENTAL_MINISTER_ALLOCATION_GIVEN,
     RENTAL_MOTOR_VEHICLE_EXPENSES,
     RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION,
     RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION,
@@ -529,6 +544,30 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert registry.get("ca/rental_cca_limit") is RENTAL_CCA_LIMIT
     assert registry.get("ca/rental_closing_ucc") is RENTAL_CLOSING_UCC
     assert registry.get("ca/rental_net_income_after_cca") is RENTAL_NET_INCOME_AFTER_CCA
+    assert registry.get("ca/rental_epop_associated") is RENTAL_EPOP_ASSOCIATED
+    assert registry.get("ca/rental_epop_agreement_filed") is RENTAL_EPOP_AGREEMENT_FILED
+    assert registry.get("ca/rental_epop_percentage") is RENTAL_EPOP_PERCENTAGE
+    assert registry.get("ca/rental_epop_percentage_total") is RENTAL_EPOP_PERCENTAGE_TOTAL
+    assert registry.get("ca/rental_minister_allocation_given") is RENTAL_MINISTER_ALLOCATION_GIVEN
+    assert registry.get("ca/rental_minister_allocation") is RENTAL_MINISTER_ALLOCATION
+    assert registry.get("ca/rental_immediate_expensing_cap") is RENTAL_IMMEDIATE_EXPENSING_CAP
+    assert registry.get("ca/rental_epop_percentage_maximum") is RENTAL_EPOP_PERCENTAGE_MAXIMUM
+    assert registry.get("ca/rental_immediate_expensing_share") is RENTAL_IMMEDIATE_EXPENSING_SHARE
+    assert registry.get("ca/rental_epop_percentage_room") is RENTAL_EPOP_PERCENTAGE_ROOM
+    assert (
+        registry.get("ca/rental_immediate_expensing_allocated")
+        is RENTAL_IMMEDIATE_EXPENSING_ALLOCATED
+    )
+    assert (
+        registry.get("ca/rental_immediate_expensing_associated_limit")
+        is RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT
+    )
+    assert (
+        registry.get("ca/rental_immediate_expensing_limit_before_minister")
+        is RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER
+    )
+    assert registry.get("ca/rental_immediate_expensing_limit") is RENTAL_IMMEDIATE_EXPENSING_LIMIT
+    assert registry.get("ca/rental_immediate_expensing_claim") is RENTAL_IMMEDIATE_EXPENSING_CLAIM
     assert registry.get("ca/rental_partner") is RENTAL_PARTNER
     assert registry.get("ca/rental_partner_share") is RENTAL_PARTNER_SHARE
     assert registry.get("ca/rental_partner_gst_hst_rebate") is RENTAL_PARTNER_GST_HST_REBATE

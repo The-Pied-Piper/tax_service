@@ -35,8 +35,8 @@ from app.jurisdictions.ca.catalog import (
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
 from tests.jurisdictions.ca_on.end_to_end.support import D, rental_return
 
-BUILDING = ("1", "200000", "0", "0", "0", "0", "8000", 0)
-FURNITURE = ("8", "5000", "2000", "0", "0", "0", "1200", 0)
+BUILDING = ("1", "200000", "0", "0", "0", "0", "8000", 0, "0", "0", "0")
+FURNITURE = ("8", "5000", "2000", "0", "0", "0", "1200", 0, "0", "0", "0")
 
 
 RETURN_AP_STATEMENT: dict[str, Any] = {

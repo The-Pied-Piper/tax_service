@@ -740,7 +740,12 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_CCA_TABLE_RECAPTURE,
     RENTAL_CCA_TABLE_TERMINAL_LOSS,
     RENTAL_COOWNER,
+    RENTAL_EPOP_ASSOCIATED,
     RENTAL_GROSS_RENTS,
+    RENTAL_IMMEDIATE_EXPENSING_CAP,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    RENTAL_MINISTER_ALLOCATION_GIVEN,
     RENTAL_NET_INCOME_AFTER_CCA,
     RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS,
     RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -5741,6 +5746,22 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             chosen_kind=RENTAL_CCA_TABLE_CLAIM,
             chosen_value=D("0"),
+        ),
+        # Form T776 Note 5: a count of 0 for associated with an EPOP chooses the $1.5 million, and a
+        # count of 0 for an amount allocated by the minister keeps that limit.
+        RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER: ChosenByCountLine(
+            output=RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+            count_kind=RENTAL_EPOP_ASSOCIATED,
+            count=0,
+            chosen_kind=RENTAL_IMMEDIATE_EXPENSING_CAP,
+            chosen_value=D("1500000.00"),
+        ),
+        RENTAL_IMMEDIATE_EXPENSING_LIMIT: ChosenByCountLine(
+            output=RENTAL_IMMEDIATE_EXPENSING_LIMIT,
+            count_kind=RENTAL_MINISTER_ALLOCATION_GIVEN,
+            count=0,
+            chosen_kind=RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+            chosen_value=D("1500000.00"),
         ),
         NET_RENTAL_INCOME: ChosenByCountLine(
             output=NET_RENTAL_INCOME,

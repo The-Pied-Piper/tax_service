@@ -71,10 +71,10 @@ def test_the_manifest_has_the_form_t776_beside_the_other_forms() -> None:
     assert found.exports == t776.FORM_EXPORTS
 
 
-def test_the_form_holds_the_31_t776_selections_unchanged() -> None:
+def test_the_form_holds_the_40_t776_selections() -> None:
     found = form()
 
-    assert len(found.capabilities) == 31
+    assert len(found.capabilities) == 40
     assert set(found.capabilities) == t776.FORM_STEPS
 
 
@@ -108,7 +108,7 @@ def test_the_statements_kind_is_a_record_list_of_every_t776_input_in_order() -> 
     assert isinstance(T776_STATEMENTS, RecordListKind)
     assert T776_STATEMENTS.identifier == "ca/t776_statements"
     assert frozenset(field.identifier for field in T776_STATEMENTS.fields) == t776.FORM_INPUTS
-    assert len(T776_STATEMENTS.fields) == len(t776.FORM_INPUTS) == 56
+    assert len(T776_STATEMENTS.fields) == len(t776.FORM_INPUTS) == 62
 
 
 def test_the_lists_of_a_statement_are_nested_record_lists() -> None:
@@ -145,13 +145,14 @@ def test_the_return_declares_no_output_for_the_exports_nothing_reads() -> None:
             "ca/rental_closing_ucc",
             "ca/rental_non_compliant_cca",
             "ca/short_term_rental_non_compliant_cca_by_class",
+            "ca/rental_immediate_expensing_claim",
         }
         & exports
     )
     assert not {export for export in exports if "." in export}
 
 
-def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_six_kinds() -> None:
+def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_seven_kinds() -> None:
     found = composed()
 
     assert found.instances == T776_STATEMENTS
@@ -163,6 +164,7 @@ def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_six_kinds(
         t776.RENTAL_CLOSING_UCC_PER_STATEMENT,
         t776.RENTAL_NON_COMPLIANT_CCA_PER_STATEMENT,
         t776.SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS_PER_STATEMENT,
+        t776.RENTAL_IMMEDIATE_EXPENSING_CLAIM_PER_STATEMENT,
     )
 
 
