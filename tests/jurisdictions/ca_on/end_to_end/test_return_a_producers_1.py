@@ -24,6 +24,8 @@ from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
+from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
+from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
 from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
@@ -32,6 +34,11 @@ from app.jurisdictions.ca.capabilities.chart_b_zone_b_total import ChartBZoneBTo
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
+from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
+from app.jurisdictions.ca.capabilities.ei_excluded_slips_net_income import (
+    EiExcludedSlipsNetIncome,
+)
+from app.jurisdictions.ca.capabilities.lesser_of_with_maximum import LesserOfWithMaximum
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
@@ -41,6 +48,7 @@ from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
 from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_expenses import (
     ShortTermRentalNonCompliantExpenses,
 )
+from app.jurisdictions.ca.capabilities.sign_chosen_difference import SignChosenDifference
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
@@ -49,13 +57,17 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
     ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
     ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
     ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
+    ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
@@ -64,6 +76,94 @@ from app.jurisdictions.ca.catalog import (
     AGE_REDUCTION,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_ADJUSTED_INCOME_WITH_GAINS,
+    AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
+    AMT_ADJUSTED_TAXABLE_INCOME,
+    AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
+    AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_AMOUNT_A_MINUS_AMOUNT_B,
+    AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_BASIC_EXEMPTION,
+    AMT_BASIC_FEDERAL_TAX,
+    AMT_CAPITAL_GAINS_ADDED,
+    AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
+    AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+    AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CREDITS_ADJUSTMENTS_TOTAL,
+    AMT_CREDITS_TOTAL,
+    AMT_DEDUCTIONS_TOTAL,
+    AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
+    AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+    AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+    AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
+    AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+    AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
+    AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
+    AMT_FILM_PROPERTY_ADJUSTMENT,
+    AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+    AMT_FOREIGN_BUSINESS_INCOME,
+    AMT_FOREIGN_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM,
+    AMT_FOREIGN_INCOME_LIMIT,
+    AMT_FOREIGN_NON_BUSINESS_INCOME,
+    AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+    AMT_FOREIGN_TAX_CREDIT_LESSER,
+    AMT_FOREIGN_TAXES_PAID,
+    AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_INVESTMENT_TAX_CREDIT,
+    AMT_INVESTMENT_TAX_CREDIT_CLAIM,
+    AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
+    AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
+    AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
+    AMT_LINE_3_HAS_AMOUNT,
+    AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
+    AMT_MAXIMUM_CARRYOVER_APPLIED,
+    AMT_MAXIMUM_CARRYOVER_CLAIM,
+    AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+    AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
+    AMT_NET_ADJUSTED_TAXABLE_INCOME,
+    AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
+    AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
+    AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
+    AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
+    AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
+    AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
+    AMT_OFFICE_EXPENSES_ADJUSTMENT,
+    AMT_OTHER_YEARS_LOSSES_TOTAL,
+    AMT_PART_1_SUBTOTAL,
+    AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
+    AMT_PUBLICLY_LISTED_GIFTS_NET,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+    AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_TAX_CREDITS_TOTAL,
+    AMT_RENTAL_PROPERTY_ADJUSTMENT,
+    AMT_RESOURCE_INCOME_TOTAL,
+    AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
+    AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+    AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL,
+    AMT_SECURITY_OPTIONS_D1_TOTAL,
+    AMT_SECURITY_OPTIONS_D_TOTAL,
+    AMT_SECURITY_OPTIONS_NET,
+    AMT_SPECIAL_FOREIGN_TAX_CREDIT,
+    AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+    AMT_T2038_AMOUNT_I,
+    AMT_T2203_COLUMN_5_PERCENTAGE,
+    AMT_TAX_PAYABLE_AFTER_CREDITS,
+    AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+    AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
+    AMT_TAX_SHELTER_ADJUSTMENTS,
+    AMT_TOTAL_FOREIGN_INCOME,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
     BUSINESS_INCOME,
@@ -109,23 +209,154 @@ from app.jurisdictions.ca.catalog import (
     COMMISSION_INCOME,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_BASIC_EXEMPTION,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
     CPP_EARNINGS_UP_TO_MAXIMUM,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE,
+    CPP_LINE_16_NOT_NEGATIVE,
+    CPP_LINE_16_POSITIVE,
+    CPP_LINE_19_NOT_NEGATIVE,
+    CPP_LINE_20_POSITIVE,
+    CPP_LINE_23_AND_LINE_33_POSITIVE,
+    CPP_LINE_23_AND_LINE_40_POSITIVE,
+    CPP_LINE_23_NOT_NEGATIVE,
+    CPP_LINE_24_POSITIVE,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
     CPP_OR_QPP_BENEFITS,
+    CPP_OVERPAYMENT,
+    CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    CPP_PART_3_LINE_2,
+    CPP_PART_3_OVERPAYMENT,
+    CPP_PART_3B_LINE_23_LESS_LINE_35,
+    CPP_PART_3B_LINE_30,
+    CPP_PART_3B_LINE_31,
+    CPP_PART_3B_LINE_32,
+    CPP_PART_3B_LINE_32_LESSER,
+    CPP_PART_3B_LINE_33,
+    CPP_PART_3B_LINE_34,
+    CPP_PART_3B_LINE_35,
+    CPP_PART_3B_LINE_35_LESSER,
+    CPP_PART_3B_LINE_36,
+    CPP_PART_3B_LINE_37,
+    CPP_PART_3B_LINE_38,
+    CPP_PART_3B_LINE_39,
+    CPP_PART_3B_LINE_39_LESSER,
+    CPP_PART_3B_LINE_40,
+    CPP_PART_3B_LINE_41,
+    CPP_PART_3B_LINE_42,
+    CPP_PART_3B_LINE_42_LESSER,
+    CPP_PART_3B_LINE_43,
+    CPP_PART_3B_LINE_44,
+    CPP_PART_3B_LINE_45,
+    CPP_PART_3B_LINE_46,
+    CPP_PART_3B_LINE_46_LESSER,
+    CPP_PART_3B_LINE_47,
+    CPP_PART_3B_LINE_48,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_LINE_4,
+    CPP_PART_5_LINE_6,
+    CPP_PART_5_LINE_7,
+    CPP_PART_5_LINE_8,
+    CPP_PART_5_LINE_9,
+    CPP_PART_5_LINE_9_LESSER,
+    CPP_PART_5_LINE_10,
+    CPP_PART_5_LINE_12,
+    CPP_PART_5_LINE_13,
+    CPP_PART_5_LINE_14,
+    CPP_PART_5_LINE_15,
+    CPP_PART_5_LINE_15_LESSER,
+    CPP_PART_5_LINE_16,
+    CPP_PART_5_LINE_19,
+    CPP_PART_5_LINE_20,
+    CPP_PART_5_LINE_20_NEGATIVE_LINE_23_POSITIVE,
+    CPP_PART_5_LINE_20_POSITIVE_LINE_23_NEGATIVE,
+    CPP_PART_5_LINE_21,
+    CPP_PART_5_LINE_22,
+    CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE,
+    CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE,
+    CPP_PART_5_LINE_23_LESS_LINE_56,
+    CPP_PART_5_LINE_25,
+    CPP_PART_5_LINE_28,
+    CPP_PART_5_LINE_29,
+    CPP_PART_5_LINE_30,
+    CPP_PART_5_LINE_33,
+    CPP_PART_5_LINE_33_MORE_THAN_LINE_17,
+    CPP_PART_5_LINE_35,
+    CPP_PART_5_LINE_36,
+    CPP_PART_5_LINE_39,
+    CPP_PART_5_LINE_41,
+    CPP_PART_5_LINE_42,
+    CPP_PART_5_LINE_42_LESSER,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
+    CPP_PART_5_LINE_46,
+    CPP_PART_5_LINE_47,
+    CPP_PART_5_LINE_48,
+    CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+    CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_49_IF_POSITIVE,
+    CPP_PART_5_LINE_50,
+    CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+    CPP_PART_5_LINE_51,
+    CPP_PART_5_LINE_52,
+    CPP_PART_5_LINE_53,
+    CPP_PART_5_LINE_53_LESSER,
+    CPP_PART_5_LINE_54,
+    CPP_PART_5_LINE_55,
+    CPP_PART_5_LINE_56,
+    CPP_PART_5_LINE_56_LESSER,
+    CPP_PART_5_LINE_57,
+    CPP_PART_5_LINE_58,
+    CPP_PART_5_LINE_59,
+    CPP_PART_5_LINE_60,
+    CPP_PART_5_LINE_60_LESSER,
+    CPP_PART_5_LINE_61,
+    CPP_PART_5_LINE_62,
+    CPP_PART_5_LINE_63,
+    CPP_PART_5_LINE_63_LESSER,
+    CPP_PART_5_LINE_64,
+    CPP_PART_5_LINE_65,
+    CPP_PART_5_LINE_66,
+    CPP_PART_5_LINE_67,
+    CPP_PART_5_LINE_67_LESSER,
+    CPP_PART_5_LINE_68,
+    CPP_PART_5_LINE_69,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_72,
+    CPP_PART_5_LINE_73,
+    CPP_PART_5_LINE_74,
+    CPP_PART_5_LINE_75,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_77,
+    CPP_PART_5_LINE_80,
+    CPP_PART_5_LINE_83,
+    CPP_PART_5_LINE_84,
+    CPP_PART_5_LINE_86,
+    CPP_PART_5_LINE_87,
+    CPP_PART_5_LINE_88,
+    CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPP_ZERO,
     CPT20_EARNINGS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -143,7 +374,14 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
     DEPRECIABLE_GIFTS,
     DISABILITY_AMOUNT_FOR_SELF,
+    DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
     DISABILITY_DEPENDANTS,
+    DISABILITY_SELF_BASE_AMOUNT,
+    DISABILITY_SELF_CARE_OVER_THRESHOLD,
+    DISABILITY_SELF_CARE_THRESHOLD,
+    DISABILITY_SELF_SUPPLEMENT,
+    DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+    DISABILITY_SELF_WORKSHEET_AMOUNT,
     DISABILITY_SUPPORTS_DEDUCTION,
     DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_TAX_CREDIT,
@@ -165,6 +403,8 @@ from app.jurisdictions.ca.catalog import (
     EI_AND_OTHER_BENEFITS,
     EI_CONTROLLED_CORPORATION_EARNINGS,
     EI_EARNINGS_SUBJECT_TO_PREMIUM,
+    EI_EXCLUDED_SLIPS,
+    EI_EXCLUDED_SLIPS_NET_INCOME,
     EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
     EI_INSURABLE_EARNINGS,
     EI_INSURABLE_EARNINGS_REMAINING,
@@ -173,6 +413,7 @@ from app.jurisdictions.ca.catalog import (
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PREMIUMS,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
     EI_SPECIAL_BENEFITS_AGREEMENT,
     ELECTED_SPLIT_PENSION_AMOUNT,
@@ -273,7 +514,10 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
     NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985,
+    NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
+    NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_COMMISSION_INCOME,
@@ -322,6 +566,14 @@ from app.jurisdictions.ca.catalog import (
     OTHER_SPLIT_INCOME,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CONTRIBUTIONS,
+    PRE_1986_CAPITAL_LOSS_BALANCE,
+    PRE_1986_DEDUCTIONS_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_2001_TO_2024,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_BEFORE_1988,
+    PRE_1986_DEDUCTIONS_TOTAL,
     PROFESSIONAL_INCOME,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
@@ -332,6 +584,7 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
@@ -501,7 +754,9 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_THRESHOLD,
     TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+    TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_INCOME,
@@ -515,9 +770,11 @@ from app.jurisdictions.ca.catalog import (
     TRAVEL_TOTAL_ZONE_B,
     TRAVEL_TRIPS,
     TRAVEL_ZONE_B_DEDUCTION,
+    TUITION_INCOME_WITH_TOSI,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UCCB_REPAYMENT,
+    UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
     UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
     UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
     UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
@@ -546,7 +803,6 @@ from app.jurisdictions.ca.catalog import (
     ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
 )
 from app.jurisdictions.ca_on import catalog as ontario
-from app.jurisdictions.ca_on.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca_on.capabilities.caregiver_amount import OntarioCaregiverAmount
 from app.jurisdictions.ca_on.capabilities.disability_transfer_amount import (
     OntarioDisabilityTransferAmount,
@@ -670,7 +926,69 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(SPLIT_INCOME_DIVIDENDS) is None
     assert worksheet.producer_of(SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE) is None
     assert worksheet.producer_of(OTHER_SPLIT_INCOME) is None
-    assert worksheet.producer_of(DISABILITY_AMOUNT_FOR_SELF) is None
+    assert isinstance(worksheet.producer_of(DISABILITY_AMOUNT_FOR_SELF), TimesCount)
+    assert isinstance(worksheet.producer_of(DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE), ChooseByCount)
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_BASE_AMOUNT), CreditAmount)
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_SUPPLEMENT_MAXIMUM), CreditAmount)
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_CARE_THRESHOLD), CreditAmount)
+    assert isinstance(
+        worksheet.producer_of(DISABILITY_SELF_CARE_OVER_THRESHOLD), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_SUPPLEMENT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_FILM_PROPERTY_ADJUSTMENT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_RENTAL_PROPERTY_ADJUSTMENT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_TAX_SHELTER_ADJUSTMENTS), Sum)
+    assert isinstance(worksheet.producer_of(AMT_PART_1_SUBTOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_RESOURCE_INCOME_TOTAL), Sum)
+    assert isinstance(
+        worksheet.producer_of(AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS), Sum)
+    assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_ADJUSTMENTS), Sum)
+    assert isinstance(worksheet.producer_of(AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_DIFFERENCE), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_ADDED), SignChosenDifference)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTED_INCOME_WITH_GAINS), Sum)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS), Sum)
+    assert isinstance(worksheet.producer_of(AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTMENTS_AFTER_RATE_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_AMOUNT_A_MINUS_AMOUNT_B), Subtract)
+    assert isinstance(
+        worksheet.producer_of(AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT), ApplyRate
+    )
+    assert isinstance(worksheet.producer_of(AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_DIVIDENDS_ADJUSTMENTS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_LIFETIME_EXEMPTION_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED), ApplyFraction)
+    assert isinstance(worksheet.producer_of(AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTED_TAXABLE_INCOME), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_BASIC_EXEMPTION), CreditAmount)
+    assert isinstance(worksheet.producer_of(AMT_NET_ADJUSTED_TAXABLE_INCOME), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_GROSS_MINIMUM_AMOUNT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_DONATIONS_AND_GIFTS_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_CREDITS_ADJUSTMENTS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_MINIMUM_AMOUNT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_PUBLICLY_LISTED_GIFTS_NET), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_SECURITY_OPTIONS_D_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_SECURITY_OPTION_GIFTS_DEDUCTION), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_SECURITY_OPTIONS_NET), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_SECURITY_OPTIONS_D1_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_OTHER_YEARS_LOSSES_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED), Sum)
+    assert isinstance(worksheet.producer_of(AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_NON_CAPITAL_LOSSES_ADJUSTMENT), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_DEDUCTIONS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES), Sum)
+    assert isinstance(worksheet.producer_of(AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES), Sum)
+    assert isinstance(worksheet.producer_of(AMT_OFFICE_EXPENSES_ADJUSTMENT), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_APPLICABLE_RATE_AMOUNT), ApplyRate)
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_WORKSHEET_AMOUNT), Sum)
     assert worksheet.producer_of(ontario.LIFT_SPOUSE_AT_YEAR_END) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None
     assert worksheet.producer_of(OLD_AGE_SECURITY) is None
@@ -823,6 +1141,11 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
         UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
         NET_CAPITAL_LOSSES_CLAIMED,
+        NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
+        PRE_1986_DEDUCTIONS_BEFORE_1988,
+        PRE_1986_DEDUCTIONS_1988_AND_1989,
+        PRE_1986_DEDUCTIONS_1990_TO_1999,
+        PRE_1986_DEDUCTIONS_2001_TO_2024,
         ADDITIONAL_DEDUCTIONS,
         OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT,
         OTHER_PAYMENTS_WORKSHEET_REQUIRED,
@@ -911,6 +1234,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         worksheet.producer_of(TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO), SumNotBelowZero
     )
     assert isinstance(worksheet.producer_of(FEDERAL_TAX_ON_SPLIT_INCOME), ApplyRate)
+    # Line 8A is line 8 divided by 14.5%, and Schedule 11 line 11 plus it is a plain sum.
+    assert isinstance(worksheet.producer_of(TOSI_ADJUSTED_TAXABLE_INCOME), DividedByRate)
+    assert isinstance(worksheet.producer_of(TUITION_INCOME_WITH_TOSI), Sum)
     assert isinstance(worksheet.producer_of(FEDERAL_TAX_WITH_SPLIT_INCOME), Sum)
     assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_10), Sum)
     assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_13), Sum)
@@ -988,13 +1314,208 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(EI_PREMIUMS), TieredContribution)
     assert worksheet.producer_of(EI_PREMIUMS) not in tiers
     assert isinstance(worksheet.producer_of(CPP_ENHANCED_CONTRIBUTIONS), Sum)
+    # Schedule 8 Parts 3a and 3b: the counts, the "whichever is less" candidates, the chosen lines
+    # and the three return lines that line 24 routes.
+    assert isinstance(worksheet.producer_of(CPP_ZERO), CreditAmount)
+    for count in (
+        CPP_LINE_24_POSITIVE,
+        CPP_LINE_16_NOT_NEGATIVE,
+        CPP_LINE_19_NOT_NEGATIVE,
+        CPP_LINE_23_NOT_NEGATIVE,
+        CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE,
+        CPP_LINE_23_AND_LINE_33_POSITIVE,
+        CPP_LINE_16_POSITIVE,
+        CPP_LINE_23_AND_LINE_40_POSITIVE,
+        CPP_LINE_20_POSITIVE,
+    ):
+        assert isinstance(worksheet.producer_of(count), CountByConditions), count.identifier
+    for lesser in (
+        CPP_PART_3B_LINE_32_LESSER,
+        CPP_PART_3B_LINE_35_LESSER,
+        CPP_PART_3B_LINE_39_LESSER,
+        CPP_PART_3B_LINE_42_LESSER,
+        CPP_PART_3B_LINE_46_LESSER,
+    ):
+        assert isinstance(worksheet.producer_of(lesser), LesserOf), lesser.identifier
+    for chosen in (
+        CPP_PART_3B_LINE_30,
+        CPP_PART_3B_LINE_32,
+        CPP_PART_3B_LINE_35,
+        CPP_PART_3B_LINE_37,
+        CPP_PART_3B_LINE_39,
+        CPP_PART_3B_LINE_42,
+        CPP_PART_3B_LINE_44,
+        CPP_PART_3B_LINE_46,
+        CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+        CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        CPP_PART_3_OVERPAYMENT,
+        CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        CPP_OVERPAYMENT,
+    ):
+        assert isinstance(worksheet.producer_of(chosen), ChooseByCount), chosen.identifier
+    for floored in (CPP_PART_3B_LINE_31, CPP_PART_3B_LINE_38, CPP_PART_3B_LINE_45):
+        assert isinstance(worksheet.producer_of(floored), SubtractNotBelowZero)
+    for difference in (
+        CPP_PART_3B_LINE_33,
+        CPP_PART_3B_LINE_40,
+        CPP_PART_3B_LINE_23_LESS_LINE_35,
+    ):
+        assert isinstance(worksheet.producer_of(difference), Subtract)
+    for total in (
+        CPP_PART_3B_LINE_34,
+        CPP_PART_3B_LINE_36,
+        CPP_PART_3B_LINE_41,
+        CPP_PART_3B_LINE_43,
+        CPP_PART_3B_LINE_47,
+        CPP_PART_3B_LINE_48,
+    ):
+        assert isinstance(worksheet.producer_of(total), Sum)
+    # Schedule 8 Part 3 line 2 and Part 5 lines 1 to 42: the counts, the "whichever is less"
+    # candidates, the lines chosen by count, the floors, the plain differences and sums, line 20 (a
+    # multiplication by a fraction) and line 35 (a division by a rate).
+    assert isinstance(worksheet.producer_of(CPP_PART_3_LINE_2), LesserOf)
+    for count in (
+        CPP_PART_5_LINE_20_NEGATIVE_LINE_23_POSITIVE,
+        CPP_PART_5_LINE_20_POSITIVE_LINE_23_NEGATIVE,
+        CPP_PART_5_LINE_33_MORE_THAN_LINE_17,
+    ):
+        assert isinstance(worksheet.producer_of(count), CountByConditions), count.identifier
+    for lesser in (
+        CPP_PART_5_LINE_9_LESSER,
+        CPP_PART_5_LINE_15_LESSER,
+        CPP_PART_5_LINE_22,
+        CPP_PART_5_LINE_42_LESSER,
+    ):
+        assert isinstance(worksheet.producer_of(lesser), LesserOf), lesser.identifier
+    for chosen in (CPP_PART_5_LINE_9, CPP_PART_5_LINE_15, CPP_PART_5_LINE_42):
+        assert isinstance(worksheet.producer_of(chosen), ChooseByCount), chosen.identifier
+    for floored in (
+        CPP_PART_5_LINE_6,
+        CPP_PART_5_LINE_8,
+        CPP_PART_5_LINE_12,
+        CPP_PART_5_LINE_14,
+        CPP_PART_5_LINE_19,
+        CPP_PART_5_LINE_21,
+        CPP_PART_5_LINE_25,
+        CPP_PART_5_LINE_28,
+        CPP_PART_5_LINE_29,
+        CPP_PART_5_LINE_30,
+    ):
+        assert isinstance(worksheet.producer_of(floored), SubtractNotBelowZero), floored.identifier
+    for difference in (
+        CPP_PART_5_LINE_7,
+        CPP_PART_5_LINE_13,
+        CPP_PART_5_LINE_36,
+        CPP_PART_5_LINE_39,
+        CPP_PART_5_LINE_41,
+    ):
+        assert isinstance(worksheet.producer_of(difference), Subtract), difference.identifier
+    for total in (CPP_PART_5_LINE_4, CPP_PART_5_LINE_10, CPP_PART_5_LINE_16, CPP_PART_5_LINE_33):
+        assert isinstance(worksheet.producer_of(total), Sum), total.identifier
+    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_20), ApplyFraction)
+    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_35), DividedByRate)
+    # Schedule 8 Part 5 lines 43 to 69: the tiers of lines 43 to 45, line 48's doubling (a fraction)
+    # and line 50's half (a rate), the two counts of lines 56 and 63, the candidates and the lines
+    # chosen by count, the floors and the plain differences and sums.
+    for tier in (
+        CPP_PART_5_LINE_43,
+        CPP_PART_5_LINE_44,
+        CPP_PART_5_LINE_45,
+    ):
+        assert isinstance(worksheet.producer_of(tier), TieredContribution), tier.identifier
+    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_48), ApplyFraction)
+    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_50), ApplyRate)
+    for count in (
+        CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE,
+        CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE,
+    ):
+        assert isinstance(worksheet.producer_of(count), CountByConditions), count.identifier
+    for lesser in (
+        CPP_PART_5_LINE_53_LESSER,
+        CPP_PART_5_LINE_56_LESSER,
+        CPP_PART_5_LINE_60_LESSER,
+        CPP_PART_5_LINE_63_LESSER,
+        CPP_PART_5_LINE_67_LESSER,
+    ):
+        assert isinstance(worksheet.producer_of(lesser), LesserOf), lesser.identifier
+    for chosen in (
+        CPP_PART_5_LINE_51,
+        CPP_PART_5_LINE_53,
+        CPP_PART_5_LINE_56,
+        CPP_PART_5_LINE_58,
+        CPP_PART_5_LINE_60,
+        CPP_PART_5_LINE_63,
+        CPP_PART_5_LINE_65,
+        CPP_PART_5_LINE_67,
+    ):
+        assert isinstance(worksheet.producer_of(chosen), ChooseByCount), chosen.identifier
+    for floored in (
+        CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+        CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+        CPP_PART_5_LINE_52,
+        CPP_PART_5_LINE_59,
+        CPP_PART_5_LINE_66,
+    ):
+        assert isinstance(worksheet.producer_of(floored), SubtractNotBelowZero), floored.identifier
+    for difference in (
+        CPP_PART_5_LINE_49,
+        CPP_PART_5_LINE_54,
+        CPP_PART_5_LINE_61,
+        CPP_PART_5_LINE_23_LESS_LINE_56,
+    ):
+        assert isinstance(worksheet.producer_of(difference), Subtract), difference.identifier
+    for total in (
+        CPP_PART_5_LINE_46,
+        CPP_PART_5_LINE_47,
+        CPP_PART_5_LINE_55,
+        CPP_PART_5_LINE_57,
+        CPP_PART_5_LINE_62,
+        CPP_PART_5_LINE_64,
+        CPP_PART_5_LINE_68,
+        CPP_PART_5_LINE_69,
+    ):
+        assert isinstance(worksheet.producer_of(total), Sum), total.identifier
+    # Schedule 8 Part 5 lines 70 to 88: the halves of lines 43, 44 and 45 and line A's 83.1933% are
+    # rates, line 73 and lines 86 and 87 (and line 49 if positive, for line 42100) are floors,
+    # line 74 and lines 77, 80 and 83 are differences, line A is the lesser of lines 72 and 73,
+    # and lines 72 and 88 are sums.
+    for rate in (CPP_PART_5_LINE_70, CPP_PART_5_LINE_71, CPP_PART_5_LINE_75, CPP_PART_5_LINE_84):
+        assert isinstance(worksheet.producer_of(rate), ApplyRate), rate.identifier
+    for floored in (
+        CPP_PART_5_LINE_73,
+        CPP_PART_5_LINE_86,
+        CPP_PART_5_LINE_87,
+        CPP_PART_5_LINE_49_IF_POSITIVE,
+    ):
+        assert isinstance(worksheet.producer_of(floored), SubtractNotBelowZero), floored.identifier
+    for difference in (
+        CPP_PART_5_LINE_74,
+        CPP_PART_5_LINE_77,
+        CPP_PART_5_LINE_80,
+        CPP_PART_5_LINE_83,
+    ):
+        assert isinstance(worksheet.producer_of(difference), Subtract), difference.identifier
+    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_75_BASE), LesserOf)
+    for total in (
+        CPP_PART_5_LINE_72,
+        CPP_PART_5_LINE_88,
+        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    ):
+        assert isinstance(worksheet.producer_of(total), Sum), total.identifier
+    # T1 lines 31000, 22200 and 42100 from Part 5 are counted once for each Part 5 completed.
+    for routed in (
+        CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+        CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+        CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
+    ):
+        assert isinstance(worksheet.producer_of(routed), TimesCount), routed.identifier
     # The self-employment lines (T1 lines 22 to 27, Schedule 8 Parts 2 and 4, Schedule 13).
     for starting in (
-        BUSINESS_INCOME,
         PROFESSIONAL_INCOME,
         COMMISSION_INCOME,
-        FARMING_INCOME,
-        FISHING_INCOME,
         CPP_MONTHS,
         CPT20_EARNINGS,
         CPP_PART_4_COMPLETED,
@@ -1004,6 +1525,15 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         EI_SPECIAL_BENEFITS_AGREEMENT,
     ):
         assert worksheet.producer_of(starting) is None, starting.identifier
+    # T1 line 22 (line 13500) is T2125 line 9946, "Amount 5D minus line 9945", no longer a starting
+    # amount.
+    assert isinstance(worksheet.producer_of(BUSINESS_INCOME), Subtract)
+    # T1 line 25 (line 14100) is T2042 line 9946, "Amount 5C minus line 9945", no longer a starting
+    # amount either.
+    assert isinstance(worksheet.producer_of(FARMING_INCOME), Subtract)
+    # T1 line 26 (line 14300) is T2121 line 9946, "Amount 5C minus line 9945", no longer a starting
+    # amount either.
+    assert isinstance(worksheet.producer_of(FISHING_INCOME), Subtract)
     assert isinstance(worksheet.producer_of(NET_SELF_EMPLOYMENT_INCOME), Sum)
     months_tables = {
         worksheet.producer_of(kind)
@@ -1048,7 +1578,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     ):
         assert isinstance(worksheet.producer_of(summed), Sum)
     assert isinstance(worksheet.producer_of(SELF_EMPLOYED_CPP_BASE_CREDIT), ApplyRate)
-    assert isinstance(worksheet.producer_of(EI_SELF_EMPLOYMENT_EARNINGS), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(EI_SELF_EMPLOYMENT_BEFORE_SLIPS), Sum)
+    assert isinstance(worksheet.producer_of(EI_EXCLUDED_SLIPS_NET_INCOME), EiExcludedSlipsNetIncome)
+    assert worksheet.producer_of(EI_EXCLUDED_SLIPS) is None
+    assert isinstance(worksheet.producer_of(EI_SELF_EMPLOYMENT_EARNINGS), SubtractNotBelowZero)
     assert isinstance(worksheet.producer_of(EI_MAXIMUM_INSURABLE_EARNINGS), CreditAmount)
     assert isinstance(worksheet.producer_of(EI_EARNINGS_SUBJECT_TO_PREMIUM), LesserOf)
     # T1 lines 42100, 31000, 22200, 31217 and 42120: each a line of its form claimed once.
@@ -1223,7 +1756,36 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     )
     assert isinstance(worksheet.producer_of(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES), Sum)
     assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM), LesserOf)
-    assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSSES_OF_OTHER_YEARS), AtMost)
+    assert isinstance(worksheet.producer_of(ADJUSTED_NET_CAPITAL_LOSSES_APPLIED), AtMost)
+    # Form T1436 line 10 "Line 7 plus line 9" is T1 line 25300; line 13 "Line 11 plus line 12".
+    assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSSES_OF_OTHER_YEARS), Sum)
+    assert isinstance(worksheet.producer_of(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED), Sum)
+    assert worksheet.producer_of(NET_CAPITAL_LOSSES_OF_OTHER_YEARS) is not worksheet.producer_of(
+        TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED
+    )
+    assert isinstance(
+        worksheet.producer_of(PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989), ApplyFraction
+    )
+    assert isinstance(
+        worksheet.producer_of(PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999), ApplyFraction
+    )
+    assert isinstance(worksheet.producer_of(PRE_1986_DEDUCTIONS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(PRE_1986_CAPITAL_LOSS_BALANCE), Subtract)
+    assert isinstance(worksheet.producer_of(UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES), Subtract)
+    assert isinstance(
+        worksheet.producer_of(NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION), LesserOfWithMaximum
+    )
+    assert isinstance(
+        worksheet.producer_of(ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985), ApplyFraction
+    )
+    assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985), LesserOf)
+    assert isinstance(
+        worksheet.producer_of(ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985), Subtract
+    )
+    assert isinstance(worksheet.producer_of(REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985), Subtract)
+    assert isinstance(
+        worksheet.producer_of(NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985), ApplyFraction
+    )
     assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_APPLIED_1985_TO_1987), LesserOf)
     assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987), Subtract)
     assert isinstance(worksheet.producer_of(REMAINING_ADJUSTED_LOSSES_1985_TO_1987), Subtract)
@@ -1583,6 +2145,8 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         ontario.SPLIT_INCOME_LINE_45,
     ):
         assert isinstance(worksheet.producer_of(kind), ApplyRate), kind.identifier
+    # Line 33C divides line 33A, the Ontario tax on split income, by the rate of line 33B.
+    assert isinstance(worksheet.producer_of(ontario.TOSI_ADJUSTED_TAXABLE_INCOME), DividedByRate)
     for kind in (
         ontario.SPLIT_INCOME_LINE_36,
         ontario.SPLIT_INCOME_LINE_46,
@@ -1647,3 +2211,74 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CARE_ADJUSTED_INCOME) is not worksheet.producer_of(
         CARE_FAMILY_ADJUSTED_INCOME
     )
+
+
+def test_the_part_2_and_part_8_amounts_are_produced_by_their_capabilities() -> None:
+    worksheet = return_a()
+
+    # Part 2 line 4 "Line 2 plus line 3" and Part 8 lines 4 and 8 are sums; line 5, line 7 and
+    # line 9 are differences, and line 11 is the difference not below zero.
+    assert isinstance(worksheet.producer_of(AMT_CREDITS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_BASIC_FEDERAL_TAX), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE), Sum)
+    assert isinstance(worksheet.producer_of(AMT_SPLIT_INCOME_AND_CREDITS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_TAX_PAYABLE_AFTER_CREDITS), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_MAXIMUM_CARRYOVER_APPLIED), SubtractNotBelowZero)
+    # Line 12: the cap is the lesser of line 1 and line 11, and the claim is at most the cap.
+    assert isinstance(worksheet.producer_of(AMT_MAXIMUM_CARRYOVER_CLAIM), LesserOf)
+    assert isinstance(worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_APPLIED), AtMost)
+    # Line 1 and the claim on line 12 are the caller's amounts, and T1 line 125 sums line 124.
+    assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS) is None
+    assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_CLAIM) is None
+    assert isinstance(worksheet.producer_of(CREDITS_AGAINST_BASIC_FEDERAL_TAX), Sum)
+    # Part 3 line 2 "Multiply the amount from line 1 by 48%." is a rate; line 3 is a percentage of
+    # line 2; line 4 is chosen by the count of its condition, from line 3 or the second branch,
+    # which is line 2 times a count; line 6 and line 9 are sums, line 10 a difference not below
+    # zero, line 12 an amount checked against its bound, line 14 a sum and line 15 a difference
+    # not below zero.
+    assert isinstance(worksheet.producer_of(AMT_FEDERAL_SURTAX_AT_48_PERCENT), ApplyRate)
+    assert isinstance(
+        worksheet.producer_of(AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS), ApplyPercentage
+    )
+    assert isinstance(worksheet.producer_of(AMT_LINE_3_HAS_AMOUNT), CountByConditions)
+    assert isinstance(worksheet.producer_of(AMT_FEDERAL_SURTAX_IF_NON_RESIDENT), TimesCount)
+    assert isinstance(worksheet.producer_of(AMT_FEDERAL_SURTAX), ChooseByCount)
+    assert isinstance(worksheet.producer_of(AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE), Sum)
+    assert isinstance(worksheet.producer_of(AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_FEDERAL_TAX_PAYABLE), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_INVESTMENT_TAX_CREDIT), AtMost)
+    assert isinstance(worksheet.producer_of(AMT_REGULAR_TAX_CREDITS_TOTAL), Sum)
+    assert isinstance(
+        worksheet.producer_of(AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE), SubtractNotBelowZero
+    )
+    # The count of the condition is the caller's count, and the claim and amount I are the
+    # caller's amounts, as are the T2203 percentage and the non-resident count.
+    assert worksheet.producer_of(AMT_NON_RESIDENT_OR_DEEMED_RESIDENT) is None
+    assert worksheet.producer_of(AMT_T2203_COLUMN_5_PERCENTAGE) is None
+    assert worksheet.producer_of(AMT_INVESTMENT_TAX_CREDIT_CLAIM) is None
+    assert worksheet.producer_of(AMT_T2038_AMOUNT_I) is None
+
+
+def test_the_part_4_amounts_are_produced_by_their_capabilities() -> None:
+    worksheet = return_a()
+
+    # Part 4 line 3 is the claim checked against line 23 of Part 1, an at-most check; line 4 is a
+    # sum floored at zero; line 6 and line 7 are rates; line 9 is a floored sum; line 10 is the
+    # lesser of lines 6 and 9; line 11 is the greater of Part 3 line 7 and line 10.
+    assert isinstance(
+        worksheet.producer_of(AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO), SumNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE), AtMost)
+    assert isinstance(worksheet.producer_of(AMT_TOTAL_FOREIGN_INCOME), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_FOREIGN_INCOME_LIMIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_FOREIGN_TAXES_PAID), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_FOREIGN_TAX_CREDIT_LESSER), LesserOf)
+    assert isinstance(worksheet.producer_of(AMT_SPECIAL_FOREIGN_TAX_CREDIT), GreaterOf)
+    # The caller's figures are inputs: no capability produces them.
+    assert worksheet.producer_of(AMT_FOREIGN_BUSINESS_INCOME) is None
+    assert worksheet.producer_of(AMT_FOREIGN_NON_BUSINESS_INCOME) is None
+    assert worksheet.producer_of(AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM) is None
+    assert worksheet.producer_of(AMT_FOREIGN_NON_BUSINESS_TAX_PAID) is None
+    assert worksheet.producer_of(AMT_FOREIGN_BUSINESS_TAX_PAID) is None

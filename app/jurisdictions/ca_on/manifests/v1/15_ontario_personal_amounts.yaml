@@ -185,6 +185,70 @@ capabilities:
       eligible_dependant_amount: ca-on/eligible_dependant_amount
     produces:
       output: ca-on/caregiver_amount
+  # ON428 line 29 and line 58440 "Disability amount for self (claim $10,298 or, if you were under
+  # 18 years of age, use Worksheet ON428)", Worksheet ON428 "Line 58440 - Disability amount for
+  # self": line 1 "Base amount 10,298.00", the dataset as an artifact of the same name.
+  - name: core/credit_amount
+    params:
+      amount: ca-on/disability_self_base_amount
+    produces:
+      output: ca-on/disability_self_base_amount
+  # Line 2 "Maximum amount 6,007.00", the dataset as an artifact of the same name.
+  - name: core/credit_amount
+    params:
+      amount: ca-on/disability_self_supplement_maximum
+    produces:
+      output: ca-on/disability_self_supplement_maximum
+  # Line 4 "Threshold for child and attendant care expenses 3,518.00", the dataset as an
+  # artifact of the same name. Line 3 "Total child care and attendant care expenses for you,
+  # claimed by you or another person" is the same caller's input as the federal line 3,
+  # ca/disability_self_care_expenses.
+  - name: core/credit_amount
+    params:
+      amount: ca-on/disability_self_care_threshold
+    produces:
+      output: ca-on/disability_self_care_threshold
+  # Line 5 "Line 3 minus line 4 (if negative, enter "0") =".
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/disability_self_care_expenses
+      less: ca-on/disability_self_care_threshold
+    produces:
+      output: ca-on/disability_self_care_over_threshold
+  # Line 6 "Line 2 minus line 5 (if negative, enter "0") =".
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca-on/disability_self_supplement_maximum
+      less: ca-on/disability_self_care_over_threshold
+    produces:
+      output: ca-on/disability_self_supplement
+  # Line 7 "Line 1 plus line 6 Enter this amount on line 58440 of your Form ON428. (maximum
+  # $16,305) =": the sum needs no cap, as line 6 is at most the maximum amount 6,007.00.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca-on/disability_self_base_amount
+        - ca-on/disability_self_supplement
+    produces:
+      output: ca-on/disability_self_worksheet_amount
+  # ON428 line 29 "claim $10,298 or, if you were under 18 years of age, use Worksheet ON428": the
+  # base amount for a filer 18 or older on December 31, 2025, the line 7 worksheet amount for a
+  # filer under 18.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/under_18_on_december_31
+      when_none: ca-on/disability_self_base_amount
+      when_any: ca-on/disability_self_worksheet_amount
+    produces:
+      output: ca-on/disability_amount_for_self_if_eligible
+  # "If you qualify for the disability amount" (the CRA approved Form T2201): the amount once if
+  # the filer qualifies, else 0.
+  - name: core/times_count
+    consumes:
+      amount: ca-on/disability_amount_for_self_if_eligible
+      count: ca/eligible_for_disability_amount
+    produces:
+      output: ca-on/disability_amount_for_self
   # ON428 line 30 and line 58480 "Disability amount transferred from a dependant (use
   # Worksheet ON428)", Worksheet ON428 "Line 58480 - Disability amount transferred from a
   # dependant": for each dependant, line 1 "Base amount 10,298.00", line 2 "Maximum amount
@@ -218,9 +282,9 @@ capabilities:
       output: ca-on/unused_tuition_income_cap
   # ON428 line 31 "Line 31: Add lines 28 to 30. =": the credit amounts the form totals before
   # medical expenses, as its lines 1 to 25 carry them (the basic personal amount, the age, spouse,
-  # eligible dependant and caregiver amounts, the CPP and EI contributions), and line 30 (the
-  # disability amount transferred from a dependant). The pension amount (line 27), the disability
-  # amount for self (line 29) and the student loan interest (line 32) are not yet wired into it.
+  # eligible dependant and caregiver amounts, the CPP and EI contributions), line 29 (the
+  # disability amount for self) and line 30 (the disability amount transferred from a dependant).
+  # The pension amount (line 27) and the student loan interest (line 32) are not yet wired into it.
   - name: core/sum
     consumes:
       parts:
@@ -229,10 +293,11 @@ capabilities:
         - ca-on/spouse_amount
         - ca-on/eligible_dependant_amount
         - ca-on/caregiver_amount
-        - ca/cpp_base_contributions
-        - ca/cpp_base_contributions_on_self_employment
+        - ca/cpp_base_contributions_on_return
+        - ca/cpp_base_contributions_on_self_employment_and_other_earnings
         - ca/ei_premiums
         - ca/ei_premiums_on_self_employment
+        - ca-on/disability_amount_for_self
         - ca-on/disability_transferred_amount
     produces:
       output: ca-on/credit_amounts_through_disability_transfer

@@ -1,0 +1,289 @@
+# Return BG: a filer with employment income who has film property, rental and leasing
+# property, tax shelter amounts, resource property, a capital gain and gifts of publicly
+# listed securities, computed on Form T691 (alternative minimum tax) Parts 1 and 9 as far as
+# line 103, Parts 2 and 8 as far as line 12 (no carryover is claimed), Part 3 lines 1 to 15
+# (no tax is payable to multiple jurisdictions), and Part 4 lines 1 to 11 (no foreign income,
+# tax or claim). The Part 1 and
+# Part 9 amounts that are not lines of this return are chosen
+# figures, entered as the form takes them; the adjustments and the sums are computed from them.
+jurisdiction: CA-ON
+tax_year: 2025
+description: >-
+  A single filer, a 2025 Ontario resident, with employment income of 60000.00, a chosen
+  figure, and no other income, deduction or credit claimed. The filer has 12 months of CPP
+  contributions, a chosen figure (cpp_months 12). Schedule 8 line 28 enters the deduction
+  for CPP enhanced contributions on line 22215: the first additional contribution of
+  565.00 (1% of 60000.00 less the 3500.00 basic exemption, under its maximum of 678.00).
+  The filer also disposes of shares for proceeds of 5000.00, with an adjusted cost base of
+  3000.00 and no outlays, all chosen figures: the gain is 2000.00, and at the 50% inclusion
+  rate the taxable capital gains, line 12700 of the return and Form T691 Part 1 line 21, are
+  1000.00. So taxable income, line 26000 of the return and Form T691 Part 1 line 1, is
+  60000.00 less 565.00 plus 1000.00 = 60435.00. Film property, Part 1 lines 2 to 4: line 2,
+  the CCA and carrying charges, is 9000.00 and line 3, the net income from film property
+  before CCA, is 4000.00, both chosen figures; line 4 is 9000.00 minus 4000.00 = 5000.00,
+  which is not below zero. Rental and leasing property, lines 5 to 7: line 5 is 7000.00 and
+  line 6 is 9000.00, both chosen figures; line 7 is 7000.00 minus 9000.00 = -2000.00, which is
+  below zero, so line 7 is 0.00. Tax shelters, lines 8 to 11: line 8, the losses from
+  partnerships that are tax shelters, is 1000.00, line 9, the amounts deductible for
+  properties that are tax shelters, is 500.00, and line 10, the carrying charges for a
+  limited or non-active partner, is 250.00, all chosen figures; line 11 is 1000.00 +
+  500.00 + 250.00 = 1750.00. Line 12 is line 1 plus lines 4, 7 and 11: 60435.00 + 5000.00
+  + 0.00 + 1750.00 = 67185.00. Part 9, resource property, lines 1 to 4 are chosen figures:
+  5000.00, 2000.00, 1000.00 and 500.00; line 5 is 2000.00 + 1000.00 + 500.00 = 3500.00 and
+  line 6 is 5000.00 minus 3500.00 = 1500.00, not below zero. Part 1 lines 15 to 20: line 15
+  is the capital gain of 2000.00; line 16 is 0.00, as there is no foreclosure gain or loss;
+  lines 17 and 18 are chosen figures, 200.00 and 100.00; line 19 is 300.00; line 20 is 2000.00
+  minus 300.00 = 1700.00. Line 21 is the taxable capital gains of 1000.00 (line 12700), and line
+  22 is 1700.00 minus 1000.00 = 700.00; line 20 is positive, so line 23 is the amount from
+  line 22, 700.00. Part 1 lines 24 to 26: line 24 is 3000.00 and line 25 is 1000.00,
+  both chosen figures; the line 24 less line 25 amount is 2000.00, and 30% of it is 600.00 on
+  line 26. Part 1 lines 28 to 32: line 28, the total of boxes 39 and 91 of the T4 slips, is
+  1000.00 and line 29, the amount from line 2 of Form T1212, is 400.00, both chosen figures;
+  line 30 is 1000.00 plus 400.00, 1400.00. Line 31, the gifts of publicly listed securities under
+  a security option plan, is a chosen figure of 500.00, and 40% of it is 200.00; line 32 is
+  1400.00 minus 200.00, 1200.00, not below zero. Part 1 lines 35 to 38: line 35, boxes 41 and 92
+  of the T4 slips, is 300.00; line 36 is 100.00 and line 37 is 50.00, all chosen figures; line
+  38 is 450.00. Part 1 lines 39 to 43: line 39, the limited partnership difference with no
+  election, is a chosen figure of 600.00; line 40 is not applicable and is left out; line 41 is
+  100.00 and line 42 is 50.00, chosen figures; line 43 is 600.00 plus 100.00 plus 50.00, 750.00.
+  Part 1 lines 45 to 47: line 45, the limited partnership losses of other years, is 0 as none
+  are claimed; line 46 is the amount from line 39, 600.00; line 47 is 0 minus 600.00, -600.00, a
+  loss in brackets. Lines 48 to 50: line 48 is 0 as no non-capital losses of other years are
+  claimed; line 49 is the amount from line 41, 100.00; line 50 is -100.00. Lines 51 and 52 (union
+  dues and child care expenses) are 0 as none are claimed, since a claim would change taxable
+  income; line 53 is -600.00 plus -100.00, -700.00. Lines 54 to 63: lines 55, 57 and 59 to 62 are
+  0 as none are claimed (line 59 is for Quebec only); line 56, the moving expenses of line 21900,
+  is a chosen figure of 200.00; line 58 is the enhanced CPP contributions of 565.00 (line 22215)
+  above; line 63 is -700.00 plus 200.00 plus 565.00, 65.00. Lines 64 to 68: line 64 is a chosen
+  figure of 300.00, line 65 is 100.00, line 66 is not applicable and line 67 is 50.00; line 68
+  is 450.00. Lines 69 to 77: line 69, other employment expenses of line 22900, is 0 as none are
+  claimed; line 70 is a chosen figure of 150.00 and lines 71 to 75 are not applicable; line 76
+  is 150.00; line 77 is 0 minus 150.00, -150.00, a loss in brackets. Line 78 is 65.00 plus
+  450.00 plus -150.00, 365.00, and line 80 is 365.00 at the 50% of line 79, 182.50. Line 13 is
+  the amount from line 12, 67185.00, and line 14 the amount from Part 9 line 6, 1500.00; line
+  27 is 67185.00 + 1500.00 + 700.00 + 600.00 = 69985.00. Line 33 is 69985.00 plus line 32,
+  1200.00, 71185.00, and line 34 is the amount from line 33. Line 44 is 71185.00 + 450.00 + 750.00 =
+  72385.00, the amounts of lines 38 and 43 being 450.00 and 750.00. Line 81 is the amount from line
+  44, and line 82 is 182.50 + 72385.00 = 72567.50; line 83 is the amount from line 82. Return BG
+  claims no dividends, so lines 12000 and 12010 are 0.00 (lines 84 and 85 are then 0.00), and it
+  claims no capital gains deduction (lines 25400 and 25395 are 0.00), so lines 86 to 92 are 0.00.
+  Line 93 is 72567.50 minus 0.00, 72567.50. Line 94 is the basic exemption, 177882.00, and line 95
+  is 72567.50 minus 177882.00, below zero, so 0.00: the filer is not subject to alternative minimum
+  tax, and line 97 is 0.00 at 20.5% of line 95. Line 98 is 50% of line 33800 of the return, 3100.21,
+  which is 1550.105, a tie, rounded half-up to 1550.11; line 99 is 0.00 as no donations and gifts
+  are claimed, and lines 100 and 101 are not claimed. Line 102 is 1550.11, and line 103 is 0.00
+  minus 1550.11, below zero, so 0.00. Part 2 (basic federal tax): line 1, "Enter the amount
+  from line 40400 of your return", is the federal tax of line 40400 as the return computes
+  it, 8946.68 on taxable income of 60435.00. Line 2, "Total non-refundable tax credits (line
+  35000 of your return)", is 3100.21 (the credit amounts of 21380.75 at the credit rate,
+  rounded half-up to the cent), and line 3, "Dividend tax credit (line 40425 of your
+  return)", is 0.00 as no dividends are claimed. "Line 2 plus line 3" is 3100.21 plus 0.00,
+  3100.21, and "Line 1 minus line 4" is 8946.68 minus 3100.21, 5846.47, the tax payable
+  before minimum tax carryover. Line 6, "Minimum tax carryover applied in 2025 from line 12
+  of Part 8", is 0.00, so "Line 5 minus line 6", the basic federal tax, is 5846.47 minus
+  0.00, 5846.47. Part 8: line 1, "Minimum tax carryover from previous years (2018 to 2024)",
+  is a chosen figure of 0.00 as none is carried forward; line 2, "Tax payable before minimum
+  tax carryover from line 5 of Part 2", is 5846.47; line 3, the recapture of investment tax
+  credit, is 0.00, so "Line 2 plus line 3" is 5846.47 plus 0.00, 5846.47. Lines 5 to 7 are
+  0.00 each: no federal tax on split income, no federal logging tax credit and no amount
+  from line 41600 of the return, so "Add lines 5 to 7" is 0.00. "Line 4 minus line 8" is
+  5846.47 minus 0.00, 5846.47. Line 10, "Minimum amount from line 103 of Part 1", is 0.00,
+  so line 11, "Maximum carryover that can be applied in 2025: line 9 minus line 10 (if
+  negative, enter "0")", is 5846.47 minus 0.00, 5846.47. Line 12, "Claim an amount that is
+  not more than line 1 or 11, whichever is less.", claims 0.00, and the most that may be
+  claimed is the lesser of line 1, 0.00, and line 11, 5846.47, so the cap is 0.00 and "Enter
+  this amount on line 40427 of your return." is 0.00. Part 3,
+  regular net federal tax payable, lines 1 to 15: line 1, "Amount from line 7 of Part 2", is the
+  basic federal tax of 5846.47. Line 2, "Federal surtax on business income earned outside Canada",
+  is 48% of line 1: 5846.47 times 0.48 is 2806.3056, rounded half-up to 2806.31. Line 3, "If you
+  have to pay tax to multiple jurisdictions", is line 2 times the percentage in Column 5 of line
+  52220 on Form T2203, a chosen figure of 0 as no tax is payable to multiple jurisdictions: 2806.31
+  times 0, 0.00. Line 4, "If you have an amount on line 3, enter that amount. If not, and you are a
+  non-resident or deemed resident, enter the amount from line 2. Otherwise, enter "0".", is 0.00:
+  line 3 is 0.00, so there is no amount on it, and the filer is not a non-resident (a chosen figure
+  of 0), so the branch is "0". Line 5, the recapture of investment tax credit, is 0.00. "Add lines
+  1, 4, and 5." is 5846.47 plus 0.00 plus 0.00, 5846.47. Line 7, the federal foreign tax credit from
+  Form T2209, is 0.00 and line 8, the federal logging tax credit, is 0.00, so "Line 7 plus line 8"
+  is 0.00, and "Line 6 minus line 9 (if negative, enter "0")", the federal tax payable, is 5846.47
+  minus 0.00, 5846.47. Line 11, the federal political contribution tax credit, is 0.00; line 12, the
+  investment tax credit, is 0.00 (no claim, and amount I of Form T2038(IND) is 0.00), so it is 0.00;
+  line 13, the labour-sponsored funds tax credit, is 0.00. "Add lines 11 to 13." is 0.00, and "Line
+  10 minus line 14 (if negative, enter "0")", the regular net federal tax payable, is 5846.47 minus
+  0.00, 5846.47. Part 4, special foreign tax credit, lines 1 to 11: foreign business income, line 1, with no
+  entry (0.00), and foreign non-business income, line 2, with no entry (0.00), and no claim on
+  line 3 (the claim may not be more than line 23 of Part 1, 700.00): line 3 is 0.00 and "Total
+  foreign income: add lines 1 to 3" is 0.00. Line 5, "Applicable rate", is 20.5%, and line 6,
+  "Foreign income limit for special foreign tax credit", is 0.00 times 20.5%, 0.00. Line 7 is the
+  non-business income tax paid to a foreign country, with no entry (0.00), times 66.6666%, 0.00;
+  line 8, the business income tax paid to a foreign country, with no entry (0.00); line 9,
+  "Foreign taxes paid", is 0.00. Line 10, the lesser of lines 6 and 9, is 0.00, and line 11, the
+  greater of the "Federal foreign tax credit from Form T2209" (0.00, no foreign tax countries) and
+  line 10, is 0.00. Not yet computed: Parts 5 to 7 of
+  Form T691 and Part 8 lines 13 to 17. Amounts are quoted decimals, and the count of CPP months
+  is a quoted digit string.
+sources:
+  - >-
+    CRA, Form T691 (2025), docs/cra-forms-2025/t691-25e.pdf: "Taxable income from line
+    26000 of your return"; "Line 2 minus line 3 (if negative, enter "0")" "67820 =";
+    "Line 5 minus line 6 (if negative, enter "0")" "67830 ="; "Add lines 8 to 10."
+    "67840 ="; "Add lines 1, 4, 7, and 11."; "Add lines 2 to 4."; "Line 1 minus line 5 (if
+    negative, enter "0")"; "Resource property and flow-through share 67860 ="; "Add lines 16
+    to 18."; "Line 15 minus line 19 (if negative, show in brackets)"; "Line 24 minus line 25";
+    "30%"; "Line 28 plus line 29" "67910 ="; "× 40%"; "Line 30 minus line 31 (if negative,
+    enter "0")"; "Add lines 35 to 37." "67918 ="; "Line 39 or 40, as applicable, plus line 41
+    and 42"; "Line 45 minus line 46"; "Line 48 minus line 49"; "Add lines 47, 50, 51, and 52.";
+    "Add lines 54 to 62."; "Add lines 64 to 67 (11)" "67924 ="; "Add lines 70 to 75." "67926 =";
+    "Line 69 minus line 76"; "Add lines 63, 68, and 77."; "Applicable Rate" "× 50%"; "Line 78
+    multiply by the percentage from line 79"; "Line 20 minus line 21 (if negative, do not show
+    in brackets.)"; "If line 20 is positive, enter the amount from line 22."; "If line 20 is
+    negative, enter whichever is less: the amount from line 21 or line 22 (show in brackets).";
+    "Add lines 13, 14, 23, and 26."; "Line 27 plus line 32"; "Add lines 34, 38, and 43.";
+    "Line 80 plus line 81"; "Enter the amount from line 44."; "B × 13.0435%"; "Amount A minus
+    Amount B ="; "C × 27.5362% ="; "Line 84 plus line 85"; "Enter the amount from line 25400 of your
+    return" "× 40% ="; "Line 86 plus line 87"; "Amount from line 25395 of your return × 2 =";
+    "line 89 minus line 90"; "Line 88 plus line 91"; "Line 83 minus line 92 (if negative, enter
+    "0")"; "Basic exemption" "177,882.00"; "Line 93 minus line 94 (if negative, enter "0")";
+    "Federal tax rate" "× 20.5%"; "Gross minimum amount: line 95 multiplied by the percentage on
+    line 96."; "Net non-refundable tax credits (line 33800 of your return)" "× 50% ="; "Donations and
+    gifts (line 34900 of your return)" "× 80% ="; "Add lines 98 to 101."; "Line 97 minus line 102
+    (if negative, enter "0")"; "Minimum amount"; "Enter the amount from line 40400 of your return"; "Total non-refundable tax credits (line 35000 of your return)"; "Dividend tax credit (line 40425 of your return)"; "Line 2 plus line 3"; "Line 1 minus line 4"; "Tax payable before minimum tax carryover"; "Minimum tax carryover applied in 2025 from line 12 of Part 8"; "Line 5 minus line 6"; "Basic federal tax"; "Minimum tax carryover from previous years (2018 to 2024)"; "Tax payable before minimum tax carryover from line 5 of Part 2"; "Recapture of investment tax credit from line 3 of Part C of Form T2038(IND)"; "Federal tax on split income from line 8 of Form T1206"; "Amount from line 41600 of your return"; "Add lines 5 to 7"; "Line 4 minus line 8"; "Minimum amount from line 103 of Part 1"; "Maximum carryover that can be applied in 2025: line 9 minus line 10 (if negative, enter "0")"; "Claim an amount that is not more than line 1 or 11, whichever is less."; "Enter this amount on line 40427 of your return." "Amount from line 7 of Part 2"; "Federal surtax on business income earned outside Canada" "Multiply the amount from line 1 by 48%."; "If you have to pay tax to multiple jurisdictions, multiply the amount from line 2 by the percentage in Column 5 of line 52220 on Form T2203."; "If you have an amount on line 3, enter that amount. If not, and you are a non-resident or deemed resident, enter the amount from line 2. Otherwise, enter "0"."; "Recapture of investment tax credit (from line 3 of Part C of Form T2038(IND))"; "Add lines 1, 4, and 5."; "Federal foreign tax credit from Form T2209"; "Federal logging tax credit"; "Line 7 plus line 8"; "Line 6 minus line 9 (if negative, enter "0")" "Federal tax payable"; "Federal political contribution tax credit from line 41000 of your return"; "Investment tax credit amount up to, but not more than the amount I of Form T2038(IND)"; "Labour-sponsored funds tax credit from line 41400 of your return"; "Add lines 11 to 13."; "Line 10 minus line 14 (if negative, enter "0")" "Regular net federal tax payable"; "Part 4 – Special foreign tax credit"; "Foreign business income (total business income earned in the foreign country, minus allowable expenses and deductions for the foreign income)"; "Foreign non-business income (on which non-business income tax was paid to a foreign country (12))"; "Non-taxable part of foreign capital gains included in adjusted taxable income (cannot be more than line 23 of Part 1)" "67940"; "Total foreign income: add lines 1 to 3 (if negative, enter "0")"; "Applicable rate" "× 20.5%"; "Foreign income limit for special foreign tax credit: line 4 multiplied by the percentage on line 5 (if negative, enter "0")."; "Total non-business income tax paid to a foreign country (12)" "× 66.6666%"; "Total business income tax paid to a foreign country (13)"; "Foreign taxes paid for special foreign tax credit: line 7 plus line 8 (if negative, enter "0")"; "Enter whichever is less: amount from line 6 or line 9."; "Enter whichever is more: amount from line 7 of Part 3 or line 10." "Special foreign tax credit".
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t691/t691-25e.pdf
+  - >-
+    CRA, T1 (2025), docs/cra-forms-2025/5006-r-25e.txt: "Line 124 and line 40427: Minimum tax
+    carryover (complete Form T691)"; "Line 125: Add lines 122 to 124."
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
+  - >-
+    CRA, Schedule 8 (form 5000-S8, 2025), docs/cra-forms-2025/5000-s8-25e.txt: "Deduction
+    for CPP enhanced contributions on employment income:" "Line 28: Line 26 plus line 27 Enter
+    this amount (in dollars and cents) on line 22215 of your return."
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s8/5000-s8-25e.txt
+inputs:
+  ca/employment_income: "60000"
+  ca/cpp_months: "12"
+  ca/cpp_t4_base_and_first_additional_contributions: "3361.75"
+  ca/cpp_t4_second_additional_contributions: "0"
+  ca/share_dispositions:
+    - ca/disposition_proceeds: "5000"
+      ca/disposition_adjusted_cost_base: "3000"
+      ca/disposition_outlays: "0"
+  ca/amt_film_property_cca_and_carrying_charges: "9000.00"
+  ca/amt_film_property_income_before_cca: "4000.00"
+  ca/amt_rental_property_cca_and_carrying_charges: "7000.00"
+  ca/amt_rental_property_income_before_cca: "9000.00"
+  ca/amt_tax_shelter_losses: "1000.00"
+  ca/amt_tax_shelter_deductible_amounts: "500.00"
+  ca/amt_limited_partner_carrying_charges: "250.00"
+  ca/amt_resource_expenditures: "5000.00"
+  ca/amt_resource_production_income: "2000.00"
+  ca/amt_resource_foreign_property_income: "1000.00"
+  ca/amt_class_43_1_income: "500.00"
+  ca/amt_treaty_exempt_capital_gains: "200.00"
+  ca/amt_graduated_rate_estate_capital_gains: "100.00"
+  ca/amt_publicly_listed_gifts_total: "3000.00"
+  ca/amt_publicly_listed_gifts_t1170_line_68231: "1000.00"
+  ca/amt_t4_security_options_boxes_39_and_91: "1000.00"
+  ca/amt_t1212_line_2_deferred_security_options: "400.00"
+  ca/amt_security_option_publicly_listed_gifts: "500.00"
+  ca/amt_t4_security_options_boxes_41_and_92: "300.00"
+  ca/amt_prospector_or_grubstaker_deduction: "100.00"
+  ca/amt_deferred_profit_sharing_plan_deduction: "50.00"
+  ca/amt_limited_partnership_difference_no_election: "600.00"
+  ca/amt_non_capital_losses_difference: "100.00"
+  ca/amt_net_capital_losses_difference: "50.00"
+  ca/amt_moving_expenses_deduction: "200.00"
+  ca/amt_non_deductible_interest: "300.00"
+  ca/amt_life_insurance_premiums_as_collateral: "100.00"
+  ca/amt_investment_counsel_fees: "50.00"
+  ca/amt_commission_employment_expenses: "150.00"
+  ca/unapplied_net_capital_losses_2000: "0"
+expected:
+  ca/share_proceeds: "5000"
+  ca/capital_gain: "2000.00"
+  ca/taxable_capital_gains: "1000.00"
+  ca/taxable_income: "60435.00"
+  ca/amt_film_property_adjustment: "5000.00"
+  ca/amt_rental_property_adjustment: "0.00"
+  ca/amt_tax_shelter_adjustments: "1750.00"
+  ca/amt_part_1_subtotal: "67185.00"
+  ca/amt_resource_income_total: "3500.00"
+  ca/amt_resource_property_and_flow_through_shares: "1500.00"
+  ca/amt_mortgage_foreclosure_capital_gains: "0.00"
+  ca/amt_capital_gains_adjustments: "300.00"
+  ca/amt_net_capital_gains_after_adjustments: "1700.00"
+  ca/amt_capital_gains_difference: "700.00"
+  ca/amt_capital_gains_added: "700.00"
+  ca/amt_publicly_listed_gifts_net: "2000.00"
+  ca/amt_publicly_listed_gifts_adjustment: "600.00"
+  ca/amt_adjusted_income_with_gains: "69985.00"
+  ca/amt_security_options_d_total: "1400.00"
+  ca/amt_security_option_gifts_deduction: "200.00"
+  ca/amt_security_options_net: "1200.00"
+  ca/amt_security_options_d1_total: "450.00"
+  ca/amt_other_years_losses_total: "750.00"
+  ca/amt_limited_partnership_difference_applied: "600.00"
+  ca/amt_limited_partnership_losses_adjustment: "-600.00"
+  ca/amt_non_capital_losses_adjustment: "-100.00"
+  ca/amt_losses_and_deductions_subtotal: "-700.00"
+  ca/amt_deductions_total: "65.00"
+  ca/amt_non_deductible_property_expenses: "450.00"
+  ca/amt_non_deductible_office_expenses: "150.00"
+  ca/amt_office_expenses_adjustment: "-150.00"
+  ca/amt_adjustments_before_rate_total: "365.00"
+  ca/amt_applicable_rate_amount: "182.50"
+  ca/amt_adjusted_income_with_security_options: "71185.00"
+  ca/amt_security_options_and_losses_total: "72385.00"
+  ca/amt_adjustments_after_rate_total: "72567.50"
+  ca/amt_dividends_other_than_eligible_adjustment: "0.00"
+  ca/amt_amount_a_minus_amount_b: "0.00"
+  ca/amt_dividends_difference_adjustment: "0.00"
+  ca/amt_dividends_adjustments_total: "0.00"
+  ca/amt_lifetime_exemption_adjustment: "0.00"
+  ca/amt_adjustments_with_lifetime_exemption_total: "0.00"
+  ca/amt_qbt_capital_gains_deduction_doubled: "0.00"
+  ca/amt_qbt_capital_gains_deduction_difference: "0.00"
+  ca/amt_capital_gains_deductions_total: "0.00"
+  ca/amt_adjusted_taxable_income: "72567.50"
+  ca/amt_basic_exemption: "177882.00"
+  ca/amt_net_adjusted_taxable_income: "0.00"
+  ca/amt_gross_minimum_amount: "0.00"
+  ca/amt_non_refundable_credits_adjustment: "1550.11"
+  ca/amt_donations_and_gifts_adjustment: "0.00"
+  ca/amt_credits_adjustments_total: "1550.11"
+  ca/amt_minimum_amount: "0.00"
+  ca/amt_credits_total: "3100.21"
+  ca/amt_tax_payable_before_minimum_tax_carryover: "5846.47"
+  ca/amt_basic_federal_tax: "5846.47"
+  ca/amt_tax_payable_with_itc_recapture: "5846.47"
+  ca/amt_split_income_and_credits_total: "0.00"
+  ca/amt_tax_payable_after_credits: "5846.47"
+  ca/amt_maximum_carryover_applied: "5846.47"
+  ca/amt_maximum_carryover_claim: "0.00"
+  ca/amt_minimum_tax_carryover_applied: "0.00"
+  ca/net_income_before_adjustments: "60435.00"
+  ca/other_payments_limit_income: "60435.00"
+  ca/cpp_second_additional_earnings_maximum: "9900.00"
+  ca-on/ontario_tax_less_dividend_credit: "2526.82"
+  ca/refund_or_balance_owing: "8973.29"
+  ca/net_capital_loss_balance_2000: "0.00"
+  ca/cpp_required_base_and_first_additional_contributions: "3361.75"
+  ca/cpp_contributions_difference: "0.00"
+  ca/cpp_part_5_line_57: "2796.75"
+  ca/cpp_part_5_line_69: "565.00"
+  ca/amt_federal_surtax_at_48_percent: "2806.31"
+  ca/amt_federal_surtax_multiple_jurisdictions: "0.00"
+  ca/amt_line_3_has_amount: "0"
+  ca/amt_federal_surtax_if_non_resident: "0.00"
+  ca/amt_federal_surtax: "0.00"
+  ca/amt_federal_tax_with_surtax_and_recapture: "5846.47"
+  ca/amt_foreign_and_logging_credits_total: "0.00"
+  ca/amt_federal_tax_payable: "5846.47"
+  ca/amt_investment_tax_credit: "0.00"
+  ca/amt_regular_tax_credits_total: "0.00"
+  ca/amt_regular_net_federal_tax_payable: "5846.47"
+  ca/amt_foreign_capital_gains_non_taxable: "0.00"
+  ca/amt_total_foreign_income: "0.00"
+  ca/amt_foreign_income_limit: "0.00"
+  ca/amt_foreign_non_business_tax_two_thirds: "0.00"
+  ca/amt_foreign_taxes_paid: "0.00"
+  ca/amt_foreign_tax_credit_lesser: "0.00"
+  ca/amt_special_foreign_tax_credit: "0.00"

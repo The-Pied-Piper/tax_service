@@ -135,7 +135,7 @@ def test_the_dividend_tax_credit_comes_off_the_basic_federal_tax_with_the_other_
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "credits_against_basic_federal_tax: non_refundable_tax_credits 3004.65 "
-        "+ dividend_tax_credit 319.19 = 3323.84"
+        "+ dividend_tax_credit 319.19 + amt_minimum_tax_carryover_applied 0 = 3323.84"
     ) in rendered
     assert (
         "federal_tax_after_credits: federal_tax_with_split_income 7538.55 "
@@ -434,7 +434,8 @@ def test_deductions_from_net_income_add_lines_58_to_63_66_and_67_once_each() -> 
         "deductions_from_net_income: canadian_armed_forces_and_police_deduction 1 "
         "+ security_options_deductions 2 + other_payments_deduction 4 "
         "+ limited_partnership_losses_of_other_years 8 + non_capital_losses_of_other_years 16 "
-        "+ net_capital_losses_of_other_years 32 + northern_residents_deductions 128 "
+        "+ net_capital_losses_of_other_years 32 + qbt_capital_gains_deduction 0 "
+        "+ capital_gains_deduction 0 + northern_residents_deductions 128 "
         "+ additional_deductions 64 = 255"
     ) in rendered
 

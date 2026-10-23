@@ -22,6 +22,7 @@ RENDERERS = "app.jurisdictions.ca_on.trace_english"
 
 HOMES: dict[str, tuple[str, ...]] = {
     "dependants": ("CaregiverClaimLessClaimedLine",),
+    "foreign_tax": ("ProvincialForeignTaxCreditLine",),
     "placement_credit": ("PlacementCreditLine",),
 }
 

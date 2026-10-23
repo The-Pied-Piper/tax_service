@@ -261,7 +261,7 @@ description: >-
   credit amounts is as without them.
   No self-employment income: the net business, professional, commission, farming and fishing
   income (T1 lines 13500, 13700, 13900, 14100 and 14300) are $0, so their sum (line 27) is
-  $0, and it is not yet in total income (line 15000, to be wired). The CPP months (Schedule
+  $0, and it is a $0 term of total income (line 15000). The CPP months (Schedule
   8 box A) are the 12 of a full year, Schedule 8 Part 4 is not completed (count 0) and there
   is no agreement with the Canada Employment Insurance Commission (count 0), so the CPP
   contributions payable (line 42100), the base CPP contributions (line 31000) and the
@@ -977,6 +977,8 @@ inputs:
   ca/employment_income: "60000"
   ca/rrsp_deduction_limit: "10800"
   ca/cpp_months: "12"
+  ca/cpp_t4_base_and_first_additional_contributions: "3361.75"
+  ca/cpp_t4_second_additional_contributions: "0"
   ca-on/dependent_children: "1"
   ca/eligible_dependants: "1"
   ca/child_care_expenses_paid: "6000"
@@ -986,6 +988,7 @@ inputs:
   ca/resident_in_canada_throughout_2025: "1"
   ca/aged_18_or_older_at_end_of_2025: "1"
   ca-on/care_supporting_persons_adjusted_income: "30000"
+  ca/unapplied_net_capital_losses_2000: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/investment_income_before_prior_years: "0"
@@ -995,7 +998,11 @@ expected:
   ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca/cpp_base_contributions: "2796.75"
   ca/cpp_first_additional_contributions: "565.00"
+  ca/cpp_required_base_and_first_additional_contributions: "3361.75"
   ca/cpp_second_additional_contributions: "0"
+  ca/cpp_contributions_difference: "0.00"
+  ca/cpp_part_5_line_57: "2796.75"
+  ca/cpp_part_5_line_69: "565.00"
   ca/cpp_enhanced_contributions: "565.00"
   ca/ei_premiums: "984.00"
   ca/rrsp_contributions_available: "0"
@@ -1160,3 +1167,17 @@ expected:
   ca/refund: "5409.31"
   ca-on/refund_before_donation: "5409.31"
   ca-on/net_refund: "5409.31"
+  ca/amt_part_1_subtotal: "54435.00"
+  ca/amt_net_capital_gains_after_adjustments: "0"
+  ca/amt_publicly_listed_gifts_adjustment: "0.00"
+  ca/amt_resource_property_and_flow_through_shares: "0"
+  ca/amt_applicable_rate_amount: "2782.50"
+  ca/amt_other_years_losses_total: "0"
+  ca/amt_security_options_d1_total: "0"
+  ca/amt_security_options_net: "0"
+  ca/net_capital_loss_balance_2000: "0.00"
+  ca/amt_adjusted_income_with_gains: "54435.00"
+  ca/amt_minimum_amount: "0"
+  ca/amt_basic_federal_tax: "2454.17"
+  ca/amt_regular_net_federal_tax_payable: "2454.17"
+  ca/amt_special_foreign_tax_credit: "0"

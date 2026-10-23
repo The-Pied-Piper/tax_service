@@ -542,7 +542,8 @@ def test_the_northern_residents_deductions_come_off_net_income_with_the_other_de
         "deductions_from_net_income: canadian_armed_forces_and_police_deduction 0 "
         "+ security_options_deductions 1000 + other_payments_deduction 0 "
         "+ limited_partnership_losses_of_other_years 0 + non_capital_losses_of_other_years 0 "
-        "+ net_capital_losses_of_other_years 0 + northern_residents_deductions 8030 "
+        "+ net_capital_losses_of_other_years 0 + qbt_capital_gains_deduction 0 "
+        "+ capital_gains_deduction 0 + northern_residents_deductions 8030 "
         "+ additional_deductions 500 = 9530"
     ) in rendered
 

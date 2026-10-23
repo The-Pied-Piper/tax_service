@@ -30,8 +30,8 @@ from app.jurisdictions.ca_on.catalog import (
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
     LIFT_REDUCTION,
+    ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
-    ONTARIO_TAX_AFTER_REDUCTION,
 )
 
 INPUTS = frozenset(
@@ -264,11 +264,14 @@ STEPS = {
     ),
     # ON428 line 86 "Line 84 minus line 85 (if negative, enter "0")": line 84 "Amount from line
     # 83 of the previous page" carries line 83 "Line 81 minus line 82 (if negative, enter "0")",
-    # which is line 81 while line 82 (the provincial foreign tax credit) is not triggered.
+    # the Ontario tax after the provincial foreign tax credit.
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
-        consumes={"amount": "ca-on/ontario_tax_after_reduction", "less": "ca-on/lift_credit"},
+        consumes={
+            "amount": "ca-on/ontario_tax_after_foreign_tax_credit",
+            "less": "ca-on/lift_credit",
+        },
         produces={"output": "ca-on/ontario_tax_after_lift_credit"},
     ),
 }
@@ -382,7 +385,7 @@ WIRING = {
     ),
     (
         SubtractNotBelowZero,
-        frozenset({ONTARIO_TAX_AFTER_REDUCTION, LIFT_CREDIT}),
+        frozenset({ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT, LIFT_CREDIT}),
         frozenset({ONTARIO_TAX_AFTER_LIFT_CREDIT}),
     ),
 }

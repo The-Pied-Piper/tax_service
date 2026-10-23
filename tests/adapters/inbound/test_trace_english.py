@@ -33,15 +33,18 @@ from app.domain.record_list import RecordListKind
 from app.domain.trace import (
     AmountByCountLine,
     AmountOrDividedByRateLine,
+    AmountWhenMoreLine,
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
     ChosenByCountLine,
     ChosenByRangeLine,
+    ChosenBySignLine,
     ChosenRateAppliedLine,
     ConditionLine,
     ConditionsCountLine,
     ContributionTierLine,
+    CountAtLeastLine,
     CreditAmountLine,
     DividedByRateLine,
     FractionAppliedLine,
@@ -50,15 +53,21 @@ from app.domain.trace import (
     ItemsTotalLine,
     ItemSumLine,
     LesserOfLine,
+    LesserOfWhenPositiveLine,
+    LesserOfWithMaximumLine,
     MultipleOverLine,
+    PercentageAppliedLine,
     PerUnitAmountLine,
+    PositivePartOfNegationLine,
     QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
     RatioAppliedLine,
+    RatioTruncatedLine,
     RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
+    SignChosenDifferenceLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
@@ -78,7 +87,10 @@ from app.jurisdictions.ca.trace import (
     DispositionGainLine,
     DispositionGainOnlyLine,
     DispositionProceedsLine,
+    ForeignTaxCreditLine,
+    NetCapitalLossesRowLine,
     OtherDependantMedicalLine,
+    PooledForeignTaxCreditLine,
     PrincipalResidenceGainLine,
     RecapturedCcaLine,
     ShortTermRentalNonCompliantCcaByClassLine,
@@ -86,10 +98,15 @@ from app.jurisdictions.ca.trace import (
     ShortTermRentalNonCompliantLine,
     TerminalLossLine,
 )
-from app.jurisdictions.ca_on.trace import CaregiverClaimLessClaimedLine, PlacementCreditLine
+from app.jurisdictions.ca_on.trace import (
+    CaregiverClaimLessClaimedLine,
+    PlacementCreditLine,
+    ProvincialForeignTaxCreditLine,
+)
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
+FIVE_DECIMALS_DOWN = RoundTo(D("0.00001"), RoundingMode.DOWN)
 
 TAXABLE_BASE = ArtifactKind("ex/taxable_base", Decimal)
 BASIC_TAX = ArtifactKind("ex/basic_tax", Decimal)
@@ -99,6 +116,7 @@ PART_THREE = ArtifactKind("ex/part_three", Decimal)
 TOTAL = ArtifactKind("ex/total", Decimal)
 GROSS_AMOUNT = ArtifactKind("ex/gross_amount", Decimal)
 RATED_AMOUNT = ArtifactKind("ex/rated_amount", Decimal)
+RATED_AMOUNT_RATE = ArtifactKind("ex/rated_amount", Rate)
 REDUCTION = ArtifactKind("ex/reduction", Decimal)
 NET_AMOUNT = ArtifactKind("ex/net_amount", Decimal)
 PERSONAL_AMOUNT = ArtifactKind("ex/personal_amount", Decimal)
@@ -156,7 +174,7 @@ def render(line: TraceLine) -> str:
     return EnglishTraceRenderer().render(line)
 
 
-# --- bracket columns -------------------------------------------------------------
+# --- bracket columns ----------------------------
 #
 # One line for the bracket the base falls in, read like the form's column: the rate on the
 # excess over the bracket's lower, plus the tax at the bracket's start.
@@ -203,7 +221,7 @@ def test_renders_the_rate_as_a_plain_percentage(rate: str, percent: str) -> None
     assert render(line) == f"{percent}% on 100 over 0 plus 0"
 
 
-# --- rounded totals --------------------------------------------------------------
+# --- rounded totals ----------------------------
 
 
 def test_renders_a_rounded_total() -> None:
@@ -236,7 +254,7 @@ def test_renders_each_rounding_rule(rounding: RoundingRule, text: str) -> None:
     assert render(line) == f"basic_tax on taxable_base 250 ({text})"
 
 
-# --- sums ------------------------------------------------------------------------
+# --- sums ----------------------------
 
 
 def test_renders_a_sum_of_three_parts() -> None:
@@ -265,7 +283,7 @@ def test_renders_a_sum_of_no_parts() -> None:
     assert render(SumLine(TOTAL, (), D(0))) == "total: no parts = 0"
 
 
-# --- sums not below zero ---------------------------------------------------------
+# --- sums not below zero ----------------------------
 
 
 def test_renders_a_sum_not_below_zero() -> None:
@@ -308,7 +326,7 @@ def test_renders_a_sum_not_below_zero_of_no_parts() -> None:
     assert render(SumNotBelowZeroLine(TOTAL, (), D(0))) == "total: no parts, not below 0 = 0"
 
 
-# --- rates applied --------------------------------------------------------------
+# --- rates applied ----------------------------
 
 
 def test_renders_a_rate_applied_without_rounding() -> None:
@@ -334,7 +352,7 @@ def test_renders_the_applied_rate_as_a_plain_percentage(rate: str, percent: str)
     assert render(line) == f"rated_amount: {percent}% of gross_amount 40 (no rounding)"
 
 
-# --- figures divided by a rate --------------------------------------------------
+# --- figures divided by a rate ----------------------------
 #
 # "<output>: <dividend kind> <dividend> divided by <rate>% (<rule>) = <result>", every figure as
 # given without trailing zeros, the result last.
@@ -378,6 +396,59 @@ def test_renders_the_divided_figures_without_trailing_zeros_or_an_exponent() -> 
     )
 
 
+# --- differences chosen by a sign -----------------------------------------------
+#
+# Not negative: "<output>: <difference kind> <difference> (<sign kind> <sign> is not negative) =
+# <result>". Negative: "<output>: <sign kind> <sign> is negative, lesser of <reference kind>
+# <reference> and <difference kind> <difference>, as a negative = <result>". Figures as given
+# without trailing zeros.
+
+
+def test_renders_the_difference_when_the_sign_amount_is_positive() -> None:
+    line = SignChosenDifferenceLine(
+        NET_AMOUNT, GROSS_AMOUNT, D("100"), REDUCTION, D("30"), RATED_AMOUNT, D("70"), D("70")
+    )
+
+    assert render(line) == "net_amount: rated_amount 70 (gross_amount 100 is not negative) = 70"
+
+
+def test_renders_the_difference_when_the_sign_amount_is_zero() -> None:
+    line = SignChosenDifferenceLine(
+        NET_AMOUNT, GROSS_AMOUNT, D("0.00"), REDUCTION, D("0.00"), RATED_AMOUNT, D("0.00"), D("0")
+    )
+
+    assert render(line) == "net_amount: rated_amount 0 (gross_amount 0 is not negative) = 0"
+
+
+def test_renders_the_lesser_figure_as_a_negative_when_the_sign_amount_is_negative() -> None:
+    line = SignChosenDifferenceLine(
+        NET_AMOUNT, GROSS_AMOUNT, D("-100"), REDUCTION, D("30"), RATED_AMOUNT, D("130"), D("-30")
+    )
+
+    assert render(line) == (
+        "net_amount: gross_amount -100 is negative, lesser of reduction 30 and "
+        "rated_amount 130, as a negative = -30"
+    )
+
+
+def test_renders_the_sign_chosen_figures_without_trailing_zeros_or_an_exponent() -> None:
+    line = SignChosenDifferenceLine(
+        NET_AMOUNT,
+        GROSS_AMOUNT,
+        D("-1.00E+2"),
+        REDUCTION,
+        D("30.500"),
+        RATED_AMOUNT,
+        D("130.50"),
+        D("-30.500"),
+    )
+
+    assert render(line) == (
+        "net_amount: gross_amount -100 is negative, lesser of reduction 30.5 and "
+        "rated_amount 130.5, as a negative = -30.5"
+    )
+
+
 # --- subtractions ---------------------------------------------------------------
 
 
@@ -399,7 +470,7 @@ def test_renders_a_subtraction_to_zero() -> None:
     assert render(line) == "net_amount: gross_amount 40.5 less reduction 40.5 = 0"
 
 
-# --- subtractions not below zero ---------------------------------------------------------
+# --- subtractions not below zero ----------------------------
 
 
 def test_renders_a_subtraction_not_below_zero() -> None:
@@ -426,7 +497,7 @@ def test_renders_a_subtraction_not_below_zero_to_exactly_zero() -> None:
     assert render(line) == "net_amount: gross_amount 40.5 less reduction 40.5, not below 0 = 0"
 
 
-# --- credit amounts ------------------------------------------------------------------------
+# --- credit amounts ----------------------------
 
 
 def test_renders_a_credit_amount_without_rounding() -> None:
@@ -449,7 +520,7 @@ def test_renders_the_credit_amount_with_another_rounding_rule() -> None:
     assert render(line) == "personal_amount: credit amount 1000.99 (floor to 1)"
 
 
-# --- capped amounts --------------------------------------------------------------------
+# --- capped amounts ----------------------------
 
 
 def test_renders_a_base_above_the_cap() -> None:
@@ -486,7 +557,7 @@ def test_renders_the_cap_as_given() -> None:
     assert render(line) == "capped_amount: lesser of gross_amount 0 and 1471.5 (no rounding)"
 
 
-# --- lesser of amounts -------------------------------------------------------------------
+# --- lesser of amounts ----------------------------
 
 
 def test_renders_the_lesser_of_two_amounts() -> None:
@@ -525,6 +596,63 @@ def test_renders_the_lesser_of_one_amount() -> None:
     line = LesserOfLine(LESSER_AMOUNT, ((PART_TWO, D("40.5")),), D("40.5"))
 
     assert render(line) == "lesser_amount: lesser of part_two 40.5 = 40.5"
+
+
+# --- lesser of amounts and a maximum ---------------------------------------------------
+#
+# "<output>: lesser of <part> <amount> and <part> <amount> and <maximum> (<rule>) = <result>", every
+# figure as given without trailing zeros, the result last.
+
+
+def test_renders_the_lesser_of_two_amounts_and_a_maximum() -> None:
+    line = LesserOfWithMaximumLine(
+        LESSER_AMOUNT,
+        ((PART_ONE, D("2500")), (PART_TWO, D("3000"))),
+        Amount(D("2000")),
+        NO_ROUNDING,
+        D("2000"),
+    )
+
+    assert render(line) == (
+        "lesser_amount: lesser of part_one 2500 and part_two 3000 and 2000 (no rounding) = 2000"
+    )
+
+
+def test_renders_the_lesser_of_amounts_and_a_maximum_in_the_order_of_the_line() -> None:
+    line = LesserOfWithMaximumLine(
+        LESSER_AMOUNT,
+        ((PART_TWO, D("150")), (PART_ONE, D("80.50"))),
+        Amount(D("2000")),
+        NO_ROUNDING,
+        D("80.50"),
+    )
+
+    assert render(line) == (
+        "lesser_amount: lesser of part_two 150 and part_one 80.5 and 2000 (no rounding) = 80.5"
+    )
+
+
+def test_renders_the_lesser_of_one_amount_and_a_maximum() -> None:
+    line = LesserOfWithMaximumLine(
+        LESSER_AMOUNT, ((PART_TWO, D("40.5")),), Amount(D("2000")), NO_ROUNDING, D("40.5")
+    )
+
+    assert render(line) == "lesser_amount: lesser of part_two 40.5 and 2000 (no rounding) = 40.5"
+
+
+def test_renders_the_lesser_of_amounts_and_a_maximum_with_the_rounding_rule() -> None:
+    line = LesserOfWithMaximumLine(
+        LESSER_AMOUNT,
+        ((PART_ONE, D("80.005")), (PART_TWO, D("150"))),
+        Amount(D("2000.00")),
+        CENT,
+        D("80.01"),
+    )
+
+    assert render(line) == (
+        "lesser_amount: lesser of part_one 80.005 and part_two 150 and 2000 (half-up to 0.01)"
+        " = 80.01"
+    )
 
 
 # --- greater of amounts -------------------------------------------------------------------
@@ -572,7 +700,7 @@ def test_renders_the_greater_of_one_amount() -> None:
     assert render(line) == "greater_amount: greater of part_two 40.5 = 40.5"
 
 
-# --- contribution tiers ---------------------------------------------------------------
+# --- contribution tiers ----------------------------
 
 
 def test_renders_a_contribution_tier() -> None:
@@ -626,7 +754,7 @@ def test_renders_the_tiers_figures() -> None:
     )
 
 
-# --- surcharge tiers -------------------------------------------------------------------
+# --- surcharge tiers ----------------------------
 
 
 def test_renders_a_surcharge_tier() -> None:
@@ -720,7 +848,7 @@ def test_renders_a_surcharge_tiers_maximum_without_trailing_zeros(
     assert render(line) == f"surcharge: 25% of tax_so_far 400.5 over 300, {text} (no rounding)"
 
 
-# --- tapered amounts -------------------------------------------------------------------
+# --- tapered amounts ----------------------------
 
 
 def test_renders_a_tapered_amount() -> None:
@@ -818,7 +946,7 @@ def test_renders_a_reduction_with_a_finite_expansion_as_a_plain_figure(
     )
 
 
-# --- per-unit amounts ------------------------------------------------------------------
+# --- per-unit amounts ----------------------------
 
 
 def test_renders_a_per_unit_amount() -> None:
@@ -851,7 +979,7 @@ def test_renders_a_rounded_per_unit_amount() -> None:
     assert render(line) == "child_amount: 0.333 for each of 3 child_count = 1 (half-up to 0.01)"
 
 
-# --- multiples over a figure -----------------------------------------------------------
+# --- multiples over a figure ----------------------------
 
 
 def test_renders_a_multiple_over_a_figure() -> None:
@@ -924,7 +1052,7 @@ def test_renders_a_fractional_factor() -> None:
     )
 
 
-# --- amounts at most a bound ----------------------------------------------------------
+# --- amounts at most a bound ----------------------------
 
 
 def test_renders_an_amount_at_most_a_bound() -> None:
@@ -951,7 +1079,7 @@ def test_renders_an_amount_at_most_a_bound_with_every_digit() -> None:
     assert render(line) == "allowed_amount: claimed_amount 0.0049, at most claim_limit 0.005"
 
 
-# --- amounts gated by a threshold ---------------------------------------------------------
+# --- amounts gated by a threshold ----------------------------
 #
 # "<output>: <amount kind> <amount> if <gate kind> <gate> is at least <threshold> (<rule>) =
 # <result>", every figure as given without trailing zeros, the result last.
@@ -1009,7 +1137,7 @@ def test_renders_a_rounded_gated_amount() -> None:
     )
 
 
-# --- amounts passed through or divided by a rate ----------------------------------------
+# --- amounts passed through or divided by a rate ----------------------------
 #
 # "<output>: <amount kind> <amount> if <threshold> or less, otherwise <dividend kind> <dividend>
 # divided by <rate>% (<rule>) = <result>", one sentence that does not pick the branch, every
@@ -1088,7 +1216,7 @@ def test_renders_this_lines_figures_without_trailing_zeros_or_an_exponent() -> N
     )
 
 
-# --- fractions applied -----------------------------------------------------------------
+# --- fractions applied ----------------------------
 #
 # The fraction prints as its two whole parts, "<numerator>/<denominator>", as given.
 
@@ -1133,7 +1261,7 @@ def test_renders_the_fraction_as_given(numerator: int, denominator: int, text: s
     assert render(line) == f"earned_portion: {text} of earned_income 120 (no rounding)"
 
 
-# --- amounts times a count -------------------------------------------------------------
+# --- amounts times a count ----------------------------
 #
 # The amount is an artifact, so it prints with its label, unlike a per-unit amount's dataset
 # figure; there is no rounding rule to print.
@@ -1171,7 +1299,7 @@ def test_renders_a_negative_amount_times_a_count() -> None:
     )
 
 
-# --- an amount chosen by a count ------------------------------------------------------
+# --- an amount chosen by a count ----------------------------
 #
 # The chosen candidate prints with its label and value, and the count that chose it with its
 # label and value; the candidate not chosen is not printed. There is no rounding rule to print.
@@ -1221,7 +1349,7 @@ def test_renders_a_negative_count_as_given() -> None:
     )
 
 
-# --- an amount read from a table by a count ----------------------------------------------
+# --- an amount read from a table by a count ----------------------------
 #
 # The row's figure prints with the count's label and value, then the rounding rule; the result
 # is not repeated (the row and the rule give it).
@@ -1245,7 +1373,7 @@ def test_renders_an_amount_by_count_of_zero_months() -> None:
     assert render(line) == "monthly_amount: 0 for month_count 0 (no rounding)"
 
 
-# --- the total of a field over a list of records ---------------------------------------
+# --- the total of a field over a list of records ----------------------------
 #
 # Each item is named by its position from 1, with the field's label and its amount; the total
 # follows "=". An empty list prints "no items".
@@ -1287,7 +1415,7 @@ def test_renders_the_output_and_field_labels_without_their_namespace() -> None:
     assert render(line) == "gross_amount: item 1 part_one 2 = 2"
 
 
-# --- an amount chosen by a range ------------------------------------------------------
+# --- an amount chosen by a range ----------------------------
 #
 # The chosen candidate prints with its label and value, and the tested amount with its label and
 # value; the candidates not chosen and the limits are not printed. There is no rounding rule to
@@ -1322,7 +1450,7 @@ def test_renders_a_negative_chosen_candidate_and_a_negative_tested_amount() -> N
     assert render(line) == "amount_chosen: amount_in_range -250.75, chosen as amount_tested is -5"
 
 
-# --- a rate chosen by a band of income --------------------------------------------------
+# --- a rate chosen by a band of income ----------------------------
 #
 # Read like the form's table: the figure with its label, then the row it falls in, "more than
 # <lower> but not more than <upper>" (just "more than <lower>" on the unbounded last row), then
@@ -1390,7 +1518,7 @@ def test_renders_a_fractional_band_rate() -> None:
     )
 
 
-# --- a chosen rate applied -----------------------------------------------------------------
+# --- a chosen rate applied ----------------------------
 #
 # Like a rate applied, with the rate artifact's label before its percentage.
 
@@ -1425,7 +1553,7 @@ def test_renders_a_chosen_rate_of_zero() -> None:
     assert render(line) == "care_credit: band_rate 0% of care_expenses 5000 (half-up to 0.01)"
 
 
-# --- an amount claimed per dependant ---------------------------------------------------
+# --- an amount claimed per dependant ----------------------------
 #
 # One sentence: the output's label, then one clause per dependant named by its position from 1,
 # "dependant 1: <base> less net income <income>, at most <maximum> = <allowable amount>", joined by
@@ -1478,7 +1606,7 @@ def test_renders_a_dependants_claim_without_rounding() -> None:
     )
 
 
-# --- an amount claimed per dependant, less what is claimed elsewhere ----------------------
+# --- an amount claimed per dependant, less what is claimed elsewhere ----------------------------
 #
 # The same sentence with the allowable amount before the claimed amount and the claimed amount
 # after it: "dependant 1: <base> less net income <income>, at most <maximum> = <allowable amount>,
@@ -1543,7 +1671,7 @@ def test_renders_a_dependant_without_rounding() -> None:
     )
 
 
-# --- the lines of a capability that loops over a record list ------------------------------
+# --- the lines of a capability that loops over a record list ----------------------------
 #
 # Each names the item by its position from 1, "item 2", after the produced kind.
 
@@ -1603,7 +1731,7 @@ def test_renders_the_caregiver_amount_total_of_two_dependants() -> None:
     assert render(line) == "caregiver_amount: item 1 8601 + item 2 3798 = 12399"
 
 
-# --- a medical claim per dependant -----------------------------------------------------
+# --- a medical claim per dependant ----------------------------
 #
 # One sentence: the output's label, then "dependant <position>: expenses <expenses> less the
 # lesser of <rate>% of net income <income> and <ceiling> = <allowable amount>", then
@@ -1866,7 +1994,7 @@ def test_renders_a_decimal_class_number_and_figures_without_trailing_zeros() -> 
     )
 
 
-# --- an amount transferred per dependant ------------------------------------------
+# --- an amount transferred per dependant ----------------------------
 #
 # One sentence: the output's label, then "dependant <position>: " (from 1), the age group
 # ("under 18" or "18 or older") and one clause per step of the worksheet, joined by "; ". A
@@ -2051,7 +2179,7 @@ def test_renders_the_total_of_no_dependants() -> None:
     )
 
 
-# --- a residence gain per property -----------------------------------------------------
+# --- a residence gain per property ----------------------------
 #
 # One sentence: the output's label, then "property <position>: gain <gain> = proceeds <p> less
 # adjusted cost base <a> less outlays <o>; exempt <exempt> = <gain> × (<designated> designated +
@@ -2248,13 +2376,57 @@ def test_renders_a_proceeds_row() -> None:
     assert render(line) == "share_gain_or_loss: disposition 2: proceeds 800"
 
 
+NET_CAPITAL_LOSSES_TOTAL = ArtifactKind("ex/chart_1_column_g_total", Decimal)
+
+
+def test_renders_a_chart_1_row_with_columns_e_f_and_g() -> None:
+    # Form T657 Chart 1, the 1992 row: column E is C less D, F is B plus E, G is A less F.
+    line = NetCapitalLossesRowLine(
+        NET_CAPITAL_LOSSES_TOTAL,
+        2,
+        D("5000.00"),
+        D("0"),
+        D("4000.00"),
+        D("1500.00"),
+        D("2500.00"),
+        D("2500.00"),
+        D("2500.00"),
+    )
+
+    assert render(line) == (
+        "chart_1_column_g_total: item 2: column E 2500 = column C 4000 less column D 1500, not "
+        "below 0; column F 2500 = column B 0 plus column E 2500; column G 2500 = column A 5000 "
+        "less column F 2500, not below 0"
+    )
+
+
+def test_renders_a_chart_1_row_whose_columns_floor_at_0() -> None:
+    line = NetCapitalLossesRowLine(
+        NET_CAPITAL_LOSSES_TOTAL,
+        1,
+        D("1000"),
+        D("0"),
+        D("300"),
+        D("500"),
+        D("0"),
+        D("0"),
+        D("1000"),
+    )
+
+    assert render(line) == (
+        "chart_1_column_g_total: item 1: column E 0 = column C 300 less column D 500, not below "
+        "0; column F 0 = column B 0 plus column E 0; column G 1000 = column A 1000 less column F "
+        "0, not below 0"
+    )
+
+
 def test_renders_the_total_of_the_dispositions_by_position() -> None:
     line = ItemsTotalLine(DISPOSITION_GAINS, ((1, D("450.00")), (2, D("-230.00"))), D("220.00"))
 
     assert render(line) == "share_gain_or_loss: item 1 450 + item 2 -230 = 220"
 
 
-# --- conditions --------------------------------------------------------------------------------
+# --- conditions ----------------------------
 #
 # One line for each condition: the output's label, "condition <position>", the printed text in
 # double quotes, the figures read (each kind's label and value, a count as a whole number, an
@@ -2337,7 +2509,64 @@ def test_renders_a_condition_without_a_namespace_in_any_label() -> None:
     assert "ex/" not in render(line)
 
 
-# --- a ratio of two artifacts applied --------------------------------------------------
+# --- a percentage of an artifact applied ----------------------------
+#
+# The percentage prints as entered, with its label, then the amount, then the result and the
+# rounding rule in parentheses.
+
+
+ELECTED_PERCENTAGE = ArtifactKind("ex/elected_percentage", Decimal)
+
+
+def test_renders_a_percentage_applied_rounded() -> None:
+    line = PercentageAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("600000"),
+        ELECTED_PERCENTAGE,
+        D("50"),
+        CENT,
+        D("300000"),
+    )
+
+    assert render(line) == (
+        "credit_share: elected_percentage 50% of tax_payable 600000 = 300000 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_percentage_applied_without_rounding() -> None:
+    line = PercentageAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("14000"),
+        ELECTED_PERCENTAGE,
+        D("10"),
+        NO_ROUNDING,
+        D("1400"),
+    )
+
+    assert render(line) == (
+        "credit_share: elected_percentage 10% of tax_payable 14000 = 1400 (no rounding)"
+    )
+
+
+def test_renders_a_negative_percentage_applied_with_every_digit() -> None:
+    line = PercentageAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("-250.75"),
+        ELECTED_PERCENTAGE,
+        D("1.5"),
+        NO_ROUNDING,
+        D("-3.76125"),
+    )
+
+    assert render(line) == (
+        "credit_share: elected_percentage 1.5% of tax_payable -250.75 = -3.76125 (no rounding)"
+    )
+
+
+# --- a ratio of two artifacts applied ----------------------------
 #
 # The amount, the numerator and the denominator print with their labels and values, and the rounding
 # rule in parentheses; the result is the line's amount, not printed twice.
@@ -2399,7 +2628,7 @@ def test_renders_a_negative_ratio_applied_with_every_digit() -> None:
     )
 
 
-# --- money figures ---------------------------------------------------------------
+# --- money figures ----------------------------
 
 
 @pytest.mark.parametrize(
@@ -2460,6 +2689,20 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             "rated_amount: gross_amount 3795 divided by 14.5% (half-up to 0.01) = 26172.41",
         ),
         (
+            SignChosenDifferenceLine(
+                NET_AMOUNT,
+                GROSS_AMOUNT,
+                D("-100.00"),
+                REDUCTION,
+                D("30.00"),
+                RATED_AMOUNT,
+                D("130.00"),
+                D("-30.00"),
+            ),
+            "net_amount: gross_amount -100 is negative, lesser of reduction 30 and "
+            "rated_amount 130, as a negative = -30",
+        ),
+        (
             SubtractedLine(
                 NET_AMOUNT, GROSS_AMOUNT, D("100.250"), REDUCTION, D("40.00"), D("60.250")
             ),
@@ -2487,6 +2730,17 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
                 LESSER_AMOUNT, ((PART_ONE, D("1500.2500")), (PART_TWO, D("1E+3"))), D("1E+3")
             ),
             "lesser_amount: lesser of part_one 1500.25 and part_two 1000 = 1000",
+        ),
+        (
+            LesserOfWithMaximumLine(
+                LESSER_AMOUNT,
+                ((PART_ONE, D("2500.00")), (PART_TWO, D("3E+3"))),
+                Amount(D("2000.00")),
+                NO_ROUNDING,
+                D("2000.00"),
+            ),
+            "lesser_amount: lesser of part_one 2500 and part_two 3000 and 2000 (no rounding)"
+            " = 2000",
         ),
         (
             GreaterOfLine(
@@ -2571,6 +2825,41 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
                 AMOUNT_CLAIMED, AMOUNT_EACH, D("1.612900E+4"), PERSONS, 2, D("32258.00")
             ),
             "amount_claimed: amount_each 16129 for each of 2 person_count = 32258",
+        ),
+        (
+            CountAtLeastLine(PERSONS, CHILDREN, 3, DEPENDANTS, 2),
+            "person_count: child_count 3, at least dependant_count 2",
+        ),
+        (
+            RatioTruncatedLine(
+                RATED_AMOUNT_RATE,
+                GROSS_AMOUNT,
+                D("3.0000E+4"),
+                TOTAL,
+                D("70000.00"),
+                FIVE_DECIMALS_DOWN,
+                False,
+                D("0.428570"),
+            ),
+            "rated_amount: gross_amount 30000 divided by total 70000 (down to 0.00001) = 0.42857",
+        ),
+        (
+            PositivePartOfNegationLine(RATED_AMOUNT, NET_AMOUNT, D("-12.500"), D("12.500")),
+            "rated_amount: negation of net_amount -12.5, not below 0 = 12.5",
+        ),
+        (
+            LesserOfWhenPositiveLine(
+                TOTAL,
+                ((PART_ONE, D("1.500E+3")), (PART_TWO, D("750.50"))),
+                True,
+                True,
+                D("-750.50"),
+            ),
+            "total: lesser of part_one 1500 and part_two 750.5, shown in brackets = -750.5",
+        ),
+        (
+            ChosenBySignLine(AMOUNT_CHOSEN, GATE_AMOUNT, D("-3.0"), AMOUNT_ALONE, D("1633.00")),
+            "amount_chosen: amount_alone 1633, chosen as gate_amount -3 is negative",
         ),
         (
             ChosenByCountLine(AMOUNT_CHOSEN, DEPENDANTS, 1, AMOUNT_WITH_FAMILY, D("4.31940E+3")),
@@ -2658,7 +2947,7 @@ def test_renders_every_money_figure_of_a_line_without_trailing_zeros(
     assert render(line) == text
 
 
-# --- whole traces and unknown lines ----------------------------------------------
+# --- whole traces and unknown lines ----------------------------
 
 
 def test_render_all_renders_each_line_in_order() -> None:
@@ -2943,7 +3232,7 @@ def test_renders_the_credit_with_no_rounding_named_when_the_rule_is_none() -> No
     )
 
 
-# --- the capital cost allowance table, one line per class ---------------------------------------
+# --- the capital cost allowance table, one line per class ----------------------------
 
 
 def class_rate(
@@ -3355,3 +3644,422 @@ def test_renders_the_reason_the_closing_line_records_without_working_it_out_agai
         render(recorded) == "closing_ucc: item 1 class 8: column 7 13000 with no property left: 0"
     )
     assert render(unrecorded) == ("closing_ucc: item 1 class 8: column 7 5000 less claim 0 = 5000")
+
+
+# --- counts at least a minimum ----------------------------
+#
+# "<output>: <count kind> <count>, at least <minimum kind> <minimum>".
+
+
+def test_renders_a_count_at_least_a_minimum() -> None:
+    line = CountAtLeastLine(PERSONS, CHILDREN, 3, DEPENDANTS, 2)
+
+    assert render(line) == "person_count: child_count 3, at least dependant_count 2"
+
+
+def test_renders_a_count_equal_to_its_minimum() -> None:
+    line = CountAtLeastLine(PERSONS, CHILDREN, 2, DEPENDANTS, 2)
+
+    assert render(line) == "person_count: child_count 2, at least dependant_count 2"
+
+
+def test_renders_a_zero_count_and_a_negative_minimum() -> None:
+    line = CountAtLeastLine(PERSONS, CHILDREN, 0, DEPENDANTS, -1)
+
+    assert render(line) == "person_count: child_count 0, at least dependant_count -1"
+
+
+# --- ratios, truncated ----------------------------
+#
+# "<output>: <dividend kind> <dividend> divided by <divisor kind> <divisor> (<rule>) = <result>";
+# with the cap, ", at most 1" follows the rule: "(<rule>), at most 1 = <result>".
+
+
+def test_renders_a_ratio_truncated_to_five_decimals() -> None:
+    line = RatioTruncatedLine(
+        RATED_AMOUNT_RATE,
+        GROSS_AMOUNT,
+        D("30000"),
+        TOTAL,
+        D("70000"),
+        FIVE_DECIMALS_DOWN,
+        False,
+        D("0.42857"),
+    )
+
+    assert render(line) == (
+        "rated_amount: gross_amount 30000 divided by total 70000 (down to 0.00001) = 0.42857"
+    )
+
+
+def test_renders_a_ratio_with_a_zero_divisor() -> None:
+    line = RatioTruncatedLine(
+        RATED_AMOUNT_RATE, GROSS_AMOUNT, D("5"), TOTAL, D("0"), FIVE_DECIMALS_DOWN, False, D("0")
+    )
+
+    assert render(line) == "rated_amount: gross_amount 5 divided by total 0 (down to 0.00001) = 0"
+
+
+def test_renders_a_capped_ratio() -> None:
+    line = RatioTruncatedLine(
+        RATED_AMOUNT_RATE,
+        GROSS_AMOUNT,
+        D("70000"),
+        TOTAL,
+        D("30000"),
+        FIVE_DECIMALS_DOWN,
+        True,
+        D("1"),
+    )
+
+    assert render(line) == (
+        "rated_amount: gross_amount 70000 divided by total 30000 (down to 0.00001), at most 1 = 1"
+    )
+
+
+def test_renders_a_capped_ratio_that_was_not_reduced() -> None:
+    line = RatioTruncatedLine(
+        RATED_AMOUNT_RATE,
+        GROSS_AMOUNT,
+        D("30000"),
+        TOTAL,
+        D("70000"),
+        FIVE_DECIMALS_DOWN,
+        True,
+        D("0.42857"),
+    )
+
+    assert render(line) == (
+        "rated_amount: gross_amount 30000 divided by total 70000 (down to 0.00001), at most 1 "
+        "= 0.42857"
+    )
+
+
+def test_renders_a_ratio_without_rounding() -> None:
+    line = RatioTruncatedLine(
+        RATED_AMOUNT_RATE, GROSS_AMOUNT, D("1"), TOTAL, D("4"), NO_ROUNDING, False, D("0.25")
+    )
+
+    assert render(line) == "rated_amount: gross_amount 1 divided by total 4 (no rounding) = 0.25"
+
+
+# --- the positive part of a negation ----------------------------
+#
+# "<output>: negation of <kind> <amount>, not below 0 = <result>".
+
+
+def test_renders_the_negation_of_a_negative_amount() -> None:
+    line = PositivePartOfNegationLine(RATED_AMOUNT, NET_AMOUNT, D("-12.50"), D("12.50"))
+
+    assert render(line) == "rated_amount: negation of net_amount -12.5, not below 0 = 12.5"
+
+
+def test_renders_the_negation_of_a_positive_amount() -> None:
+    line = PositivePartOfNegationLine(RATED_AMOUNT, NET_AMOUNT, D("40"), D("0"))
+
+    assert render(line) == "rated_amount: negation of net_amount 40, not below 0 = 0"
+
+
+# --- lesser of, when every amount is positive ----------------------------
+#
+# "<output>: lesser of <part> and <part>[, shown in brackets][, not all positive] = <result>";
+# a single part has no "lesser of".
+
+
+def test_renders_the_lesser_of_two_amounts_when_every_amount_is_positive() -> None:
+    line = LesserOfWhenPositiveLine(
+        TOTAL, ((PART_ONE, D("1500")), (PART_TWO, D("750.50"))), True, False, D("750.50")
+    )
+
+    assert render(line) == "total: lesser of part_one 1500 and part_two 750.5 = 750.5"
+
+
+def test_renders_the_lesser_of_three_amounts() -> None:
+    line = LesserOfWhenPositiveLine(
+        TOTAL,
+        ((PART_ONE, D("3")), (PART_TWO, D("2")), (GROSS_AMOUNT, D("5"))),
+        True,
+        False,
+        D("2"),
+    )
+
+    assert render(line) == "total: lesser of part_one 3 and part_two 2 and gross_amount 5 = 2"
+
+
+def test_renders_the_lesser_shown_in_brackets() -> None:
+    line = LesserOfWhenPositiveLine(
+        TOTAL, ((PART_ONE, D("1500")), (PART_TWO, D("750.50"))), True, True, D("-750.50")
+    )
+
+    assert render(line) == (
+        "total: lesser of part_one 1500 and part_two 750.5, shown in brackets = -750.5"
+    )
+
+
+def test_renders_conditions_that_are_not_met() -> None:
+    line = LesserOfWhenPositiveLine(
+        TOTAL, ((PART_ONE, D("1500")), (PART_TWO, D("750.50"))), False, False, D("0")
+    )
+
+    assert render(line) == (
+        "total: lesser of part_one 1500 and part_two 750.5, not all positive = 0"
+    )
+
+
+def test_renders_conditions_that_are_not_met_with_brackets() -> None:
+    line = LesserOfWhenPositiveLine(
+        TOTAL, ((PART_ONE, D("1500")), (PART_TWO, D("750.50"))), False, True, D("0")
+    )
+
+    assert render(line) == (
+        "total: lesser of part_one 1500 and part_two 750.5, shown in brackets, not all positive = 0"
+    )
+
+
+def test_renders_a_single_amount_that_is_positive() -> None:
+    line = LesserOfWhenPositiveLine(TOTAL, ((PART_ONE, D("12.30")),), True, False, D("12.30"))
+
+    assert render(line) == "total: part_one 12.3 = 12.3"
+
+
+def test_renders_a_single_amount_that_is_not_positive() -> None:
+    line = LesserOfWhenPositiveLine(TOTAL, ((PART_ONE, D("12.30")),), False, False, D("0"))
+
+    assert render(line) == "total: part_one 12.3, not all positive = 0"
+
+
+# --- amounts chosen by sign ----------------------------
+#
+# "<output>: <chosen kind> <chosen>, chosen as <sign kind> <sign> is positive|zero|negative";
+# an omitted branch: "<output>: 0, no amount when <sign kind> <sign> is positive|zero|negative".
+
+
+def test_renders_the_amount_chosen_for_a_positive_sign() -> None:
+    line = ChosenBySignLine(AMOUNT_CHOSEN, GATE_AMOUNT, D("2.5"), AMOUNT_ALONE, D("1633"))
+
+    assert render(line) == "amount_chosen: amount_alone 1633, chosen as gate_amount 2.5 is positive"
+
+
+def test_renders_the_amount_chosen_for_a_zero_sign() -> None:
+    line = ChosenBySignLine(AMOUNT_CHOSEN, GATE_AMOUNT, D("0.00"), AMOUNT_ALONE, D("1633"))
+
+    assert render(line) == "amount_chosen: amount_alone 1633, chosen as gate_amount 0 is zero"
+
+
+def test_renders_the_amount_chosen_for_a_negative_sign() -> None:
+    line = ChosenBySignLine(AMOUNT_CHOSEN, GATE_AMOUNT, D("-3"), AMOUNT_WITH_FAMILY, D("-250.75"))
+
+    assert render(line) == (
+        "amount_chosen: amount_with_family -250.75, chosen as gate_amount -3 is negative"
+    )
+
+
+def test_renders_an_omitted_branch() -> None:
+    line = ChosenBySignLine(AMOUNT_CHOSEN, GATE_AMOUNT, D("-3"), None, D("0"))
+
+    assert render(line) == "amount_chosen: 0, no amount when gate_amount -3 is negative"
+
+
+# --- amounts when one is more than another ----------------------------
+#
+# "<output>: <amount kind> <amount> if <more kind> <more> is more than <than kind> <than>
+# = <result>";
+# a gated-off amount reads the same, with its zero result.
+
+
+def test_renders_an_amount_passed_when_one_figure_is_more_than_another() -> None:
+    line = AmountWhenMoreLine(
+        ALLOWED_AMOUNT,
+        CLAIMED_AMOUNT,
+        D("1500.25"),
+        GATE_AMOUNT,
+        D("70000.01"),
+        CLAIM_LIMIT,
+        D("70000"),
+        D("1500.25"),
+    )
+
+    assert render(line) == (
+        "allowed_amount: claimed_amount 1500.25 if gate_amount 70000.01 is more than "
+        "claim_limit 70000 = 1500.25"
+    )
+
+
+def test_renders_an_amount_gated_off() -> None:
+    line = AmountWhenMoreLine(
+        ALLOWED_AMOUNT,
+        CLAIMED_AMOUNT,
+        D("1500.25"),
+        GATE_AMOUNT,
+        D("70000"),
+        CLAIM_LIMIT,
+        D("70000"),
+        D("0"),
+    )
+
+    assert render(line) == (
+        "allowed_amount: claimed_amount 1500.25 if gate_amount 70000 is more than "
+        "claim_limit 70000 = 0"
+    )
+
+
+def test_renders_an_amount_when_more_without_trailing_zeros() -> None:
+    line = AmountWhenMoreLine(
+        ALLOWED_AMOUNT,
+        CLAIMED_AMOUNT,
+        D("1.500E+3"),
+        GATE_AMOUNT,
+        D("2.0"),
+        CLAIM_LIMIT,
+        D("1.00"),
+        D("1500.00"),
+    )
+
+    assert render(line) == (
+        "allowed_amount: claimed_amount 1500 if gate_amount 2 is more than claim_limit 1 = 1500"
+    )
+
+
+# --- foreign tax credit (Form T2209 lines 1 to 3) --------------------------------------------
+
+
+def foreign_country(
+    position: int,
+    tax_paid: str,
+    income: str,
+    line_2: str,
+    result: str,
+    rounding: RoundingRule = CENT,
+) -> ForeignTaxCreditLine:
+    return ForeignTaxCreditLine(
+        NON_COMPLIANT_EXPENSES,
+        position,
+        D(tax_paid),
+        D(income),
+        D("100000"),
+        D("14000"),
+        rounding,
+        D(line_2),
+        D(result),
+    )
+
+
+def test_renders_one_country_by_position() -> None:
+    line = foreign_country(1, "1500", "10000", "1400.00", "1400.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: country 1: tax paid 1500, 10000 net foreign income x "
+        "14000 basic federal tax / 100000 net income = 1400 (half-up to 0.01); credit 1400"
+    )
+
+
+def test_renders_a_country_whose_tax_paid_is_the_lesser() -> None:
+    line = foreign_country(2, "100", "5000", "700.00", "100")
+
+    assert render(line) == (
+        "non_compliant_expenses: country 2: tax paid 100, 5000 net foreign income x "
+        "14000 basic federal tax / 100000 net income = 700 (half-up to 0.01); credit 100"
+    )
+
+
+def test_renders_a_country_without_rounding() -> None:
+    line = foreign_country(1, "100", "0.015", "0.0021", "0.0021", rounding=NO_ROUNDING)
+
+    assert render(line) == (
+        "non_compliant_expenses: country 1: tax paid 100, 0.015 net foreign income x "
+        "14000 basic federal tax / 100000 net income = 0.0021 (no rounding); credit 0.0021"
+    )
+
+
+def pooled_countries(
+    countries: int, tax_paid: str, income: str, line_2: str, result: str
+) -> PooledForeignTaxCreditLine:
+    return PooledForeignTaxCreditLine(
+        NON_COMPLIANT_EXPENSES,
+        countries,
+        D(tax_paid),
+        D(income),
+        D("100000"),
+        D("14000"),
+        D("200"),
+        CENT,
+        D(line_2),
+        D(result),
+    )
+
+
+def test_renders_a_pooled_calculation_naming_why_it_is_pooled() -> None:
+    line = pooled_countries(2, "200.00", "10100", "1414.00", "200.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: all 2 countries pooled, total tax paid 200 is not more than 200: "
+        "10100 net foreign income x 14000 basic federal tax / 100000 net income = 1414 "
+        "(half-up to 0.01); credit 200"
+    )
+
+
+def test_renders_a_single_country_as_one_country_not_pooled_by_the_threshold() -> None:
+    line = pooled_countries(1, "1500", "10000", "1400.00", "1400.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: one country: tax paid 1500, 10000 net foreign income x "
+        "14000 basic federal tax / 100000 net income = 1400 (half-up to 0.01); credit 1400"
+    )
+
+
+# --- provincial foreign tax credit (Form T2036 lines 1 to 5) ----------------------------------
+
+
+def provincial_sheet(
+    position: int,
+    tax_paid: str,
+    federal_credit: str,
+    line_3: str,
+    income: str,
+    line_4: str,
+    result: str,
+    rounding: RoundingRule = CENT,
+) -> ProvincialForeignTaxCreditLine:
+    return ProvincialForeignTaxCreditLine(
+        NON_COMPLIANT_EXPENSES,
+        position,
+        D(tax_paid),
+        D(federal_credit),
+        D(line_3),
+        D(income),
+        D("100000"),
+        D("5000"),
+        rounding,
+        D(line_4),
+        D(result),
+    )
+
+
+def test_renders_one_sheet_by_position() -> None:
+    line = provincial_sheet(1, "1500", "1400.00", "100.00", "10000", "500.00", "100.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 1: tax paid 1500 less federal credit 1400 = 100; "
+        "10000 net foreign income x 5000 provincial tax / 100000 net income = 500 "
+        "(half-up to 0.01); credit 100"
+    )
+
+
+def test_renders_a_sheet_whose_line_4_is_the_lesser() -> None:
+    line = provincial_sheet(2, "1500", "0", "1500", "10000", "500.00", "500.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 2: tax paid 1500 less federal credit 0 = 1500; "
+        "10000 net foreign income x 5000 provincial tax / 100000 net income = 500 "
+        "(half-up to 0.01); credit 500"
+    )
+
+
+def test_renders_a_sheet_without_rounding() -> None:
+    line = provincial_sheet(1, "5", "0", "5", "0.015", "0.00075", "0.00075", rounding=NO_ROUNDING)
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 1: tax paid 5 less federal credit 0 = 5; "
+        "0.015 net foreign income x 5000 provincial tax / 100000 net income = 0.00075 "
+        "(no rounding); credit 0.00075"
+    )

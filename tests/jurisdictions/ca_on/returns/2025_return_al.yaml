@@ -30,9 +30,11 @@
 # the cent, 343.42, so line 46 is 343.42 and line 47 is 2,360.95 - 343.42 = 2,017.53,
 # which is line 50 (line 49 is not wired). Line 51 is ON428 line 88, and line 52 the more
 # of lines 50 and 51, 2,017.53, which is the Ontario tax before the health premium. Not
-# yet computed, so not in this file: lines 8A, 23, 33C and 49 of T1206. The chart of line 23500
+# yet computed, so not in this file: lines 23 and 49 of T1206. The chart of line 23500
 # does not apply (no old age security, EI benefits or net federal supplements), so line 23500 is 0 and
-# line 23600 equals line 23400. Amounts are quoted decimal strings, never
+# line 23600 equals line 23400. T1206 line 33C is 2,360.95 / 5.05% = 46,751.49 (a declared
+# output: nothing reads it). T1206 line 8A is 3,795.00 / 14.5% = 26,172.41, added to the taxable income
+# on line 11 of Schedule 11. Amounts are quoted decimal strings, never
 # floats; counts are quoted digit strings. A line or input this return leaves out
 # is blank, 0, and is checked to compute to 0; intermediate lines that are listed are checked
 # too.
@@ -72,6 +74,11 @@ description: >-
   $3,795.00; line 16 is $11,500 and line 17 is $11,500, line 18 is $0.00, line 19 is $11,500
   x 9.0301% = $1,038.4615, rounded half-up to the cent: $1,038.46, line 20 is $0.00 x
   15.0198% = $0.00 and line 21 is $1,038.46; line 22 is $3,795.00 - $1,038.46 = $2,756.54;
+  line 8A is line 8 divided by 14.5%: $3,795.00 / 0.145 = $26,172.4137, rounded half-up to
+  the cent: $26,172.41, which Schedule 11 adds to the amount on its line 11 (the taxable
+  income of $0.00, at or below $57,375): $0.00 + $26,172.41 = $26,172.41, and line 13 is
+  that less the credit amounts of line 101 (the basic personal amount, $16,129.00) =
+  $10,043.41, line 14 (unused tuition from 2024, $0) is $0 and line 15 is $10,043.41;
   line 24 is line 22, $2,756.54 (line 23 is not wired); line 25 (line 40600) is $417.83,
   line 26 (line 41600) is $0.00, line 27 is $417.83, line 28 (line 41500) is $0 and line 29
   is $417.83; line 30 is the greater of $2,756.54 and $417.83: $2,756.54, and line 42000 is
@@ -86,7 +93,10 @@ description: >-
   are $0.00 and line 39 is $2,360.95 - $0.00 = $2,360.95; line 42 is 10% of the $0.00 of
   line 18, $0.00, and line 45 is 2.9863% x the $11,500 of line 2 = $343.4245, rounded
   half-up to the cent: $343.42, so line 46 is $343.42 and line 47 is $2,360.95 - $343.42 =
-  $2,017.53, as is line 50 (line 49 is not wired). The Ontario tax with the tax on split
+  $2,017.53, as is line 50 (line 49 is not wired). Line 33C is line 33A (line 33, $2,360.95)
+  divided by the 5.05% of line 33B (Chart C column 3): $2,360.95 / 0.0505 = $46,751.4851,
+  rounded half-up to the cent: $46,751.49, a declared output that nothing on the return
+  reads. The Ontario tax with the tax on split
   income (ON428 line 55) is $0.00 + $2,360.95 = $2,360.95. The surtax base (line 65) is
   line 63 (that $2,360.95) less line 64, the tax on split income (line 54, $2,360.95), not
   below zero: $0.00, so the surtax (lines 66 to 68) is $0.00 and the Ontario tax with
@@ -260,13 +270,32 @@ sources:
     zero: 0.00. The health premium income is 0.00 + 11,500.00. Lines 33, 38, 42 and 45 are
     dollars-and-cents boxes, rounded half-up to the cent; the others take amounts already in
     cents.
+  - >-
+    CRA, Form T1206 2025, Part 2 and "TOSI-adjusted taxable income" on page 5, and Schedule 11
+    (docs/cra-forms-2025/5000-s11-25e.txt): "TOSI-adjusted taxable income Amount from line 8 ÷
+    14.5% = 8A"; "If you are completing a federal Schedule 11, calculate line 8A and add it to
+    the amount on line 11 of Schedule 11"; Schedule 11 "Line 11: Amount from line 76 of your
+    return divided by 14.5% =" (or the line 26000 amount if it is $57,375 or less); "Line 12:
+    Enter the amount from line 101 of your return"; "Line 13: Line 11 minus line 12 (if
+    negative, enter "0") =". Line 8A is 3,795.00 / 14.5% = 26,172.4137, rounded half-up to the
+    cent (a dollars-and-cents box, the owner's decision), 26,172.41; line 11 plus line 8A is
+    0.00 + 26,172.41; line 13 is 26,172.41 - 16,129.00 = 10,043.41.
+  - >-
+    CRA, Form T1206 2025, Part 3 "TOSI-adjusted taxable income": "Amount from line 33 ... 33A";
+    "Tax rate that applies to your province or territory from column 3 in Chart C on page 5 ÷ %
+    33B" (Ontario's row: "ON 20.53% 5.05% 10% 2.9863%"); "Amount from line 33A divided by the
+    tax rate you entered on line 33B = 33C". Line 33C is 2,360.95 / 0.0505 = 46,751.4851,
+    rounded half-up to the cent (a dollars-and-cents box, the owner's decision), 46,751.49.
 inputs:
   ca/other_dividends_received_without_a_slip: "10000"
   ca/resident_in_canada_throughout_2025: "1"
   ca/cpp_months: "12"
+  ca/cpp_t4_base_and_first_additional_contributions: "0"
+  ca/cpp_t4_second_additional_contributions: "0"
   ca/aged_18_or_older_at_end_of_2025: "1"
   ca/split_income_dividends: "11500"
   ca/split_income_dividends_other_than_eligible: "11500"
+  ca/unapplied_net_capital_losses_2000: "0"
 expected:
   ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca/other_dividends_grossed_up: "11500.00"
@@ -298,6 +327,12 @@ expected:
   ca/dividend_tax_credit: "1038.46"
   ca/credits_against_basic_federal_tax: "3377.17"
   ca/federal_tax_on_split_income: "3795.00"
+  ca/tosi_adjusted_taxable_income: "26172.41"
+  ca/tuition_income_base: "0.00"
+  ca/tuition_income_with_tosi: "26172.41"
+  ca/credit_amounts_subtotal: "16129.00"
+  ca/tuition_income_less_credits: "10043.41"
+  ca/tuition_income_remaining: "10043.41"
   ca/federal_tax_with_split_income: "3795.00"
   ca/federal_tax_after_credits: "417.83"
   ca-on/basic_personal_amount: "12747.00"
@@ -320,6 +355,7 @@ expected:
   ca-on/tax_reduction_basic: "294.00"
   ca-on/tax_reduction_amounts: "294.00"
   ca-on/ontario_tax_on_split_income: "2360.95"
+  ca-on/tosi_adjusted_taxable_income: "46751.49"
   ca-on/split_income_line_36: "0.00"
   ca-on/split_income_line_38: "0.00"
   ca-on/split_income_line_39: "2360.95"
@@ -364,3 +400,19 @@ expected:
   ca-on/coop_education_remaining_share: "1.00"
   ca/medical_supplement_line_6: "11500.00"
   ca/refund_or_balance_owing: "4774.07"
+  ca/amt_part_1_subtotal: "0"
+  ca/amt_net_capital_gains_after_adjustments: "0"
+  ca/amt_publicly_listed_gifts_adjustment: "0.00"
+  ca/amt_resource_property_and_flow_through_shares: "0"
+  ca/amt_applicable_rate_amount: "0.00"
+  ca/amt_other_years_losses_total: "0"
+  ca/amt_security_options_d1_total: "0"
+  ca/amt_security_options_net: "0"
+  ca/net_capital_loss_balance_2000: "0.00"
+  ca/cpp_required_base_and_first_additional_contributions: "0.00"
+  ca/cpp_contributions_difference: "0.00"
+  ca/amt_adjusted_income_with_gains: "0.00"
+  ca/amt_minimum_amount: "0"
+  ca/amt_basic_federal_tax: "417.83"
+  ca/amt_regular_net_federal_tax_payable: "417.83"
+  ca/amt_special_foreign_tax_credit: "0"

@@ -311,12 +311,82 @@ all dependants who qualify for the disability tax credit", each line 13 "Enter w
 amount from line 8 or line 12. Allowable amount for this dependant", a part of the total of the
 credit amounts."""
 
+ELIGIBLE_FOR_DISABILITY_AMOUNT = CATALOG.declare(
+    "eligible_for_disability_amount", int, non_negative=True
+)
+"""Qualifies for the disability amount, Federal Worksheet (form 5000-D1), "Line 31600 - Disability
+amount for self", "If you qualify for the disability amount": a starting count, 0 or 1, the CRA's
+approval of the filer on Form T2201; the amount is claimed once if it is 1."""
+
+UNDER_18_ON_DECEMBER_31 = CATALOG.declare("under_18_on_december_31", int, non_negative=True)
+"""Under 18 years of age on December 31, 2025, Federal Worksheet (form 5000-D1), "Line 31600 -
+Disability amount for self", "under 18 years of age, complete the calculation below": a starting
+count, 0 or 1, from the date of birth the return asks for."""
+
+DISABILITY_SELF_CARE_EXPENSES = CATALOG.declare(
+    "disability_self_care_expenses", Decimal, non_negative=True
+)
+"""Child care and attendant care expenses for self, Federal Worksheet (form 5000-D1), "Line 31600 -
+Disability amount for self", line 3 "Total of child care and attendant care expenses for you that
+you or another person claimed": a starting amount, the caller's figure, the same figure as the
+Ontario worksheet's line 3."""
+
+DISABILITY_SELF_BASE_AMOUNT = CATALOG.declare(
+    "disability_self_base_amount", Decimal, non_negative=True
+)
+"""Base amount for self, Federal Worksheet (form 5000-D1), "Line 31600 - Disability amount for
+self", line 1 "Base amount 10,138.00": the dataset as an artifact."""
+
+DISABILITY_SELF_SUPPLEMENT_MAXIMUM = CATALOG.declare(
+    "disability_self_supplement_maximum", Decimal, non_negative=True
+)
+"""Maximum supplement for self, Federal Worksheet (form 5000-D1), "Line 31600 - Disability amount
+for self", line 2 "Maximum supplement 5,914.00": the dataset as an artifact."""
+
+DISABILITY_SELF_CARE_THRESHOLD = CATALOG.declare(
+    "disability_self_care_threshold", Decimal, non_negative=True
+)
+"""Threshold for child care and attendant care expenses for self, Federal Worksheet (form
+5000-D1), "Line 31600 - Disability amount for self", line 4 "Threshold for child care and attendant
+care expenses 3,464.00": the dataset as an artifact."""
+
+DISABILITY_SELF_CARE_OVER_THRESHOLD = CATALOG.declare(
+    "disability_self_care_over_threshold", Decimal, non_negative=True
+)
+"""Care expenses over the threshold for self, Federal Worksheet (form 5000-D1), "Line 31600 -
+Disability amount for self", line 5 "Line 3 minus line 4 (if negative, enter "0")": line 3 less the
+threshold of line 4, not below zero."""
+
+DISABILITY_SELF_SUPPLEMENT = CATALOG.declare(
+    "disability_self_supplement", Decimal, non_negative=True
+)
+"""Supplement for self, Federal Worksheet (form 5000-D1), "Line 31600 - Disability amount for self",
+line 6 "Line 2 minus line 5 (if negative, enter "0")": the maximum supplement less the care
+expenses over the threshold, not below zero."""
+
+DISABILITY_SELF_WORKSHEET_AMOUNT = CATALOG.declare(
+    "disability_self_worksheet_amount", Decimal, non_negative=True
+)
+"""Disability amount for self under 18, Federal Worksheet (form 5000-D1), "Line 31600 - Disability
+amount for self", line 7 "Line 1 plus line 6 Enter this amount on line 31600 of your return.
+(maximum $16,052)": the base amount plus the supplement; the printed maximum is met without a cap,
+as the supplement is at most the maximum supplement."""
+
+DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE = CATALOG.declare(
+    "disability_amount_for_self_if_eligible", Decimal, non_negative=True
+)
+"""Disability amount for self before the qualification, Federal Worksheet (form 5000-D1), "Line
+31600 - Disability amount for self": "18 years of age or older, enter $10,138 on line 31600 of your
+return", the base amount of line 1 for a filer 18 or older on December 31, 2025, and the worksheet
+amount of line 7 for a filer under 18."""
+
 DISABILITY_AMOUNT_FOR_SELF = CATALOG.declare(
     "disability_amount_for_self", Decimal, non_negative=True
 )
 """Disability amount for self, T1 line 99 and line 31600 "Disability amount for self (if you were
-under 18 years of age, use Federal Worksheet; if not, claim $10,138)": a starting amount, read by
-Form T1206 Part 2 line 11 "Amount from line 31600 of your return" and not yet computed."""
+under 18 years of age, use Federal Worksheet; if not, claim $10,138)": the amount once if the
+filer qualifies, else 0; a part of the total of the credit amounts. Read by Form T1206 Part 2
+line 11 "Amount from line 31600 of your return"."""
 
 RESIDENCE_YEARS_DESIGNATED_AFTER_1981 = CATALOG.declare(
     "residence_years_designated_after_1981", int, non_negative=True

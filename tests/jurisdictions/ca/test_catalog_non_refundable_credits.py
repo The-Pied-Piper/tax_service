@@ -7,6 +7,7 @@ from decimal import Decimal
 from app.domain.artifact import ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADA_TRAINING_CREDIT_CLAIMED,
@@ -46,12 +47,21 @@ from app.jurisdictions.ca.catalog import (
     ECOLOGICAL_GIFTS_BEFORE_2016,
     EI_PREMIUMS,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
     FEDERAL_TUITION_AMOUNT,
+    FIRST_NATIONS_ABATEMENT,
     FIRST_TIER_DONATION_CREDIT,
     FOREIGN_CHARITY_DONATIONS,
+    FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+    FOREIGN_TAX_CREDIT_NET_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+    FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
     HIGH_INCOME_DONATION_CREDIT,
@@ -86,6 +96,7 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOP_UP_THRESHOLD,
+    TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_TUITION_AVAILABLE,
     TUITION_AVAILABLE_TO_TRANSFER,
@@ -93,6 +104,7 @@ from app.jurisdictions.ca.catalog import (
     TUITION_INCOME_BASE,
     TUITION_INCOME_LESS_CREDITS,
     TUITION_INCOME_REMAINING,
+    TUITION_INCOME_WITH_TOSI,
     TUITION_TRANSFER_ELECTED,
     TUITION_TRANSFER_LIMIT,
     TUITION_TRANSFERRED,
@@ -102,6 +114,7 @@ from app.jurisdictions.ca.catalog import (
     UNUSED_TUITION_CLAIMED,
     UNUSED_TUITION_FROM_2024,
 )
+from tests.jurisdictions.ca.catalog_snapshot import SIGNED
 
 
 def test_the_non_refundable_credits_kinds_are_the_registered_ones(
@@ -182,6 +195,7 @@ def test_the_non_refundable_credits_kinds_are_the_registered_ones(
     assert registry.get("ca/top_up_tax_credit") is TOP_UP_TAX_CREDIT
     assert registry.get("ca/federal_tax_on_split_income") is FEDERAL_TAX_ON_SPLIT_INCOME
     assert registry.get("ca/federal_tax_with_split_income") is FEDERAL_TAX_WITH_SPLIT_INCOME
+    assert registry.get("ca/tosi_adjusted_taxable_income") is TOSI_ADJUSTED_TAXABLE_INCOME
     assert registry.get("ca/canadian_tuition_fees") is CANADIAN_TUITION_FEES
     assert registry.get("ca/canada_training_credit_limit") is CANADA_TRAINING_CREDIT_LIMIT
     assert registry.get("ca/canada_training_credit_claimed") is CANADA_TRAINING_CREDIT_CLAIMED
@@ -195,6 +209,7 @@ def test_the_non_refundable_credits_kinds_are_the_registered_ones(
     assert registry.get("ca/current_year_tuition_available") is CURRENT_YEAR_TUITION_AVAILABLE
     assert registry.get("ca/total_tuition_available") is TOTAL_TUITION_AVAILABLE
     assert registry.get("ca/tuition_income_base") is TUITION_INCOME_BASE
+    assert registry.get("ca/tuition_income_with_tosi") is TUITION_INCOME_WITH_TOSI
     assert registry.get("ca/credit_amounts_subtotal") is CREDIT_AMOUNTS_SUBTOTAL
     assert registry.get("ca/tuition_income_less_credits") is TUITION_INCOME_LESS_CREDITS
     assert registry.get("ca/unused_tuition_claimed") is UNUSED_TUITION_CLAIMED
@@ -306,6 +321,8 @@ def test_the_non_refundable_credits_kinds_are_money() -> None:
         CURRENT_YEAR_TUITION_AVAILABLE,
         TOTAL_TUITION_AVAILABLE,
         TUITION_INCOME_BASE,
+        TOSI_ADJUSTED_TAXABLE_INCOME,
+        TUITION_INCOME_WITH_TOSI,
         CREDIT_AMOUNTS_SUBTOTAL,
         TUITION_INCOME_LESS_CREDITS,
         UNUSED_TUITION_CLAIMED,
@@ -362,6 +379,8 @@ def test_the_tuition_and_transfer_kinds_are_non_negative(registry: ArtifactRegis
         CURRENT_YEAR_TUITION_AVAILABLE,
         TOTAL_TUITION_AVAILABLE,
         TUITION_INCOME_BASE,
+        TOSI_ADJUSTED_TAXABLE_INCOME,
+        TUITION_INCOME_WITH_TOSI,
         CREDIT_AMOUNTS_SUBTOTAL,
         TUITION_INCOME_LESS_CREDITS,
         UNUSED_TUITION_CLAIMED,
@@ -402,3 +421,93 @@ def test_the_separation_count_is_a_non_negative_int(registry: ArtifactRegistry) 
     assert SPOUSE_NOT_SEPARATED_90_DAYS.value_type is int
     assert SPOUSE_NOT_SEPARATED_90_DAYS.non_negative is True
     assert registry.kind("ca/spouse_not_separated_90_days") is SPOUSE_NOT_SEPARATED_90_DAYS
+
+
+# --- Form T2209 and T1 lines 128 to 130: the federal foreign tax credit ---------------------------
+
+
+def test_the_federal_foreign_tax_credit_kinds_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    assert registry.get("ca/first_nations_abatement") is FIRST_NATIONS_ABATEMENT
+    assert (
+        registry.get("ca/foreign_tax_credit_net_income_deductions")
+        is FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS
+    )
+    assert (
+        registry.get("ca/foreign_tax_credit_net_income_before_split_income")
+        is FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME
+    )
+    assert (
+        registry.get("ca/foreign_tax_credit_net_income_with_split_income")
+        is FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME
+    )
+    assert registry.get("ca/foreign_tax_credit_net_income") is FOREIGN_TAX_CREDIT_NET_INCOME
+    assert (
+        registry.get("ca/basic_federal_tax_with_dividend_credit")
+        is BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT
+    )
+    assert (
+        registry.get("ca/foreign_tax_credit_basic_federal_tax")
+        is FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX
+    )
+    assert (
+        registry.get("ca/federal_non_business_foreign_tax_credit")
+        is FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT
+    )
+    assert registry.get("ca/federal_foreign_tax_credit") is FEDERAL_FOREIGN_TAX_CREDIT
+    assert (
+        registry.get("ca/federal_tax_less_foreign_tax_credit")
+        is FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT
+    )
+
+
+def test_the_federal_foreign_tax_credit_kinds_are_money() -> None:
+    for kind in (
+        FIRST_NATIONS_ABATEMENT,
+        FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+        FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+        FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+        FOREIGN_TAX_CREDIT_NET_INCOME,
+        BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+        FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+        FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
+        FEDERAL_FOREIGN_TAX_CREDIT,
+        FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_foreign_tax_credit_net_income_kinds_are_signed(registry: ArtifactRegistry) -> None:
+    # Form T2209 note (3), net income: "Amount from line 23600 of your return (or the amount you
+    # would have entered if the instructions said "if negative, show in brackets") plus the amount
+    # on line 68360 of Form T1206, Total split income, minus any:" the listed deductions. The
+    # note prints no "(if negative, enter "0")", and line 23600 in brackets is signed, so the
+    # amount before the split income, the amount with it and the result may each be negative.
+    for kind in (
+        FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+        FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+        FOREIGN_TAX_CREDIT_NET_INCOME,
+    ):
+        assert kind.non_negative is False, kind.identifier
+        assert registry.kind(kind.identifier) is kind
+        assert kind.identifier in SIGNED
+
+
+def test_the_other_federal_foreign_tax_credit_kinds_are_non_negative(
+    registry: ArtifactRegistry,
+) -> None:
+    # Note (4), basic federal tax: line 42900 plus the federal dividend tax credit, minus the
+    # First Nations abatement; line 3 is the lesser of two non-negative amounts, line 13 "should
+    # not be more than" line 42900, and T1 line 130 comes off line 128 within the limit.
+    for kind in (
+        FIRST_NATIONS_ABATEMENT,
+        FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+        BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+        FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+        FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
+        FEDERAL_FOREIGN_TAX_CREDIT,
+        FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
+    ):
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier) is kind

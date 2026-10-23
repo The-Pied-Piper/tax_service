@@ -187,13 +187,62 @@ amount transferred from a dependant (use Worksheet ON428)": "the total of allowa
 claimed for all dependants", each line 12 "Enter whichever is less: amount from line 7 or line
 11. Allowable amount for this dependant", a part of the total of the Ontario credit amounts."""
 
+DISABILITY_SELF_BASE_AMOUNT = CATALOG.declare(
+    "disability_self_base_amount", Decimal, non_negative=True
+)
+"""Base amount for self, Worksheet ON428 (form 5006-D), "Line 58440 - Disability amount for self",
+line 1 "Base amount 10,298.00": the dataset as an artifact."""
+
+DISABILITY_SELF_SUPPLEMENT_MAXIMUM = CATALOG.declare(
+    "disability_self_supplement_maximum", Decimal, non_negative=True
+)
+"""Maximum amount for self, Worksheet ON428 (form 5006-D), "Line 58440 - Disability amount for
+self", line 2 "Maximum amount 6,007.00": the dataset as an artifact."""
+
+DISABILITY_SELF_CARE_THRESHOLD = CATALOG.declare(
+    "disability_self_care_threshold", Decimal, non_negative=True
+)
+"""Threshold for child and attendant care expenses for self, Worksheet ON428 (form 5006-D), "Line
+58440 - Disability amount for self", line 4 "Threshold for child and attendant care expenses
+3,518.00": the dataset as an artifact."""
+
+DISABILITY_SELF_CARE_OVER_THRESHOLD = CATALOG.declare(
+    "disability_self_care_over_threshold", Decimal, non_negative=True
+)
+"""Care expenses over the threshold for self, Worksheet ON428 (form 5006-D), "Line 58440 -
+Disability amount for self", line 5 "Line 3 minus line 4 (if negative, enter "0") =": line 3 less
+the threshold of line 4, not below zero."""
+
+DISABILITY_SELF_SUPPLEMENT = CATALOG.declare(
+    "disability_self_supplement", Decimal, non_negative=True
+)
+"""Supplement for self, Worksheet ON428 (form 5006-D), "Line 58440 - Disability amount for self",
+line 6 "Line 2 minus line 5 (if negative, enter "0") =": the maximum amount less the care expenses
+over the threshold, not below zero."""
+
+DISABILITY_SELF_WORKSHEET_AMOUNT = CATALOG.declare(
+    "disability_self_worksheet_amount", Decimal, non_negative=True
+)
+"""Disability amount for self under 18, Worksheet ON428 (form 5006-D), "Line 58440 - Disability
+amount for self", line 7 "Line 1 plus line 6 Enter this amount on line 58440 of your Form ON428.
+(maximum $16,305) =": the base amount plus the supplement; the printed maximum is met without a cap,
+as the supplement is at most the maximum amount."""
+
+DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE = CATALOG.declare(
+    "disability_amount_for_self_if_eligible", Decimal, non_negative=True
+)
+"""Disability amount for self before the qualification, ON428 line 29 and line 58440 "Disability
+amount for self (claim $10,298 or, if you were under 18 years of age, use Worksheet ON428)": the
+base amount for a filer 18 or older on December 31, 2025, and the worksheet amount of line 7 for a
+filer under 18."""
+
 DISABILITY_AMOUNT_FOR_SELF = CATALOG.declare(
     "disability_amount_for_self", Decimal, non_negative=True
 )
-"""Ontario disability amount for self, ON428 line 58440 "Disability amount for self (if you were
-under 18 years of age, use Worksheet ON428; if not, claim $10,138)": a starting amount, read by
-Form T1206 Part 3 line 34 "DTC from line 58440 of your provincial or territorial Form 428" and not
-yet computed."""
+"""Ontario disability amount for self, ON428 line 29 and line 58440 "Disability amount for self
+(claim $10,298 or, if you were under 18 years of age, use Worksheet ON428)": the amount once if the
+filer qualifies, else 0; a part of the total of the Ontario credit amounts. Read by Form T1206
+Part 3 line 34 "DTC from line 58440 of your provincial or territorial Form 428"."""
 
 UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD = CATALOG.declare(
     "unused_tuition_amounts_brought_forward", Decimal, non_negative=True
@@ -375,6 +424,14 @@ ONTARIO_TAX_ON_SPLIT_INCOME = CATALOG.declare(
 Form T1206)", Form T1206 Part 3 line 33 "The amount from line 31 multiplied by the tax rate you
 entered on line 32": the total split income (line 31, the T1206 line 4) at the Ontario high tax rate
 of Chart C column 2."""
+
+TOSI_ADJUSTED_TAXABLE_INCOME = CATALOG.declare(
+    "tosi_adjusted_taxable_income", Decimal, non_negative=True
+)
+"""Ontario TOSI-adjusted taxable income, Form T1206 Part 3 line 33C "Amount from line 33A divided by
+the tax rate you entered on line 33B": the Ontario tax on split income (line 33A, the T1206 line
+33) divided by the Chart C column 3 rate, 5.05%. A declared output: with the exception of Ontario,
+a provincial Schedule adds it, and nothing else on the Ontario return reads it."""
 
 SPLIT_INCOME_LINE_36 = CATALOG.declare("split_income_line_36", Decimal, non_negative=True)
 """Disability amounts on split income, Form T1206 Part 3 line 36 "Line 34 plus line 35", line 34
@@ -638,6 +695,66 @@ ONTARIO_TAX_AFTER_REDUCTION = CATALOG.declare(
 """Ontario tax after the Ontario tax reduction, ON428 line 81 "Line 73 minus line 80 (if negative,
 enter "0")": the Ontario tax after the dividend tax credit (line 73) less the Ontario tax
 reduction."""
+
+TAX_OTHERWISE_PAYABLE_LINE_71 = CATALOG.declare(
+    "tax_otherwise_payable_line_71", Decimal, non_negative=True
+)
+"""Line 71 for the tax otherwise payable, ON428 line 71 "Line 69 minus line 70 (if negative, enter
+"0")" with "0" on line 70, as Form T2036 note (4) directs: line 69."""
+
+TAX_OTHERWISE_PAYABLE_LINE_73 = CATALOG.declare(
+    "tax_otherwise_payable_line_73", Decimal, non_negative=True
+)
+"""Line 73 for the tax otherwise payable, ON428 line 73 "Line 71 plus line 72 =" with "0" on line
+72, as Form T2036 note (4) directs: line 71."""
+
+TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS = CATALOG.declare(
+    "tax_otherwise_payable_reduction_before_conditions", Decimal, non_negative=True
+)
+"""Ontario tax reduction before the conditions for the tax otherwise payable, ON428 line 80 "Line 78
+minus line 79 (if negative, enter "0") Ontario tax reduction": line 78 less line 79, the latter
+being the line 73 of the tax otherwise payable, before the conditions on which the form enters "0"
+on line 80."""
+
+TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE = CATALOG.declare(
+    "tax_otherwise_payable_reduction_claimable", int, non_negative=True
+)
+"""Whether line 80 is completed for the tax otherwise payable, ON428 "Enter "0" on line 80 if any of
+the following applies to you" "If none of the above applies to you, complete lines 74 to 80", with
+"0" on line 72 so that "There is an amount on line 72" cannot apply: 0 when any of the other five
+printed conditions applies, else 1."""
+
+TAX_OTHERWISE_PAYABLE_REDUCTION = CATALOG.declare(
+    "tax_otherwise_payable_reduction", Decimal, non_negative=True
+)
+"""Ontario tax reduction for the tax otherwise payable, ON428 line 80 "Ontario tax reduction" with
+"0" on lines 70 and 72: line 78 less line 79 when none of the five conditions applies, else "0"."""
+
+TAX_OTHERWISE_PAYABLE = CATALOG.declare("tax_otherwise_payable", Decimal, non_negative=True)
+"""Provincial tax otherwise payable, Form T2036 note (4) "Provincial or territorial tax otherwise
+payable": for a resident of Ontario, ON428 line 81 "Line 73 minus line 80 (if negative, enter
+"0")" calculated by entering "0" on lines 70 and 72."""
+
+PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT = CATALOG.declare(
+    "provincial_foreign_tax_credit_before_limit", Decimal, non_negative=True
+)
+"""Provincial foreign tax credit before its limit, Form T2036 line 5 "Provincial or territorial
+foreign tax credit" and "Enter the total from line 5 (for each country if applicable)": the total of
+the sheets' line 5, before "should not be more than" the tax otherwise payable."""
+
+PROVINCIAL_FOREIGN_TAX_CREDIT = CATALOG.declare(
+    "provincial_foreign_tax_credit", Decimal, non_negative=True
+)
+"""Provincial foreign tax credit, ON428 line 82 "Provincial foreign tax credit (complete Form
+T2036)": the total of Form T2036 line 5, which "should not be more than the amount entered on the
+line for provincial or territorial tax otherwise payable"."""
+
+ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT = CATALOG.declare(
+    "ontario_tax_after_foreign_tax_credit", Decimal, non_negative=True
+)
+"""Ontario tax after the provincial foreign tax credit, ON428 line 83 "Line 81 minus line 82 (if
+negative, enter "0")": the Ontario tax after the Ontario tax reduction less the provincial foreign
+tax credit."""
 
 LIFT_CREDIT_BEFORE_MAXIMUM = CATALOG.declare(
     "lift_credit_before_maximum", Decimal, non_negative=True

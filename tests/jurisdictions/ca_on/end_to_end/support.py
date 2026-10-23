@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
+from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER
 from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.record_list import RecordList, RecordListKind
 from app.domain.worksheet import Worksheet
@@ -16,14 +18,134 @@ from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGED_18_OR_OLDER_AT_END_OF_2025,
+    AMT_CLASS_43_1_INCOME,
+    AMT_COMMISSION_EMPLOYMENT_EXPENSES,
+    AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
+    AMT_EXCESS_EPSP_AMOUNTS,
+    AMT_FEDERAL_LOGGING_TAX_CREDIT,
+    AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
+    AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_FINANCING_EXPENSES,
+    AMT_FOREIGN_BUSINESS_INCOME,
+    AMT_FOREIGN_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM,
+    AMT_FOREIGN_NON_BUSINESS_INCOME,
+    AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
+    AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
+    AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
+    AMT_INVESTMENT_COUNSEL_FEES,
+    AMT_INVESTMENT_TAX_CREDIT_CLAIM,
+    AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
+    AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
+    AMT_LIMITED_PARTNER_CARRYING_CHARGES,
+    AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION,
+    AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
+    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+    AMT_MOVING_EXPENSES_DEDUCTION,
+    AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
+    AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
+    AMT_NON_DEDUCTIBLE_INTEREST,
+    AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
+    AMT_PPIP_PREMIUMS_DEDUCTION,
+    AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
+    AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
+    AMT_PUBLICLY_LISTED_GIFTS_TOTAL,
+    AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
+    AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_REPAYMENT_OF_SALARY_AND_WAGES,
+    AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT,
+    AMT_RESOURCE_EXPENDITURES,
+    AMT_RESOURCE_FOREIGN_PROPERTY_INCOME,
+    AMT_RESOURCE_PRODUCTION_INCOME,
+    AMT_SECTION_119_FORMER_RESIDENT_CREDIT,
+    AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
+    AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
+    AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
+    AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
+    AMT_T2038_AMOUNT_I,
+    AMT_T2203_COLUMN_5_PERCENTAGE,
+    AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
+    AMT_TAX_SHELTER_LOSSES,
+    AMT_TREATY_EXEMPT_CAPITAL_GAINS,
     BOND_DISPOSITIONS,
     BORN_IN_1960_OR_EARLIER,
-    BUSINESS_INCOME,
+    BUSINESS_ADVERTISING,
+    BUSINESS_BAD_DEBTS,
+    BUSINESS_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
+    BUSINESS_CCA_CLASSES,
+    BUSINESS_CCA_PERSONAL_PART,
+    BUSINESS_CLOSING_INVENTORY,
+    BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,
+    BUSINESS_DIRECT_WAGE_COSTS,
+    BUSINESS_FUEL_COSTS,
+    BUSINESS_GROSS_SALES,
+    BUSINESS_HOME_CARRIED_FORWARD,
+    BUSINESS_HOME_CCA,
+    BUSINESS_HOME_ELECTRICITY,
+    BUSINESS_HOME_HEAT,
+    BUSINESS_HOME_INSURANCE,
+    BUSINESS_HOME_MAINTENANCE,
+    BUSINESS_HOME_MORTGAGE_INTEREST,
+    BUSINESS_HOME_OTHER_EXPENSES,
+    BUSINESS_HOME_PERSONAL_USE_PART,
+    BUSINESS_HOME_PROPERTY_TAXES,
+    BUSINESS_INSURANCE,
+    BUSINESS_INTEREST_AND_BANK_CHARGES,
     BUSINESS_INVESTMENT_LOSS,
+    BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,
+    BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,
+    BUSINESS_MEALS_AND_ENTERTAINMENT,
+    BUSINESS_OFFICE_EXPENSES,
+    BUSINESS_OFFICE_STATIONERY_AND_SUPPLIES,
+    BUSINESS_OPENING_INVENTORY,
+    BUSINESS_OTHER_COSTS,
+    BUSINESS_OTHER_EXPENSES,
+    BUSINESS_OTHER_INCOME,
+    BUSINESS_PARTNER,
+    BUSINESS_PARTNER_GST_HST_REBATE,
+    BUSINESS_PARTNER_OTHER_AMOUNT_A,
+    BUSINESS_PARTNER_OTHER_AMOUNT_B,
+    BUSINESS_PARTNER_OTHER_AMOUNT_C,
+    BUSINESS_PARTNER_OTHER_AMOUNT_D,
+    BUSINESS_PARTNER_OTHER_AMOUNT_E,
+    BUSINESS_PARTNER_SHARE,
+    BUSINESS_PROFESSIONAL_FEES,
+    BUSINESS_PROPERTY_TAXES,
+    BUSINESS_PURCHASES,
+    BUSINESS_QUICK_METHOD_GST_HST,
+    BUSINESS_QUICK_METHOD_REMITTED,
+    BUSINESS_RENT,
+    BUSINESS_REPAIRS_AND_MAINTENANCE,
+    BUSINESS_RESERVES_DEDUCTED_LAST_YEAR,
+    BUSINESS_SALARIES_WAGES_AND_BENEFITS,
+    BUSINESS_SALES_ADJUSTMENTS,
+    BUSINESS_SUBCONTRACTS,
+    BUSINESS_TRAVEL_EXPENSES,
+    BUSINESS_UTILITIES,
+    BUSINESS_VEHICLE_BUSINESS_KILOMETRES,
+    BUSINESS_VEHICLE_ELECTRICITY_ZEV,
+    BUSINESS_VEHICLE_FUEL_AND_OIL,
+    BUSINESS_VEHICLE_INSURANCE,
+    BUSINESS_VEHICLE_INTEREST_DAYS,
+    BUSINESS_VEHICLE_INTEREST_PAYABLE,
+    BUSINESS_VEHICLE_LEASE_CHARGES,
+    BUSINESS_VEHICLE_LEASE_DAYS,
+    BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,
+    BUSINESS_VEHICLE_LIST_PRICE,
+    BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,
+    BUSINESS_VEHICLE_OTHER_EXPENSES_10,
+    BUSINESS_VEHICLE_OTHER_EXPENSES_11,
+    BUSINESS_VEHICLE_PARKING_FEES,
+    BUSINESS_VEHICLE_SALES_TAX_RATE,
+    BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,
+    BUSINESS_VEHICLE_TOTAL_KILOMETRES,
     CANADA_TRAINING_CREDIT_CLAIMED,
     CANADA_TRAINING_CREDIT_LIMIT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CANADIAN_TUITION_FEES,
+    CAPITAL_GAINS_DEDUCTION_CLAIMED,
     CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987,
     CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY,
     CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY,
@@ -52,7 +174,11 @@ from app.jurisdictions.ca.catalog import (
     CPP_MONTHS,
     CPP_OR_QPP_BENEFITS,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_COMPLETED,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPT20_EARNINGS,
+    CPT20_T4_EARNINGS,
     CRYPTO_ASSET_DISPOSITIONS,
     CWB_ELIGIBLE_DEPENDANTS,
     DEPENDANT_CARE_EXPENSES,
@@ -63,8 +189,8 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_CAPITAL_COST,
     DEPRECIABLE_GIFT_NET_PROCEEDS,
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
-    DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_DEPENDANTS,
+    DISABILITY_SELF_CARE_EXPENSES,
     DISABILITY_SUPPORTS_DEDUCTION,
     DISPOSITION_ADJUSTED_COST_BASE,
     DISPOSITION_OUTLAYS,
@@ -75,6 +201,8 @@ from app.jurisdictions.ca.catalog import (
     EI_AND_OTHER_BENEFITS,
     EI_BENEFITS_REPAYMENT,
     EI_CONTROLLED_CORPORATION_EARNINGS,
+    EI_EXCLUDED_SLIP_NET_INCOME,
+    EI_EXCLUDED_SLIPS,
     EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
     EI_INSURABLE_EARNINGS,
     EI_SPECIAL_BENEFITS_AGREEMENT,
@@ -82,10 +210,111 @@ from app.jurisdictions.ca.catalog import (
     ELECTED_SPLIT_PENSION_DEDUCTION,
     ELIGIBLE_DEPENDANTS,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
+    ELIGIBLE_FOR_DISABILITY_AMOUNT,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     EMPLOYMENT_INCOME,
+    EXEMPT_INCOME_DEDUCTIONS,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
-    FARMING_INCOME,
+    FARM_BARLEY,
+    FARM_BUILDING_REPAIRS_AND_MAINTENANCE,
+    FARM_CANOLA,
+    FARM_CATTLE,
+    FARM_CCA_CLASSES,
+    FARM_CCA_PERSONAL_PART,
+    FARM_CLEARING_LEVELLING_AND_DRAINING,
+    FARM_CONTAINERS_AND_TWINE,
+    FARM_CORN,
+    FARM_CROP_INSURANCE,
+    FARM_CROP_INSURANCE_PREMIUMS,
+    FARM_CUSTOM_WORK,
+    FARM_CUSTOM_WORK_EXPENSES,
+    FARM_DAIRY_SUBSIDIES,
+    FARM_EGGS,
+    FARM_ELECTRICITY,
+    FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,
+    FARM_FERTILIZERS_AND_LIME,
+    FARM_FLAXSEED,
+    FARM_FORAGE_CROPS_OR_SEEDS,
+    FARM_FRUIT,
+    FARM_FUEL_CHARGE_CREDIT,
+    FARM_GASOLINE_DIESEL_AND_OIL,
+    FARM_GRAINS_AND_OILSEEDS,
+    FARM_GREENHOUSE_AND_NURSERY,
+    FARM_HEATING_AND_CURING_FUEL,
+    FARM_HOME_CARRIED_FORWARD,
+    FARM_HOME_CCA,
+    FARM_HOME_ELECTRICITY,
+    FARM_HOME_HEAT,
+    FARM_HOME_INSURANCE,
+    FARM_HOME_MAINTENANCE,
+    FARM_HOME_MORTGAGE_INTEREST,
+    FARM_HOME_OTHER_EXPENSES,
+    FARM_HOME_PERSONAL_USE_PART,
+    FARM_HOME_PROPERTY_TAXES,
+    FARM_INSURANCE,
+    FARM_INSURANCE_PROCEEDS,
+    FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,
+    FARM_INTEREST_AND_BANK_CHARGES,
+    FARM_LIVESTOCK_AND_ANIMAL_PRODUCTS_REVENUE,
+    FARM_LIVESTOCK_PURCHASED,
+    FARM_MACHINERY_REPAIRS_LICENCES_AND_INSURANCE,
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_MILK_AND_CREAM,
+    FARM_MIXED_GRAINS,
+    FARM_OATS,
+    FARM_OFFICE_EXPENSES,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_OTHER_COMMODITIES,
+    FARM_OTHER_CROPS,
+    FARM_OTHER_EXPENSES,
+    FARM_OTHER_INCOME,
+    FARM_OTHER_PROGRAM_PAYMENTS,
+    FARM_PARTNER,
+    FARM_PARTNER_GST_HST_REBATE,
+    FARM_PARTNER_OTHER_AMOUNT_A,
+    FARM_PARTNER_OTHER_AMOUNT_B,
+    FARM_PARTNER_OTHER_AMOUNT_C,
+    FARM_PARTNER_OTHER_AMOUNT_D,
+    FARM_PARTNER_OTHER_AMOUNT_E,
+    FARM_PARTNER_SHARE,
+    FARM_PATRONAGE_DIVIDENDS,
+    FARM_PESTICIDES,
+    FARM_POTATOES,
+    FARM_POULTRY,
+    FARM_PROFESSIONAL_FEES,
+    FARM_PROPERTY_TAXES,
+    FARM_REBATES,
+    FARM_RENT,
+    FARM_SALARIES_WAGES_AND_BENEFITS,
+    FARM_SEEDS_AND_PLANTS,
+    FARM_SHEEP_AND_LAMBS,
+    FARM_SMALL_TOOLS,
+    FARM_SOYBEANS,
+    FARM_SWINE,
+    FARM_TOBACCO,
+    FARM_VEGETABLES,
+    FARM_VEHICLE_BUSINESS_KILOMETRES,
+    FARM_VEHICLE_ELECTRICITY_ZEV,
+    FARM_VEHICLE_FUEL_AND_OIL,
+    FARM_VEHICLE_INSURANCE,
+    FARM_VEHICLE_INTEREST_DAYS,
+    FARM_VEHICLE_INTEREST_PAYABLE,
+    FARM_VEHICLE_LEASE_CHARGES,
+    FARM_VEHICLE_LEASE_DAYS,
+    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    FARM_VEHICLE_LICENCE_AND_REGISTRATION,
+    FARM_VEHICLE_LIST_PRICE,
+    FARM_VEHICLE_MAINTENANCE_AND_REPAIRS,
+    FARM_VEHICLE_OTHER_EXPENSES_10,
+    FARM_VEHICLE_OTHER_EXPENSES_11,
+    FARM_VEHICLE_PARKING_FEES,
+    FARM_VEHICLE_SALES_TAX_RATE,
+    FARM_VEHICLE_SUPPLEMENTARY_INSURANCE,
+    FARM_VEHICLE_TOTAL_KILOMETRES,
+    FARM_VETERINARY_FEES,
+    FARM_WHEAT,
     FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS,
     FHSA_CARRYFORWARD_FOR_2024,
     FHSA_CARRYFORWARD_FOR_2025,
@@ -106,9 +335,73 @@ from app.jurisdictions.ca.catalog import (
     FHSA_VARIABLE_B_AMOUNT,
     FHSA_VARIABLE_F_AMOUNT,
     FHSA_VARIABLE_H_AMOUNT,
-    FISHING_INCOME,
+    FIRST_NATIONS_ABATEMENT,
+    FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
+    FISH_CCA_CLASSES,
+    FISH_CCA_PERSONAL_PART,
+    FISH_COMPENSATION_FOR_LOSS,
+    FISH_CREW_SHARES,
+    FISH_FISH_PRODUCTS,
+    FISH_FISHING_GEAR,
+    FISH_FUEL_COSTS,
+    FISH_GRANTS_CREDITS_AND_REBATES,
+    FISH_HOME_CARRIED_FORWARD,
+    FISH_HOME_CCA,
+    FISH_HOME_ELECTRICITY,
+    FISH_HOME_HEAT,
+    FISH_HOME_INSURANCE,
+    FISH_HOME_MAINTENANCE,
+    FISH_HOME_MORTGAGE_INTEREST,
+    FISH_HOME_OTHER_EXPENSES,
+    FISH_HOME_PERSONAL_USE_PART,
+    FISH_HOME_PROPERTY_TAXES,
+    FISH_INSURANCE,
+    FISH_INSURANCE_RECOVERY,
+    FISH_INTEREST_AND_BANK_CHARGES,
+    FISH_MEALS_AND_ENTERTAINMENT,
+    FISH_NETS_AND_TRAPS,
+    FISH_OFFICE_EXPENSES,
+    FISH_OTHER_EXPENSES,
+    FISH_OTHER_INCOME,
+    FISH_OTHER_MARINE_PRODUCTS,
+    FISH_PARTNER,
+    FISH_PARTNER_GST_HST_REBATE,
+    FISH_PARTNER_OTHER_AMOUNT_A,
+    FISH_PARTNER_OTHER_AMOUNT_B,
+    FISH_PARTNER_OTHER_AMOUNT_C,
+    FISH_PARTNER_OTHER_AMOUNT_D,
+    FISH_PARTNER_OTHER_AMOUNT_E,
+    FISH_PARTNER_SHARE,
+    FISH_PROFESSIONAL_FEES,
+    FISH_REPAIRS_ELECTRICAL_EQUIPMENT,
+    FISH_REPAIRS_ENGINE,
+    FISH_REPAIRS_FISHING_BOAT,
+    FISH_SALARIES_WAGES_AND_BENEFITS,
+    FISH_SALT_BAIT_AND_ICE,
+    FISH_SHARESPERSON_INCOME,
+    FISH_SUBSIDIES,
+    FISH_VEHICLE_BUSINESS_KILOMETRES,
+    FISH_VEHICLE_ELECTRICITY_ZEV,
+    FISH_VEHICLE_FUEL_AND_OIL,
+    FISH_VEHICLE_INSURANCE,
+    FISH_VEHICLE_INTEREST_DAYS,
+    FISH_VEHICLE_INTEREST_PAYABLE,
+    FISH_VEHICLE_LEASE_CHARGES,
+    FISH_VEHICLE_LEASE_DAYS,
+    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    FISH_VEHICLE_LICENCE_AND_REGISTRATION,
+    FISH_VEHICLE_LIST_PRICE,
+    FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,
+    FISH_VEHICLE_OTHER_EXPENSES_10,
+    FISH_VEHICLE_OTHER_EXPENSES_11,
+    FISH_VEHICLE_PARKING_FEES,
+    FISH_VEHICLE_SALES_TAX_RATE,
+    FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,
+    FISH_VEHICLE_TOTAL_KILOMETRES,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
+    FOREIGN_NON_BUSINESS_TAX_PAID,
+    FOREIGN_TAX_COUNTRIES,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
     INCOME_TAX_DEDUCTED,
@@ -126,11 +419,13 @@ from app.jurisdictions.ca.catalog import (
     LISTED_PERSONAL_PROPERTY_DISPOSITIONS,
     MEDICAL_EXPENSES,
     NET_BUSINESS_INCOME,
+    NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_COMMISSION_INCOME,
     NET_FARMING_INCOME,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FISHING_INCOME,
+    NET_FOREIGN_NON_BUSINESS_INCOME,
     NET_PARTNERSHIP_INCOME,
     NET_PROFESSIONAL_INCOME,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
@@ -175,8 +470,26 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_5,
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
+    PRE_1986_DEDUCTIONS_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_2000,
+    PRE_1986_DEDUCTIONS_2001_TO_2024,
+    PRE_1986_DEDUCTIONS_BEFORE_1988,
     PRINCIPAL_RESIDENCE_PROPERTIES,
     PROFESSIONAL_INCOME,
+    QBT_2024_RESERVE,
+    QBT_2025_RESERVE,
+    QBT_CAPITAL_GAINS,
+    QBT_DEDUCTION_CLAIMED,
+    QBT_ELECTION_ELIGIBLE_AMOUNT,
+    QBT_ELECTION_IS_QBT,
+    QBT_GAINS_ARE_QSBCS_OR_QFFP,
+    QBT_HAS_INVESTMENT_EXPENSES,
+    QBT_OTHER_INVESTMENT_EXPENSES,
+    QBT_OTHER_PROPERTY_INCOME,
+    QBT_PARTNERSHIP_LOSSES,
+    QBT_PERCENTAGE_ALLOCATED,
+    QBT_PRIOR_YEARS_CLAIMS,
     QFFP_DISPOSITIONS,
     QFFP_FORECLOSURE_DISPOSITIONS,
     QSBCS_DISPOSITIONS,
@@ -308,6 +621,99 @@ from app.jurisdictions.ca.catalog import (
     T5_INVESTMENT_INCOME,
     T5_TAXABLE_DIVIDENDS,
     T5_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    T657_ABIL_CLAIMED_1985_TO_2024,
+    T657_CAPITAL_LOSSES_CLAIMED_1985,
+    T657_CHART_1_COLUMN_A,
+    T657_CHART_1_COLUMN_B,
+    T657_CHART_1_COLUMN_C,
+    T657_CHART_1_COLUMN_D,
+    T657_CHART_1_ROWS,
+    T657_CHART_2_LINE_1,
+    T657_CHART_2_LINE_2,
+    T657_CHART_2_LINE_6,
+    T657_CHART_2_LINE_10,
+    T657_CHART_2_LINE_14,
+    T657_CHART_2_LINE_18,
+    T657_CHART_2016_AMOUNT_B_INSTEAD,
+    T657_CHART_2016_AMOUNT_D,
+    T657_CHART_2016_AMOUNT_E,
+    T657_CHART_2016_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2016_USES_D_INSTEAD,
+    T657_CHART_2017_AMOUNT_D_INSTEAD,
+    T657_CHART_2017_AMOUNT_F,
+    T657_CHART_2017_AMOUNT_G,
+    T657_CHART_2017_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2017_USES_D_INSTEAD,
+    T657_CHART_2018_AMOUNT_D_INSTEAD,
+    T657_CHART_2018_AMOUNT_F,
+    T657_CHART_2018_AMOUNT_G,
+    T657_CHART_2018_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2018_USES_D_INSTEAD,
+    T657_CHART_2019_AMOUNT_D_INSTEAD,
+    T657_CHART_2019_AMOUNT_F,
+    T657_CHART_2019_AMOUNT_G,
+    T657_CHART_2019_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2019_USES_D_INSTEAD,
+    T657_CHART_2020_AMOUNT_D_INSTEAD,
+    T657_CHART_2020_AMOUNT_F,
+    T657_CHART_2020_AMOUNT_G,
+    T657_CHART_2020_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2020_USES_D_INSTEAD,
+    T657_CHART_2021_AMOUNT_D_INSTEAD,
+    T657_CHART_2021_AMOUNT_F,
+    T657_CHART_2021_AMOUNT_G,
+    T657_CHART_2021_AMOUNT_I,
+    T657_CHART_2021_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2021_PART_2_AMOUNT_G,
+    T657_CHART_2021_USES_D_INSTEAD,
+    T657_CHART_2022_AMOUNT_D_INSTEAD,
+    T657_CHART_2022_AMOUNT_F,
+    T657_CHART_2022_AMOUNT_G,
+    T657_CHART_2022_AMOUNT_I,
+    T657_CHART_2022_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2022_PART_2_AMOUNT_G,
+    T657_CHART_2022_USES_D_INSTEAD,
+    T657_CHART_2023_AMOUNT_D_INSTEAD,
+    T657_CHART_2023_AMOUNT_F,
+    T657_CHART_2023_AMOUNT_G,
+    T657_CHART_2023_AMOUNT_I,
+    T657_CHART_2023_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2023_PART_2_AMOUNT_G,
+    T657_CHART_2023_USES_D_INSTEAD,
+    T657_CHART_2024_PERIOD_1_AMOUNT_F,
+    T657_CHART_2024_PERIOD_1_AMOUNT_G,
+    T657_CHART_2024_PERIOD_1_AMOUNT_H,
+    T657_CHART_2024_PERIOD_1_AMOUNT_J,
+    T657_CHART_2024_PERIOD_2_AMOUNT_F,
+    T657_CHART_2024_PERIOD_2_AMOUNT_G,
+    T657_CHART_2024_PERIOD_2_AMOUNT_H,
+    T657_CHART_2024_PERIOD_2_AMOUNT_J,
+    T657_CUMULATIVE_NET_INVESTMENT_LOSS,
+    T657_DEDUCTIONS_CLAIMED_1985_TO_2024,
+    T657_GAINS_1985_TO_1991,
+    T657_GAINS_1992_AND_1993,
+    T657_GAINS_1994,
+    T657_GAINS_1995,
+    T657_GAINS_1996_TO_1999,
+    T657_GAINS_2000,
+    T657_GAINS_2001,
+    T657_GAINS_2002_TO_2024,
+    T657_INCLUSION_RATE_2000,
+    T657_NET_NON_ELIGIBLE_TAXABLE_CAPITAL_GAINS,
+    T657_PART_1_AMOUNT_F,
+    T657_PART_1_AMOUNT_G,
+    T657_PART_1_AMOUNT_H,
+    T657_PART_1_AMOUNT_I,
+    T657_PART_1_AMOUNT_J,
+    T657_PART_1_AMOUNT_L,
+    T657_PART_2_AMOUNT_I,
+    T657_PART_2_AMOUNT_J,
+    T657_PART_2_AMOUNT_L,
+    T657_PART_2_EXCLUDED_F,
+    T657_PART_2_EXCLUDED_G,
+    T657_PART_2_EXCLUDED_H,
+    T657_T2017_LINE_13,
+    T657_T2048_LINE_17217_FOR_2024,
     T5013_DIVIDEND_TAX_CREDIT,
     T5013_INVESTMENT_INCOME,
     T5013_TAXABLE_DIVIDENDS,
@@ -333,7 +739,9 @@ from app.jurisdictions.ca.catalog import (
     UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
     UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
     UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
+    UNAPPLIED_NET_CAPITAL_LOSSES_2000,
     UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
+    UNDER_18_ON_DECEMBER_31,
     UNION_DUES,
     UNIVERSAL_CHILD_CARE_BENEFIT,
     UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
@@ -376,6 +784,7 @@ from app.jurisdictions.ca_on.catalog import (
     SEPARATE_RESIDENCES_FOR_MEDICAL_REASONS,
 )
 from app.main import build_tax_computation
+from app.registrations import JURISDICTIONS
 
 D = Decimal
 
@@ -456,6 +865,14 @@ def placement_list(*expenditures: str) -> Artifact[RecordList]:
     return Artifact(
         COOP_EDUCATION_PLACEMENTS, RecordList(COOP_EDUCATION_PLACEMENTS.fields, records)
     )
+
+
+def ei_excluded_slips_list(*net_incomes: str) -> Artifact[RecordList]:
+    """The Schedule 13 line 1 slips, one record per net income (or net loss), in the order given."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {EI_EXCLUDED_SLIP_NET_INCOME: D(net_income)} for net_income in net_incomes
+    ]
+    return Artifact(EI_EXCLUDED_SLIPS, RecordList(EI_EXCLUDED_SLIPS.fields, records))
 
 
 def rental_properties_list(*rows: tuple[int, str, str]) -> Artifact[RecordList]:
@@ -611,6 +1028,377 @@ def rental_expense_artifacts(
     return artifacts
 
 
+# The Form T2125 amounts the caller enters, in the form's order: the non-negative ones, then the
+# signed one (amount 5A, the T5013 amount or a share of a loss).
+BUSINESS_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
+    BUSINESS_GROSS_SALES,  # gross_sales
+    BUSINESS_SALES_ADJUSTMENTS,  # sales_adjustments
+    BUSINESS_QUICK_METHOD_GST_HST,  # quick_method_gst_hst
+    BUSINESS_QUICK_METHOD_REMITTED,  # quick_method_remitted
+    BUSINESS_RESERVES_DEDUCTED_LAST_YEAR,  # reserves_deducted_last_year
+    BUSINESS_OTHER_INCOME,  # other_income
+    BUSINESS_OPENING_INVENTORY,  # opening_inventory
+    BUSINESS_PURCHASES,  # purchases
+    BUSINESS_DIRECT_WAGE_COSTS,  # direct_wage_costs
+    BUSINESS_SUBCONTRACTS,  # subcontracts
+    BUSINESS_OTHER_COSTS,  # other_costs
+    BUSINESS_CLOSING_INVENTORY,  # closing_inventory
+    BUSINESS_ADVERTISING,  # advertising
+    BUSINESS_MEALS_AND_ENTERTAINMENT,  # meals_and_entertainment
+    BUSINESS_BAD_DEBTS,  # bad_debts
+    BUSINESS_INSURANCE,  # insurance
+    BUSINESS_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
+    BUSINESS_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,  # business_taxes_licences_and_memberships
+    BUSINESS_OFFICE_EXPENSES,  # office_expenses
+    BUSINESS_OFFICE_STATIONERY_AND_SUPPLIES,  # office_stationery_and_supplies
+    BUSINESS_PROFESSIONAL_FEES,  # professional_fees
+    BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,  # management_and_administration_fees
+    BUSINESS_RENT,  # rent
+    BUSINESS_REPAIRS_AND_MAINTENANCE,  # repairs_and_maintenance
+    BUSINESS_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
+    BUSINESS_PROPERTY_TAXES,  # property_taxes
+    BUSINESS_TRAVEL_EXPENSES,  # travel_expenses
+    BUSINESS_UTILITIES,  # utilities
+    BUSINESS_FUEL_COSTS,  # fuel_costs
+    BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,  # delivery_freight_and_express
+    BUSINESS_VEHICLE_BUSINESS_KILOMETRES,  # business_kilometres
+    BUSINESS_VEHICLE_TOTAL_KILOMETRES,  # total_kilometres
+    BUSINESS_VEHICLE_FUEL_AND_OIL,  # fuel_and_oil
+    BUSINESS_VEHICLE_INSURANCE,  # insurance
+    BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,  # licence_and_registration
+    BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,  # maintenance_and_repairs
+    BUSINESS_VEHICLE_ELECTRICITY_ZEV,  # electricity_zev
+    BUSINESS_VEHICLE_OTHER_EXPENSES_10,  # other_expenses_10
+    BUSINESS_VEHICLE_OTHER_EXPENSES_11,  # other_expenses_11
+    BUSINESS_VEHICLE_PARKING_FEES,  # parking_fees
+    BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,  # supplementary_insurance
+    BUSINESS_VEHICLE_INTEREST_PAYABLE,  # interest_payable
+    BUSINESS_VEHICLE_INTEREST_DAYS,  # interest_days
+    BUSINESS_VEHICLE_LEASE_CHARGES,  # lease_charges
+    BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,  # lease_payments_before
+    BUSINESS_VEHICLE_LEASE_DAYS,  # lease_days
+    BUSINESS_VEHICLE_LIST_PRICE,  # list_price
+    BUSINESS_VEHICLE_SALES_TAX_RATE,  # sales_tax_rate
+    BUSINESS_CCA_PERSONAL_PART,  # cca_personal_part
+    BUSINESS_OTHER_EXPENSES,  # other_expenses
+    BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,  # journalism_labour_tax_credit
+    BUSINESS_PARTNER_GST_HST_REBATE,  # partner_gst_hst_rebate
+    BUSINESS_PARTNER_OTHER_AMOUNT_A,  # partner_other_amount_a
+    BUSINESS_PARTNER_OTHER_AMOUNT_B,  # partner_other_amount_b
+    BUSINESS_PARTNER_OTHER_AMOUNT_C,  # partner_other_amount_c
+    BUSINESS_PARTNER_OTHER_AMOUNT_D,  # partner_other_amount_d
+    BUSINESS_PARTNER_OTHER_AMOUNT_E,  # partner_other_amount_e
+    BUSINESS_HOME_HEAT,  # home_heat
+    BUSINESS_HOME_ELECTRICITY,  # home_electricity
+    BUSINESS_HOME_INSURANCE,  # home_insurance
+    BUSINESS_HOME_MAINTENANCE,  # home_maintenance
+    BUSINESS_HOME_MORTGAGE_INTEREST,  # home_mortgage_interest
+    BUSINESS_HOME_PROPERTY_TAXES,  # home_property_taxes
+    BUSINESS_HOME_OTHER_EXPENSES,  # home_other_expenses
+    BUSINESS_HOME_PERSONAL_USE_PART,  # home_personal_use_part
+    BUSINESS_HOME_CCA,  # home_cca
+    BUSINESS_HOME_CARRIED_FORWARD,  # home_carried_forward
+    BUSINESS_PARTNER_SHARE,  # partner_share
+)
+
+
+def business_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decimal]]:
+    """The Form T2125 amounts the caller enters, keyed by the name after `ca/business_` (the
+    amounts not given are 0)."""
+    by_name = {kind.identifier.removeprefix("ca/business_"): kind for kind in BUSINESS_INPUT_KINDS}
+    assert set(amounts) <= set(by_name), set(amounts) - set(by_name)
+    return [Artifact(kind, D(amounts.get(name, "0"))) for name, kind in by_name.items()]
+
+
+def business_cca_classes(
+    *rows: tuple[str, str, str, str, str, str, str, int],
+) -> Artifact[RecordList]:
+    """The Form T2125 Area A rows, one record per class, with the columns of
+    `rental_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
+    column 12, the CCA claimed (column 21) as decimal text, and 1 if no property is left in the
+    class, else 0 (endnote 3)."""
+    kind = BUSINESS_CCA_CLASSES
+    assert isinstance(kind, RecordListKind)
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            CCA_CLASS_NUMBER: D(class_number),
+            CCA_UCC_AT_START: D(ucc_at_start),
+            CCA_ADDITIONS: D(additions),
+            CCA_PROCEEDS: D(proceeds),
+            CCA_AIIP_ADDITIONS: D(aiip_additions),
+            CCA_RIIP_ADDITIONS: D(riip_additions),
+            CCA_CLAIMED: D(claimed),
+            CCA_NO_PROPERTY_LEFT: no_property_left,
+        }
+        for (
+            class_number,
+            ucc_at_start,
+            additions,
+            proceeds,
+            aiip_additions,
+            riip_additions,
+            claimed,
+            no_property_left,
+        ) in rows
+    ]
+    return Artifact(kind, RecordList(kind.fields, records))
+
+
+# The Form T2042 amounts the caller enters, in the form's order: the non-negative ones, then the
+# signed one (amount 5A, the T5013 amount or a share of a loss).
+FARM_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
+    FARM_WHEAT,  # wheat
+    FARM_OATS,  # oats
+    FARM_BARLEY,  # barley
+    FARM_MIXED_GRAINS,  # mixed_grains
+    FARM_CORN,  # corn
+    FARM_CANOLA,  # canola
+    FARM_FLAXSEED,  # flaxseed
+    FARM_SOYBEANS,  # soybeans
+    FARM_GRAINS_AND_OILSEEDS,  # grains_and_oilseeds
+    FARM_FRUIT,  # fruit
+    FARM_POTATOES,  # potatoes
+    FARM_VEGETABLES,  # vegetables
+    FARM_TOBACCO,  # tobacco
+    FARM_GREENHOUSE_AND_NURSERY,  # greenhouse_and_nursery
+    FARM_FORAGE_CROPS_OR_SEEDS,  # forage_crops_or_seeds
+    FARM_OTHER_CROPS,  # other_crops
+    FARM_CATTLE,  # cattle
+    FARM_SWINE,  # swine
+    FARM_POULTRY,  # poultry
+    FARM_SHEEP_AND_LAMBS,  # sheep_and_lambs
+    FARM_LIVESTOCK_AND_ANIMAL_PRODUCTS_REVENUE,  # livestock_and_animal_products_revenue
+    FARM_MILK_AND_CREAM,  # milk_and_cream
+    FARM_EGGS,  # eggs
+    FARM_OTHER_COMMODITIES,  # other_commodities
+    FARM_DAIRY_SUBSIDIES,  # dairy_subsidies
+    FARM_CROP_INSURANCE,  # crop_insurance
+    FARM_OTHER_PROGRAM_PAYMENTS,  # other_program_payments
+    FARM_REBATES,  # rebates
+    FARM_CUSTOM_WORK,  # custom_work
+    FARM_INSURANCE_PROCEEDS,  # insurance_proceeds
+    FARM_PATRONAGE_DIVIDENDS,  # patronage_dividends
+    FARM_OTHER_INCOME,  # other_income
+    FARM_CONTAINERS_AND_TWINE,  # containers_and_twine
+    FARM_FERTILIZERS_AND_LIME,  # fertilizers_and_lime
+    FARM_PESTICIDES,  # pesticides
+    FARM_SEEDS_AND_PLANTS,  # seeds_and_plants
+    FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,  # feed_supplements_straw_and_bedding
+    FARM_LIVESTOCK_PURCHASED,  # livestock_purchased
+    FARM_VETERINARY_FEES,  # veterinary_fees
+    FARM_MACHINERY_REPAIRS_LICENCES_AND_INSURANCE,  # machinery_repairs_licences_and_insurance
+    FARM_GASOLINE_DIESEL_AND_OIL,  # gasoline_diesel_and_oil
+    FARM_BUILDING_REPAIRS_AND_MAINTENANCE,  # building_repairs_and_maintenance
+    FARM_CLEARING_LEVELLING_AND_DRAINING,  # clearing_levelling_and_draining
+    FARM_CROP_INSURANCE_PREMIUMS,  # crop_insurance_premiums
+    FARM_CUSTOM_WORK_EXPENSES,  # custom_work_expenses
+    FARM_ELECTRICITY,  # electricity
+    FARM_HEATING_AND_CURING_FUEL,  # heating_and_curing_fuel
+    FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,  # insurance_program_overpayment_recapture
+    FARM_INSURANCE,  # insurance
+    FARM_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
+    FARM_OFFICE_EXPENSES,  # office_expenses
+    FARM_PROFESSIONAL_FEES,  # professional_fees
+    FARM_PROPERTY_TAXES,  # property_taxes
+    FARM_RENT,  # rent
+    FARM_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
+    FARM_VEHICLE_BUSINESS_KILOMETRES,  # business_kilometres
+    FARM_VEHICLE_TOTAL_KILOMETRES,  # total_kilometres
+    FARM_VEHICLE_FUEL_AND_OIL,  # fuel_and_oil
+    FARM_VEHICLE_INSURANCE,  # insurance
+    FARM_VEHICLE_LICENCE_AND_REGISTRATION,  # licence_and_registration
+    FARM_VEHICLE_MAINTENANCE_AND_REPAIRS,  # maintenance_and_repairs
+    FARM_VEHICLE_ELECTRICITY_ZEV,  # electricity_zev
+    FARM_VEHICLE_OTHER_EXPENSES_10,  # other_expenses_10
+    FARM_VEHICLE_OTHER_EXPENSES_11,  # other_expenses_11
+    FARM_VEHICLE_PARKING_FEES,  # parking_fees
+    FARM_VEHICLE_SUPPLEMENTARY_INSURANCE,  # supplementary_insurance
+    FARM_VEHICLE_INTEREST_PAYABLE,  # interest_payable
+    FARM_VEHICLE_INTEREST_DAYS,  # interest_days
+    FARM_VEHICLE_LEASE_CHARGES,  # lease_charges
+    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,  # lease_payments_before
+    FARM_VEHICLE_LEASE_DAYS,  # lease_days
+    FARM_VEHICLE_LIST_PRICE,  # list_price
+    FARM_VEHICLE_SALES_TAX_RATE,  # sales_tax_rate
+    FARM_SMALL_TOOLS,  # small_tools
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,  # optional_inventory_adjustment_previous_year
+    FARM_OTHER_EXPENSES,  # other_expenses
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_CURRENT_YEAR,  # optional_inventory_adjustment_current_year
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,  # mandatory_inventory_adjustment_current_year
+    FARM_CCA_PERSONAL_PART,  # cca_personal_part
+    FARM_PARTNER_SHARE,  # partner_share
+    FARM_FUEL_CHARGE_CREDIT,  # fuel_charge_credit
+    FARM_PARTNER_GST_HST_REBATE,  # partner_gst_hst_rebate
+    FARM_PARTNER_OTHER_AMOUNT_A,  # partner_other_amount_a
+    FARM_PARTNER_OTHER_AMOUNT_B,  # partner_other_amount_b
+    FARM_PARTNER_OTHER_AMOUNT_C,  # partner_other_amount_c
+    FARM_PARTNER_OTHER_AMOUNT_D,  # partner_other_amount_d
+    FARM_PARTNER_OTHER_AMOUNT_E,  # partner_other_amount_e
+    FARM_HOME_HEAT,  # home_heat
+    FARM_HOME_ELECTRICITY,  # home_electricity
+    FARM_HOME_INSURANCE,  # home_insurance
+    FARM_HOME_MAINTENANCE,  # home_maintenance
+    FARM_HOME_MORTGAGE_INTEREST,  # home_mortgage_interest
+    FARM_HOME_PROPERTY_TAXES,  # home_property_taxes
+    FARM_HOME_OTHER_EXPENSES,  # home_other_expenses
+    FARM_HOME_PERSONAL_USE_PART,  # home_personal_use_part
+    FARM_HOME_CCA,  # home_cca
+    FARM_HOME_CARRIED_FORWARD,  # home_carried_forward
+)
+
+
+def farm_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decimal]]:
+    """The Form T2042 amounts the caller enters, keyed by the name after `ca/farm_` (the amounts not
+    given are 0)."""
+    by_name = {kind.identifier.removeprefix("ca/farm_"): kind for kind in FARM_INPUT_KINDS}
+    assert set(amounts) <= set(by_name), set(amounts) - set(by_name)
+    return [Artifact(kind, D(amounts.get(name, "0"))) for name, kind in by_name.items()]
+
+
+def farm_cca_classes(
+    *rows: tuple[str, str, str, str, str, str, str, int],
+) -> Artifact[RecordList]:
+    """The Form T2042 Area A rows, one record per class, with the columns of
+    `rental_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
+    column 12, the CCA claimed (column 21) as decimal text, and 1 if no property is left in the
+    class, else 0 (endnote 3)."""
+    kind = FARM_CCA_CLASSES
+    assert isinstance(kind, RecordListKind)
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            CCA_CLASS_NUMBER: D(class_number),
+            CCA_UCC_AT_START: D(ucc_at_start),
+            CCA_ADDITIONS: D(additions),
+            CCA_PROCEEDS: D(proceeds),
+            CCA_AIIP_ADDITIONS: D(aiip_additions),
+            CCA_RIIP_ADDITIONS: D(riip_additions),
+            CCA_CLAIMED: D(claimed),
+            CCA_NO_PROPERTY_LEFT: no_property_left,
+        }
+        for (
+            class_number,
+            ucc_at_start,
+            additions,
+            proceeds,
+            aiip_additions,
+            riip_additions,
+            claimed,
+            no_property_left,
+        ) in rows
+    ]
+    return Artifact(kind, RecordList(kind.fields, records))
+
+
+# The Form T2121 amounts the caller enters, in the form's order: the income lines 3A to 3F and
+# line 9600, the expense lines, the repairs, the partnership amounts, the business-use-of-home
+# amounts and the carry forward.
+FISH_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
+    FISH_FISH_PRODUCTS,  # fish_products
+    FISH_OTHER_MARINE_PRODUCTS,  # other_marine_products
+    FISH_GRANTS_CREDITS_AND_REBATES,  # grants_credits_and_rebates
+    FISH_SUBSIDIES,  # subsidies
+    FISH_COMPENSATION_FOR_LOSS,  # compensation_for_loss
+    FISH_SHARESPERSON_INCOME,  # sharesperson_income
+    FISH_OTHER_INCOME,  # other_income
+    FISH_SALT_BAIT_AND_ICE,  # salt_bait_and_ice
+    FISH_CREW_SHARES,  # crew_shares
+    FISH_FUEL_COSTS,  # fuel_costs
+    FISH_FISHING_GEAR,  # fishing_gear
+    FISH_INSURANCE,  # insurance
+    FISH_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
+    FISH_MEALS_AND_ENTERTAINMENT,  # meals_and_entertainment
+    FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,  # business_taxes_licences_and_memberships
+    FISH_VEHICLE_BUSINESS_KILOMETRES,  # business_kilometres
+    FISH_VEHICLE_TOTAL_KILOMETRES,  # total_kilometres
+    FISH_VEHICLE_FUEL_AND_OIL,  # fuel_and_oil
+    FISH_VEHICLE_INSURANCE,  # insurance
+    FISH_VEHICLE_LICENCE_AND_REGISTRATION,  # licence_and_registration
+    FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,  # maintenance_and_repairs
+    FISH_VEHICLE_ELECTRICITY_ZEV,  # electricity_zev
+    FISH_VEHICLE_OTHER_EXPENSES_10,  # other_expenses_10
+    FISH_VEHICLE_OTHER_EXPENSES_11,  # other_expenses_11
+    FISH_VEHICLE_PARKING_FEES,  # parking_fees
+    FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,  # supplementary_insurance
+    FISH_VEHICLE_INTEREST_PAYABLE,  # interest_payable
+    FISH_VEHICLE_INTEREST_DAYS,  # interest_days
+    FISH_VEHICLE_LEASE_CHARGES,  # lease_charges
+    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,  # lease_payments_before
+    FISH_VEHICLE_LEASE_DAYS,  # lease_days
+    FISH_VEHICLE_LIST_PRICE,  # list_price
+    FISH_VEHICLE_SALES_TAX_RATE,  # sales_tax_rate
+    FISH_OFFICE_EXPENSES,  # office_expenses
+    FISH_NETS_AND_TRAPS,  # nets_and_traps
+    FISH_PROFESSIONAL_FEES,  # professional_fees
+    FISH_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
+    FISH_REPAIRS_FISHING_BOAT,  # repairs_fishing_boat
+    FISH_REPAIRS_ENGINE,  # repairs_engine
+    FISH_REPAIRS_ELECTRICAL_EQUIPMENT,  # repairs_electrical_equipment
+    FISH_INSURANCE_RECOVERY,  # insurance_recovery
+    FISH_OTHER_EXPENSES,  # other_expenses
+    FISH_CCA_PERSONAL_PART,  # cca_personal_part
+    FISH_PARTNER_SHARE,  # partner_share
+    FISH_PARTNER_GST_HST_REBATE,  # partner_gst_hst_rebate
+    FISH_PARTNER_OTHER_AMOUNT_A,  # partner_other_amount_a
+    FISH_PARTNER_OTHER_AMOUNT_B,  # partner_other_amount_b
+    FISH_PARTNER_OTHER_AMOUNT_C,  # partner_other_amount_c
+    FISH_PARTNER_OTHER_AMOUNT_D,  # partner_other_amount_d
+    FISH_PARTNER_OTHER_AMOUNT_E,  # partner_other_amount_e
+    FISH_HOME_HEAT,  # home_heat
+    FISH_HOME_ELECTRICITY,  # home_electricity
+    FISH_HOME_INSURANCE,  # home_insurance
+    FISH_HOME_MAINTENANCE,  # home_maintenance
+    FISH_HOME_MORTGAGE_INTEREST,  # home_mortgage_interest
+    FISH_HOME_PROPERTY_TAXES,  # home_property_taxes
+    FISH_HOME_OTHER_EXPENSES,  # home_other_expenses
+    FISH_HOME_PERSONAL_USE_PART,  # home_personal_use_part
+    FISH_HOME_CCA,  # home_cca
+    FISH_HOME_CARRIED_FORWARD,  # home_carried_forward
+)
+
+
+def fish_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decimal]]:
+    """The Form T2121 amounts the caller enters, keyed by the name after `ca/fish_` (the amounts
+    not given are 0)."""
+    by_name = {kind.identifier.removeprefix("ca/fish_"): kind for kind in FISH_INPUT_KINDS}
+    assert set(amounts) <= set(by_name), set(amounts) - set(by_name)
+    return [Artifact(kind, D(amounts.get(name, "0"))) for name, kind in by_name.items()]
+
+
+def fish_cca_classes(
+    *rows: tuple[str, str, str, str, str, str, str, int],
+) -> Artifact[RecordList]:
+    """The Form T2121 Area A rows, one record per class, with the columns of
+    `farm_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
+    column 12, the CCA claimed (column 21) as decimal text, and 1 if no property is left in the
+    class, else 0 (endnote 3)."""
+    kind = FISH_CCA_CLASSES
+    assert isinstance(kind, RecordListKind)
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            CCA_CLASS_NUMBER: D(class_number),
+            CCA_UCC_AT_START: D(ucc_at_start),
+            CCA_ADDITIONS: D(additions),
+            CCA_PROCEEDS: D(proceeds),
+            CCA_AIIP_ADDITIONS: D(aiip_additions),
+            CCA_RIIP_ADDITIONS: D(riip_additions),
+            CCA_CLAIMED: D(claimed),
+            CCA_NO_PROPERTY_LEFT: no_property_left,
+        }
+        for (
+            class_number,
+            ucc_at_start,
+            additions,
+            proceeds,
+            aiip_additions,
+            riip_additions,
+            claimed,
+            no_property_left,
+        ) in rows
+    ]
+    return Artifact(kind, RecordList(kind.fields, records))
+
+
 def trip(individual: int, zone: int, column_3: str, column_4: str, column_5: str) -> dict[Any, Any]:
     """A Form T2222 Chart B record: the individual, the zone (1 for A, 2 for B), columns 3 to 5."""
     return {
@@ -631,6 +1419,16 @@ def individual(
         STANDARD_AMOUNT_ALLOCATED_1: D(first),
         STANDARD_AMOUNT_ALLOCATED_2: D(second),
         STANDARD_AMOUNT_ALLOCATED_3: D(third),
+    }
+
+
+def t657_chart_1_row(a: str = "0", b: str = "0", c: str = "0", d: str = "0") -> dict[Any, Any]:
+    """A Form T657 Chart 1 record: columns A to D of a year row; a cell the form prints N/A is 0."""
+    return {
+        T657_CHART_1_COLUMN_A: D(a),
+        T657_CHART_1_COLUMN_B: D(b),
+        T657_CHART_1_COLUMN_C: D(c),
+        T657_CHART_1_COLUMN_D: D(d),
     }
 
 
@@ -686,6 +1484,43 @@ def principal_residence_properties(*rows: ResidenceProperty) -> Artifact[RecordL
     return Artifact(
         PRINCIPAL_RESIDENCE_PROPERTIES, RecordList(PRINCIPAL_RESIDENCE_PROPERTIES.fields, records)
     )
+
+
+def foreign_tax_countries(*rows: tuple[str, str]) -> Artifact[RecordList]:
+    """The Form T2209 countries, one record per (line 43100, line 43300) row, in the order given."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {FOREIGN_NON_BUSINESS_TAX_PAID: D(tax_paid), NET_FOREIGN_NON_BUSINESS_INCOME: D(income)}
+        for tax_paid, income in rows
+    ]
+    return Artifact(FOREIGN_TAX_COUNTRIES, RecordList(FOREIGN_TAX_COUNTRIES.fields, records))
+
+
+CPP_BASE_TIER = "ca/cpp_base_contribution"
+CPP_FIRST_ADDITIONAL_TIER = "ca/cpp_first_additional_contribution"
+CPP_SECOND_ADDITIONAL_TIER = "ca/cpp_second_additional_contribution"
+_PARAMETERS = YamlParameterSource(JURISDICTIONS.roots())
+
+
+def _cpp_tier(family: str, employment_income: Decimal) -> Decimal:
+    """The 2025 contribution tier on employment income, from its dataset, rounded half-up."""
+    tier = _PARAMETERS.get(family, 2025, CONTRIBUTION_TIER).values
+    band = max(D(0), min(employment_income, tier.upper) - tier.lower)
+    amount = (band * tier.rate.value).quantize(D("0.01"), rounding=ROUND_HALF_UP)
+    return min(amount, tier.maximum)
+
+
+def required_cpp_contributions(employment_income: Decimal) -> tuple[Decimal, Decimal]:
+    """The T4 box 16 and 16A amounts that make Schedule 8 line 24 zero, for the earnings given.
+
+    Box 16 is the base and first additional contributions the form needs (line 13, lines 11 and
+    12) and box 16A the second additional contribution (line 22). Line 20 is line 9 plus line 10
+    less lines 11 and 12, that is line 8 less line 13, so box 16 equal to line 13 gives line 20
+    and line 24 zero whatever the cent rounding of line 9 does (lines 16 and 19 may then be one
+    cent each way, which cancel). No cent adjustment is made.
+    """
+    base = _cpp_tier(CPP_BASE_TIER, employment_income)
+    base_and_first = base + _cpp_tier(CPP_FIRST_ADDITIONAL_TIER, employment_income)
+    return base_and_first, _cpp_tier(CPP_SECOND_ADDITIONAL_TIER, employment_income)
 
 
 def compute(
@@ -763,6 +1598,15 @@ def compute(
     rental_partner_share: str = "0",
     rental_partner_gst_hst_rebate: str = "0",
     rental_partner_other_expenses: str = "0",
+    business: Mapping[str, str] | None = None,
+    business_partner: int = 0,
+    business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    farm: Mapping[str, str] | None = None,
+    farm_partner: int = 0,
+    farm_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    fish: Mapping[str, str] | None = None,
+    fish_partner: int = 0,
+    fish_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
     taxable_support_payments: str = "0",
     rrsp_income: str = "0",
     fhsa_income: str = "0",
@@ -847,7 +1691,6 @@ def compute(
     caregiver_dependants: tuple[tuple[str, int], ...] = (),
     disability_dependants: tuple[tuple[int, str, str, str], ...] = (),
     ontario_disability_dependants: tuple[tuple[int, str, str, str], ...] = (),
-    ontario_disability_amount_for_self: str = "0",
     child_care_expenses_paid: str = "0",
     children_under_seven: int = 0,
     children_with_disability: int = 0,
@@ -922,22 +1765,31 @@ def compute(
     split_income_dividends: str = "0",
     split_income_dividends_other_than_eligible: str = "0",
     other_split_income: str = "0",
-    disability_amount_for_self: str = "0",
+    eligible_for_disability_amount: int = 0,
+    under_18_on_december_31: int = 0,
+    disability_self_care_expenses: str = "0",
     unapplied_net_capital_losses_1985_to_1987: str = "0",
     unapplied_net_capital_losses_1988_and_1989: str = "0",
     unapplied_net_capital_losses_1990_to_1999: str = "0",
+    unapplied_net_capital_losses_2000: str = "0",
     unapplied_net_capital_losses_2001_to_2024: str = "0",
     net_capital_losses_claimed: str = "0",
-    business_income: str = "0",
+    net_capital_losses_before_may_23_1985: str = "0",
+    pre_1986_deductions_before_1988: str = "0",
+    pre_1986_deductions_1988_and_1989: str = "0",
+    pre_1986_deductions_1990_to_1999: str = "0",
+    pre_1986_deductions_2000: str = "0",
+    pre_1986_deductions_2001_to_2024: str = "0",
     professional_income: str = "0",
     commission_income: str = "0",
-    farming_income: str = "0",
-    fishing_income: str = "0",
     cpp_months: int = 12,
     cpt20_earnings: str = "0",
+    cpt20_t4_earnings: str = "0",
     cpp_part_4_completed: int = 0,
+    cpp_part_5_completed: int = 0,
     ei_controlled_corporation_earnings: str = "0",
     ei_exempt_self_employment_income: str = "0",
+    ei_excluded_slips: tuple[str, ...] = (),
     ei_insurable_earnings: str = "0",
     ei_special_benefits_agreement: int = 0,
     canadian_tuition_fees: str = "0",
@@ -975,7 +1827,178 @@ def compute(
     spouse_or_common_law_partner_on_december_31: int = 0,
     claims_tax_reduction_amounts_at_equal_net_income: int = 0,
     unused_tuition_amounts_brought_forward: str = "0",
+    exempt_income_deductions: str = "0",
+    first_nations_abatement: str = "0",
+    foreign_tax_countries_rows: tuple[tuple[str, str], ...] = (),
+    qbt_election_eligible_amount: str = "0",
+    qbt_percentage_allocated: str = "0",
+    qbt_prior_years_claims: str = "0",
+    qbt_capital_gains: str = "0",
+    qbt_2024_reserve: str = "0",
+    qbt_2025_reserve: str = "0",
+    qbt_election_is_qbt: int = 0,
+    qbt_gains_are_qsbcs_or_qffp: int = 0,
+    qbt_has_investment_expenses: int = 0,
+    qbt_partnership_losses: str = "0",
+    qbt_other_investment_expenses: str = "0",
+    qbt_other_property_income: str = "0",
+    qbt_deduction_claimed: str = "0",
+    amt_film_property_cca_and_carrying_charges: str = "0",
+    amt_film_property_income_before_cca: str = "0",
+    amt_rental_property_cca_and_carrying_charges: str = "0",
+    amt_rental_property_income_before_cca: str = "0",
+    amt_tax_shelter_losses: str = "0",
+    amt_tax_shelter_deductible_amounts: str = "0",
+    amt_limited_partner_carrying_charges: str = "0",
+    t657_t2017_line_13: str = "0",
+    t657_net_non_eligible_taxable_capital_gains: str = "0",
+    t657_gains_1985_to_1991: str = "0",
+    t657_gains_1992_and_1993: str = "0",
+    t657_gains_1994: str = "0",
+    t657_gains_1995: str = "0",
+    t657_gains_1996_to_1999: str = "0",
+    t657_gains_2000: str = "0",
+    t657_gains_2001: str = "0",
+    t657_gains_2002_to_2024: str = "0",
+    t657_capital_losses_claimed_1985: str = "0",
+    t657_abil_claimed_1985_to_2024: str = "0",
+    t657_t2048_line_17217_for_2024: str = "0",
+    t657_cumulative_net_investment_loss: str = "0",
+    t657_deductions_claimed_1985_to_2024: str = "0",
+    t657_chart_2_line_1: str = "0",
+    t657_chart_2_line_2: str = "0",
+    t657_chart_2_line_6: str = "0",
+    t657_chart_2_line_10: str = "0",
+    t657_chart_2_line_14: str = "0",
+    t657_inclusion_rate_2000: str = "0",
+    t657_chart_2_line_18: str = "0",
+    t657_chart_2024_period_1_amount_f: str = "0",
+    t657_chart_2024_period_1_amount_g: str = "0",
+    t657_chart_2024_period_1_amount_h: str = "0",
+    t657_chart_2024_period_1_amount_j: str = "0",
+    t657_chart_2024_period_2_amount_f: str = "0",
+    t657_chart_2024_period_2_amount_g: str = "0",
+    t657_chart_2024_period_2_amount_h: str = "0",
+    t657_chart_2024_period_2_amount_j: str = "0",
+    t657_chart_2016_uses_d_instead: int = 0,
+    t657_chart_2016_amount_b_instead: str = "0",
+    t657_chart_2016_amount_d: str = "0",
+    t657_chart_2016_amount_e: str = "0",
+    t657_chart_2016_claims_additional_deduction: int = 0,
+    t657_chart_2017_uses_d_instead: int = 0,
+    t657_chart_2017_amount_d_instead: str = "0",
+    t657_chart_2017_amount_f: str = "0",
+    t657_chart_2017_amount_g: str = "0",
+    t657_chart_2017_claims_additional_deduction: int = 0,
+    t657_chart_2018_uses_d_instead: int = 0,
+    t657_chart_2018_amount_d_instead: str = "0",
+    t657_chart_2018_amount_f: str = "0",
+    t657_chart_2018_amount_g: str = "0",
+    t657_chart_2018_claims_additional_deduction: int = 0,
+    t657_chart_2019_uses_d_instead: int = 0,
+    t657_chart_2019_amount_d_instead: str = "0",
+    t657_chart_2019_amount_f: str = "0",
+    t657_chart_2019_amount_g: str = "0",
+    t657_chart_2019_claims_additional_deduction: int = 0,
+    t657_chart_2020_uses_d_instead: int = 0,
+    t657_chart_2020_amount_d_instead: str = "0",
+    t657_chart_2020_amount_f: str = "0",
+    t657_chart_2020_amount_g: str = "0",
+    t657_chart_2020_claims_additional_deduction: int = 0,
+    t657_chart_2021_uses_d_instead: int = 0,
+    t657_chart_2021_amount_d_instead: str = "0",
+    t657_chart_2021_amount_f: str = "0",
+    t657_chart_2021_amount_g: str = "0",
+    t657_chart_2021_amount_i: str = "0",
+    t657_chart_2021_part_2_amount_g: str = "0",
+    t657_chart_2021_claims_additional_deduction: int = 0,
+    t657_chart_2022_uses_d_instead: int = 0,
+    t657_chart_2022_amount_d_instead: str = "0",
+    t657_chart_2022_amount_f: str = "0",
+    t657_chart_2022_amount_g: str = "0",
+    t657_chart_2022_amount_i: str = "0",
+    t657_chart_2022_part_2_amount_g: str = "0",
+    t657_chart_2022_claims_additional_deduction: int = 0,
+    t657_chart_2023_uses_d_instead: int = 0,
+    t657_chart_2023_amount_d_instead: str = "0",
+    t657_chart_2023_amount_f: str = "0",
+    t657_chart_2023_amount_g: str = "0",
+    t657_chart_2023_amount_i: str = "0",
+    t657_chart_2023_part_2_amount_g: str = "0",
+    t657_chart_2023_claims_additional_deduction: int = 0,
+    t657_part_1_amount_f: str = "0",
+    t657_part_1_amount_g: str = "0",
+    t657_part_1_amount_h: str = "0",
+    t657_part_1_amount_i: str = "0",
+    t657_part_1_amount_j: str = "0",
+    t657_part_1_amount_l: str = "0",
+    t657_part_2_excluded_f: str = "0",
+    t657_part_2_excluded_g: str = "0",
+    t657_part_2_excluded_h: str = "0",
+    t657_part_2_amount_i: str = "0",
+    t657_part_2_amount_j: str = "0",
+    t657_part_2_amount_l: str = "0",
+    capital_gains_deduction_claimed: str = "0",
+    t657_chart_1_rows: tuple[dict[Any, Any], ...] = (),
+    amt_resource_expenditures: str = "0",
+    amt_resource_production_income: str = "0",
+    amt_resource_foreign_property_income: str = "0",
+    amt_class_43_1_income: str = "0",
+    amt_treaty_exempt_capital_gains: str = "0",
+    amt_graduated_rate_estate_capital_gains: str = "0",
+    amt_publicly_listed_gifts_total: str = "0",
+    amt_publicly_listed_gifts_t1170_line_68231: str = "0",
+    amt_t4_security_options_boxes_39_and_91: str = "0",
+    amt_t1212_line_2_deferred_security_options: str = "0",
+    amt_security_option_publicly_listed_gifts: str = "0",
+    amt_t4_security_options_boxes_41_and_92: str = "0",
+    amt_prospector_or_grubstaker_deduction: str = "0",
+    amt_deferred_profit_sharing_plan_deduction: str = "0",
+    amt_limited_partnership_difference_no_election: str = "0",
+    amt_limited_partnership_difference_election: str = "0",
+    amt_non_capital_losses_difference: str = "0",
+    amt_net_capital_losses_difference: str = "0",
+    amt_moving_expenses_deduction: str = "0",
+    amt_ppip_premiums_deduction: str = "0",
+    amt_non_deductible_interest: str = "0",
+    amt_life_insurance_premiums_as_collateral: str = "0",
+    amt_financing_expenses: str = "0",
+    amt_investment_counsel_fees: str = "0",
+    amt_commission_employment_expenses: str = "0",
+    amt_legal_and_accounting_expenses: str = "0",
+    amt_repayment_of_salary_and_wages: str = "0",
+    amt_excess_epsp_amounts: str = "0",
+    amt_forfeited_salary_deferral_amounts: str = "0",
+    amt_repayment_of_wage_loss_replacement: str = "0",
+    cpp_t4_base_and_first_additional_contributions: str | None = None,
+    cpp_t4_second_additional_contributions: str | None = None,
+    amt_federal_logging_tax_credit: str = "0",
+    amt_section_119_former_resident_credit: str = "0",
+    amt_minimum_tax_carryover_from_previous_years: str = "0",
+    amt_minimum_tax_carryover_claim: str = "0",
+    amt_t2203_column_5_percentage: str = "0",
+    amt_non_resident_or_deemed_resident: int = 0,
+    amt_investment_tax_credit_claim: str = "0",
+    amt_t2038_amount_i: str = "0",
+    amt_foreign_business_income: str = "0",
+    amt_foreign_non_business_income: str = "0",
+    amt_foreign_capital_gains_non_taxable_claim: str = "0",
+    amt_foreign_non_business_tax_paid: str = "0",
+    amt_foreign_business_tax_paid: str = "0",
 ) -> Worksheet:
+    # The T4 box 16 and 16A amounts default to the required ones for the employment income given,
+    # so line 24 is 0 unless a test gives its own.
+    required_base_and_first, required_second = required_cpp_contributions(D(employment_income))
+    t4_base_and_first = (
+        required_base_and_first
+        if cpp_t4_base_and_first_additional_contributions is None
+        else D(cpp_t4_base_and_first_additional_contributions)
+    )
+    t4_second = (
+        required_second
+        if cpp_t4_second_additional_contributions is None
+        else D(cpp_t4_second_additional_contributions)
+    )
     return service().compute(
         CA_ON,
         2025,
@@ -1002,6 +2025,8 @@ def compute(
         Artifact(OTHER_EMPLOYMENT_INCOME, D(other_employment_income)),
         Artifact(OLD_AGE_SECURITY, D(old_age_security)),
         Artifact(CPP_OR_QPP_BENEFITS, D(cpp_or_qpp_benefits)),
+        Artifact(CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS, t4_base_and_first),
+        Artifact(CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS, t4_second),
         Artifact(OTHER_PENSIONS_AND_SUPERANNUATION, D(other_pensions_and_superannuation)),
         Artifact(ELECTED_SPLIT_PENSION_AMOUNT, D(elected_split_pension_amount)),
         Artifact(UNIVERSAL_CHILD_CARE_BENEFIT, D(universal_child_care_benefit)),
@@ -1069,6 +2094,15 @@ def compute(
         Artifact(RENTAL_PARTNER_SHARE, D(rental_partner_share)),
         Artifact(RENTAL_PARTNER_GST_HST_REBATE, D(rental_partner_gst_hst_rebate)),
         Artifact(RENTAL_PARTNER_OTHER_EXPENSES, D(rental_partner_other_expenses)),
+        *business_amount_artifacts(business or {}),
+        Artifact(BUSINESS_PARTNER, business_partner),
+        business_cca_classes(*business_cca_classes_rows),
+        *farm_amount_artifacts(farm or {}),
+        Artifact(FARM_PARTNER, farm_partner),
+        farm_cca_classes(*farm_cca_classes_rows),
+        *fish_amount_artifacts(fish or {}),
+        Artifact(FISH_PARTNER, fish_partner),
+        fish_cca_classes(*fish_cca_classes_rows),
         Artifact(TAXABLE_SUPPORT_PAYMENTS, D(taxable_support_payments)),
         Artifact(RRSP_INCOME, D(rrsp_income)),
         Artifact(FHSA_INCOME, D(fhsa_income)),
@@ -1231,7 +2265,6 @@ def compute(
                 ],
             ),
         ),
-        Artifact(ontario.DISABILITY_AMOUNT_FOR_SELF, D(ontario_disability_amount_for_self)),
         Artifact(
             ontario.DISABILITY_DEPENDANTS,
             RecordList(
@@ -1361,7 +2394,9 @@ def compute(
             D(split_income_dividends_other_than_eligible),
         ),
         Artifact(OTHER_SPLIT_INCOME, D(other_split_income)),
-        Artifact(DISABILITY_AMOUNT_FOR_SELF, D(disability_amount_for_self)),
+        Artifact(ELIGIBLE_FOR_DISABILITY_AMOUNT, eligible_for_disability_amount),
+        Artifact(UNDER_18_ON_DECEMBER_31, under_18_on_december_31),
+        Artifact(DISABILITY_SELF_CARE_EXPENSES, D(disability_self_care_expenses)),
         Artifact(
             UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987, D(unapplied_net_capital_losses_1985_to_1987)
         ),
@@ -1372,20 +2407,27 @@ def compute(
         Artifact(
             UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999, D(unapplied_net_capital_losses_1990_to_1999)
         ),
+        Artifact(UNAPPLIED_NET_CAPITAL_LOSSES_2000, D(unapplied_net_capital_losses_2000)),
         Artifact(
             UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024, D(unapplied_net_capital_losses_2001_to_2024)
         ),
         Artifact(NET_CAPITAL_LOSSES_CLAIMED, D(net_capital_losses_claimed)),
-        Artifact(BUSINESS_INCOME, D(business_income)),
+        Artifact(NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985, D(net_capital_losses_before_may_23_1985)),
+        Artifact(PRE_1986_DEDUCTIONS_BEFORE_1988, D(pre_1986_deductions_before_1988)),
+        Artifact(PRE_1986_DEDUCTIONS_1988_AND_1989, D(pre_1986_deductions_1988_and_1989)),
+        Artifact(PRE_1986_DEDUCTIONS_1990_TO_1999, D(pre_1986_deductions_1990_to_1999)),
+        Artifact(PRE_1986_DEDUCTIONS_2000, D(pre_1986_deductions_2000)),
+        Artifact(PRE_1986_DEDUCTIONS_2001_TO_2024, D(pre_1986_deductions_2001_to_2024)),
         Artifact(PROFESSIONAL_INCOME, D(professional_income)),
         Artifact(COMMISSION_INCOME, D(commission_income)),
-        Artifact(FARMING_INCOME, D(farming_income)),
-        Artifact(FISHING_INCOME, D(fishing_income)),
         Artifact(CPP_MONTHS, cpp_months),
         Artifact(CPT20_EARNINGS, D(cpt20_earnings)),
+        Artifact(CPT20_T4_EARNINGS, D(cpt20_t4_earnings)),
         Artifact(CPP_PART_4_COMPLETED, cpp_part_4_completed),
+        Artifact(CPP_PART_5_COMPLETED, cpp_part_5_completed),
         Artifact(EI_CONTROLLED_CORPORATION_EARNINGS, D(ei_controlled_corporation_earnings)),
         Artifact(EI_EXEMPT_SELF_EMPLOYMENT_INCOME, D(ei_exempt_self_employment_income)),
+        ei_excluded_slips_list(*ei_excluded_slips),
         Artifact(EI_INSURABLE_EARNINGS, D(ei_insurable_earnings)),
         Artifact(EI_SPECIAL_BENEFITS_AGREEMENT, ei_special_benefits_agreement),
         Artifact(CANADIAN_TUITION_FEES, D(canadian_tuition_fees)),
@@ -1447,6 +2489,227 @@ def compute(
             ontario.UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD,
             D(unused_tuition_amounts_brought_forward),
         ),
+        Artifact(EXEMPT_INCOME_DEDUCTIONS, D(exempt_income_deductions)),
+        Artifact(FIRST_NATIONS_ABATEMENT, D(first_nations_abatement)),
+        foreign_tax_countries(*foreign_tax_countries_rows),
+        Artifact(QBT_ELECTION_ELIGIBLE_AMOUNT, D(qbt_election_eligible_amount)),
+        Artifact(QBT_PERCENTAGE_ALLOCATED, D(qbt_percentage_allocated)),
+        Artifact(QBT_PRIOR_YEARS_CLAIMS, D(qbt_prior_years_claims)),
+        Artifact(QBT_CAPITAL_GAINS, D(qbt_capital_gains)),
+        Artifact(QBT_2024_RESERVE, D(qbt_2024_reserve)),
+        Artifact(QBT_2025_RESERVE, D(qbt_2025_reserve)),
+        Artifact(QBT_ELECTION_IS_QBT, qbt_election_is_qbt),
+        Artifact(QBT_GAINS_ARE_QSBCS_OR_QFFP, qbt_gains_are_qsbcs_or_qffp),
+        Artifact(QBT_HAS_INVESTMENT_EXPENSES, qbt_has_investment_expenses),
+        Artifact(QBT_PARTNERSHIP_LOSSES, D(qbt_partnership_losses)),
+        Artifact(QBT_OTHER_INVESTMENT_EXPENSES, D(qbt_other_investment_expenses)),
+        Artifact(QBT_OTHER_PROPERTY_INCOME, D(qbt_other_property_income)),
+        Artifact(QBT_DEDUCTION_CLAIMED, D(qbt_deduction_claimed)),
+        Artifact(
+            AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
+            D(amt_film_property_cca_and_carrying_charges),
+        ),
+        Artifact(AMT_FILM_PROPERTY_INCOME_BEFORE_CCA, D(amt_film_property_income_before_cca)),
+        Artifact(
+            AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
+            D(amt_rental_property_cca_and_carrying_charges),
+        ),
+        Artifact(AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA, D(amt_rental_property_income_before_cca)),
+        Artifact(AMT_TAX_SHELTER_LOSSES, D(amt_tax_shelter_losses)),
+        Artifact(AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS, D(amt_tax_shelter_deductible_amounts)),
+        Artifact(AMT_LIMITED_PARTNER_CARRYING_CHARGES, D(amt_limited_partner_carrying_charges)),
+        Artifact(T657_T2017_LINE_13, D(t657_t2017_line_13)),
+        Artifact(
+            T657_NET_NON_ELIGIBLE_TAXABLE_CAPITAL_GAINS,
+            D(t657_net_non_eligible_taxable_capital_gains),
+        ),
+        Artifact(T657_GAINS_1985_TO_1991, D(t657_gains_1985_to_1991)),
+        Artifact(T657_GAINS_1992_AND_1993, D(t657_gains_1992_and_1993)),
+        Artifact(T657_GAINS_1994, D(t657_gains_1994)),
+        Artifact(T657_GAINS_1995, D(t657_gains_1995)),
+        Artifact(T657_GAINS_1996_TO_1999, D(t657_gains_1996_to_1999)),
+        Artifact(T657_GAINS_2000, D(t657_gains_2000)),
+        Artifact(T657_GAINS_2001, D(t657_gains_2001)),
+        Artifact(T657_GAINS_2002_TO_2024, D(t657_gains_2002_to_2024)),
+        Artifact(T657_CAPITAL_LOSSES_CLAIMED_1985, D(t657_capital_losses_claimed_1985)),
+        Artifact(T657_ABIL_CLAIMED_1985_TO_2024, D(t657_abil_claimed_1985_to_2024)),
+        Artifact(T657_T2048_LINE_17217_FOR_2024, D(t657_t2048_line_17217_for_2024)),
+        Artifact(T657_CUMULATIVE_NET_INVESTMENT_LOSS, D(t657_cumulative_net_investment_loss)),
+        Artifact(T657_DEDUCTIONS_CLAIMED_1985_TO_2024, D(t657_deductions_claimed_1985_to_2024)),
+        Artifact(T657_CHART_2_LINE_1, D(t657_chart_2_line_1)),
+        Artifact(T657_CHART_2_LINE_2, D(t657_chart_2_line_2)),
+        Artifact(T657_CHART_2_LINE_6, D(t657_chart_2_line_6)),
+        Artifact(T657_CHART_2_LINE_10, D(t657_chart_2_line_10)),
+        Artifact(T657_CHART_2_LINE_14, D(t657_chart_2_line_14)),
+        Artifact(T657_INCLUSION_RATE_2000, D(t657_inclusion_rate_2000)),
+        Artifact(T657_CHART_2_LINE_18, D(t657_chart_2_line_18)),
+        Artifact(T657_CHART_2024_PERIOD_1_AMOUNT_F, D(t657_chart_2024_period_1_amount_f)),
+        Artifact(T657_CHART_2024_PERIOD_1_AMOUNT_G, D(t657_chart_2024_period_1_amount_g)),
+        Artifact(T657_CHART_2024_PERIOD_1_AMOUNT_H, D(t657_chart_2024_period_1_amount_h)),
+        Artifact(T657_CHART_2024_PERIOD_1_AMOUNT_J, D(t657_chart_2024_period_1_amount_j)),
+        Artifact(T657_CHART_2024_PERIOD_2_AMOUNT_F, D(t657_chart_2024_period_2_amount_f)),
+        Artifact(T657_CHART_2024_PERIOD_2_AMOUNT_G, D(t657_chart_2024_period_2_amount_g)),
+        Artifact(T657_CHART_2024_PERIOD_2_AMOUNT_H, D(t657_chart_2024_period_2_amount_h)),
+        Artifact(T657_CHART_2024_PERIOD_2_AMOUNT_J, D(t657_chart_2024_period_2_amount_j)),
+        Artifact(T657_CHART_2016_USES_D_INSTEAD, t657_chart_2016_uses_d_instead),
+        Artifact(T657_CHART_2016_AMOUNT_B_INSTEAD, D(t657_chart_2016_amount_b_instead)),
+        Artifact(T657_CHART_2016_AMOUNT_D, D(t657_chart_2016_amount_d)),
+        Artifact(T657_CHART_2016_AMOUNT_E, D(t657_chart_2016_amount_e)),
+        Artifact(
+            T657_CHART_2016_CLAIMS_ADDITIONAL_DEDUCTION, t657_chart_2016_claims_additional_deduction
+        ),
+        Artifact(T657_CHART_2017_USES_D_INSTEAD, t657_chart_2017_uses_d_instead),
+        Artifact(T657_CHART_2017_AMOUNT_D_INSTEAD, D(t657_chart_2017_amount_d_instead)),
+        Artifact(T657_CHART_2017_AMOUNT_F, D(t657_chart_2017_amount_f)),
+        Artifact(T657_CHART_2017_AMOUNT_G, D(t657_chart_2017_amount_g)),
+        Artifact(
+            T657_CHART_2017_CLAIMS_ADDITIONAL_DEDUCTION, t657_chart_2017_claims_additional_deduction
+        ),
+        Artifact(T657_CHART_2018_USES_D_INSTEAD, t657_chart_2018_uses_d_instead),
+        Artifact(T657_CHART_2018_AMOUNT_D_INSTEAD, D(t657_chart_2018_amount_d_instead)),
+        Artifact(T657_CHART_2018_AMOUNT_F, D(t657_chart_2018_amount_f)),
+        Artifact(T657_CHART_2018_AMOUNT_G, D(t657_chart_2018_amount_g)),
+        Artifact(
+            T657_CHART_2018_CLAIMS_ADDITIONAL_DEDUCTION, t657_chart_2018_claims_additional_deduction
+        ),
+        Artifact(T657_CHART_2019_USES_D_INSTEAD, t657_chart_2019_uses_d_instead),
+        Artifact(T657_CHART_2019_AMOUNT_D_INSTEAD, D(t657_chart_2019_amount_d_instead)),
+        Artifact(T657_CHART_2019_AMOUNT_F, D(t657_chart_2019_amount_f)),
+        Artifact(T657_CHART_2019_AMOUNT_G, D(t657_chart_2019_amount_g)),
+        Artifact(
+            T657_CHART_2019_CLAIMS_ADDITIONAL_DEDUCTION, t657_chart_2019_claims_additional_deduction
+        ),
+        Artifact(T657_CHART_2020_USES_D_INSTEAD, t657_chart_2020_uses_d_instead),
+        Artifact(T657_CHART_2020_AMOUNT_D_INSTEAD, D(t657_chart_2020_amount_d_instead)),
+        Artifact(T657_CHART_2020_AMOUNT_F, D(t657_chart_2020_amount_f)),
+        Artifact(T657_CHART_2020_AMOUNT_G, D(t657_chart_2020_amount_g)),
+        Artifact(
+            T657_CHART_2020_CLAIMS_ADDITIONAL_DEDUCTION, t657_chart_2020_claims_additional_deduction
+        ),
+        Artifact(T657_CHART_2021_USES_D_INSTEAD, t657_chart_2021_uses_d_instead),
+        Artifact(T657_CHART_2021_AMOUNT_D_INSTEAD, D(t657_chart_2021_amount_d_instead)),
+        Artifact(T657_CHART_2021_AMOUNT_F, D(t657_chart_2021_amount_f)),
+        Artifact(T657_CHART_2021_AMOUNT_G, D(t657_chart_2021_amount_g)),
+        Artifact(T657_CHART_2021_AMOUNT_I, D(t657_chart_2021_amount_i)),
+        Artifact(T657_CHART_2021_PART_2_AMOUNT_G, D(t657_chart_2021_part_2_amount_g)),
+        Artifact(
+            T657_CHART_2021_CLAIMS_ADDITIONAL_DEDUCTION, t657_chart_2021_claims_additional_deduction
+        ),
+        Artifact(T657_CHART_2022_USES_D_INSTEAD, t657_chart_2022_uses_d_instead),
+        Artifact(T657_CHART_2022_AMOUNT_D_INSTEAD, D(t657_chart_2022_amount_d_instead)),
+        Artifact(T657_CHART_2022_AMOUNT_F, D(t657_chart_2022_amount_f)),
+        Artifact(T657_CHART_2022_AMOUNT_G, D(t657_chart_2022_amount_g)),
+        Artifact(T657_CHART_2022_AMOUNT_I, D(t657_chart_2022_amount_i)),
+        Artifact(T657_CHART_2022_PART_2_AMOUNT_G, D(t657_chart_2022_part_2_amount_g)),
+        Artifact(
+            T657_CHART_2022_CLAIMS_ADDITIONAL_DEDUCTION, t657_chart_2022_claims_additional_deduction
+        ),
+        Artifact(T657_CHART_2023_USES_D_INSTEAD, t657_chart_2023_uses_d_instead),
+        Artifact(T657_CHART_2023_AMOUNT_D_INSTEAD, D(t657_chart_2023_amount_d_instead)),
+        Artifact(T657_CHART_2023_AMOUNT_F, D(t657_chart_2023_amount_f)),
+        Artifact(T657_CHART_2023_AMOUNT_G, D(t657_chart_2023_amount_g)),
+        Artifact(T657_CHART_2023_AMOUNT_I, D(t657_chart_2023_amount_i)),
+        Artifact(T657_CHART_2023_PART_2_AMOUNT_G, D(t657_chart_2023_part_2_amount_g)),
+        Artifact(
+            T657_CHART_2023_CLAIMS_ADDITIONAL_DEDUCTION, t657_chart_2023_claims_additional_deduction
+        ),
+        Artifact(T657_PART_1_AMOUNT_F, D(t657_part_1_amount_f)),
+        Artifact(T657_PART_1_AMOUNT_G, D(t657_part_1_amount_g)),
+        Artifact(T657_PART_1_AMOUNT_H, D(t657_part_1_amount_h)),
+        Artifact(T657_PART_1_AMOUNT_I, D(t657_part_1_amount_i)),
+        Artifact(T657_PART_1_AMOUNT_J, D(t657_part_1_amount_j)),
+        Artifact(T657_PART_1_AMOUNT_L, D(t657_part_1_amount_l)),
+        Artifact(T657_PART_2_EXCLUDED_F, D(t657_part_2_excluded_f)),
+        Artifact(T657_PART_2_EXCLUDED_G, D(t657_part_2_excluded_g)),
+        Artifact(T657_PART_2_EXCLUDED_H, D(t657_part_2_excluded_h)),
+        Artifact(T657_PART_2_AMOUNT_I, D(t657_part_2_amount_i)),
+        Artifact(T657_PART_2_AMOUNT_J, D(t657_part_2_amount_j)),
+        Artifact(T657_PART_2_AMOUNT_L, D(t657_part_2_amount_l)),
+        Artifact(CAPITAL_GAINS_DEDUCTION_CLAIMED, D(capital_gains_deduction_claimed)),
+        Artifact(T657_CHART_1_ROWS, RecordList(T657_CHART_1_ROWS.fields, t657_chart_1_rows)),
+        Artifact(AMT_RESOURCE_EXPENDITURES, D(amt_resource_expenditures)),
+        Artifact(AMT_RESOURCE_PRODUCTION_INCOME, D(amt_resource_production_income)),
+        Artifact(AMT_RESOURCE_FOREIGN_PROPERTY_INCOME, D(amt_resource_foreign_property_income)),
+        Artifact(AMT_CLASS_43_1_INCOME, D(amt_class_43_1_income)),
+        Artifact(AMT_TREATY_EXEMPT_CAPITAL_GAINS, D(amt_treaty_exempt_capital_gains)),
+        Artifact(
+            AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
+            D(amt_graduated_rate_estate_capital_gains),
+        ),
+        Artifact(AMT_PUBLICLY_LISTED_GIFTS_TOTAL, D(amt_publicly_listed_gifts_total)),
+        Artifact(
+            AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
+            D(amt_publicly_listed_gifts_t1170_line_68231),
+        ),
+        Artifact(
+            AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91, D(amt_t4_security_options_boxes_39_and_91)
+        ),
+        Artifact(
+            AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
+            D(amt_t1212_line_2_deferred_security_options),
+        ),
+        Artifact(
+            AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
+            D(amt_security_option_publicly_listed_gifts),
+        ),
+        Artifact(
+            AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92, D(amt_t4_security_options_boxes_41_and_92)
+        ),
+        Artifact(AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION, D(amt_prospector_or_grubstaker_deduction)),
+        Artifact(
+            AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
+            D(amt_deferred_profit_sharing_plan_deduction),
+        ),
+        Artifact(
+            AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
+            D(amt_limited_partnership_difference_no_election),
+        ),
+        Artifact(
+            AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION,
+            D(amt_limited_partnership_difference_election),
+        ),
+        Artifact(AMT_NON_CAPITAL_LOSSES_DIFFERENCE, D(amt_non_capital_losses_difference)),
+        Artifact(AMT_NET_CAPITAL_LOSSES_DIFFERENCE, D(amt_net_capital_losses_difference)),
+        Artifact(AMT_MOVING_EXPENSES_DEDUCTION, D(amt_moving_expenses_deduction)),
+        Artifact(AMT_PPIP_PREMIUMS_DEDUCTION, D(amt_ppip_premiums_deduction)),
+        Artifact(AMT_NON_DEDUCTIBLE_INTEREST, D(amt_non_deductible_interest)),
+        Artifact(
+            AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
+            D(amt_life_insurance_premiums_as_collateral),
+        ),
+        Artifact(AMT_FINANCING_EXPENSES, D(amt_financing_expenses)),
+        Artifact(AMT_INVESTMENT_COUNSEL_FEES, D(amt_investment_counsel_fees)),
+        Artifact(AMT_COMMISSION_EMPLOYMENT_EXPENSES, D(amt_commission_employment_expenses)),
+        Artifact(AMT_LEGAL_AND_ACCOUNTING_EXPENSES, D(amt_legal_and_accounting_expenses)),
+        Artifact(AMT_REPAYMENT_OF_SALARY_AND_WAGES, D(amt_repayment_of_salary_and_wages)),
+        Artifact(AMT_EXCESS_EPSP_AMOUNTS, D(amt_excess_epsp_amounts)),
+        Artifact(AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS, D(amt_forfeited_salary_deferral_amounts)),
+        Artifact(
+            AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT,
+            D(amt_repayment_of_wage_loss_replacement),
+        ),
+        Artifact(AMT_FEDERAL_LOGGING_TAX_CREDIT, D(amt_federal_logging_tax_credit)),
+        Artifact(
+            AMT_SECTION_119_FORMER_RESIDENT_CREDIT,
+            D(amt_section_119_former_resident_credit),
+        ),
+        Artifact(
+            AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+            D(amt_minimum_tax_carryover_from_previous_years),
+        ),
+        Artifact(AMT_MINIMUM_TAX_CARRYOVER_CLAIM, D(amt_minimum_tax_carryover_claim)),
+        Artifact(AMT_T2203_COLUMN_5_PERCENTAGE, D(amt_t2203_column_5_percentage)),
+        Artifact(AMT_NON_RESIDENT_OR_DEEMED_RESIDENT, amt_non_resident_or_deemed_resident),
+        Artifact(AMT_INVESTMENT_TAX_CREDIT_CLAIM, D(amt_investment_tax_credit_claim)),
+        Artifact(AMT_T2038_AMOUNT_I, D(amt_t2038_amount_i)),
+        Artifact(AMT_FOREIGN_BUSINESS_INCOME, D(amt_foreign_business_income)),
+        Artifact(AMT_FOREIGN_NON_BUSINESS_INCOME, D(amt_foreign_non_business_income)),
+        Artifact(
+            AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE_CLAIM,
+            D(amt_foreign_capital_gains_non_taxable_claim),
+        ),
+        Artifact(AMT_FOREIGN_NON_BUSINESS_TAX_PAID, D(amt_foreign_non_business_tax_paid)),
+        Artifact(AMT_FOREIGN_BUSINESS_TAX_PAID, D(amt_foreign_business_tax_paid)),
     )
 
 
@@ -1541,3 +2804,76 @@ def return_w(**overrides: Any) -> Worksheet:
 def step_3(**amounts: Any) -> Worksheet:
     """A return with no income, no CPP, no RRSP and no deductions but the keyword `amounts`."""
     return compute("0", (), "0", "0", "0", "0", "0", **amounts)
+
+
+def return_be(**overrides: Any) -> Worksheet:
+    """Return BE's inputs, as in `returns/2025_return_be.yaml`.
+
+    Employment income of 60000, capital gains of 200000 (taxable capital gains 100000), net
+    capital losses of other years of 40000 with 30000 claimed, a business investment loss of
+    8000 (4000.00 allowable), carrying charges of 5000, exploration and development expenses of
+    6000, interest of 4000 and other income of 2000. One QBT: line 1 600000 at 50%, prior claims
+    of 20000, gains of 180000, a 2024 reserve of 20000 and a 2025 reserve of 40000; an election
+    for a QBT of QSBCS shares; investment expenses in 2025, with 2000 of partnership losses,
+    1000 of other investment expenses and 500 of other property income in Chart A; all 60500 of
+    the most that can be claimed is claimed.
+    """
+    inputs: dict[str, Any] = {
+        "employment_income": "60000",
+        "share_dispositions": (),
+        "unused_rrsp_contributions": "0",
+        "rrsp_contributions": "0",
+        "rrsp_deduction_limit": "10800",
+        "rrsp_amount_deducted": "0",
+        "union_dues": "0",
+        "slip_capital_gains_or_losses": "200000",
+        "unapplied_net_capital_losses_2001_to_2024": "40000",
+        "net_capital_losses_claimed": "30000",
+        "business_investment_loss": "8000",
+        "total_carrying_charges": "5000",
+        "exploration_and_development_expenses": "6000",
+        "t5_investment_income": "4000",
+        "other_income": "2000",
+        "income_tax_deducted": "8000",
+        "qbt_election_eligible_amount": "600000",
+        "qbt_percentage_allocated": "50",
+        "qbt_prior_years_claims": "20000",
+        "qbt_capital_gains": "180000",
+        "qbt_2024_reserve": "20000",
+        "qbt_2025_reserve": "40000",
+        "qbt_election_is_qbt": 1,
+        "qbt_gains_are_qsbcs_or_qffp": 1,
+        "qbt_has_investment_expenses": 1,
+        "qbt_partnership_losses": "2000",
+        "qbt_other_investment_expenses": "1000",
+        "qbt_other_property_income": "500",
+        "qbt_deduction_claimed": "60500",
+    }
+    return compute(**{**inputs, **overrides})
+
+
+def return_bf(**overrides: Any) -> Worksheet:
+    """Return BF's inputs, as in `returns/2025_return_bf.yaml`.
+
+    Other income of 10000 and one disposition of QSBCS in 2025 after June 24, 2024: proceeds of
+    500000, adjusted cost base of 150000 and no outlays, a gain of 350000 (Schedule 3 line 10700).
+    Net capital losses of other years of 20000 are available and claimed. Taxable capital gains
+    for 2002 to 2024 of a chosen 100000 on Step 2 line 8; every other Form T657 line is blank. All
+    155000, the annual gains limit, is claimed on line 25400.
+    """
+    inputs: dict[str, Any] = {
+        "employment_income": "0",
+        "share_dispositions": (),
+        "unused_rrsp_contributions": "0",
+        "rrsp_contributions": "0",
+        "rrsp_deduction_limit": "0",
+        "rrsp_amount_deducted": "0",
+        "union_dues": "0",
+        "other_income": "10000",
+        "qsbcs_dispositions": (("500000", "150000", "0"),),
+        "unapplied_net_capital_losses_2001_to_2024": "20000",
+        "net_capital_losses_claimed": "20000",
+        "t657_gains_2002_to_2024": "100000",
+        "capital_gains_deduction_claimed": "155000",
+    }
+    return compute(**{**inputs, **overrides})

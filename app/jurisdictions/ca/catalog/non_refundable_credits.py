@@ -1,7 +1,8 @@
 """The federal catalog: non-refundable credits.
 
 The CPP, EI and Canada employment amounts, donations and gifts, the top-up credit, the non-
-refundable tax credits total and the investment tax credit recapture.
+refundable tax credits total, the federal foreign tax credit and the investment tax credit
+recapture.
 """
 
 from __future__ import annotations
@@ -19,14 +20,15 @@ T1 and, as ON428 line 19 (line 58240) "Amount from line 30800 of your return", o
 Line 15 is "Amount from line 11"; Part 3b line 30 "If line 16 is positive or "0", enter the amount
 from line 15 at line 30 and line 36, and continue at line 37." and line 36 "Line 34 plus line 35.
 Enter this amount (in dollars and cents) on line 30800 of your return and line 58240 of your Form
-428." carry it to T1 line 30800 and ON428 line 58240, lines 32 and 35 being 0. When line 24 is
-positive, Part 3a line 25 "Enter the amount from line 15." carries the same amount.
+428." carry it to T1 line 30800 and ON428 line 58240 when line 24 is "0" or negative
+(cpp_base_contributions_on_return). When line 24 is positive, Part 3a line 25 "Enter the amount
+from line 15." carries the same amount to the same lines.
 
 Line 1 (50339) is "Total CPP pensionable earnings from box 26 of all of your T4 slips (if box 26
 is blank, enter the amount from box 14)", so the three contributions read employment income.
-Not triggered by the returns modelled: Part 2's proration for fewer than 12 months, box 26
-differing from box 14, and the slips' deducted contributions differing from the required ones
-(so no overpayment on T1 line 44800).
+Not triggered by the returns modelled: Part 2's proration for fewer than 12 months, and box 26
+differing from box 14. The slips' contributions differing from the required ones are line 24, which
+routes to the T1 line 44800 overpayment when positive (cpp_overpayment).
 """
 
 CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT = CATALOG.declare(
@@ -142,6 +144,18 @@ TUITION_INCOME_BASE = CATALOG.declare("tuition_income_base", Decimal, non_negati
 your return on line 11 if it is $57,375 or less. If it is more than $57,375, enter the result of
 the following calculation: Amount from line 76 of your return divided by 14.5% =": the taxable
 income, or the federal basic tax divided by 14.5% above the threshold."""
+
+TOSI_ADJUSTED_TAXABLE_INCOME = CATALOG.declare(
+    "tosi_adjusted_taxable_income", Decimal, non_negative=True
+)
+"""TOSI-adjusted taxable income, Form T1206 Part 2 line 8A "TOSI-adjusted taxable income Amount
+from line 8 ÷ 14.5% =": the federal tax on split income divided by 14.5%, which is added to the
+amount on line 11 of Schedule 11."""
+
+TUITION_INCOME_WITH_TOSI = CATALOG.declare("tuition_income_with_tosi", Decimal, non_negative=True)
+"""Income base for the tuition amount with the TOSI-adjusted taxable income, Schedule 11 line 11
+plus Form T1206 line 8A "If you are completing a federal Schedule 11, calculate line 8A and add it
+to the amount on line 11 of Schedule 11": the amount that line 13 "Line 11 minus line 12" reads."""
 
 CREDIT_AMOUNTS_SUBTOTAL = CATALOG.declare("credit_amounts_subtotal", Decimal, non_negative=True)
 """Credit amounts subtotal, T1 line 101 "Add lines 98 to 100. =", which Schedule 11 line 12 "Enter
@@ -561,8 +575,9 @@ Basic federal tax": line 121 less the credits against it, not below zero.
 
 Line 121 (40400, `federal_tax_with_split_income`) is "Line 119 plus line 120", line 119 "Enter the
 amount from line 76." and line 120 (40424, `federal_tax_on_split_income`) the tax on split income;
-line 125 is "Add lines 122 to 124.", line 122 "Amount from line 35000" and line 123 "Federal
-dividend tax credit". Not modelled: line 124 (minimum tax carryover).
+line 125 is "Add lines 122 to 124.", line 122 "Amount from line 35000", line 123 "Federal
+dividend tax credit" and line 124 (40427), the minimum tax carryover applied on Form T691 Part 8
+line 12.
 """
 
 ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT = CATALOG.declare(
@@ -596,12 +611,99 @@ ITC_RECAPTURE = CATALOG.declare("itc_recapture", Decimal, non_negative=True)
 Form T2038(IND))": Part C amount 3 "Total recapture of investment tax credit on SR&ED expenditures
 (add amounts 1 and 2)", which the form says to enter on this line."""
 
+FIRST_NATIONS_ABATEMENT = CATALOG.declare("first_nations_abatement", Decimal, non_negative=True)
+"""Federal refundable First Nations abatement, Form T2209 note (4) "federal refundable First Nations
+abatement (line 44100 of your return)": a starting amount, taken off the basic federal tax of the
+foreign tax credit."""
+
+FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS = CATALOG.declare(
+    "foreign_tax_credit_net_income_deductions", Decimal, non_negative=True
+)
+"""Deductions taken off the net income of Form T2209, note (3) "Net income" "minus any:" the
+amounts of lines 24400, 24900, 25000, 25300, 25395 and 25400 of the return and the exempt part of
+line 25600, added in the note's order."""
+
+FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME = CATALOG.declare(
+    "foreign_tax_credit_net_income_before_split_income", Decimal
+)
+"""Net income before the split income, Form T2209 note (3) "Amount from line 23600 of your return
+(or the amount you would have entered if the instructions said "if negative, show in brackets")":
+line 23400 less line 23500, not floored, so signed. It is not the line 23600 kind, which is floored
+at 0."""
+
+FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME = CATALOG.declare(
+    "foreign_tax_credit_net_income_with_split_income", Decimal
+)
+"""Net income with the split income, Form T2209 note (3) "plus the amount on line 68360 of Form
+T1206, Total split income": the amount of note (3) before the split income plus line 68360. It is
+the same figure as the TOSI-adjusted net income, which adds line 68360 to line 23400 less line
+23500."""
+
+FOREIGN_TAX_CREDIT_NET_INCOME = CATALOG.declare("foreign_tax_credit_net_income", Decimal)
+"""Net income for the foreign tax credit, Form T2209 note (3) "Net income (3)": "Amount from line
+23600 of your return (or the amount you would have entered if the instructions said "if negative,
+show in brackets") plus the amount on line 68360 of Form T1206, Total split income, minus any:"
+the listed deductions; the net income with the split income less them. The note prints no "(if
+negative, enter "0")", so the result may be negative."""
+
+BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT = CATALOG.declare(
+    "basic_federal_tax_with_dividend_credit", Decimal, non_negative=True
+)
+"""Basic federal tax with the dividend credit, Form T2209 note (4) "Line 42900 of your return plus
+any:" "federal dividend tax credit (line 40425 of your return)" (note (8) is this sum alone, for
+the business lines): line 42900 (`federal_tax_after_credits`) and line 40425
+(`dividend_tax_credit`)."""
+
+FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX = CATALOG.declare(
+    "foreign_tax_credit_basic_federal_tax", Decimal, non_negative=True
+)
+"""Basic federal tax for the foreign tax credit, Form T2209 note (4) "Basic federal tax": the
+basic federal tax with the dividend credit "minus any:" "federal refundable First Nations
+abatement (line 44100 of your return)".
+
+Not part of it: the federal surtax on income allocated to "Other (Outside Canada)" (T1 line 127,
+not wired and not triggered on an Ontario return) and the refundable Quebec abatement (line 44000),
+which does not apply to an Ontario return."""
+
+FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT = CATALOG.declare(
+    "federal_non_business_foreign_tax_credit", Decimal, non_negative=True
+)
+"""Federal non-business foreign tax credit, Form T2209 line 3 "Enter whichever is less: the amount
+from line 1 or line 2. Federal non-business foreign tax credit": the total of line 3 over the
+countries."""
+
+FEDERAL_FOREIGN_TAX_CREDIT = CATALOG.declare(
+    "federal_foreign_tax_credit", Decimal, non_negative=True
+)
+"""Federal foreign tax credit, Form T2209 line 13 "Federal foreign tax credit" and T1 line 129
+(line 40500) "Federal foreign tax credit (complete Form T2209)": line 3, as the business lines 4 to
+12 are not wired, limited as the form says, "The amount on line 13 should not be more than the
+total of the amount on line 42900 of your return, plus any federal surtax on income earned outside
+of Canada", to line 42900, as the surtax is not wired."""
+
+FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT = CATALOG.declare(
+    "federal_tax_less_foreign_tax_credit", Decimal, non_negative=True
+)
+"""Federal tax less the foreign tax credit, T1 line 130 "Line 128 minus line 129 =": line 128 "Line
+126 plus line 127 =", which is line 126 (`federal_tax_after_credits`) as line 127 "Federal surtax on
+income earned outside Canada (complete Form T2203)" is not wired and not triggered on an Ontario
+return, less line 129 (40500). Line 129 is at most line 126, so it is not below zero."""
+
 FEDERAL_TAX_WITH_ITC_RECAPTURE = CATALOG.declare(
     "federal_tax_with_itc_recapture", Decimal, non_negative=True
 )
-"""Federal tax with the recapture, T1 line 132 "Line 130 plus line 131 =": line 126 (the federal
-tax after credits) and line 131 (`itc_recapture`).
+"""Federal tax with the recapture, T1 line 132 "Line 130 plus line 131 =": line 130
+(`federal_tax_less_foreign_tax_credit`) and line 131 (`itc_recapture`)."""
 
-Line 127 "Federal surtax on income earned outside Canada (complete Form T2203)" is not triggered on
-a return whose income is all allocated to Ontario and line 129 (40500) is not wired, so lines 128
-and 130 carry line 126 unchanged."""
+
+CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT = CATALOG.declare(
+    "cpp_part_5_base_contributions_on_self_employment", Decimal, non_negative=True
+)
+"""T1 line 31000 from Part 5 line 70, once for each Part 5 completed (1 or 0)."""
+
+CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
+    "cpp_base_contributions_on_self_employment_and_other_earnings", Decimal, non_negative=True
+)
+"""T1 line 31000: the Part 4 amount (cpp_base_contributions_on_self_employment) plus the Part 5
+amount, read by 08_non_refundable_credits (twice), 15_ontario_personal_amounts and
+16_ontario_credits."""

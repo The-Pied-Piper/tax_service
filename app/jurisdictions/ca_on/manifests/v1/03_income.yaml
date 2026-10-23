@@ -582,8 +582,9 @@ capabilities:
   # T1 line 33 and line 15000 "Line 28 plus line 32 Total income": every income line the
   # return lists, in line order (lines 1 to 20, line 13 being the net rental income, line
   # 12600 "Net"; here with the amount of dividends of line 9 (12000), the taxable capital
-  # gains of line 14 and the taxable support payments of line 15, then line 32);
-  # self-employment income (lines 22 to 26) is not wired yet.
+  # gains of line 14 and the taxable support payments of line 15, then line 32); line 27
+  # "Add lines 22 to 26. Net self-employment income" comes after line 20, before lines 29 to
+  # 31 (line 32).
   - name: core/sum
     consumes:
       parts:
@@ -607,6 +608,7 @@ capabilities:
         - ca/other_fhsa_income
         - ca/other_income
         - ca/taxable_scholarships
+        - ca/net_self_employment_income
         - ca/income_support_benefits
     produces:
       output: ca/total_income
@@ -675,20 +677,22 @@ capabilities:
         - ca/no_slip_dividend_tax_credit
     produces:
       output: ca/dividend_tax_credit
-  # T1 line 125 "Add lines 122 to 124.": line 122 "Amount from line 35000" and line 123
-  # (40425), in line order; line 124 (40427, minimum tax carryover) is not triggered.
+  # T1 line 125 "Add lines 122 to 124.": line 122 "Amount from line 35000", line 123 (40425),
+  # the federal dividend tax credit, and line 124 (40427), the minimum tax carryover applied
+  # on Form T691 Part 8 line 12, in line order.
   - name: core/sum
     consumes:
       parts:
         - ca/non_refundable_tax_credits
         - ca/dividend_tax_credit
+        - ca/amt_minimum_tax_carryover_applied
     produces:
       output: ca/credits_against_basic_federal_tax
   # T1 line 27 "Add lines 22 to 26. Net self-employment income": line 22 (13500) business
   # income, line 23 (13700) professional income, line 24 (13900) commission income, line 25
   # (14100) farming income and line 26 (14300) fishing income, the "Net" box of each, in
-  # line order. Line 28 "Line 21 plus line 27" and total income (line 15000) are not yet
-  # computed from it.
+  # line order. Line 28 "Line 21 plus line 27" is not a step of its own: total income (line
+  # 15000) adds line 27 to the lines 1 to 20, in line order.
   - name: core/sum
     consumes:
       parts:

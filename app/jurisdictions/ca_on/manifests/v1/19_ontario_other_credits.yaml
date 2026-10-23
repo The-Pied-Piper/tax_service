@@ -115,7 +115,7 @@ capabilities:
   # Line 6 "Enter your child care expenses deduction from line 21400 of your return." and
   # line 8 "Line 6 multiplied by the percentage from line 7 Enter this amount on line 63050
   # of your Form ON479.": line 6 reads the child care expenses deduction, as line 2 does.
-  - name: ca-on/apply_chosen_rate
+  - name: ca/apply_chosen_rate
     params:
       rounding: ca-on/care_credit_rounding
     consumes:

@@ -32,15 +32,18 @@ from app.domain.record_list import RecordListKind
 from app.domain.trace import (
     AmountByCountLine,
     AmountOrDividedByRateLine,
+    AmountWhenMoreLine,
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
     ChosenByCountLine,
     ChosenByRangeLine,
+    ChosenBySignLine,
     ChosenRateAppliedLine,
     ConditionLine,
     ConditionsCountLine,
     ContributionTierLine,
+    CountAtLeastLine,
     CreditAmountLine,
     DividedByRateLine,
     FractionAppliedLine,
@@ -49,15 +52,21 @@ from app.domain.trace import (
     ItemsTotalLine,
     ItemSumLine,
     LesserOfLine,
+    LesserOfWhenPositiveLine,
+    LesserOfWithMaximumLine,
     MultipleOverLine,
+    PercentageAppliedLine,
     PerUnitAmountLine,
+    PositivePartOfNegationLine,
     QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
     RatioAppliedLine,
+    RatioTruncatedLine,
     RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
+    SignChosenDifferenceLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
@@ -77,7 +86,9 @@ from app.jurisdictions.ca.trace import (
     DispositionGainLine,
     DispositionGainOnlyLine,
     DispositionProceedsLine,
+    ForeignTaxCreditLine,
     OtherDependantMedicalLine,
+    PooledForeignTaxCreditLine,
     PrincipalResidenceGainLine,
     RecapturedCcaLine,
     ShortTermRentalNonCompliantCcaByClassLine,
@@ -85,7 +96,11 @@ from app.jurisdictions.ca.trace import (
     ShortTermRentalNonCompliantLine,
     TerminalLossLine,
 )
-from app.jurisdictions.ca_on.trace import CaregiverClaimLessClaimedLine, PlacementCreditLine
+from app.jurisdictions.ca_on.trace import (
+    CaregiverClaimLessClaimedLine,
+    PlacementCreditLine,
+    ProvincialForeignTaxCreditLine,
+)
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
@@ -95,6 +110,7 @@ PART_ONE = ArtifactKind("ex/part_one", Decimal)
 PART_TWO = ArtifactKind("ex/part_two", Decimal)
 TOTAL = ArtifactKind("ex/total", Decimal)
 RATED = ArtifactKind("ex/rated", Decimal)
+RATED_RATE = ArtifactKind("ex/rated", Rate)
 GROSS = ArtifactKind("ex/gross", Decimal)
 REDUCTION = ArtifactKind("ex/reduction", Decimal)
 NET = ArtifactKind("ex/net", Decimal)
@@ -126,6 +142,7 @@ TAX_PAYABLE = ArtifactKind("ex/tax_payable", Decimal)
 FOREIGN_INCOME = ArtifactKind("ex/foreign_income", Decimal)
 WORLD_INCOME = ArtifactKind("ex/worldwide_income", Decimal)
 CREDIT_SHARE = ArtifactKind("ex/credit_share", Decimal)
+PERCENTAGE = ArtifactKind("ex/allocated_percentage", Decimal)
 ITEM_AMOUNT = ArtifactKind("ex/item_amount", Decimal)
 GATED = ArtifactKind("ex/gated_amount", Decimal)
 GATE = ArtifactKind("ex/gate_amount", Decimal)
@@ -184,6 +201,12 @@ def divided_by_rate_line() -> DividedByRateLine:
     return DividedByRateLine(RATED, BASE, D("3795"), Rate(D("0.145")), CENT, D("26172.41"))
 
 
+def sign_chosen_difference_line() -> SignChosenDifferenceLine:
+    return SignChosenDifferenceLine(
+        NET, GROSS, D("-100"), REDUCTION, D("30"), BASE, D("130"), D("-30")
+    )
+
+
 def subtracted_line() -> SubtractedLine:
     return SubtractedLine(NET, GROSS, D("100.25"), REDUCTION, D(40), D("60.25"))
 
@@ -209,6 +232,12 @@ def threshold_gate_line() -> ThresholdGateLine:
 def amount_or_divided_by_rate_line() -> AmountOrDividedByRateLine:
     return AmountOrDividedByRateLine(
         LIMITED, TESTED, D("60000"), DIVIDED, D("3321.67"), THRESHOLD_LIMIT, CENT, D("65775.64")
+    )
+
+
+def lesser_of_with_maximum_line() -> LesserOfWithMaximumLine:
+    return LesserOfWithMaximumLine(
+        LESSER, ((PART_ONE, D("2500")), (PART_TWO, D("3000"))), Amount(D(2000)), CENT, D("2000.00")
     )
 
 
@@ -282,6 +311,18 @@ def ratio_applied_line() -> RatioAppliedLine:
     )
 
 
+def percentage_applied_line() -> PercentageAppliedLine:
+    return PercentageAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("1000"),
+        PERCENTAGE,
+        D("50"),
+        CENT,
+        D("500"),
+    )
+
+
 def amount_by_count_line() -> AmountByCountLine:
     return AmountByCountLine(MONTHLY, MONTHS, 4, D("400.255"), CENT, D("400.26"))
 
@@ -343,6 +384,51 @@ def short_term_rental_non_compliant_cca_by_class_line() -> (
 ):
     return ShortTermRentalNonCompliantCcaByClassLine(
         NON_COMPLIANT_CCA_BY_CLASS, 2, D("10.1"), (D("300.00"), D("33.33")), D("333.33")
+    )
+
+
+def foreign_tax_credit_line() -> ForeignTaxCreditLine:
+    return ForeignTaxCreditLine(
+        NON_COMPLIANT,
+        2,
+        D("1500"),
+        D("10000"),
+        D("100000"),
+        D("14000"),
+        CENT,
+        D("1400.00"),
+        D("1400.00"),
+    )
+
+
+def pooled_foreign_tax_credit_line() -> PooledForeignTaxCreditLine:
+    return PooledForeignTaxCreditLine(
+        NON_COMPLIANT,
+        2,
+        D("200"),
+        D("10100"),
+        D("100000"),
+        D("14000"),
+        D("200"),
+        CENT,
+        D("1414.00"),
+        D("200"),
+    )
+
+
+def provincial_foreign_tax_credit_line() -> ProvincialForeignTaxCreditLine:
+    return ProvincialForeignTaxCreditLine(
+        NON_COMPLIANT,
+        2,
+        D("1500"),
+        D("1400.00"),
+        D("100.00"),
+        D("10000"),
+        D("100000"),
+        D("5000"),
+        CENT,
+        D("500.00"),
+        D("100.00"),
     )
 
 
@@ -448,6 +534,43 @@ def item_lesser_of_line() -> ItemLesserOfLine:
     return ItemLesserOfLine(TOTAL, 1, ((PART_ONE, D("1500")), (PART_TWO, D("750.50"))), D("750.50"))
 
 
+def count_at_least_line() -> CountAtLeastLine:
+    return CountAtLeastLine(PERSONS, CHILDREN, 3, DEPENDANTS, 2)
+
+
+def ratio_truncated_line() -> RatioTruncatedLine:
+    return RatioTruncatedLine(
+        RATED_RATE,
+        BASE,
+        D("30000"),
+        TOTAL,
+        D("70000"),
+        RoundTo(D("0.00001"), RoundingMode.DOWN),
+        False,
+        D("0.42857"),
+    )
+
+
+def positive_part_of_negation_line() -> PositivePartOfNegationLine:
+    return PositivePartOfNegationLine(RATED, NET, D("-12.50"), D("12.50"))
+
+
+def lesser_of_when_positive_line() -> LesserOfWhenPositiveLine:
+    return LesserOfWhenPositiveLine(
+        TOTAL, ((PART_ONE, D("1500")), (PART_TWO, D("750.50"))), True, True, D("-750.50")
+    )
+
+
+def amount_when_more_line() -> AmountWhenMoreLine:
+    return AmountWhenMoreLine(
+        ALLOWED, CLAIMED, D("1500.25"), TESTED, D("70000.01"), LIMIT, D(70000), D("1500.25")
+    )
+
+
+def chosen_by_sign_line() -> ChosenBySignLine:
+    return ChosenBySignLine(CHOSEN, GATE, D("-3"), ALONE, D("1633.00"))
+
+
 ALL_LINES = [
     column_line,
     total_line,
@@ -455,6 +578,7 @@ ALL_LINES = [
     sum_not_below_zero_line,
     rate_applied_line,
     divided_by_rate_line,
+    sign_chosen_difference_line,
     subtracted_line,
     subtracted_not_below_zero_line,
     credit_amount_line,
@@ -462,6 +586,7 @@ ALL_LINES = [
     threshold_gate_line,
     amount_or_divided_by_rate_line,
     lesser_of_line,
+    lesser_of_with_maximum_line,
     greater_of_line,
     contribution_tier_line,
     surcharge_tier_line,
@@ -473,6 +598,7 @@ ALL_LINES = [
     times_count_line,
     chosen_by_count_line,
     ratio_applied_line,
+    percentage_applied_line,
     amount_by_count_line,
     record_total_line,
     chosen_by_range_line,
@@ -485,6 +611,8 @@ ALL_LINES = [
     item_sum_line,
     item_lesser_of_line,
     disposition_gain_line,
+    foreign_tax_credit_line,
+    pooled_foreign_tax_credit_line,
     disposition_gain_only_line,
     items_total_line,
     other_dependant_medical_line,
@@ -493,6 +621,12 @@ ALL_LINES = [
     short_term_rental_non_compliant_cca_by_class_line,
     condition_line,
     conditions_count_line,
+    count_at_least_line,
+    ratio_truncated_line,
+    positive_part_of_negation_line,
+    lesser_of_when_positive_line,
+    chosen_by_sign_line,
+    amount_when_more_line,
 ]
 
 
@@ -723,6 +857,60 @@ def test_a_divided_by_rate_line_is_not_a_rate_applied_line() -> None:
     assert not isinstance(divided_by_rate_line(), RateAppliedLine)
 
 
+def test_sign_chosen_difference_line_fields_in_order() -> None:
+    line = sign_chosen_difference_line()
+
+    assert line == SignChosenDifferenceLine(
+        output=NET,
+        sign=GROSS,
+        sign_amount=D("-100"),
+        reference=REDUCTION,
+        reference_amount=D("30"),
+        difference=BASE,
+        difference_amount=D("130"),
+        result=D("-30"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "sign",
+        "sign_amount",
+        "reference",
+        "reference_amount",
+        "difference",
+        "difference_amount",
+        "result",
+    ]
+    assert line.output is NET
+    assert line.sign is GROSS
+    assert line.sign_amount == D("-100")
+    assert line.reference is REDUCTION
+    assert line.reference_amount == D("30")
+    assert line.difference is BASE
+    assert line.difference_amount == D("130")
+    assert line.result == D("-30")
+    assert line.amount == D("-30")
+
+
+def test_sign_chosen_difference_lines_differ_by_result() -> None:
+    assert sign_chosen_difference_line() != SignChosenDifferenceLine(
+        NET, GROSS, D("-100"), REDUCTION, D("30"), BASE, D("130"), D("30")
+    )
+
+
+def test_sign_chosen_difference_lines_differ_by_sign_amount() -> None:
+    assert sign_chosen_difference_line() != SignChosenDifferenceLine(
+        NET, GROSS, D("100"), REDUCTION, D("30"), BASE, D("130"), D("-30")
+    )
+
+
+def test_sign_chosen_difference_lines_are_hashable() -> None:
+    assert hash(sign_chosen_difference_line()) == hash(sign_chosen_difference_line())
+
+
+def test_a_sign_chosen_difference_line_is_not_a_subtracted_line() -> None:
+    assert not isinstance(sign_chosen_difference_line(), SubtractedLine)
+
+
 def test_subtracted_line_fields_in_order() -> None:
     line = subtracted_line()
 
@@ -925,6 +1113,50 @@ def test_lesser_of_line_fields_in_order() -> None:
     assert line.parts == ((PART_ONE, D("100.25")), (PART_TWO, D(40)))
     assert line.result == D(40)
     assert line.amount == D(40)
+
+
+def test_lesser_of_with_maximum_line_fields_in_order() -> None:
+    line = lesser_of_with_maximum_line()
+
+    assert line == LesserOfWithMaximumLine(
+        output=LESSER,
+        parts=((PART_ONE, D("2500")), (PART_TWO, D("3000"))),
+        maximum=Amount(D(2000)),
+        rounding=CENT,
+        result=D("2000.00"),
+    )
+    assert [f.name for f in fields(line)] == ["output", "parts", "maximum", "rounding", "result"]
+    assert line.output is LESSER
+    assert line.parts == ((PART_ONE, D("2500")), (PART_TWO, D("3000")))
+    assert line.maximum == Amount(D(2000))
+    assert line.rounding == CENT
+    assert line.result == D("2000.00")
+    assert line.amount == D("2000.00")
+
+
+def test_lesser_of_with_maximum_lines_differ_by_maximum_rounding_and_the_order_of_parts() -> None:
+    parts = ((PART_ONE, D("2500")), (PART_TWO, D("3000")))
+    assert lesser_of_with_maximum_line() != LesserOfWithMaximumLine(
+        LESSER, parts, Amount(D(1000)), CENT, D("2000.00")
+    )
+    assert lesser_of_with_maximum_line() != LesserOfWithMaximumLine(
+        LESSER, parts, Amount(D(2000)), NO_ROUNDING, D("2000.00")
+    )
+    assert lesser_of_with_maximum_line() != LesserOfWithMaximumLine(
+        LESSER, parts[::-1], Amount(D(2000)), CENT, D("2000.00")
+    )
+
+
+def test_lesser_of_with_maximum_lines_are_hashable() -> None:
+    assert hash(lesser_of_with_maximum_line()) == hash(lesser_of_with_maximum_line())
+
+
+def test_a_lesser_of_with_maximum_line_is_not_a_lesser_of_or_capped_amount_line() -> None:
+    line = lesser_of_with_maximum_line()
+
+    assert not isinstance(line, LesserOfLine)
+    assert not isinstance(line, CappedAmountLine)
+    assert not isinstance(lesser_of_line(), LesserOfWithMaximumLine)
 
 
 def test_lesser_of_line_may_have_one_part() -> None:
@@ -2424,6 +2656,241 @@ def test_short_term_rental_non_compliant_cca_by_class_lines_are_hashable() -> No
     assert hash(short_term_rental_non_compliant_cca_by_class_line()) == hash(
         short_term_rental_non_compliant_cca_by_class_line()
     )
+
+
+def test_foreign_tax_credit_line_fields_in_order() -> None:
+    line = foreign_tax_credit_line()
+
+    assert line == ForeignTaxCreditLine(
+        output=NON_COMPLIANT,
+        position=2,
+        tax_paid=D("1500"),
+        income=D("10000"),
+        net_income=D("100000"),
+        basic_federal_tax=D("14000"),
+        rounding=CENT,
+        line_2=D("1400.00"),
+        result=D("1400.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "tax_paid",
+        "income",
+        "net_income",
+        "basic_federal_tax",
+        "rounding",
+        "line_2",
+        "result",
+    ]
+    assert line.output is NON_COMPLIANT
+    assert line.position == 2
+    assert line.rounding == CENT
+
+
+def test_foreign_tax_credit_line_amount_is_the_result() -> None:
+    line = foreign_tax_credit_line()
+
+    assert line.amount == D("1400.00")
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_foreign_tax_credit_lines_differ_by_each_field() -> None:
+    line = foreign_tax_credit_line()
+    other_output = ArtifactKind("ex/other_expenses", Decimal)
+    args: list[Any] = [
+        NON_COMPLIANT,
+        2,
+        D("1500"),
+        D("10000"),
+        D("100000"),
+        D("14000"),
+        CENT,
+        D("1400.00"),
+        D("1400.00"),
+    ]
+    changes: list[Any] = [
+        other_output,
+        1,
+        D("1501"),
+        D("10001"),
+        D("100001"),
+        D("14001"),
+        NO_ROUNDING,
+        D("1400.01"),
+        D("1400.01"),
+    ]
+    for index, changed in enumerate(changes):
+        varied = [*args[:index], changed, *args[index + 1 :]]
+        assert line != ForeignTaxCreditLine(*varied)
+
+
+def test_foreign_tax_credit_lines_are_hashable() -> None:
+    assert hash(foreign_tax_credit_line()) == hash(foreign_tax_credit_line())
+
+
+def test_pooled_foreign_tax_credit_line_fields_in_order() -> None:
+    line = pooled_foreign_tax_credit_line()
+
+    assert line == PooledForeignTaxCreditLine(
+        output=NON_COMPLIANT,
+        countries=2,
+        tax_paid=D("200"),
+        income=D("10100"),
+        net_income=D("100000"),
+        basic_federal_tax=D("14000"),
+        threshold=D("200"),
+        rounding=CENT,
+        line_2=D("1414.00"),
+        result=D("200"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "countries",
+        "tax_paid",
+        "income",
+        "net_income",
+        "basic_federal_tax",
+        "threshold",
+        "rounding",
+        "line_2",
+        "result",
+    ]
+    assert line.countries == 2
+    assert type(line.countries) is int
+
+
+def test_pooled_foreign_tax_credit_line_amount_is_the_result() -> None:
+    line = pooled_foreign_tax_credit_line()
+
+    assert line.amount == D("200")
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_pooled_foreign_tax_credit_lines_differ_by_each_field() -> None:
+    line = pooled_foreign_tax_credit_line()
+    other_output = ArtifactKind("ex/other_expenses", Decimal)
+    args: list[Any] = [
+        NON_COMPLIANT,
+        2,
+        D("200"),
+        D("10100"),
+        D("100000"),
+        D("14000"),
+        D("200"),
+        CENT,
+        D("1414.00"),
+        D("200"),
+    ]
+    changes: list[Any] = [
+        other_output,
+        3,
+        D("201"),
+        D("10101"),
+        D("100001"),
+        D("14001"),
+        D("250"),
+        NO_ROUNDING,
+        D("1414.01"),
+        D("199"),
+    ]
+    for index, changed in enumerate(changes):
+        varied = [*args[:index], changed, *args[index + 1 :]]
+        assert line != PooledForeignTaxCreditLine(*varied)
+
+
+def test_a_pooled_foreign_tax_credit_line_is_not_a_foreign_tax_credit_line() -> None:
+    assert not isinstance(pooled_foreign_tax_credit_line(), ForeignTaxCreditLine)
+    assert not isinstance(foreign_tax_credit_line(), PooledForeignTaxCreditLine)
+
+
+def test_provincial_foreign_tax_credit_line_fields_in_order() -> None:
+    line = provincial_foreign_tax_credit_line()
+
+    assert line == ProvincialForeignTaxCreditLine(
+        output=NON_COMPLIANT,
+        position=2,
+        tax_paid=D("1500"),
+        federal_credit=D("1400.00"),
+        line_3=D("100.00"),
+        income=D("10000"),
+        net_income=D("100000"),
+        provincial_tax=D("5000"),
+        rounding=CENT,
+        line_4=D("500.00"),
+        result=D("100.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "tax_paid",
+        "federal_credit",
+        "line_3",
+        "income",
+        "net_income",
+        "provincial_tax",
+        "rounding",
+        "line_4",
+        "result",
+    ]
+    assert line.output is NON_COMPLIANT
+    assert line.position == 2
+    assert type(line.position) is int
+    assert line.rounding == CENT
+
+
+def test_provincial_foreign_tax_credit_line_amount_is_the_result() -> None:
+    line = provincial_foreign_tax_credit_line()
+
+    assert line.amount == D("100.00")
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_provincial_foreign_tax_credit_lines_differ_by_each_field() -> None:
+    line = provincial_foreign_tax_credit_line()
+    other_output = ArtifactKind("ex/other_expenses", Decimal)
+    args: list[Any] = [
+        NON_COMPLIANT,
+        2,
+        D("1500"),
+        D("1400.00"),
+        D("100.00"),
+        D("10000"),
+        D("100000"),
+        D("5000"),
+        CENT,
+        D("500.00"),
+        D("100.00"),
+    ]
+    changes: list[Any] = [
+        other_output,
+        1,
+        D("1501"),
+        D("1400.01"),
+        D("100.01"),
+        D("10001"),
+        D("100001"),
+        D("5001"),
+        NO_ROUNDING,
+        D("500.01"),
+        D("99.00"),
+    ]
+    for index, changed in enumerate(changes):
+        varied = [*args[:index], changed, *args[index + 1 :]]
+        assert line != ProvincialForeignTaxCreditLine(*varied)
+
+
+def test_provincial_foreign_tax_credit_lines_are_frozen_and_hashable() -> None:
+    line = provincial_foreign_tax_credit_line()
+
+    assert hash(line) == hash(provincial_foreign_tax_credit_line())
+    with pytest.raises(FrozenInstanceError):
+        setattr(line, "result", D(1))  # noqa: B010
+
+
+def test_a_provincial_foreign_tax_credit_line_is_not_a_federal_foreign_tax_credit_line() -> None:
+    assert not isinstance(provincial_foreign_tax_credit_line(), ForeignTaxCreditLine)
+    assert not isinstance(provincial_foreign_tax_credit_line(), PooledForeignTaxCreditLine)
 
 
 def test_caregiver_claim_less_claimed_line_fields_in_order() -> None:
@@ -4010,3 +4477,322 @@ def test_the_two_disposition_lines_are_classes_of_their_own() -> None:
     assert not isinstance(disposition_gain_line(), DispositionGainOnlyLine)
     assert not isinstance(disposition_gain_only_line(), DispositionGainLine)
     assert not isinstance(disposition_gain_line(), ItemsTotalLine)
+
+
+def test_percentage_applied_line_fields_in_order() -> None:
+    line = percentage_applied_line()
+
+    assert line == PercentageAppliedLine(
+        output=CREDIT_SHARE,
+        amount_kind=TAX_PAYABLE,
+        amount_value=D("1000"),
+        percentage_kind=PERCENTAGE,
+        percentage_value=D("50"),
+        rounding=CENT,
+        result=D("500"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "amount_kind",
+        "amount_value",
+        "percentage_kind",
+        "percentage_value",
+        "rounding",
+        "result",
+    ]
+    assert line.output is CREDIT_SHARE
+    assert line.amount_kind is TAX_PAYABLE
+    assert line.amount_value == D("1000")
+    assert line.percentage_kind is PERCENTAGE
+    assert line.percentage_value == D("50")
+    assert line.rounding == CENT
+    assert line.result == D("500")
+    assert line.amount == D("500")
+
+
+def test_a_percentage_applied_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(percentage_applied_line())]
+
+
+def test_percentage_applied_lines_are_hashable() -> None:
+    assert hash(percentage_applied_line()) == hash(percentage_applied_line())
+
+
+def test_percentage_applied_lines_differ_by_amount_value() -> None:
+    assert percentage_applied_line() != PercentageAppliedLine(
+        CREDIT_SHARE, TAX_PAYABLE, D("1001"), PERCENTAGE, D("50"), CENT, D("500")
+    )
+
+
+def test_percentage_applied_lines_differ_by_percentage_value() -> None:
+    assert percentage_applied_line() != PercentageAppliedLine(
+        CREDIT_SHARE, TAX_PAYABLE, D("1000"), PERCENTAGE, D("51"), CENT, D("500")
+    )
+
+
+def test_percentage_applied_lines_differ_by_kind() -> None:
+    other = ArtifactKind("ex/other_percentage", Decimal)
+
+    assert percentage_applied_line() != PercentageAppliedLine(
+        CREDIT_SHARE, TAX_PAYABLE, D("1000"), other, D("50"), CENT, D("500")
+    )
+
+
+def test_percentage_applied_lines_differ_by_rounding() -> None:
+    assert percentage_applied_line() != PercentageAppliedLine(
+        CREDIT_SHARE, TAX_PAYABLE, D("1000"), PERCENTAGE, D("50"), NO_ROUNDING, D("500")
+    )
+
+
+def test_a_percentage_applied_line_is_not_a_ratio_or_rate_applied_line() -> None:
+    assert not isinstance(percentage_applied_line(), RatioAppliedLine)
+    assert not isinstance(percentage_applied_line(), RateAppliedLine)
+
+
+# --- lines for the engine capabilities of Form RC381 ----------------------------------------------
+
+
+def test_count_at_least_line_fields_in_order() -> None:
+    line = count_at_least_line()
+
+    assert line == CountAtLeastLine(
+        output=PERSONS, count_kind=CHILDREN, count=3, minimum_kind=DEPENDANTS, minimum=2
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "count_kind",
+        "count",
+        "minimum_kind",
+        "minimum",
+    ]
+    assert line.output is PERSONS
+    assert line.count_kind is CHILDREN
+    assert line.count == 3
+    assert line.minimum_kind is DEPENDANTS
+    assert line.minimum == 2
+    assert line.amount == D(3)
+
+
+def test_count_at_least_lines_differ_by_count_and_minimum() -> None:
+    assert count_at_least_line() != CountAtLeastLine(PERSONS, CHILDREN, 4, DEPENDANTS, 2)
+    assert count_at_least_line() != CountAtLeastLine(PERSONS, CHILDREN, 3, DEPENDANTS, 3)
+
+
+def test_count_at_least_lines_are_hashable() -> None:
+    assert hash(count_at_least_line()) == hash(count_at_least_line())
+
+
+def test_a_count_at_least_line_is_not_an_at_most_line() -> None:
+    assert not isinstance(count_at_least_line(), AtMostLine)
+
+
+def test_ratio_truncated_line_fields_in_order() -> None:
+    line = ratio_truncated_line()
+    five_decimals_down = RoundTo(D("0.00001"), RoundingMode.DOWN)
+
+    assert line == RatioTruncatedLine(
+        output=RATED_RATE,
+        dividend=BASE,
+        dividend_amount=D("30000"),
+        divisor=TOTAL,
+        divisor_amount=D("70000"),
+        rounding=five_decimals_down,
+        cap_at_one=False,
+        result=D("0.42857"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "dividend",
+        "dividend_amount",
+        "divisor",
+        "divisor_amount",
+        "rounding",
+        "cap_at_one",
+        "result",
+    ]
+    assert line.output is RATED_RATE
+    assert line.dividend is BASE
+    assert line.divisor is TOTAL
+    assert line.rounding == five_decimals_down
+    assert line.cap_at_one is False
+    assert line.amount == D("0.42857")
+
+
+def test_ratio_truncated_lines_differ_by_cap_and_rounding() -> None:
+    line = ratio_truncated_line()
+    five_decimals_down = RoundTo(D("0.00001"), RoundingMode.DOWN)
+
+    assert line != RatioTruncatedLine(
+        RATED_RATE, BASE, D("30000"), TOTAL, D("70000"), five_decimals_down, True, D("0.42857")
+    )
+    assert line != RatioTruncatedLine(
+        RATED_RATE, BASE, D("30000"), TOTAL, D("70000"), NO_ROUNDING, False, D("0.42857")
+    )
+
+
+def test_ratio_truncated_lines_are_hashable() -> None:
+    assert hash(ratio_truncated_line()) == hash(ratio_truncated_line())
+
+
+def test_a_ratio_truncated_line_is_not_a_quotient_line() -> None:
+    assert not isinstance(ratio_truncated_line(), QuotientLine)
+
+
+def test_positive_part_of_negation_line_fields_in_order() -> None:
+    line = positive_part_of_negation_line()
+
+    assert line == PositivePartOfNegationLine(
+        output=RATED, amount_kind=NET, amount_value=D("-12.50"), result=D("12.50")
+    )
+    assert [f.name for f in fields(line)] == ["output", "amount_kind", "amount_value", "result"]
+    assert line.output is RATED
+    assert line.amount_kind is NET
+    assert line.amount_value == D("-12.50")
+    assert line.amount == D("12.50")
+
+
+def test_positive_part_of_negation_lines_differ_by_value() -> None:
+    assert positive_part_of_negation_line() != PositivePartOfNegationLine(
+        RATED, NET, D("-13"), D("12.50")
+    )
+
+
+def test_positive_part_of_negation_lines_are_hashable() -> None:
+    assert hash(positive_part_of_negation_line()) == hash(positive_part_of_negation_line())
+
+
+def test_lesser_of_when_positive_line_fields_in_order() -> None:
+    line = lesser_of_when_positive_line()
+
+    assert line == LesserOfWhenPositiveLine(
+        output=TOTAL,
+        parts=((PART_ONE, D("1500")), (PART_TWO, D("750.50"))),
+        all_positive=True,
+        bracket=True,
+        result=D("-750.50"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "parts",
+        "all_positive",
+        "bracket",
+        "result",
+    ]
+    assert line.output is TOTAL
+    assert line.parts == ((PART_ONE, D("1500")), (PART_TWO, D("750.50")))
+    assert line.all_positive is True
+    assert line.bracket is True
+    assert line.amount == D("-750.50")
+
+
+def test_lesser_of_when_positive_lines_differ_by_condition_bracket_and_result() -> None:
+    parts = ((PART_ONE, D("1500")), (PART_TWO, D("750.50")))
+
+    assert lesser_of_when_positive_line() != LesserOfWhenPositiveLine(
+        TOTAL, parts, False, True, D("-750.50")
+    )
+    assert lesser_of_when_positive_line() != LesserOfWhenPositiveLine(
+        TOTAL, parts, True, False, D("-750.50")
+    )
+    assert lesser_of_when_positive_line() != LesserOfWhenPositiveLine(
+        TOTAL, parts, True, True, D("750.50")
+    )
+
+
+def test_lesser_of_when_positive_lines_are_hashable() -> None:
+    assert hash(lesser_of_when_positive_line()) == hash(lesser_of_when_positive_line())
+
+
+def test_a_lesser_of_when_positive_line_is_not_a_lesser_of_line() -> None:
+    assert not isinstance(lesser_of_when_positive_line(), LesserOfLine)
+
+
+def test_chosen_by_sign_line_fields_in_order() -> None:
+    line = chosen_by_sign_line()
+
+    assert line == ChosenBySignLine(
+        output=CHOSEN, sign_kind=GATE, sign=D("-3"), chosen_kind=ALONE, chosen_value=D("1633.00")
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "sign_kind",
+        "sign",
+        "chosen_kind",
+        "chosen_value",
+    ]
+    assert line.output is CHOSEN
+    assert line.sign_kind is GATE
+    assert line.sign == D("-3")
+    assert line.chosen_kind is ALONE
+    assert line.amount == D("1633.00")
+
+
+def test_a_chosen_by_sign_line_for_an_omitted_branch_names_no_kind() -> None:
+    line = ChosenBySignLine(CHOSEN, GATE, D("0"), None, D("0"))
+
+    assert line.chosen_kind is None
+    assert line.amount == D("0")
+
+
+def test_chosen_by_sign_lines_differ_by_sign_and_chosen_kind() -> None:
+    assert chosen_by_sign_line() != ChosenBySignLine(CHOSEN, GATE, D("3"), ALONE, D("1633.00"))
+    assert chosen_by_sign_line() != ChosenBySignLine(
+        CHOSEN, GATE, D("-3"), WITH_FAMILY, D("1633.00")
+    )
+
+
+def test_chosen_by_sign_lines_are_hashable() -> None:
+    assert hash(chosen_by_sign_line()) == hash(chosen_by_sign_line())
+
+
+def test_a_chosen_by_sign_line_is_not_a_chosen_by_count_line() -> None:
+    assert not isinstance(chosen_by_sign_line(), ChosenByCountLine)
+
+
+def test_amount_when_more_line_fields_in_order() -> None:
+    line = amount_when_more_line()
+
+    assert line == AmountWhenMoreLine(
+        output=ALLOWED,
+        amount_kind=CLAIMED,
+        amount_value=D("1500.25"),
+        more_kind=TESTED,
+        more_value=D("70000.01"),
+        than_kind=LIMIT,
+        than_value=D(70000),
+        result=D("1500.25"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "amount_kind",
+        "amount_value",
+        "more_kind",
+        "more_value",
+        "than_kind",
+        "than_value",
+        "result",
+    ]
+    assert line.output is ALLOWED
+    assert line.amount_kind is CLAIMED
+    assert line.more_kind is TESTED
+    assert line.than_kind is LIMIT
+    assert line.amount == D("1500.25")
+
+
+def test_amount_when_more_lines_differ_by_values_and_result() -> None:
+    line = amount_when_more_line()
+
+    assert line != AmountWhenMoreLine(
+        ALLOWED, CLAIMED, D("1500.25"), TESTED, D(70000), LIMIT, D(70000), D(0)
+    )
+    assert line != AmountWhenMoreLine(
+        ALLOWED, CLAIMED, D("1500.25"), TESTED, D("70000.01"), LIMIT, D(60000), D("1500.25")
+    )
+
+
+def test_amount_when_more_lines_are_hashable() -> None:
+    assert hash(amount_when_more_line()) == hash(amount_when_more_line())
+
+
+def test_an_amount_when_more_line_is_not_a_threshold_gate_line() -> None:
+    assert not isinstance(amount_when_more_line(), ThresholdGateLine)

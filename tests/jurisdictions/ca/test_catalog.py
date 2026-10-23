@@ -23,11 +23,135 @@ from app.jurisdictions.ca.catalog import (
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    BUSINESS_ADJUSTED_GROSS_SALES,
+    BUSINESS_ADVERTISING,
+    BUSINESS_BAD_DEBTS,
+    BUSINESS_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
+    BUSINESS_CCA_CLAIM,
+    BUSINESS_CCA_CLAIM_LESS_PERSONAL_PART,
+    BUSINESS_CCA_CLASSES,
+    BUSINESS_CCA_PERSONAL_PART,
+    BUSINESS_CCA_TABLE_CLAIM,
+    BUSINESS_CLOSING_INVENTORY,
+    BUSINESS_CLOSING_UCC,
+    BUSINESS_COST_OF_GOODS_SOLD,
+    BUSINESS_COST_OF_GOODS_SUBTOTAL,
+    BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,
+    BUSINESS_DIRECT_WAGE_COSTS,
+    BUSINESS_FUEL_COSTS,
+    BUSINESS_GROSS_INCOME,
+    BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,
+    BUSINESS_GROSS_INCOME_FOR_GROSS_PROFIT,
+    BUSINESS_GROSS_PROFIT,
+    BUSINESS_GROSS_SALES,
+    BUSINESS_HOME_ALLOWABLE_CLAIM,
+    BUSINESS_HOME_CARRIED_FORWARD,
+    BUSINESS_HOME_CARRY_FORWARD,
+    BUSINESS_HOME_CCA,
+    BUSINESS_HOME_ELECTRICITY,
+    BUSINESS_HOME_EXPENSES,
+    BUSINESS_HOME_EXPENSES_AVAILABLE,
+    BUSINESS_HOME_EXPENSES_BUSINESS_PART,
+    BUSINESS_HOME_EXPENSES_SUBTOTAL,
+    BUSINESS_HOME_HEAT,
+    BUSINESS_HOME_INCOME_LIMIT,
+    BUSINESS_HOME_INSURANCE,
+    BUSINESS_HOME_MAINTENANCE,
+    BUSINESS_HOME_MORTGAGE_INTEREST,
+    BUSINESS_HOME_OTHER_EXPENSES,
+    BUSINESS_HOME_PERSONAL_USE_PART,
+    BUSINESS_HOME_PROPERTY_TAXES,
     BUSINESS_INCOME,
+    BUSINESS_INSURANCE,
+    BUSINESS_INTEREST_AND_BANK_CHARGES,
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+    BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,
+    BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,
+    BUSINESS_MEALS_AND_ENTERTAINMENT,
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,
+    BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
+    BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
+    BUSINESS_OFFICE_EXPENSES,
+    BUSINESS_OFFICE_STATIONERY_AND_SUPPLIES,
+    BUSINESS_OPENING_INVENTORY,
+    BUSINESS_OTHER_COSTS,
+    BUSINESS_OTHER_EXPENSES,
+    BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
+    BUSINESS_OTHER_INCOME,
+    BUSINESS_OTHER_INCOME_WITH_RECAPTURE,
+    BUSINESS_PARTNER,
+    BUSINESS_PARTNER_GST_HST_REBATE,
+    BUSINESS_PARTNER_OTHER_AMOUNT_A,
+    BUSINESS_PARTNER_OTHER_AMOUNT_B,
+    BUSINESS_PARTNER_OTHER_AMOUNT_C,
+    BUSINESS_PARTNER_OTHER_AMOUNT_D,
+    BUSINESS_PARTNER_OTHER_AMOUNT_E,
+    BUSINESS_PARTNER_OTHER_AMOUNTS,
+    BUSINESS_PARTNER_OTHER_AMOUNTS_TOTAL,
+    BUSINESS_PARTNER_SHARE,
+    BUSINESS_PARTNERSHIP_TOTAL,
+    BUSINESS_PROFESSIONAL_FEES,
+    BUSINESS_PROPERTY_TAXES,
+    BUSINESS_PURCHASES,
+    BUSINESS_QUICK_METHOD_ASSISTANCE,
+    BUSINESS_QUICK_METHOD_GST_HST,
+    BUSINESS_QUICK_METHOD_REMITTED,
+    BUSINESS_RECAPTURED_CCA,
+    BUSINESS_RENT,
+    BUSINESS_REPAIRS_AND_MAINTENANCE,
+    BUSINESS_RESERVES_AND_OTHER_INCOME,
+    BUSINESS_RESERVES_DEDUCTED_LAST_YEAR,
+    BUSINESS_SALARIES_WAGES_AND_BENEFITS,
+    BUSINESS_SALES_ADJUSTMENTS,
+    BUSINESS_SALES_SUBTOTAL,
+    BUSINESS_SHARE_OF_NET_INCOME,
+    BUSINESS_SUBCONTRACTS,
+    BUSINESS_TERMINAL_LOSS,
+    BUSINESS_TOTAL_EXPENSES,
+    BUSINESS_TRAVEL_EXPENSES,
+    BUSINESS_UTILITIES,
+    BUSINESS_VEHICLE_AVAILABLE_INTEREST,
+    BUSINESS_VEHICLE_BUSINESS_KILOMETRES,
+    BUSINESS_VEHICLE_BUSINESS_USE_PART,
+    BUSINESS_VEHICLE_DAYS_DIVISOR,
+    BUSINESS_VEHICLE_ELECTRICITY_ZEV,
+    BUSINESS_VEHICLE_FUEL_AND_OIL,
+    BUSINESS_VEHICLE_INSURANCE,
+    BUSINESS_VEHICLE_INTEREST_DAYS,
+    BUSINESS_VEHICLE_INTEREST_FOR_PERIOD,
+    BUSINESS_VEHICLE_INTEREST_LIMIT,
+    BUSINESS_VEHICLE_INTEREST_PAYABLE,
+    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT,
+    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT_TAX,
+    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,
+    BUSINESS_VEHICLE_LEASE_CHARGE_PORTION,
+    BUSINESS_VEHICLE_LEASE_CHARGES,
+    BUSINESS_VEHICLE_LEASE_CHARGES_NET,
+    BUSINESS_VEHICLE_LEASE_COST_LIMIT,
+    BUSINESS_VEHICLE_LEASE_COST_LIMIT_TAX,
+    BUSINESS_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,
+    BUSINESS_VEHICLE_LEASE_COST_PORTION,
+    BUSINESS_VEHICLE_LEASE_DAYS,
+    BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
+    BUSINESS_VEHICLE_LEASE_PRICE_BASE,
+    BUSINESS_VEHICLE_LEASING_COST,
+    BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,
+    BUSINESS_VEHICLE_LIST_PRICE,
+    BUSINESS_VEHICLE_LIST_PRICE_LIMIT,
+    BUSINESS_VEHICLE_LIST_PRICE_LIMIT_TAX,
+    BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,
+    BUSINESS_VEHICLE_OTHER_EXPENSES_10,
+    BUSINESS_VEHICLE_OTHER_EXPENSES_11,
+    BUSINESS_VEHICLE_PARKING_FEES,
+    BUSINESS_VEHICLE_SALES_TAX_RATE,
+    BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,
+    BUSINESS_VEHICLE_TOTAL_EXPENSES,
+    BUSINESS_VEHICLE_TOTAL_KILOMETRES,
     CAPITAL_GAIN,
     CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
     CAREGIVER_AMOUNT,
@@ -66,6 +190,149 @@ from app.jurisdictions.ca.catalog import (
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_SELF_EMPLOYMENT_EARNINGS,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
+    FARM_BARLEY,
+    FARM_BUILDING_REPAIRS_AND_MAINTENANCE,
+    FARM_CANOLA,
+    FARM_CATTLE,
+    FARM_CCA_CLAIM,
+    FARM_CCA_CLAIM_LESS_PERSONAL_PART,
+    FARM_CCA_CLASSES,
+    FARM_CCA_PERSONAL_PART,
+    FARM_CCA_TABLE_CLAIM,
+    FARM_CLEARING_LEVELLING_AND_DRAINING,
+    FARM_CLOSING_UCC,
+    FARM_CONTAINERS_AND_TWINE,
+    FARM_CORN,
+    FARM_CROP_INSURANCE,
+    FARM_CROP_INSURANCE_PREMIUMS,
+    FARM_CUSTOM_WORK,
+    FARM_CUSTOM_WORK_EXPENSES,
+    FARM_DAIRY_SUBSIDIES,
+    FARM_EGGS,
+    FARM_ELECTRICITY,
+    FARM_EXPENSES_SUBTOTAL,
+    FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,
+    FARM_FERTILIZERS_AND_LIME,
+    FARM_FLAXSEED,
+    FARM_FORAGE_CROPS_OR_SEEDS,
+    FARM_FRUIT,
+    FARM_FUEL_CHARGE_CREDIT,
+    FARM_GASOLINE_DIESEL_AND_OIL,
+    FARM_GRAINS_AND_OILSEEDS,
+    FARM_GREENHOUSE_AND_NURSERY,
+    FARM_GROSS_INCOME,
+    FARM_GROSS_INCOME_BEFORE_EXPENSES,
+    FARM_HEATING_AND_CURING_FUEL,
+    FARM_HOME_ALLOWABLE_CLAIM,
+    FARM_HOME_CARRIED_FORWARD,
+    FARM_HOME_CARRY_FORWARD,
+    FARM_HOME_CCA,
+    FARM_HOME_ELECTRICITY,
+    FARM_HOME_EXPENSES,
+    FARM_HOME_EXPENSES_AVAILABLE,
+    FARM_HOME_EXPENSES_BUSINESS_PART,
+    FARM_HOME_EXPENSES_SUBTOTAL,
+    FARM_HOME_HEAT,
+    FARM_HOME_INCOME_LIMIT,
+    FARM_HOME_INSURANCE,
+    FARM_HOME_MAINTENANCE,
+    FARM_HOME_MORTGAGE_INTEREST,
+    FARM_HOME_OTHER_EXPENSES,
+    FARM_HOME_PERSONAL_USE_PART,
+    FARM_HOME_PROPERTY_TAXES,
+    FARM_INSURANCE,
+    FARM_INSURANCE_PROCEEDS,
+    FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,
+    FARM_INTEREST_AND_BANK_CHARGES,
+    FARM_LIVESTOCK_AND_ANIMAL_PRODUCTS_REVENUE,
+    FARM_LIVESTOCK_PURCHASED,
+    FARM_MACHINERY_REPAIRS_LICENCES_AND_INSURANCE,
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_MILK_AND_CREAM,
+    FARM_MIXED_GRAINS,
+    FARM_MOTOR_VEHICLE_EXPENSES,
+    FARM_NET_INCOME_AFTER_ADJUSTMENTS,
+    FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
+    FARM_NET_INCOME_BEFORE_ADJUSTMENTS,
+    FARM_OATS,
+    FARM_OFFICE_EXPENSES,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_OTHER_COMMODITIES,
+    FARM_OTHER_CROPS,
+    FARM_OTHER_EXPENSES,
+    FARM_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
+    FARM_OTHER_INCOME,
+    FARM_OTHER_INCOME_WITH_RECAPTURE,
+    FARM_OTHER_PROGRAM_PAYMENTS,
+    FARM_PARTNER,
+    FARM_PARTNER_GST_HST_REBATE,
+    FARM_PARTNER_OTHER_AMOUNT_A,
+    FARM_PARTNER_OTHER_AMOUNT_B,
+    FARM_PARTNER_OTHER_AMOUNT_C,
+    FARM_PARTNER_OTHER_AMOUNT_D,
+    FARM_PARTNER_OTHER_AMOUNT_E,
+    FARM_PARTNER_OTHER_AMOUNTS,
+    FARM_PARTNER_OTHER_AMOUNTS_TOTAL,
+    FARM_PARTNER_SHARE,
+    FARM_PARTNERSHIP_TOTAL,
+    FARM_PATRONAGE_DIVIDENDS,
+    FARM_PESTICIDES,
+    FARM_POTATOES,
+    FARM_POULTRY,
+    FARM_PROFESSIONAL_FEES,
+    FARM_PROPERTY_TAXES,
+    FARM_REBATES,
+    FARM_RECAPTURED_CCA,
+    FARM_RENT,
+    FARM_SALARIES_WAGES_AND_BENEFITS,
+    FARM_SEEDS_AND_PLANTS,
+    FARM_SHARE_OF_NET_INCOME,
+    FARM_SHEEP_AND_LAMBS,
+    FARM_SMALL_TOOLS,
+    FARM_SOYBEANS,
+    FARM_SWINE,
+    FARM_TERMINAL_LOSS,
+    FARM_TOBACCO,
+    FARM_TOTAL_EXPENSES,
+    FARM_VEGETABLES,
+    FARM_VEHICLE_AVAILABLE_INTEREST,
+    FARM_VEHICLE_BUSINESS_KILOMETRES,
+    FARM_VEHICLE_BUSINESS_USE_PART,
+    FARM_VEHICLE_ELECTRICITY_ZEV,
+    FARM_VEHICLE_FUEL_AND_OIL,
+    FARM_VEHICLE_INSURANCE,
+    FARM_VEHICLE_INTEREST_DAYS,
+    FARM_VEHICLE_INTEREST_FOR_PERIOD,
+    FARM_VEHICLE_INTEREST_PAYABLE,
+    FARM_VEHICLE_LEASE_CHARGE_LIMIT_TAX,
+    FARM_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,
+    FARM_VEHICLE_LEASE_CHARGE_PORTION,
+    FARM_VEHICLE_LEASE_CHARGES,
+    FARM_VEHICLE_LEASE_CHARGES_NET,
+    FARM_VEHICLE_LEASE_COST_LIMIT_TAX,
+    FARM_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,
+    FARM_VEHICLE_LEASE_COST_PORTION,
+    FARM_VEHICLE_LEASE_DAYS,
+    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FARM_VEHICLE_LEASE_PRICE_BASE,
+    FARM_VEHICLE_LEASING_COST,
+    FARM_VEHICLE_LICENCE_AND_REGISTRATION,
+    FARM_VEHICLE_LIST_PRICE,
+    FARM_VEHICLE_LIST_PRICE_LIMIT_TAX,
+    FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FARM_VEHICLE_MAINTENANCE_AND_REPAIRS,
+    FARM_VEHICLE_OTHER_EXPENSES_10,
+    FARM_VEHICLE_OTHER_EXPENSES_11,
+    FARM_VEHICLE_PARKING_FEES,
+    FARM_VEHICLE_SALES_TAX_RATE,
+    FARM_VEHICLE_SUPPLEMENTARY_INSURANCE,
+    FARM_VEHICLE_TOTAL_EXPENSES,
+    FARM_VEHICLE_TOTAL_KILOMETRES,
+    FARM_VETERINARY_FEES,
+    FARM_WHEAT,
     FARMING_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_LESS_CREDITS,
@@ -99,6 +366,112 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+    FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
+    FISH_CCA_CLAIM,
+    FISH_CCA_CLAIM_LESS_PERSONAL_PART,
+    FISH_CCA_CLASSES,
+    FISH_CCA_PERSONAL_PART,
+    FISH_CCA_TABLE_CLAIM,
+    FISH_CLOSING_UCC,
+    FISH_COMPENSATION_FOR_LOSS,
+    FISH_CREW_SHARES,
+    FISH_EXPENSES_SUBTOTAL,
+    FISH_FISH_PRODUCTS,
+    FISH_FISHING_GEAR,
+    FISH_FUEL_COSTS,
+    FISH_GRANTS_CREDITS_AND_REBATES,
+    FISH_GROSS_INCOME,
+    FISH_GROSS_INCOME_BEFORE_EXPENSES,
+    FISH_HOME_ALLOWABLE_CLAIM,
+    FISH_HOME_CARRIED_FORWARD,
+    FISH_HOME_CARRY_FORWARD,
+    FISH_HOME_CCA,
+    FISH_HOME_ELECTRICITY,
+    FISH_HOME_EXPENSES,
+    FISH_HOME_EXPENSES_AVAILABLE,
+    FISH_HOME_EXPENSES_BUSINESS_PART,
+    FISH_HOME_EXPENSES_SUBTOTAL,
+    FISH_HOME_HEAT,
+    FISH_HOME_INCOME_LIMIT,
+    FISH_HOME_INSURANCE,
+    FISH_HOME_MAINTENANCE,
+    FISH_HOME_MORTGAGE_INTEREST,
+    FISH_HOME_OTHER_EXPENSES,
+    FISH_HOME_PERSONAL_USE_PART,
+    FISH_HOME_PROPERTY_TAXES,
+    FISH_INSURANCE,
+    FISH_INSURANCE_RECOVERY,
+    FISH_INTEREST_AND_BANK_CHARGES,
+    FISH_MEALS_AND_ENTERTAINMENT,
+    FISH_MOTOR_VEHICLE_EXPENSES,
+    FISH_NET_INCOME_AFTER_ADJUSTMENTS,
+    FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
+    FISH_NETS_AND_TRAPS,
+    FISH_OFFICE_EXPENSES,
+    FISH_OTHER_EXPENSES,
+    FISH_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
+    FISH_OTHER_INCOME,
+    FISH_OTHER_INCOME_WITH_RECAPTURE,
+    FISH_OTHER_MARINE_PRODUCTS,
+    FISH_PARTNER,
+    FISH_PARTNER_GST_HST_REBATE,
+    FISH_PARTNER_OTHER_AMOUNT_A,
+    FISH_PARTNER_OTHER_AMOUNT_B,
+    FISH_PARTNER_OTHER_AMOUNT_C,
+    FISH_PARTNER_OTHER_AMOUNT_D,
+    FISH_PARTNER_OTHER_AMOUNT_E,
+    FISH_PARTNER_OTHER_AMOUNTS,
+    FISH_PARTNER_OTHER_AMOUNTS_TOTAL,
+    FISH_PARTNER_SHARE,
+    FISH_PARTNERSHIP_TOTAL,
+    FISH_PROFESSIONAL_FEES,
+    FISH_RECAPTURED_CCA,
+    FISH_REPAIRS_ELECTRICAL_EQUIPMENT,
+    FISH_REPAIRS_ENGINE,
+    FISH_REPAIRS_FISHING_BOAT,
+    FISH_REPAIRS_TOTAL,
+    FISH_REPAIRS_YOUR_COST,
+    FISH_SALARIES_WAGES_AND_BENEFITS,
+    FISH_SALT_BAIT_AND_ICE,
+    FISH_SHARE_OF_NET_INCOME,
+    FISH_SHARESPERSON_INCOME,
+    FISH_SUBSIDIES,
+    FISH_TERMINAL_LOSS,
+    FISH_TOTAL_EXPENSES,
+    FISH_VEHICLE_AVAILABLE_INTEREST,
+    FISH_VEHICLE_BUSINESS_KILOMETRES,
+    FISH_VEHICLE_BUSINESS_USE_PART,
+    FISH_VEHICLE_ELECTRICITY_ZEV,
+    FISH_VEHICLE_FUEL_AND_OIL,
+    FISH_VEHICLE_INSURANCE,
+    FISH_VEHICLE_INTEREST_DAYS,
+    FISH_VEHICLE_INTEREST_FOR_PERIOD,
+    FISH_VEHICLE_INTEREST_PAYABLE,
+    FISH_VEHICLE_LEASE_CHARGE_LIMIT_TAX,
+    FISH_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,
+    FISH_VEHICLE_LEASE_CHARGE_PORTION,
+    FISH_VEHICLE_LEASE_CHARGES,
+    FISH_VEHICLE_LEASE_CHARGES_NET,
+    FISH_VEHICLE_LEASE_COST_LIMIT_TAX,
+    FISH_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,
+    FISH_VEHICLE_LEASE_COST_PORTION,
+    FISH_VEHICLE_LEASE_DAYS,
+    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FISH_VEHICLE_LEASE_PRICE_BASE,
+    FISH_VEHICLE_LEASING_COST,
+    FISH_VEHICLE_LICENCE_AND_REGISTRATION,
+    FISH_VEHICLE_LIST_PRICE,
+    FISH_VEHICLE_LIST_PRICE_LIMIT_TAX,
+    FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,
+    FISH_VEHICLE_OTHER_EXPENSES_10,
+    FISH_VEHICLE_OTHER_EXPENSES_11,
+    FISH_VEHICLE_PARKING_FEES,
+    FISH_VEHICLE_SALES_TAX_RATE,
+    FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,
+    FISH_VEHICLE_TOTAL_EXPENSES,
+    FISH_VEHICLE_TOTAL_KILOMETRES,
     FISHING_INCOME,
     GROSS_RENTAL_INCOME,
     INCOME_TAX_DEDUCTED,
@@ -1915,6 +2288,564 @@ def test_the_rental_closing_ucc_is_a_record_list_of_the_class_and_its_closing_uc
     assert RENTAL_CLOSING_UCC.value_type is RecordList
     assert RENTAL_CLOSING_UCC.fields == (CCA_CLASS_NUMBER, CCA_UCC_AT_END)
     assert registry.get("ca/rental_closing_ucc") is RENTAL_CLOSING_UCC
+
+
+# --- Form T2125, Statement of Business or Professional Activities (T1 lines 13499 and 13500) ---
+
+# Every kind of the business statement, the caller's amounts and the computed lines, in the form's
+# order: `ca/business_<name>`, never the `ca/rental_` names of the T776.
+T2125_KINDS: tuple[ArtifactKind[Any], ...] = (
+    BUSINESS_GROSS_SALES,  # gross_sales
+    BUSINESS_SALES_ADJUSTMENTS,  # sales_adjustments
+    BUSINESS_QUICK_METHOD_GST_HST,  # quick_method_gst_hst
+    BUSINESS_QUICK_METHOD_REMITTED,  # quick_method_remitted
+    BUSINESS_RESERVES_DEDUCTED_LAST_YEAR,  # reserves_deducted_last_year
+    BUSINESS_OTHER_INCOME,  # other_income
+    BUSINESS_OPENING_INVENTORY,  # opening_inventory
+    BUSINESS_PURCHASES,  # purchases
+    BUSINESS_DIRECT_WAGE_COSTS,  # direct_wage_costs
+    BUSINESS_SUBCONTRACTS,  # subcontracts
+    BUSINESS_OTHER_COSTS,  # other_costs
+    BUSINESS_CLOSING_INVENTORY,  # closing_inventory
+    BUSINESS_ADVERTISING,  # advertising
+    BUSINESS_MEALS_AND_ENTERTAINMENT,  # meals_and_entertainment
+    BUSINESS_BAD_DEBTS,  # bad_debts
+    BUSINESS_INSURANCE,  # insurance
+    BUSINESS_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
+    BUSINESS_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,  # business_taxes_licences_and_memberships
+    BUSINESS_OFFICE_EXPENSES,  # office_expenses
+    BUSINESS_OFFICE_STATIONERY_AND_SUPPLIES,  # office_stationery_and_supplies
+    BUSINESS_PROFESSIONAL_FEES,  # professional_fees
+    BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,  # management_and_administration_fees
+    BUSINESS_RENT,  # rent
+    BUSINESS_REPAIRS_AND_MAINTENANCE,  # repairs_and_maintenance
+    BUSINESS_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
+    BUSINESS_PROPERTY_TAXES,  # property_taxes
+    BUSINESS_TRAVEL_EXPENSES,  # travel_expenses
+    BUSINESS_UTILITIES,  # utilities
+    BUSINESS_FUEL_COSTS,  # fuel_costs
+    BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,  # delivery_freight_and_express
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,  # motor_vehicle_expenses
+    BUSINESS_VEHICLE_BUSINESS_KILOMETRES,  # amount 1
+    BUSINESS_VEHICLE_TOTAL_KILOMETRES,  # amount 2
+    BUSINESS_VEHICLE_FUEL_AND_OIL,  # amount 3
+    BUSINESS_VEHICLE_INSURANCE,  # amount 5
+    BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,  # amount 6
+    BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,  # amount 7
+    BUSINESS_VEHICLE_ELECTRICITY_ZEV,  # amount 9
+    BUSINESS_VEHICLE_OTHER_EXPENSES_10,  # amount 10
+    BUSINESS_VEHICLE_OTHER_EXPENSES_11,  # amount 11
+    BUSINESS_VEHICLE_PARKING_FEES,  # amount 14
+    BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,  # amount 15
+    BUSINESS_VEHICLE_INTEREST_PAYABLE,  # amount 17
+    BUSINESS_VEHICLE_INTEREST_DAYS,  # number of days
+    BUSINESS_VEHICLE_LEASE_CHARGES,  # amount 20
+    BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,  # amount 21
+    BUSINESS_VEHICLE_LEASE_DAYS,  # amount 22
+    BUSINESS_VEHICLE_LIST_PRICE,  # amount 23
+    BUSINESS_VEHICLE_SALES_TAX_RATE,  # GST or HST rate, in percent
+    BUSINESS_VEHICLE_INTEREST_LIMIT,  # computed or dataset
+    BUSINESS_VEHICLE_DAYS_DIVISOR,  # computed or dataset
+    BUSINESS_VEHICLE_LIST_PRICE_LIMIT,  # computed or dataset
+    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT,  # computed or dataset
+    BUSINESS_VEHICLE_LEASE_COST_LIMIT,  # computed or dataset
+    BUSINESS_VEHICLE_LIST_PRICE_LIMIT_TAX,  # computed or dataset
+    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT_TAX,  # computed or dataset
+    BUSINESS_VEHICLE_LEASE_COST_LIMIT_TAX,  # computed or dataset
+    BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,  # computed or dataset
+    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,  # computed or dataset
+    BUSINESS_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,  # computed or dataset
+    BUSINESS_VEHICLE_TOTAL_EXPENSES,  # computed or dataset
+    BUSINESS_VEHICLE_BUSINESS_USE_PART,  # computed or dataset
+    BUSINESS_VEHICLE_INTEREST_FOR_PERIOD,  # computed or dataset
+    BUSINESS_VEHICLE_AVAILABLE_INTEREST,  # computed or dataset
+    BUSINESS_VEHICLE_LEASE_PRICE_BASE,  # computed or dataset
+    BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,  # computed or dataset
+    BUSINESS_VEHICLE_LEASE_CHARGE_PORTION,  # computed or dataset
+    BUSINESS_VEHICLE_LEASE_CHARGES_NET,  # computed or dataset
+    BUSINESS_VEHICLE_LEASE_COST_PORTION,  # computed or dataset
+    BUSINESS_VEHICLE_LEASING_COST,  # computed or dataset
+    BUSINESS_CCA_PERSONAL_PART,  # cca_personal_part
+    BUSINESS_OTHER_EXPENSES,  # other_expenses
+    BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,  # journalism_labour_tax_credit
+    BUSINESS_PARTNER_GST_HST_REBATE,  # partner_gst_hst_rebate
+    BUSINESS_PARTNER_OTHER_AMOUNT_A,  # partner_other_amount_a
+    BUSINESS_PARTNER_OTHER_AMOUNT_B,  # partner_other_amount_b
+    BUSINESS_PARTNER_OTHER_AMOUNT_C,  # partner_other_amount_c
+    BUSINESS_PARTNER_OTHER_AMOUNT_D,  # partner_other_amount_d
+    BUSINESS_PARTNER_OTHER_AMOUNT_E,  # partner_other_amount_e
+    BUSINESS_HOME_HEAT,  # home_heat
+    BUSINESS_HOME_ELECTRICITY,  # home_electricity
+    BUSINESS_HOME_INSURANCE,  # home_insurance
+    BUSINESS_HOME_MAINTENANCE,  # home_maintenance
+    BUSINESS_HOME_MORTGAGE_INTEREST,  # home_mortgage_interest
+    BUSINESS_HOME_PROPERTY_TAXES,  # home_property_taxes
+    BUSINESS_HOME_OTHER_EXPENSES,  # home_other_expenses
+    BUSINESS_HOME_PERSONAL_USE_PART,  # home_personal_use_part
+    BUSINESS_HOME_CCA,  # home_cca
+    BUSINESS_HOME_CARRIED_FORWARD,  # home_carried_forward
+    BUSINESS_PARTNER_SHARE,  # partner_share
+    BUSINESS_PARTNER,  # partner
+    BUSINESS_CCA_CLASSES,  # cca_classes
+    BUSINESS_SALES_SUBTOTAL,  # sales_subtotal
+    BUSINESS_RECAPTURED_CCA,  # recaptured_cca
+    BUSINESS_OTHER_INCOME_WITH_RECAPTURE,  # other_income_with_recapture
+    BUSINESS_RESERVES_AND_OTHER_INCOME,  # reserves_and_other_income
+    BUSINESS_COST_OF_GOODS_SUBTOTAL,  # cost_of_goods_subtotal
+    BUSINESS_COST_OF_GOODS_SOLD,  # cost_of_goods_sold
+    BUSINESS_CCA_TABLE_CLAIM,  # cca_table_claim
+    BUSINESS_CCA_CLAIM_LESS_PERSONAL_PART,  # cca_claim_less_personal_part
+    BUSINESS_CCA_CLAIM,  # cca_claim
+    BUSINESS_TERMINAL_LOSS,  # terminal_loss
+    BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS,  # other_expenses_with_terminal_loss
+    BUSINESS_TOTAL_EXPENSES,  # total_expenses
+    BUSINESS_PARTNER_OTHER_AMOUNTS_TOTAL,  # partner_other_amounts_total
+    BUSINESS_PARTNER_OTHER_AMOUNTS,  # partner_other_amounts
+    BUSINESS_HOME_EXPENSES_SUBTOTAL,  # home_expenses_subtotal
+    BUSINESS_HOME_EXPENSES_BUSINESS_PART,  # home_expenses_business_part
+    BUSINESS_HOME_EXPENSES_AVAILABLE,  # home_expenses_available
+    BUSINESS_HOME_INCOME_LIMIT,  # home_income_limit
+    BUSINESS_HOME_CARRY_FORWARD,  # home_carry_forward
+    BUSINESS_HOME_ALLOWABLE_CLAIM,  # home_allowable_claim
+    BUSINESS_HOME_EXPENSES,  # home_expenses
+    BUSINESS_QUICK_METHOD_ASSISTANCE,  # quick_method_assistance
+    BUSINESS_ADJUSTED_GROSS_SALES,  # adjusted_gross_sales
+    BUSINESS_GROSS_INCOME,  # gross_income
+    BUSINESS_GROSS_INCOME_FOR_GROSS_PROFIT,  # gross_income_for_gross_profit
+    BUSINESS_GROSS_PROFIT,  # gross_profit
+    BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,  # gross_income_before_expenses
+    BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,  # net_income_before_adjustments
+    BUSINESS_SHARE_OF_NET_INCOME,  # share_of_net_income
+    BUSINESS_PARTNERSHIP_TOTAL,  # partnership_total
+    BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,  # net_income_after_adjustments
+    BUSINESS_CLOSING_UCC,  # closing_ucc
+)
+
+
+def test_the_t2125_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert len({kind.identifier for kind in T2125_KINDS}) == len(T2125_KINDS)
+    for kind in T2125_KINDS:
+        assert kind.identifier.startswith("ca/business_"), kind.identifier
+        assert registry.get(kind.identifier) is kind
+        assert kind.identifier in REGISTERED
+
+
+def test_the_t2125_amounts_are_decimals_that_cannot_be_negative_unless_the_form_prints_a_loss() -> (
+    None
+):
+    # The caller's amounts and the computed lines are Decimals with a floor of 0, except the lines
+    # the snapshot's SIGNED set names: "(loss)" lines and amount 5A, the share of a loss.
+    for kind in T2125_KINDS:
+        if kind.identifier in RECORD_LISTS or kind.identifier in COUNTS:
+            continue
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier
+
+
+def test_the_t2125_partner_count_is_a_non_negative_int_count() -> None:
+    # Part 5 amount 5A "Your share of line 9369 or the amount from your T5013 slip": 1 for a
+    # partner, else 0.
+    assert BUSINESS_PARTNER.value_type is int
+    assert BUSINESS_PARTNER.non_negative is True
+    assert BUSINESS_PARTNER.identifier in COUNTS
+
+
+def test_the_business_cca_classes_are_the_area_a_columns_the_caller_enters(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A of the T2125 has the columns of the T776's (DIEP columns 4, 6, 8 and 9 left out as on
+    # the T776): the same eight field kinds, one record per class.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(BUSINESS_CCA_CLASSES, RecordListKind)
+    assert BUSINESS_CCA_CLASSES.value_type is RecordList
+    assert BUSINESS_CCA_CLASSES.fields == RENTAL_CCA_CLASSES.fields
+    assert BUSINESS_CCA_CLASSES is not RENTAL_CCA_CLASSES
+    assert registry.get("ca/business_cca_classes") is BUSINESS_CCA_CLASSES
+
+
+def test_the_business_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A column 22 "UCC at the end of the year", which `ca/closing_ucc` produces.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(BUSINESS_CLOSING_UCC, RecordListKind)
+    assert BUSINESS_CLOSING_UCC.value_type is RecordList
+    assert BUSINESS_CLOSING_UCC.fields == RENTAL_CLOSING_UCC.fields
+    assert registry.get("ca/business_closing_ucc") is BUSINESS_CLOSING_UCC
+
+
+# --- Form T2042, Statement of Farming Activities (T1 lines 14099 and 14100) ---------------------
+
+# Every kind of the farming statement, the caller's amounts and the computed lines, in the form's
+# order: `ca/farm_<name>`, never the `ca/business_` names of the T2125.
+FARM_KINDS: tuple[ArtifactKind[Any], ...] = (
+    FARM_WHEAT,  # wheat
+    FARM_OATS,  # oats
+    FARM_BARLEY,  # barley
+    FARM_MIXED_GRAINS,  # mixed_grains
+    FARM_CORN,  # corn
+    FARM_CANOLA,  # canola
+    FARM_FLAXSEED,  # flaxseed
+    FARM_SOYBEANS,  # soybeans
+    FARM_GRAINS_AND_OILSEEDS,  # grains_and_oilseeds
+    FARM_FRUIT,  # fruit
+    FARM_POTATOES,  # potatoes
+    FARM_VEGETABLES,  # vegetables
+    FARM_TOBACCO,  # tobacco
+    FARM_GREENHOUSE_AND_NURSERY,  # greenhouse_and_nursery
+    FARM_FORAGE_CROPS_OR_SEEDS,  # forage_crops_or_seeds
+    FARM_OTHER_CROPS,  # other_crops
+    FARM_CATTLE,  # cattle
+    FARM_SWINE,  # swine
+    FARM_POULTRY,  # poultry
+    FARM_SHEEP_AND_LAMBS,  # sheep_and_lambs
+    FARM_LIVESTOCK_AND_ANIMAL_PRODUCTS_REVENUE,  # livestock_and_animal_products_revenue
+    FARM_MILK_AND_CREAM,  # milk_and_cream
+    FARM_EGGS,  # eggs
+    FARM_OTHER_COMMODITIES,  # other_commodities
+    FARM_DAIRY_SUBSIDIES,  # dairy_subsidies
+    FARM_CROP_INSURANCE,  # crop_insurance
+    FARM_OTHER_PROGRAM_PAYMENTS,  # other_program_payments
+    FARM_REBATES,  # rebates
+    FARM_CUSTOM_WORK,  # custom_work
+    FARM_INSURANCE_PROCEEDS,  # insurance_proceeds
+    FARM_PATRONAGE_DIVIDENDS,  # patronage_dividends
+    FARM_OTHER_INCOME,  # other_income
+    FARM_CONTAINERS_AND_TWINE,  # containers_and_twine
+    FARM_FERTILIZERS_AND_LIME,  # fertilizers_and_lime
+    FARM_PESTICIDES,  # pesticides
+    FARM_SEEDS_AND_PLANTS,  # seeds_and_plants
+    FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,  # feed_supplements_straw_and_bedding
+    FARM_LIVESTOCK_PURCHASED,  # livestock_purchased
+    FARM_VETERINARY_FEES,  # veterinary_fees
+    FARM_MACHINERY_REPAIRS_LICENCES_AND_INSURANCE,  # machinery_repairs_licences_and_insurance
+    FARM_GASOLINE_DIESEL_AND_OIL,  # gasoline_diesel_and_oil
+    FARM_BUILDING_REPAIRS_AND_MAINTENANCE,  # building_repairs_and_maintenance
+    FARM_CLEARING_LEVELLING_AND_DRAINING,  # clearing_levelling_and_draining
+    FARM_CROP_INSURANCE_PREMIUMS,  # crop_insurance_premiums
+    FARM_CUSTOM_WORK_EXPENSES,  # custom_work_expenses
+    FARM_ELECTRICITY,  # electricity
+    FARM_HEATING_AND_CURING_FUEL,  # heating_and_curing_fuel
+    FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,  # insurance_program_overpayment_recapture
+    FARM_INSURANCE,  # insurance
+    FARM_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
+    FARM_OFFICE_EXPENSES,  # office_expenses
+    FARM_PROFESSIONAL_FEES,  # professional_fees
+    FARM_PROPERTY_TAXES,  # property_taxes
+    FARM_RENT,  # rent
+    FARM_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
+    FARM_MOTOR_VEHICLE_EXPENSES,  # motor_vehicle_expenses
+    FARM_VEHICLE_BUSINESS_KILOMETRES,  # amount 1
+    FARM_VEHICLE_TOTAL_KILOMETRES,  # amount 2
+    FARM_VEHICLE_FUEL_AND_OIL,  # amount 3
+    FARM_VEHICLE_INSURANCE,  # amount 5
+    FARM_VEHICLE_LICENCE_AND_REGISTRATION,  # amount 6
+    FARM_VEHICLE_MAINTENANCE_AND_REPAIRS,  # amount 7
+    FARM_VEHICLE_ELECTRICITY_ZEV,  # amount 9
+    FARM_VEHICLE_OTHER_EXPENSES_10,  # amount 10
+    FARM_VEHICLE_OTHER_EXPENSES_11,  # amount 11
+    FARM_VEHICLE_PARKING_FEES,  # amount 14
+    FARM_VEHICLE_SUPPLEMENTARY_INSURANCE,  # amount 15
+    FARM_VEHICLE_INTEREST_PAYABLE,  # amount 17
+    FARM_VEHICLE_INTEREST_DAYS,  # number of days
+    FARM_VEHICLE_LEASE_CHARGES,  # amount 20
+    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,  # amount 21
+    FARM_VEHICLE_LEASE_DAYS,  # amount 22
+    FARM_VEHICLE_LIST_PRICE,  # amount 23
+    FARM_VEHICLE_SALES_TAX_RATE,  # GST or HST rate, in percent
+    FARM_VEHICLE_LIST_PRICE_LIMIT_TAX,  # computed or dataset
+    FARM_VEHICLE_LEASE_CHARGE_LIMIT_TAX,  # computed or dataset
+    FARM_VEHICLE_LEASE_COST_LIMIT_TAX,  # computed or dataset
+    FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,  # computed or dataset
+    FARM_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,  # computed or dataset
+    FARM_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,  # computed or dataset
+    FARM_VEHICLE_TOTAL_EXPENSES,  # computed or dataset
+    FARM_VEHICLE_BUSINESS_USE_PART,  # computed or dataset
+    FARM_VEHICLE_INTEREST_FOR_PERIOD,  # computed or dataset
+    FARM_VEHICLE_AVAILABLE_INTEREST,  # computed or dataset
+    FARM_VEHICLE_LEASE_PRICE_BASE,  # computed or dataset
+    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,  # computed or dataset
+    FARM_VEHICLE_LEASE_CHARGE_PORTION,  # computed or dataset
+    FARM_VEHICLE_LEASE_CHARGES_NET,  # computed or dataset
+    FARM_VEHICLE_LEASE_COST_PORTION,  # computed or dataset
+    FARM_VEHICLE_LEASING_COST,  # computed or dataset
+    FARM_SMALL_TOOLS,  # small_tools
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,  # optional_inventory_adjustment_previous_year
+    FARM_OTHER_EXPENSES,  # other_expenses
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_CURRENT_YEAR,  # optional_inventory_adjustment_current_year
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,  # mandatory_inventory_adjustment_current_year
+    FARM_CCA_PERSONAL_PART,  # cca_personal_part
+    FARM_PARTNER,  # partner
+    FARM_PARTNER_SHARE,  # partner_share
+    FARM_FUEL_CHARGE_CREDIT,  # fuel_charge_credit
+    FARM_PARTNER_GST_HST_REBATE,  # partner_gst_hst_rebate
+    FARM_PARTNER_OTHER_AMOUNT_A,  # partner_other_amount_a
+    FARM_PARTNER_OTHER_AMOUNT_B,  # partner_other_amount_b
+    FARM_PARTNER_OTHER_AMOUNT_C,  # partner_other_amount_c
+    FARM_PARTNER_OTHER_AMOUNT_D,  # partner_other_amount_d
+    FARM_PARTNER_OTHER_AMOUNT_E,  # partner_other_amount_e
+    FARM_HOME_HEAT,  # home_heat
+    FARM_HOME_ELECTRICITY,  # home_electricity
+    FARM_HOME_INSURANCE,  # home_insurance
+    FARM_HOME_MAINTENANCE,  # home_maintenance
+    FARM_HOME_MORTGAGE_INTEREST,  # home_mortgage_interest
+    FARM_HOME_PROPERTY_TAXES,  # home_property_taxes
+    FARM_HOME_OTHER_EXPENSES,  # home_other_expenses
+    FARM_HOME_PERSONAL_USE_PART,  # home_personal_use_part
+    FARM_HOME_CCA,  # home_cca
+    FARM_HOME_CARRIED_FORWARD,  # home_carried_forward
+    FARM_CCA_CLASSES,  # cca_classes
+    FARM_RECAPTURED_CCA,  # recaptured_cca
+    FARM_OTHER_INCOME_WITH_RECAPTURE,  # other_income_with_recapture
+    FARM_GROSS_INCOME,  # gross_income
+    FARM_GROSS_INCOME_BEFORE_EXPENSES,  # gross_income_before_expenses
+    FARM_TERMINAL_LOSS,  # terminal_loss
+    FARM_OTHER_EXPENSES_WITH_TERMINAL_LOSS,  # other_expenses_with_terminal_loss
+    FARM_EXPENSES_SUBTOTAL,  # expenses_subtotal
+    FARM_CCA_TABLE_CLAIM,  # cca_table_claim
+    FARM_CCA_CLAIM_LESS_PERSONAL_PART,  # cca_claim_less_personal_part
+    FARM_CCA_CLAIM,  # cca_claim
+    FARM_TOTAL_EXPENSES,  # total_expenses
+    FARM_NET_INCOME_BEFORE_ADJUSTMENTS,  # net_income_before_adjustments
+    FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,  # net_income_after_inventory_adjustments
+    FARM_SHARE_OF_NET_INCOME,  # share_of_net_income
+    FARM_PARTNERSHIP_TOTAL,  # partnership_total
+    FARM_PARTNER_OTHER_AMOUNTS_TOTAL,  # partner_other_amounts_total
+    FARM_PARTNER_OTHER_AMOUNTS,  # partner_other_amounts
+    FARM_NET_INCOME_AFTER_ADJUSTMENTS,  # net_income_after_adjustments
+    FARM_HOME_EXPENSES_SUBTOTAL,  # home_expenses_subtotal
+    FARM_HOME_EXPENSES_BUSINESS_PART,  # home_expenses_business_part
+    FARM_HOME_EXPENSES_AVAILABLE,  # home_expenses_available
+    FARM_HOME_INCOME_LIMIT,  # home_income_limit
+    FARM_HOME_CARRY_FORWARD,  # home_carry_forward
+    FARM_HOME_ALLOWABLE_CLAIM,  # home_allowable_claim
+    FARM_HOME_EXPENSES,  # home_expenses
+    FARM_CLOSING_UCC,  # closing_ucc
+)
+
+
+def test_the_t2042_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert len({kind.identifier for kind in FARM_KINDS}) == len(FARM_KINDS)
+    for kind in FARM_KINDS:
+        assert kind.identifier.startswith("ca/farm_"), kind.identifier
+        assert registry.get(kind.identifier) is kind
+        assert kind.identifier in REGISTERED
+
+
+def test_the_t2042_amounts_are_decimals_that_cannot_be_negative_unless_the_form_prints_a_loss() -> (
+    None
+):
+    # The caller's amounts and the computed lines are Decimals with a floor of 0, except the lines
+    # the snapshot's SIGNED set names: "(loss)" lines, amount 5A, the share of a loss, and the T5013
+    # amount (amount 5A) the caller enters.
+    for kind in FARM_KINDS:
+        if kind.identifier in RECORD_LISTS or kind.identifier in COUNTS:
+            continue
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier
+
+
+def test_the_t2042_partner_count_is_a_non_negative_int_count() -> None:
+    # Part 5 amount 5A "Your share of amount 4C or the amount from your T5013 slip, Statement of
+    # Partnership Income": 1 for a partner, else 0.
+    assert FARM_PARTNER.value_type is int
+    assert FARM_PARTNER.non_negative is True
+    assert FARM_PARTNER.identifier in COUNTS
+
+
+def test_the_farm_cca_classes_are_the_area_a_columns_the_caller_enters(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A of the T2042 has the columns of the T2125's (DIEP columns left out as on the T776):
+    # the same field kinds, one record per class.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(FARM_CCA_CLASSES, RecordListKind)
+    assert FARM_CCA_CLASSES.value_type is RecordList
+    assert FARM_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
+    assert FARM_CCA_CLASSES is not BUSINESS_CCA_CLASSES
+    assert registry.get("ca/farm_cca_classes") is FARM_CCA_CLASSES
+
+
+def test_the_farm_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A column 22 "UCC at the end of the year (col. 7 minus col. 21)", which `ca/closing_ucc`
+    # produces.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(FARM_CLOSING_UCC, RecordListKind)
+    assert FARM_CLOSING_UCC.value_type is RecordList
+    assert FARM_CLOSING_UCC.fields == RENTAL_CLOSING_UCC.fields
+    assert registry.get("ca/farm_closing_ucc") is FARM_CLOSING_UCC
+
+
+# --- Form T2121, Statement of Fishing Activities (T1 lines 14299 and 14300) ----------------------
+
+# Every kind of the fishing statement, the caller's amounts and the computed lines, in the form's
+# order: `ca/fish_<name>`, never the `ca/farm_` names of the T2042 or the `ca/business_` names.
+FISH_KINDS: tuple[ArtifactKind[Any], ...] = (
+    FISH_FISH_PRODUCTS,  # fish_products
+    FISH_OTHER_MARINE_PRODUCTS,  # other_marine_products
+    FISH_GRANTS_CREDITS_AND_REBATES,  # grants_credits_and_rebates
+    FISH_SUBSIDIES,  # subsidies
+    FISH_COMPENSATION_FOR_LOSS,  # compensation_for_loss
+    FISH_SHARESPERSON_INCOME,  # sharesperson_income
+    FISH_OTHER_INCOME,  # other_income
+    FISH_SALT_BAIT_AND_ICE,  # salt_bait_and_ice
+    FISH_CREW_SHARES,  # crew_shares
+    FISH_FUEL_COSTS,  # fuel_costs
+    FISH_FISHING_GEAR,  # fishing_gear
+    FISH_INSURANCE,  # insurance
+    FISH_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
+    FISH_MEALS_AND_ENTERTAINMENT,  # meals_and_entertainment
+    FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,  # business_taxes_licences_and_memberships
+    FISH_MOTOR_VEHICLE_EXPENSES,  # motor_vehicle_expenses
+    FISH_VEHICLE_BUSINESS_KILOMETRES,  # amount 1
+    FISH_VEHICLE_TOTAL_KILOMETRES,  # amount 2
+    FISH_VEHICLE_FUEL_AND_OIL,  # amount 3
+    FISH_VEHICLE_INSURANCE,  # amount 5
+    FISH_VEHICLE_LICENCE_AND_REGISTRATION,  # amount 6
+    FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,  # amount 7
+    FISH_VEHICLE_ELECTRICITY_ZEV,  # amount 9
+    FISH_VEHICLE_OTHER_EXPENSES_10,  # amount 10
+    FISH_VEHICLE_OTHER_EXPENSES_11,  # amount 11
+    FISH_VEHICLE_PARKING_FEES,  # amount 14
+    FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,  # amount 15
+    FISH_VEHICLE_INTEREST_PAYABLE,  # amount 17
+    FISH_VEHICLE_INTEREST_DAYS,  # number of days
+    FISH_VEHICLE_LEASE_CHARGES,  # amount 20
+    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,  # amount 21
+    FISH_VEHICLE_LEASE_DAYS,  # amount 22
+    FISH_VEHICLE_LIST_PRICE,  # amount 23
+    FISH_VEHICLE_SALES_TAX_RATE,  # GST or HST rate, in percent
+    FISH_VEHICLE_LIST_PRICE_LIMIT_TAX,  # computed or dataset
+    FISH_VEHICLE_LEASE_CHARGE_LIMIT_TAX,  # computed or dataset
+    FISH_VEHICLE_LEASE_COST_LIMIT_TAX,  # computed or dataset
+    FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,  # computed or dataset
+    FISH_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,  # computed or dataset
+    FISH_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,  # computed or dataset
+    FISH_VEHICLE_TOTAL_EXPENSES,  # computed or dataset
+    FISH_VEHICLE_BUSINESS_USE_PART,  # computed or dataset
+    FISH_VEHICLE_INTEREST_FOR_PERIOD,  # computed or dataset
+    FISH_VEHICLE_AVAILABLE_INTEREST,  # computed or dataset
+    FISH_VEHICLE_LEASE_PRICE_BASE,  # computed or dataset
+    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,  # computed or dataset
+    FISH_VEHICLE_LEASE_CHARGE_PORTION,  # computed or dataset
+    FISH_VEHICLE_LEASE_CHARGES_NET,  # computed or dataset
+    FISH_VEHICLE_LEASE_COST_PORTION,  # computed or dataset
+    FISH_VEHICLE_LEASING_COST,  # computed or dataset
+    FISH_OFFICE_EXPENSES,  # office_expenses
+    FISH_NETS_AND_TRAPS,  # nets_and_traps
+    FISH_PROFESSIONAL_FEES,  # professional_fees
+    FISH_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
+    FISH_REPAIRS_FISHING_BOAT,  # repairs_fishing_boat
+    FISH_REPAIRS_ENGINE,  # repairs_engine
+    FISH_REPAIRS_ELECTRICAL_EQUIPMENT,  # repairs_electrical_equipment
+    FISH_INSURANCE_RECOVERY,  # insurance_recovery
+    FISH_OTHER_EXPENSES,  # other_expenses
+    FISH_CCA_PERSONAL_PART,  # cca_personal_part
+    FISH_CCA_CLASSES,  # cca_classes
+    FISH_PARTNER,  # partner
+    FISH_PARTNER_SHARE,  # partner_share
+    FISH_PARTNER_GST_HST_REBATE,  # partner_gst_hst_rebate
+    FISH_PARTNER_OTHER_AMOUNT_A,  # partner_other_amount_a
+    FISH_PARTNER_OTHER_AMOUNT_B,  # partner_other_amount_b
+    FISH_PARTNER_OTHER_AMOUNT_C,  # partner_other_amount_c
+    FISH_PARTNER_OTHER_AMOUNT_D,  # partner_other_amount_d
+    FISH_PARTNER_OTHER_AMOUNT_E,  # partner_other_amount_e
+    FISH_HOME_HEAT,  # home_heat
+    FISH_HOME_ELECTRICITY,  # home_electricity
+    FISH_HOME_INSURANCE,  # home_insurance
+    FISH_HOME_MAINTENANCE,  # home_maintenance
+    FISH_HOME_MORTGAGE_INTEREST,  # home_mortgage_interest
+    FISH_HOME_PROPERTY_TAXES,  # home_property_taxes
+    FISH_HOME_OTHER_EXPENSES,  # home_other_expenses
+    FISH_HOME_PERSONAL_USE_PART,  # home_personal_use_part
+    FISH_HOME_CCA,  # home_cca
+    FISH_HOME_CARRIED_FORWARD,  # home_carried_forward
+    FISH_RECAPTURED_CCA,  # recaptured_cca
+    FISH_OTHER_INCOME_WITH_RECAPTURE,  # other_income_with_recapture
+    FISH_GROSS_INCOME,  # gross_income
+    FISH_GROSS_INCOME_BEFORE_EXPENSES,  # gross_income_before_expenses
+    FISH_TERMINAL_LOSS,  # terminal_loss
+    FISH_OTHER_EXPENSES_WITH_TERMINAL_LOSS,  # other_expenses_with_terminal_loss
+    FISH_REPAIRS_TOTAL,  # repairs_total
+    FISH_REPAIRS_YOUR_COST,  # repairs_your_cost
+    FISH_EXPENSES_SUBTOTAL,  # expenses_subtotal
+    FISH_CCA_TABLE_CLAIM,  # cca_table_claim
+    FISH_CCA_CLAIM_LESS_PERSONAL_PART,  # cca_claim_less_personal_part
+    FISH_CCA_CLAIM,  # cca_claim
+    FISH_TOTAL_EXPENSES,  # total_expenses
+    FISH_NET_INCOME_BEFORE_ADJUSTMENTS,  # net_income_before_adjustments
+    FISH_SHARE_OF_NET_INCOME,  # share_of_net_income
+    FISH_PARTNERSHIP_TOTAL,  # partnership_total
+    FISH_PARTNER_OTHER_AMOUNTS_TOTAL,  # partner_other_amounts_total
+    FISH_PARTNER_OTHER_AMOUNTS,  # partner_other_amounts
+    FISH_NET_INCOME_AFTER_ADJUSTMENTS,  # net_income_after_adjustments
+    FISH_HOME_EXPENSES_SUBTOTAL,  # home_expenses_subtotal
+    FISH_HOME_EXPENSES_BUSINESS_PART,  # home_expenses_business_part
+    FISH_HOME_EXPENSES_AVAILABLE,  # home_expenses_available
+    FISH_HOME_INCOME_LIMIT,  # home_income_limit
+    FISH_HOME_CARRY_FORWARD,  # home_carry_forward
+    FISH_HOME_ALLOWABLE_CLAIM,  # home_allowable_claim
+    FISH_HOME_EXPENSES,  # home_expenses
+    FISH_CLOSING_UCC,  # closing_ucc
+)
+
+
+def test_the_t2121_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert len({kind.identifier for kind in FISH_KINDS}) == len(FISH_KINDS)
+    for kind in FISH_KINDS:
+        assert kind.identifier.startswith("ca/fish_"), kind.identifier
+        assert registry.get(kind.identifier) is kind
+        assert kind.identifier in REGISTERED
+
+
+def test_the_t2121_amounts_are_decimals_that_cannot_be_negative_unless_the_form_prints_a_loss() -> (
+    None
+):
+    # The caller's amounts and the computed lines are Decimals with a floor of 0, except the lines
+    # the snapshot's SIGNED set names: "(loss)" lines, amount 5A, the share of a loss, the T5013
+    # amount (amount 5A) the caller enters, and line 8963 (amount 4O), which the form prints with no
+    # floor.
+    for kind in FISH_KINDS:
+        if kind.identifier in RECORD_LISTS or kind.identifier in COUNTS:
+            continue
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier
+
+
+def test_the_t2121_partner_count_is_a_non_negative_int_count() -> None:
+    # Part 5 amount 5A "Your share of line 9369 or the amount from your T5013 slip, Statement of
+    # Partnership Income": 1 for a partner, else 0.
+    assert FISH_PARTNER.value_type is int
+    assert FISH_PARTNER.non_negative is True
+    assert FISH_PARTNER.identifier in COUNTS
+
+
+def test_the_fish_cca_classes_are_the_area_a_columns_the_caller_enters(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A of the T2121 has the columns of the T2125's (DIEP columns left out as on the T776):
+    # the same field kinds, one record per class.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(FISH_CCA_CLASSES, RecordListKind)
+    assert FISH_CCA_CLASSES.value_type is RecordList
+    assert FISH_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
+    assert FISH_CCA_CLASSES is not BUSINESS_CCA_CLASSES
+    assert registry.get("ca/fish_cca_classes") is FISH_CCA_CLASSES
+
+
+def test_the_fish_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A column 22 "UCC at the end of the year (col. 7 minus col. 21)", which `ca/closing_ucc`
+    # produces.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(FISH_CLOSING_UCC, RecordListKind)
+    assert FISH_CLOSING_UCC.value_type is RecordList
+    assert FISH_CLOSING_UCC.fields == RENTAL_CLOSING_UCC.fields
+    assert registry.get("ca/fish_closing_ucc") is FISH_CLOSING_UCC
 
 
 # --- Form T2222, Northern Residents Deductions (T1 line 66 and line 25500) ---------------------

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.capped_amount import CappedAmount
+from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.progressive_tax import ProgressiveTax
@@ -16,12 +17,14 @@ from app.jurisdictions.ca.capabilities.amount_or_divided_by_rate import AmountOr
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
 from app.jurisdictions.ca.catalog import (
     BORN_IN_1960_OR_EARLIER,
-    CPP_BASE_CONTRIBUTIONS,
-    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     DEPENDANT_NET_INCOME,
+    DISABILITY_SELF_CARE_EXPENSES,
     EI_PREMIUMS,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
     ELIGIBLE_DEPENDANTS,
+    ELIGIBLE_FOR_DISABILITY_AMOUNT,
     MEDICAL_EXPENSES,
     NET_INCOME,
     OTHER_DEPENDANTS,
@@ -31,6 +34,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSES_CLAIMED,
     TAXABLE_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+    UNDER_18_ON_DECEMBER_31,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.capabilities.caregiver_amount import OntarioCaregiverAmount
@@ -47,7 +51,6 @@ from app.jurisdictions.ca_on.catalog import (
 INPUTS = frozenset(
     {
         "ca-on/caregiver_dependants",
-        "ca-on/disability_amount_for_self",
         "ca-on/disability_dependants",
         # Schedule ON(S11) line 1 "Enter your unused Ontario tuition and education amounts from your
         # 2024 notice of assessment or reassessment": a caller input, the figure on that notice, not
@@ -278,6 +281,89 @@ STEPS = {
         },
         produces={"output": "ca-on/caregiver_amount"},
     ),
+    # ON428 line 29 and line 58440 "Disability amount for self (claim $10,298 or, if you were under
+    # 18 years of age, use Worksheet ON428)", Worksheet ON428 "Line 58440 - Disability amount for
+    # self": line 1 "Base amount 10,298.00", the dataset as an artifact of the same name.
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca-on/disability_self_base_amount"},
+        consumes={},
+        produces={"output": "ca-on/disability_self_base_amount"},
+    ),
+    # Line 2 "Maximum amount 6,007.00", the dataset as an artifact of the same name.
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca-on/disability_self_supplement_maximum"},
+        consumes={},
+        produces={"output": "ca-on/disability_self_supplement_maximum"},
+    ),
+    # Line 4 "Threshold for child and attendant care expenses 3,518.00", the dataset as an
+    # artifact of the same name. Line 3 "Total child care and attendant care expenses for you,
+    # claimed by you or another person" is the same caller's input as the federal line 3,
+    # ca/disability_self_care_expenses.
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca-on/disability_self_care_threshold"},
+        consumes={},
+        produces={"output": "ca-on/disability_self_care_threshold"},
+    ),
+    # Line 5 "Line 3 minus line 4 (if negative, enter "0") =".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/disability_self_care_expenses",
+            "less": "ca-on/disability_self_care_threshold",
+        },
+        produces={"output": "ca-on/disability_self_care_over_threshold"},
+    ),
+    # Line 6 "Line 2 minus line 5 (if negative, enter "0") =".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca-on/disability_self_supplement_maximum",
+            "less": "ca-on/disability_self_care_over_threshold",
+        },
+        produces={"output": "ca-on/disability_self_supplement"},
+    ),
+    # Line 7 "Line 1 plus line 6 Enter this amount on line 58440 of your Form ON428. (maximum
+    # $16,305) =": the sum needs no cap, as line 6 is at most the maximum amount 6,007.00.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca-on/disability_self_base_amount",
+                "ca-on/disability_self_supplement",
+            )
+        },
+        produces={"output": "ca-on/disability_self_worksheet_amount"},
+    ),
+    # ON428 line 29 "claim $10,298 or, if you were under 18 years of age, use Worksheet ON428": the
+    # base amount for a filer 18 or older on December 31, 2025, the line 7 worksheet amount for a
+    # filer under 18.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/under_18_on_december_31",
+            "when_none": "ca-on/disability_self_base_amount",
+            "when_any": "ca-on/disability_self_worksheet_amount",
+        },
+        produces={"output": "ca-on/disability_amount_for_self_if_eligible"},
+    ),
+    # "If you qualify for the disability amount" (the CRA approved Form T2201): the amount once if
+    # the filer qualifies, else 0.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca-on/disability_amount_for_self_if_eligible",
+            "count": "ca/eligible_for_disability_amount",
+        },
+        produces={"output": "ca-on/disability_amount_for_self"},
+    ),
     # ON428 line 30 and line 58480 "Disability amount transferred from a dependant (use
     # Worksheet ON428)", Worksheet ON428 "Line 58480 - Disability amount transferred from a
     # dependant": for each dependant, line 1 "Base amount 10,298.00", line 2 "Maximum amount
@@ -326,10 +412,11 @@ STEPS = {
                 "ca-on/spouse_amount",
                 "ca-on/eligible_dependant_amount",
                 "ca-on/caregiver_amount",
-                "ca/cpp_base_contributions",
-                "ca/cpp_base_contributions_on_self_employment",
+                "ca/cpp_base_contributions_on_return",
+                "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
+                "ca-on/disability_amount_for_self",
                 "ca-on/disability_transferred_amount",
             )
         },
@@ -538,6 +625,45 @@ WIRING = {
         frozenset({CAREGIVER_DEPENDANTS, ontario.ELIGIBLE_DEPENDANT_AMOUNT}),
         frozenset({ontario.CAREGIVER_AMOUNT}),
     ),
+    (CreditAmount, frozenset(), frozenset({ontario.DISABILITY_SELF_BASE_AMOUNT})),
+    (CreditAmount, frozenset(), frozenset({ontario.DISABILITY_SELF_SUPPLEMENT_MAXIMUM})),
+    (CreditAmount, frozenset(), frozenset({ontario.DISABILITY_SELF_CARE_THRESHOLD})),
+    (
+        SubtractNotBelowZero,
+        frozenset({DISABILITY_SELF_CARE_EXPENSES, ontario.DISABILITY_SELF_CARE_THRESHOLD}),
+        frozenset({ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset(
+            {
+                ontario.DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+                ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD,
+            }
+        ),
+        frozenset({ontario.DISABILITY_SELF_SUPPLEMENT}),
+    ),
+    (
+        Sum,
+        frozenset({ontario.DISABILITY_SELF_BASE_AMOUNT, ontario.DISABILITY_SELF_SUPPLEMENT}),
+        frozenset({ontario.DISABILITY_SELF_WORKSHEET_AMOUNT}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                UNDER_18_ON_DECEMBER_31,
+                ontario.DISABILITY_SELF_BASE_AMOUNT,
+                ontario.DISABILITY_SELF_WORKSHEET_AMOUNT,
+            }
+        ),
+        frozenset({ontario.DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE}),
+    ),
+    (
+        TimesCount,
+        frozenset({ontario.DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE, ELIGIBLE_FOR_DISABILITY_AMOUNT}),
+        frozenset({ontario.DISABILITY_AMOUNT_FOR_SELF}),
+    ),
     (
         OntarioDisabilityTransferAmount,
         frozenset({ontario.DISABILITY_DEPENDANTS}),
@@ -557,10 +683,11 @@ WIRING = {
                 ontario.SPOUSE_AMOUNT,
                 ontario.ELIGIBLE_DEPENDANT_AMOUNT,
                 ontario.CAREGIVER_AMOUNT,
-                CPP_BASE_CONTRIBUTIONS,
-                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+                CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+                ontario.DISABILITY_AMOUNT_FOR_SELF,
                 ontario.DISABILITY_TRANSFERRED_AMOUNT,
             }
         ),

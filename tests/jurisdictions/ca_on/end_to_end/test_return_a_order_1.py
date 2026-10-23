@@ -8,13 +8,17 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
     ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
     ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
     ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
+    ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
@@ -22,6 +26,29 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_BASIC_FEDERAL_TAX,
+    AMT_CAPITAL_GAINS_ADDED,
+    AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+    AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
+    AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
+    AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+    AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
+    AMT_FOREIGN_INCOME_LIMIT,
+    AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+    AMT_FOREIGN_TAX_CREDIT_LESSER,
+    AMT_FOREIGN_TAXES_PAID,
+    AMT_INVESTMENT_TAX_CREDIT,
+    AMT_LINE_3_HAS_AMOUNT,
+    AMT_MAXIMUM_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_TAX_CREDITS_TOTAL,
+    AMT_SPECIAL_FOREIGN_TAX_CREDIT,
+    AMT_TOTAL_FOREIGN_INCOME,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
@@ -46,17 +73,104 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
     CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_BASIC_EXEMPTION,
+    CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
     CPP_EARNINGS_UP_TO_MAXIMUM,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_LINE_24_POSITIVE,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_OVERPAYMENT,
+    CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    CPP_PART_3_LINE_2,
+    CPP_PART_3_OVERPAYMENT,
+    CPP_PART_3B_LINE_36,
+    CPP_PART_3B_LINE_48,
+    CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_LINE_4,
+    CPP_PART_5_LINE_6,
+    CPP_PART_5_LINE_7,
+    CPP_PART_5_LINE_10,
+    CPP_PART_5_LINE_13,
+    CPP_PART_5_LINE_16,
+    CPP_PART_5_LINE_20,
+    CPP_PART_5_LINE_21,
+    CPP_PART_5_LINE_22,
+    CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE,
+    CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE,
+    CPP_PART_5_LINE_23_LESS_LINE_56,
+    CPP_PART_5_LINE_30,
+    CPP_PART_5_LINE_33,
+    CPP_PART_5_LINE_33_MORE_THAN_LINE_17,
+    CPP_PART_5_LINE_35,
+    CPP_PART_5_LINE_36,
+    CPP_PART_5_LINE_41,
+    CPP_PART_5_LINE_42,
+    CPP_PART_5_LINE_42_LESSER,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
+    CPP_PART_5_LINE_46,
+    CPP_PART_5_LINE_47,
+    CPP_PART_5_LINE_48,
+    CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+    CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_49_IF_POSITIVE,
+    CPP_PART_5_LINE_50,
+    CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+    CPP_PART_5_LINE_51,
+    CPP_PART_5_LINE_52,
+    CPP_PART_5_LINE_53,
+    CPP_PART_5_LINE_53_LESSER,
+    CPP_PART_5_LINE_54,
+    CPP_PART_5_LINE_55,
+    CPP_PART_5_LINE_56,
+    CPP_PART_5_LINE_56_LESSER,
+    CPP_PART_5_LINE_57,
+    CPP_PART_5_LINE_58,
+    CPP_PART_5_LINE_59,
+    CPP_PART_5_LINE_60,
+    CPP_PART_5_LINE_60_LESSER,
+    CPP_PART_5_LINE_61,
+    CPP_PART_5_LINE_62,
+    CPP_PART_5_LINE_63,
+    CPP_PART_5_LINE_63_LESSER,
+    CPP_PART_5_LINE_64,
+    CPP_PART_5_LINE_65,
+    CPP_PART_5_LINE_66,
+    CPP_PART_5_LINE_67,
+    CPP_PART_5_LINE_67_LESSER,
+    CPP_PART_5_LINE_68,
+    CPP_PART_5_LINE_69,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_72,
+    CPP_PART_5_LINE_73,
+    CPP_PART_5_LINE_74,
+    CPP_PART_5_LINE_75,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_77,
+    CPP_PART_5_LINE_80,
+    CPP_PART_5_LINE_83,
+    CPP_PART_5_LINE_84,
+    CPP_PART_5_LINE_86,
+    CPP_PART_5_LINE_87,
+    CPP_PART_5_LINE_88,
+    CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
@@ -89,20 +203,25 @@ from app.jurisdictions.ca.catalog import (
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
     EI_EARNINGS_SUBJECT_TO_PREMIUM,
+    EI_EXCLUDED_SLIPS_NET_INCOME,
     EI_INSURABLE_EARNINGS_REMAINING,
     EI_MAXIMUM_INSURABLE_EARNINGS,
     EI_NET_SELF_EMPLOYMENT_INCOME,
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PREMIUMS,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DIVIDENDS_CREDIT,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     FEDERAL_BASIC_TAX,
+    FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
@@ -125,6 +244,12 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TOTAL_ANNUAL_LIMITS,
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FIRST_TIER_DONATION_CREDIT,
+    FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+    FOREIGN_TAX_CREDIT_NET_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+    FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_SHEETS,
     GROSS_RENTAL_INCOME,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
@@ -167,6 +292,8 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
     NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985,
+    NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_TAX,
@@ -196,6 +323,10 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_CHOSEN_COLUMN,
     POLITICAL_CREDIT_SHORTCUT_AMOUNT,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+    PRE_1986_CAPITAL_LOSS_BALANCE,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_TOTAL,
     PROVINCIAL_CREDITS,
     REFUND,
     REFUND_OR_BALANCE_OWING,
@@ -206,6 +337,7 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
     RENTAL_DEDUCTIBLE_EXPENSES,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
     RENTAL_GROSS_RENTS,
@@ -291,7 +423,9 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_THRESHOLD,
     TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+    TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
     TOTAL_INCOME,
@@ -301,8 +435,12 @@ from app.jurisdictions.ca.catalog import (
     TRAVEL_TOTAL_ZONE_A,
     TRAVEL_TOTAL_ZONE_B,
     TRAVEL_ZONE_B_DEDUCTION,
+    TUITION_INCOME_BASE,
+    TUITION_INCOME_LESS_CREDITS,
+    TUITION_INCOME_WITH_TOSI,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
+    UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
     WORKING_INCOME,
     ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
@@ -375,9 +513,44 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 557
+    assert len(order) == 1250
+    assert len(order) == 1250
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
+    assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
+    assert position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED] < position[CREDITS_AGAINST_BASIC_FEDERAL_TAX]
+    assert position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED] < position[AMT_BASIC_FEDERAL_TAX]
+    # Part 3 line 2 reads line 1 (the basic federal tax); line 3 reads line 2; line 4 is chosen
+    # from the condition on line 3 and the second branch; line 6 sums lines 1, 4 and 5.
+    assert position[AMT_BASIC_FEDERAL_TAX] < position[AMT_FEDERAL_SURTAX_AT_48_PERCENT]
+    assert (
+        position[AMT_FEDERAL_SURTAX_AT_48_PERCENT]
+        < position[AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS]
+    )
+    assert position[AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS] < position[AMT_LINE_3_HAS_AMOUNT]
+    assert position[AMT_LINE_3_HAS_AMOUNT] < position[AMT_FEDERAL_SURTAX]
+    assert position[AMT_FEDERAL_SURTAX_IF_NON_RESIDENT] < position[AMT_FEDERAL_SURTAX]
+    assert position[AMT_FEDERAL_SURTAX] < position[AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE]
+    assert position[ITC_RECAPTURE] < position[AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE]
+    # Line 9 needs the federal foreign tax credit, line 10 the sums of lines 6 and 9, and line 15
+    # the lines 10 and 14, which needs the investment tax credit of line 12.
+    assert position[FEDERAL_FOREIGN_TAX_CREDIT] < position[AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL]
+    assert position[AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE] < position[AMT_FEDERAL_TAX_PAYABLE]
+    assert position[AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL] < position[AMT_FEDERAL_TAX_PAYABLE]
+    assert position[AMT_INVESTMENT_TAX_CREDIT] < position[AMT_REGULAR_TAX_CREDITS_TOTAL]
+    assert position[AMT_FEDERAL_TAX_PAYABLE] < position[AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE]
+    assert position[AMT_REGULAR_TAX_CREDITS_TOTAL] < position[AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE]
+    # Part 4 line 3 checks the claim against line 23 of Part 1; line 4 sums lines 1 to 3; line 6 is
+    # line 4 at 20.5%; line 7 is the caller's tax paid at 66.6666%; line 9 sums lines 7 and 8; line
+    # 10 is the lesser of lines 6 and 9; line 11 is the greater of Part 3 line 7 and line 10.
+    assert position[AMT_CAPITAL_GAINS_ADDED] < position[AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE]
+    assert position[AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE] < position[AMT_TOTAL_FOREIGN_INCOME]
+    assert position[AMT_TOTAL_FOREIGN_INCOME] < position[AMT_FOREIGN_INCOME_LIMIT]
+    assert position[AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS] < position[AMT_FOREIGN_TAXES_PAID]
+    assert position[AMT_FOREIGN_INCOME_LIMIT] < position[AMT_FOREIGN_TAX_CREDIT_LESSER]
+    assert position[AMT_FOREIGN_TAXES_PAID] < position[AMT_FOREIGN_TAX_CREDIT_LESSER]
+    assert position[AMT_FOREIGN_TAX_CREDIT_LESSER] < position[AMT_SPECIAL_FOREIGN_TAX_CREDIT]
+    assert position[FEDERAL_FOREIGN_TAX_CREDIT] < position[AMT_SPECIAL_FOREIGN_TAX_CREDIT]
     assert (
         position[INVESTMENT_INCOME_BEFORE_PRIOR_YEARS]
         < position[INTEREST_AND_OTHER_INVESTMENT_INCOME]
@@ -490,6 +663,213 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[CPP_FIRST_ADDITIONAL_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS]
     assert position[CPP_SECOND_ADDITIONAL_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS]
     assert position[CPP_ENHANCED_CONTRIBUTIONS] < position[DEDUCTIONS_FROM_TOTAL_INCOME]
+    # Schedule 8: line 24 chooses Part 3a or Part 3b, which route lines 30800, 22215 and 44800.
+    assert (
+        position[CPP_CONTRIBUTIONS_DIFFERENCE]
+        < position[CPP_LINE_24_POSITIVE]
+        < position[CPP_BASE_CONTRIBUTIONS_ON_RETURN]
+        < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert position[CPP_PART_3B_LINE_36] < position[CPP_BASE_CONTRIBUTIONS_ON_RETURN]
+    assert (
+        position[CPP_BASE_CONTRIBUTIONS_ON_RETURN] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert (
+        position[CPP_PART_3B_LINE_48]
+        < position[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+        < position[DEDUCTIONS_FROM_TOTAL_INCOME]
+    )
+    assert position[CPP_ENHANCED_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+    assert position[CPP_LINE_24_POSITIVE] < position[CPP_OVERPAYMENT] < position[TOTAL_CREDITS]
+    # Schedule 8 Part 5: line 4 is summed before line 22 takes the lesser of it and line 21, which
+    # follows line 20 (line 10 times 16.80672); line 30 follows line 22 and line 29, and line 42
+    # follows the count of line 33 more than line 17, the lines 36 and 41 and the lesser of them.
+    assert (
+        position[CPP_PART_3_LINE_2]
+        < position[CPP_PART_5_LINE_33]
+        < position[CPP_PART_5_LINE_33_MORE_THAN_LINE_17]
+    )
+    assert position[CPP_PART_5_LINE_4] < position[CPP_PART_5_LINE_22] < position[CPP_PART_5_LINE_30]
+    assert (
+        position[CPP_PART_5_LINE_10]
+        < position[CPP_PART_5_LINE_20]
+        < position[CPP_PART_5_LINE_21]
+        < position[CPP_PART_5_LINE_22]
+    )
+    assert (
+        position[CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE]
+        < position[CPP_PART_5_LINE_6]
+    )
+    assert position[CPP_PART_5_LINE_6] < position[CPP_PART_5_LINE_7] < position[CPP_PART_5_LINE_10]
+    assert (
+        position[CPP_PART_5_LINE_13]
+        < position[CPP_PART_5_LINE_16]
+        < position[CPP_PART_5_LINE_35]
+        < position[CPP_PART_5_LINE_36]
+    )
+    assert (
+        position[CPP_PART_5_LINE_30]
+        < position[CPP_PART_5_LINE_41]
+        < position[CPP_PART_5_LINE_42_LESSER]
+        < position[CPP_PART_5_LINE_42]
+    )
+    assert position[CPP_PART_5_LINE_33_MORE_THAN_LINE_17] < position[CPP_PART_5_LINE_42]
+    # Schedule 8 Part 5 lines 43 to 69: the tiers of lines 43 to 45 follow lines 30 and 42, lines
+    # 46 and 47 sum them, line 48 doubles line 24 of Part 3 if positive, line 49 is line 47 less
+    # line 48 and line 50 halves it as a positive amount.
+    assert (
+        position[CPP_PART_5_LINE_30] < position[CPP_PART_5_LINE_43] < position[CPP_PART_5_LINE_47]
+    )
+    assert (
+        position[CPP_PART_5_LINE_42] < position[CPP_PART_5_LINE_45] < position[CPP_PART_5_LINE_46]
+    )
+    assert (
+        position[CPP_PART_5_LINE_44] < position[CPP_PART_5_LINE_46] < position[CPP_PART_5_LINE_47]
+    )
+    assert (
+        position[CPP_CONTRIBUTIONS_DIFFERENCE]
+        < position[CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE]
+        < position[CPP_PART_5_LINE_48]
+        < position[CPP_PART_5_LINE_49]
+        < position[CPP_PART_5_LINE_50_LINE_49_POSITIVE]
+        < position[CPP_PART_5_LINE_50]
+    )
+    assert position[CPP_PART_5_LINE_47] < position[CPP_PART_5_LINE_49]
+    # Lines 51 to 57 (base contributions on employment income): line 52 is line 16 as a positive
+    # amount, line 53 takes the lesser of line 19 and line 52, lines 54 and 55 follow, line 56
+    # follows the count of line 23 and line 54 both positive and line 57 adds it to line 55.
+    assert position[CPP_PART_5_LINE_52] < position[CPP_PART_5_LINE_53_LESSER]
+    assert position[CPP_PART_5_LINE_53_LESSER] < position[CPP_PART_5_LINE_53]
+    assert (
+        position[CPP_PART_5_LINE_53] < position[CPP_PART_5_LINE_54] < position[CPP_PART_5_LINE_55]
+    )
+    assert (
+        position[CPP_PART_5_LINE_51] < position[CPP_PART_5_LINE_55] < position[CPP_PART_5_LINE_57]
+    )
+    assert (
+        position[CPP_PART_5_LINE_54]
+        < position[CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE]
+        < position[CPP_PART_5_LINE_56]
+        < position[CPP_PART_5_LINE_57]
+    )
+    assert position[CPP_PART_5_LINE_54] < position[CPP_PART_5_LINE_56_LESSER]
+    assert position[CPP_PART_5_LINE_56_LESSER] < position[CPP_PART_5_LINE_56]
+    # Lines 58 to 69 (enhanced contributions): line 63 follows line 56, whose result its comparison
+    # amount subtracts from line 23, and line 69 adds lines 64 and 68.
+    assert position[CPP_PART_5_LINE_59] < position[CPP_PART_5_LINE_60_LESSER]
+    assert (
+        position[CPP_PART_5_LINE_60] < position[CPP_PART_5_LINE_61] < position[CPP_PART_5_LINE_63]
+    )
+    assert (
+        position[CPP_PART_5_LINE_58] < position[CPP_PART_5_LINE_62] < position[CPP_PART_5_LINE_64]
+    )
+    assert position[CPP_PART_5_LINE_56] < position[CPP_PART_5_LINE_23_LESS_LINE_56]
+    assert (
+        position[CPP_PART_5_LINE_23_LESS_LINE_56]
+        < position[CPP_PART_5_LINE_63_LESSER]
+        < position[CPP_PART_5_LINE_63]
+        < position[CPP_PART_5_LINE_64]
+        < position[CPP_PART_5_LINE_69]
+    )
+    assert position[CPP_PART_5_LINE_61] < position[CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE]
+    assert position[CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE] < position[CPP_PART_5_LINE_63]
+    assert (
+        position[CPP_PART_5_LINE_65] < position[CPP_PART_5_LINE_68] < position[CPP_PART_5_LINE_69]
+    )
+    assert position[CPP_PART_5_LINE_66] < position[CPP_PART_5_LINE_67_LESSER]
+    assert position[CPP_PART_5_LINE_67_LESSER] < position[CPP_PART_5_LINE_67]
+    assert position[CPP_PART_5_LINE_67] < position[CPP_PART_5_LINE_68]
+    # Schedule 8 Part 5 lines 70 to 88: lines 70 and 71 halve lines 43 and 44, line 72 adds them,
+    # line 74 takes line 73 (line 24 of Part 3 if positive) off line 72, line A is the lesser of
+    # lines 72 and 73, line 75 is A times 83.1933%, line 77 takes line 75 off A, lines 80 and 83
+    # take lines 75 and 77 off lines 70 and 71, line 84 halves line 45, line 86 is line 74 as a
+    # positive amount, line 87 takes it off line 84 and line 88 adds lines 80, 71, 83, 84 and 87.
+    assert (
+        position[CPP_PART_5_LINE_43] < position[CPP_PART_5_LINE_70] < position[CPP_PART_5_LINE_72]
+    )
+    assert (
+        position[CPP_PART_5_LINE_44] < position[CPP_PART_5_LINE_71] < position[CPP_PART_5_LINE_72]
+    )
+    assert position[CPP_CONTRIBUTIONS_DIFFERENCE] < position[CPP_PART_5_LINE_73]
+    assert (
+        position[CPP_PART_5_LINE_72] < position[CPP_PART_5_LINE_74] < position[CPP_PART_5_LINE_86]
+    )
+    assert position[CPP_PART_5_LINE_73] < position[CPP_PART_5_LINE_74]
+    assert (
+        position[CPP_PART_5_LINE_72]
+        < position[CPP_PART_5_LINE_75_BASE]
+        < position[CPP_PART_5_LINE_75]
+        < position[CPP_PART_5_LINE_77]
+        < position[CPP_PART_5_LINE_83]
+        < position[CPP_PART_5_LINE_88]
+    )
+    assert position[CPP_PART_5_LINE_73] < position[CPP_PART_5_LINE_75_BASE]
+    assert (
+        position[CPP_PART_5_LINE_70] < position[CPP_PART_5_LINE_80] < position[CPP_PART_5_LINE_88]
+    )
+    assert position[CPP_PART_5_LINE_75] < position[CPP_PART_5_LINE_80]
+    assert position[CPP_PART_5_LINE_71] < position[CPP_PART_5_LINE_83]
+    assert (
+        position[CPP_PART_5_LINE_45]
+        < position[CPP_PART_5_LINE_84]
+        < position[CPP_PART_5_LINE_87]
+        < position[CPP_PART_5_LINE_88]
+    )
+    assert position[CPP_PART_5_LINE_86] < position[CPP_PART_5_LINE_87]
+    # The final routing: the Part 3 route and Part 5 lines 57, 69 and 50 are chosen by the Part 5
+    # completed count into lines 30800, 22215 and 44800, and Part 5 lines 70, 88 and 49 (if
+    # positive) are added to the Part 4 route of lines 31000, 22200 and 42100.
+    assert (
+        position[CPP_PART_3B_LINE_36]
+        < position[CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN]
+        < position[CPP_BASE_CONTRIBUTIONS_ON_RETURN]
+    )
+    assert position[CPP_PART_5_LINE_57] < position[CPP_BASE_CONTRIBUTIONS_ON_RETURN]
+    assert (
+        position[CPP_PART_3B_LINE_48]
+        < position[CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+        < position[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+    )
+    assert position[CPP_PART_5_LINE_69] < position[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+    assert (
+        position[CPP_LINE_24_POSITIVE]
+        < position[CPP_PART_3_OVERPAYMENT]
+        < position[CPP_OVERPAYMENT]
+        < position[TOTAL_CREDITS]
+    )
+    assert position[CPP_PART_5_LINE_50] < position[CPP_OVERPAYMENT]
+    assert (
+        position[CPP_PART_5_LINE_70]
+        < position[CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT]
+        < position[CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS]
+        < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert (
+        position[CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT]
+        < position[CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS]
+        < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert (
+        position[CPP_PART_5_LINE_88]
+        < position[CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT]
+        < position[CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS]
+        < position[DEDUCTIONS_FROM_TOTAL_INCOME]
+    )
+    assert (
+        position[CPP_DEDUCTION_ON_SELF_EMPLOYMENT]
+        < position[CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS]
+    )
+    assert (
+        position[CPP_PART_5_LINE_49]
+        < position[CPP_PART_5_LINE_49_IF_POSITIVE]
+        < position[CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT]
+        < position[CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS]
+        < position[TOTAL_PAYABLE]
+    )
+    assert (
+        position[CPP_PAYABLE_ON_SELF_EMPLOYMENT]
+        < position[CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS]
+    )
     for limit in (
         CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
         CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
@@ -512,6 +892,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[TAXABLE_CAPITAL_GAINS] < position[NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM]
     assert (
         max(
+            position[ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985],
             position[ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987],
             position[ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989],
             position[ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999],
@@ -519,7 +900,12 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         )
         < position[TOTAL_ADJUSTED_NET_CAPITAL_LOSSES]
         < position[NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM]
-        < position[NET_CAPITAL_LOSSES_OF_OTHER_YEARS]
+        < position[ADJUSTED_NET_CAPITAL_LOSSES_APPLIED]
+        < position[UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES]
+        < position[NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION]
+        < position[TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED]
+        < position[ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985]
+        < position[ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985]
         < position[ADJUSTED_LOSSES_APPLIED_1985_TO_1987]
         < position[ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987]
         < position[ADJUSTED_LOSSES_APPLIED_1988_AND_1989]
@@ -561,6 +947,29 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[NET_CAPITAL_LOSS_BALANCE_2001_TO_2024]
     )
     assert position[NET_CAPITAL_LOSSES_OF_OTHER_YEARS] < position[DEDUCTIONS_FROM_NET_INCOME]
+    # Form T1436 lines 1 to 3, then the row "Before May 23, 1985" of Chart A (column A is line 3),
+    # the oldest row first; lines 9 and 10 read line 3, and line 10 is T1 line 25300.
+    assert (
+        max(
+            position[PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989],
+            position[PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999],
+        )
+        < position[PRE_1986_DEDUCTIONS_TOTAL]
+        < position[PRE_1986_CAPITAL_LOSS_BALANCE]
+        < position[ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985]
+    )
+    assert (
+        position[PRE_1986_CAPITAL_LOSS_BALANCE] < position[NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION]
+    )
+    assert (
+        position[NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION]
+        < position[NET_CAPITAL_LOSSES_OF_OTHER_YEARS]
+    )
+    assert (
+        position[ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985]
+        < position[REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985]
+        < position[NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985]
+    )
     assert (
         position[NET_INCOME_BEFORE_ADJUSTMENTS]
         < position[NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO]
@@ -612,6 +1021,11 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[TOTAL_SPLIT_INCOME] < position[FEDERAL_TAX_ON_SPLIT_INCOME]
     assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_WITH_SPLIT_INCOME]
     assert position[FEDERAL_TAX_ON_SPLIT_INCOME] < position[FEDERAL_TAX_WITH_SPLIT_INCOME]
+    # Line 8A divides line 8, and Schedule 11 line 11 plus it is what line 13 reads.
+    assert position[FEDERAL_TAX_ON_SPLIT_INCOME] < position[TOSI_ADJUSTED_TAXABLE_INCOME]
+    assert position[TOSI_ADJUSTED_TAXABLE_INCOME] < position[TUITION_INCOME_WITH_TOSI]
+    assert position[TUITION_INCOME_BASE] < position[TUITION_INCOME_WITH_TOSI]
+    assert position[TUITION_INCOME_WITH_TOSI] < position[TUITION_INCOME_LESS_CREDITS]
     assert position[FEDERAL_TAX_WITH_SPLIT_INCOME] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO] < position[BASIC_PERSONAL_AMOUNT]
     assert position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO] < position[AGE_INCOME_OVER_THRESHOLD]
@@ -774,6 +1188,11 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ONTARIO_SURTAX]
         < position[ONTARIO_TAX_WITH_SURTAX]
     )
+    # Form T1206 Part 3 line 33C divides line 33A, the Ontario tax on split income.
+    assert (
+        position[ontario.ONTARIO_TAX_ON_SPLIT_INCOME]
+        < position[ontario.TOSI_ADJUSTED_TAXABLE_INCOME]
+    )
     # Form T1206 Part 3 and ON428 lines 54, 55, 64 and 65: the tax on the split income (line 33)
     # joins the tax before the surtax and leaves its base, and line 52 replaces line 88 in
     # ON428 line 90.
@@ -894,7 +1313,38 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[LIFT_MAXIMUM_CREDIT] < position[ontario.LIFT_CREDIT_SINGLE]
     assert position[LIFT_REDUCTION] < position[ontario.LIFT_CREDIT_SINGLE]
     assert position[LIFT_CREDIT] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT] < position[ONTARIO_TAX]
-    assert position[ONTARIO_TAX_AFTER_REDUCTION] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT]
+    assert (
+        position[ONTARIO_TAX_AFTER_REDUCTION]
+        < position[ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT]
+        < position[ONTARIO_TAX_AFTER_LIFT_CREDIT]
+    )
+    # ON428 line 82 is limited by the tax otherwise payable (line 81 with "0" on lines 70 and 72),
+    # which is worked from line 69 and the tax reduction amounts, and Form T2036 reads the sheets
+    # of Form T2209 and its net income.
+    assert (
+        position[ONTARIO_TAX_WITH_SURTAX]
+        < position[ontario.TAX_OTHERWISE_PAYABLE_LINE_71]
+        < position[ontario.TAX_OTHERWISE_PAYABLE_LINE_73]
+        < position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS]
+        < position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION]
+        < position[ontario.TAX_OTHERWISE_PAYABLE]
+        < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT]
+        < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT]
+        < position[ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT]
+    )
+    assert position[TAX_REDUCTION_AMOUNTS] < position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION]
+    assert (
+        position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE]
+        < (position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION])
+    )
+    assert (
+        position[FOREIGN_TAX_CREDIT_SHEETS]
+        < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT]
+    )
+    assert (
+        position[FOREIGN_TAX_CREDIT_NET_INCOME]
+        < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT]
+    )
     assert (
         position[COMMUNITY_FOOD_PROGRAM_CREDIT]
         < position[ONTARIO_TAX_AFTER_FOOD_CREDIT]
@@ -924,6 +1374,42 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[ITC_RECAPTURE_AT_20_PERCENT] < position[ITC_RECAPTURE]
     assert position[ITC_RECAPTURE] < position[FEDERAL_TAX_WITH_ITC_RECAPTURE]
     assert position[FEDERAL_TAX_AFTER_CREDITS] < position[FEDERAL_TAX_WITH_ITC_RECAPTURE]
+    # Form T2209 and T1 lines 128 to 132: the net income and the basic federal tax of notes (3)
+    # and (4) come before line 3, which comes before line 13 (40500), which comes off line 126
+    # (line 130) before the recapture is added (line 132).
+    assert (
+        position[NET_INCOME_BEFORE_ADJUSTMENTS]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME]
+        < position[FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT]
+    )
+    assert (
+        position[SOCIAL_BENEFITS_REPAYMENT]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME]
+    )
+    assert position[TOTAL_SPLIT_INCOME] < position[FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME]
+    assert (
+        position[FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS] < position[FOREIGN_TAX_CREDIT_NET_INCOME]
+    )
+    assert position[OTHER_PAYMENTS_DEDUCTION] < position[FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS]
+    assert (
+        position[NET_CAPITAL_LOSSES_OF_OTHER_YEARS]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS]
+    )
+    assert (
+        position[FEDERAL_TAX_AFTER_CREDITS]
+        < position[BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT]
+        < position[FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX]
+        < position[FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT]
+    )
+    assert position[DIVIDEND_TAX_CREDIT] < position[BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT]
+    assert (
+        position[FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT]
+        < position[FEDERAL_FOREIGN_TAX_CREDIT]
+        < position[FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT]
+        < position[FEDERAL_TAX_WITH_ITC_RECAPTURE]
+    )
     assert (
         position[LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM]
         < position[LABOUR_SPONSORED_FUNDS_CREDIT]
@@ -1009,8 +1495,10 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[CPP_DEDUCTION_ON_SELF_EMPLOYMENT]
         < position[DEDUCTIONS_FROM_TOTAL_INCOME]
     )
+    assert position[EI_EXCLUDED_SLIPS_NET_INCOME] < position[EI_SELF_EMPLOYMENT_EARNINGS]
     assert (
         position[NET_SELF_EMPLOYMENT_INCOME]
+        < position[EI_SELF_EMPLOYMENT_BEFORE_SLIPS]
         < position[EI_SELF_EMPLOYMENT_EARNINGS]
         < position[EI_NET_SELF_EMPLOYMENT_INCOME]
         < position[EI_EARNINGS_SUBJECT_TO_PREMIUM]

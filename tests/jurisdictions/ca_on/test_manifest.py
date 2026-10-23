@@ -23,9 +23,18 @@ from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
 from app.main import build_tax_computation
 from tests.jurisdictions.ca_on.manifest_families import (
+    alternative_minimum_tax,
     canada_workers_benefit,
+    capital_gains_deduction_qbt,
+    capital_gains_deduction_t657,
+    capital_gains_deduction_t657_charts,
+    capital_gains_deduction_t657_charts_2016_to_2020,
+    capital_gains_deduction_t657_charts_2021_to_2023,
     credits_against_federal_tax,
     deductions,
+    deductions_schedule_8_part_5,
+    deductions_schedule_8_part_5_contributions,
+    deductions_schedule_8_part_5_other_earnings,
     income,
     net_tax,
     non_refundable_credits,
@@ -48,13 +57,22 @@ FAMILIES: tuple[ModuleType, ...] = (
     income,
     rrsp_fhsa,
     deductions,
+    deductions_schedule_8_part_5,
+    deductions_schedule_8_part_5_contributions,
+    deductions_schedule_8_part_5_other_earnings,
     taxable_income,
+    capital_gains_deduction_qbt,
+    capital_gains_deduction_t657,
+    capital_gains_deduction_t657_charts,
+    capital_gains_deduction_t657_charts_2016_to_2020,
+    capital_gains_deduction_t657_charts_2021_to_2023,
     personal_amounts,
     non_refundable_credits,
     credits_against_federal_tax,
     resp_aips,
     other_inputs,
     net_tax,
+    alternative_minimum_tax,
     canada_workers_benefit,
     refundable_credits,
     refund,
@@ -141,10 +159,47 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # entered: the lines the computation returns.
     # Schedule ON(S11) line 8, "Unused provincial tuition and education amounts available to carry
     # forward to a future year", the carryforward, which nothing else on the return reads.
+    # Form T2048 Part 4 line 32 "Line 30 plus line 31", which nothing reads, and Part 5's totals A
+    # 17211, B 17212, D 17215, E 17216 and (as lines 16, 41 and 42) C 17213, F 17217 and G 17218,
+    # which the return carries for Form T657 and the T1 slips. Form T657 Chart 2025 Part 1 amount
+    # Q, "If you are not disposing of any other QFFP or QSBCS in 2025, this is the maximum amount
+    # you can claim on line 25400", which nothing reads (Part 2's amount Q caps line 25400).
+    # Form T657 Chart 2024 Period 1 and Period 2 amount O, "Enter whichever is less: line 21 of
+    # Step 1, line 19 of Step 2 or amount N above", which nothing reads (Chart 2025 reads Period 2's
+    # amount N).
+    # Form T657 Charts 2021, 2022 and 2023 Part 1 amount N and Part 2 amount M, "Enter whichever is
+    # less: line 21 of Step 1, line 19 of Step 2 or amount M above" and "... or amount L above",
+    # the maximum for line 25400 when no later reserve is reported, which nothing reads (the total
+    # carried forward is what the next chart reads).
+    # Form T657 Charts 2016 to 2020 Part 1 amount H and Part 2 amount K, the maximum for line 25400
+    # when
+    # no later reserve is reported, which nothing reads (the carried total is what the next chart
+    # reads).
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 557
+    assert len(found.capabilities) == 1250
+    # T2125 Area A column 22 "UCC at the end of the year", a record list of each class's closing UCC
+    # for next year, and Part 7 line 7O "Business-use-of-home expenses available to carry forward",
+    # which nothing else on the return reads.
+    assert found.outputs == OUTPUTS
+    # List order carries no meaning: the composition derives the run order from the contracts.
+    assert set(found.capabilities) == STEPS
+    assert len(found.capabilities) == 1250
+    # Form T691 Part 1 line 27 "Add lines 13, 14, 23, and 26.", which nothing else on the return
+    # reads yet (lines 12, 14, 20 and 26 are read by lines 13, 14, 22, 23 and 27, so they are no
+    # longer declared outputs).
+    # Form T691 Part 3 line 15 "Line 10 minus line 14 (if negative, enter "0")" "Regular net federal
+    # tax payable", which nothing else on the return reads yet; Part 2 line 7, the basic federal
+    # tax, is read by Part 3 lines 2 and 6, and Part 3 lines 1 to 14 are read by the lines after
+    # them.
+    # Form T691 Part 4 line 11 "Enter whichever is more: amount from line 7 of Part 3 or line 10."
+    # "Special foreign tax credit", which nothing else on the return reads yet; Part 4 lines 1 to
+    # 10 are read by the lines after them.
+    assert found.outputs == OUTPUTS
+    # List order carries no meaning: the composition derives the run order from the contracts.
+    assert set(found.capabilities) == STEPS
+    assert len(found.capabilities) == 1250
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -154,5 +209,6 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 557
+    assert len(composition.order) == 1250
+    assert len(composition.order) == 1250
     assert wiring == WIRING
