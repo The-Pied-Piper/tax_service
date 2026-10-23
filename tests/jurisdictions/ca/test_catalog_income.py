@@ -23,6 +23,17 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GAINS_DEFERRAL,
     CAPITAL_GAINS_OF_QUALIFIED_AND_OTHER_PROPERTIES,
     CAPITAL_GAINS_RESERVES,
+    CCA_ADDITIONS,
+    CCA_AIIP_ADDITIONS,
+    CCA_CLAIMED,
+    CCA_CLASS_NUMBER,
+    CCA_DIEP_ADDITIONS,
+    CCA_DIEP_PROCEEDS,
+    CCA_IMMEDIATE_EXPENSING,
+    CCA_NO_PROPERTY_LEFT,
+    CCA_PROCEEDS,
+    CCA_RIIP_ADDITIONS,
+    CCA_UCC_AT_START,
     COMMISSION_INCOME,
     CPP_OR_QPP_BENEFITS,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -120,8 +131,21 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_COOWNER_SHARE,
     RENTAL_COOWNER_TERMINAL_LOSS,
     RENTAL_DEDUCTIBLE_EXPENSES,
+    RENTAL_EPOP_AGREEMENT_FILED,
+    RENTAL_EPOP_ASSOCIATED,
+    RENTAL_EPOP_PERCENTAGE,
+    RENTAL_EPOP_PERCENTAGE_MAXIMUM,
+    RENTAL_EPOP_PERCENTAGE_ROOM,
+    RENTAL_EPOP_PERCENTAGE_TOTAL,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
     RENTAL_GROSS_RENTS,
+    RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
+    RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    RENTAL_IMMEDIATE_EXPENSING_CAP,
+    RENTAL_IMMEDIATE_EXPENSING_CLAIM,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
     RENTAL_INSURANCE_SHORT_TERM_PORTION,
@@ -131,6 +155,8 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES,
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION,
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION,
+    RENTAL_MINISTER_ALLOCATION,
+    RENTAL_MINISTER_ALLOCATION_GIVEN,
     RENTAL_MOTOR_VEHICLE_EXPENSES,
     RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION,
     RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION,
@@ -231,6 +257,7 @@ from app.jurisdictions.ca.catalog import (
     WORKERS_COMPENSATION_BENEFITS,
 )
 from tests.jurisdictions.ca.catalog_snapshot import (
+    COUNTS,
     RECORD_LISTS,
     REGISTERED,
     SIGNED,
@@ -529,6 +556,30 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert registry.get("ca/rental_cca_limit") is RENTAL_CCA_LIMIT
     assert registry.get("ca/rental_closing_ucc") is RENTAL_CLOSING_UCC
     assert registry.get("ca/rental_net_income_after_cca") is RENTAL_NET_INCOME_AFTER_CCA
+    assert registry.get("ca/rental_epop_associated") is RENTAL_EPOP_ASSOCIATED
+    assert registry.get("ca/rental_epop_agreement_filed") is RENTAL_EPOP_AGREEMENT_FILED
+    assert registry.get("ca/rental_epop_percentage") is RENTAL_EPOP_PERCENTAGE
+    assert registry.get("ca/rental_epop_percentage_total") is RENTAL_EPOP_PERCENTAGE_TOTAL
+    assert registry.get("ca/rental_minister_allocation_given") is RENTAL_MINISTER_ALLOCATION_GIVEN
+    assert registry.get("ca/rental_minister_allocation") is RENTAL_MINISTER_ALLOCATION
+    assert registry.get("ca/rental_immediate_expensing_cap") is RENTAL_IMMEDIATE_EXPENSING_CAP
+    assert registry.get("ca/rental_epop_percentage_maximum") is RENTAL_EPOP_PERCENTAGE_MAXIMUM
+    assert registry.get("ca/rental_immediate_expensing_share") is RENTAL_IMMEDIATE_EXPENSING_SHARE
+    assert registry.get("ca/rental_epop_percentage_room") is RENTAL_EPOP_PERCENTAGE_ROOM
+    assert (
+        registry.get("ca/rental_immediate_expensing_allocated")
+        is RENTAL_IMMEDIATE_EXPENSING_ALLOCATED
+    )
+    assert (
+        registry.get("ca/rental_immediate_expensing_associated_limit")
+        is RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT
+    )
+    assert (
+        registry.get("ca/rental_immediate_expensing_limit_before_minister")
+        is RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER
+    )
+    assert registry.get("ca/rental_immediate_expensing_limit") is RENTAL_IMMEDIATE_EXPENSING_LIMIT
+    assert registry.get("ca/rental_immediate_expensing_claim") is RENTAL_IMMEDIATE_EXPENSING_CLAIM
     assert registry.get("ca/rental_partner") is RENTAL_PARTNER
     assert registry.get("ca/rental_partner_share") is RENTAL_PARTNER_SHARE
     assert registry.get("ca/rental_partner_gst_hst_rebate") is RENTAL_PARTNER_GST_HST_REBATE
@@ -845,3 +896,112 @@ def test_the_t2121_chart_lines_are_no_longer_artifacts(registry: ArtifactRegistr
         "leasing_cost",
     ):
         assert f"ca/fish_vehicle_{name}" not in registry.identifiers(), name
+
+
+def test_the_rental_classes_list_the_diep_columns_in_the_order_of_the_form(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A "Column 4: Cost of additions from column 3 that are DIEPs", "Column 6: Proceeds of
+    # dispositions of DIEP" and "Column 9: Immediate expensing amount for DIEPs (Note 5)" are
+    # fields of each class beside the others, in the order of the columns (1, 2, 3, 4, 5, 6, 9,
+    # 11, 12, 23) and the no-property-left question of Note 3.
+    assert RENTAL_CCA_CLASSES.fields == (
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_DIEP_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_DIEP_PROCEEDS,
+        CCA_IMMEDIATE_EXPENSING,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_NO_PROPERTY_LEFT,
+    )
+    assert registry.get("ca/rental_cca_classes") is RENTAL_CCA_CLASSES
+
+
+def test_the_t776_statements_list_the_area_g_and_note_5_inputs_after_the_partner_lines() -> None:
+    # Area G and Note 5 are answered once for each statement: the last inputs of the form.
+    assert T776_STATEMENTS.fields[-6:] == (
+        RENTAL_EPOP_ASSOCIATED,
+        RENTAL_EPOP_AGREEMENT_FILED,
+        RENTAL_EPOP_PERCENTAGE,
+        RENTAL_EPOP_PERCENTAGE_TOTAL,
+        RENTAL_MINISTER_ALLOCATION_GIVEN,
+        RENTAL_MINISTER_ALLOCATION,
+    )
+
+
+def test_the_area_g_and_note_5_answers_are_non_negative_int_counts(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area G "Are you associated in the fiscal period with one or more EPOPs that you have
+    # entered into an agreement with under subsection 1104(3.3) of the Regulations? Yes or No",
+    # Note 5 "an agreement that assigns a percentage to one or more of the associated EPOPs was
+    # not filed with the minister in a prescribed form" and "any amount allocated by the minister
+    # under subsection 1104(3.4) of the Regulations": each a caller's 0 or 1, as the other 0 or 1
+    # counts of the forms.
+    for kind, identifier in (
+        (RENTAL_EPOP_ASSOCIATED, "ca/rental_epop_associated"),
+        (RENTAL_EPOP_AGREEMENT_FILED, "ca/rental_epop_agreement_filed"),
+        (RENTAL_MINISTER_ALLOCATION_GIVEN, "ca/rental_minister_allocation_given"),
+    ):
+        assert kind.identifier == identifier
+        assert kind.value_type is int, identifier
+        assert kind.non_negative is True, identifier
+        assert registry.kind(identifier) is kind
+        assert identifier in COUNTS
+
+
+def test_the_area_g_percentages_and_the_ministers_amount_are_non_negative_decimals(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area G "Column 3: Percentage assigned under the agreement" (entered as printed, 40 for 40%),
+    # "Total of percentage assigned: Total of column 3", and Note 5's amount allocated by the
+    # minister: starting amounts.
+    for kind, identifier in (
+        (RENTAL_EPOP_PERCENTAGE, "ca/rental_epop_percentage"),
+        (RENTAL_EPOP_PERCENTAGE_TOTAL, "ca/rental_epop_percentage_total"),
+        (RENTAL_MINISTER_ALLOCATION, "ca/rental_minister_allocation"),
+    ):
+        assert kind.identifier == identifier
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert registry.kind(identifier) is kind
+
+
+def test_the_immediate_expensing_limit_chain_is_non_negative_decimals_but_the_room(
+    registry: ArtifactRegistry,
+) -> None:
+    # Note 5 "$1.5 million", Area G "Line iii: Immediate expensing limit allocated to you:
+    # Multiply $1.5 million by the percentage assigned to you in column 3 (see note 11)", Note 11
+    # "If the total of column 3 is more than 100%, enter "0."", and T776 "Line i: Total immediate
+    # expensing claim for the year: Total of column 9": amounts that print no loss. The room under
+    # 100% (100 less the total of column 3) is the sign Note 11 tests, so it is signed.
+    for kind, identifier in (
+        (RENTAL_IMMEDIATE_EXPENSING_CAP, "ca/rental_immediate_expensing_cap"),
+        (RENTAL_EPOP_PERCENTAGE_MAXIMUM, "ca/rental_epop_percentage_maximum"),
+        (RENTAL_IMMEDIATE_EXPENSING_SHARE, "ca/rental_immediate_expensing_share"),
+        (RENTAL_IMMEDIATE_EXPENSING_ALLOCATED, "ca/rental_immediate_expensing_allocated"),
+        (
+            RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+            "ca/rental_immediate_expensing_associated_limit",
+        ),
+        (
+            RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+            "ca/rental_immediate_expensing_limit_before_minister",
+        ),
+        (RENTAL_IMMEDIATE_EXPENSING_LIMIT, "ca/rental_immediate_expensing_limit"),
+        (RENTAL_IMMEDIATE_EXPENSING_CLAIM, "ca/rental_immediate_expensing_claim"),
+    ):
+        assert kind.identifier == identifier
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert registry.kind(identifier) is kind
+        assert identifier not in SIGNED
+    assert RENTAL_EPOP_PERCENTAGE_ROOM.identifier == "ca/rental_epop_percentage_room"
+    assert RENTAL_EPOP_PERCENTAGE_ROOM.value_type is Decimal
+    assert RENTAL_EPOP_PERCENTAGE_ROOM.non_negative is False
+    assert registry.kind("ca/rental_epop_percentage_room") is RENTAL_EPOP_PERCENTAGE_ROOM
+    assert "ca/rental_epop_percentage_room" in SIGNED

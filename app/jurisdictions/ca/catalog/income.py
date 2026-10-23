@@ -15,6 +15,9 @@ from app.jurisdictions.ca.catalog.personal_amounts import (
     CCA_AIIP_ADDITIONS,
     CCA_CLAIMED,
     CCA_CLASS_NUMBER,
+    CCA_DIEP_ADDITIONS,
+    CCA_DIEP_PROCEEDS,
+    CCA_IMMEDIATE_EXPENSING,
     CCA_NO_PROPERTY_LEFT,
     CCA_PROCEEDS,
     CCA_RIIP_ADDITIONS,
@@ -1140,6 +1143,111 @@ RENTAL_PARTNER_OTHER_EXPENSES = CATALOG.declare(
 """Other expenses of the rental partner, Form T776 line 9943 "Partners: other expenses of the
 partner": a starting amount."""
 
+RENTAL_EPOP_ASSOCIATED = CATALOG.declare("rental_epop_associated", int, non_negative=True)
+"""Whether the filer is associated with an EPOP under an agreement, Form T776 Area G "Are you
+associated in the fiscal period with one or more EPOPs that you have entered into an agreement
+with under subsection 1104(3.3) of the Regulations? Yes or No": 1 for yes, 0 for no, a starting
+count."""
+
+RENTAL_EPOP_AGREEMENT_FILED = CATALOG.declare("rental_epop_agreement_filed", int, non_negative=True)
+"""Whether the agreement was filed, Form T776 Area A Note 5 "zero, if you are associated with one
+or more EPOPs and an agreement that assigns a percentage to one or more of the associated EPOPs
+was not filed with the minister in a prescribed form": 1 if the agreement was filed, 0 if it was
+not, a starting count."""
+
+RENTAL_EPOP_PERCENTAGE = CATALOG.declare("rental_epop_percentage", Decimal, non_negative=True)
+"""Percentage assigned to the filer, Form T776 Area G "Column 3: Percentage assigned under the
+agreement" (the filer's own row), entered as the form prints it, 40 for 40%: a starting
+amount."""
+
+RENTAL_EPOP_PERCENTAGE_TOTAL = CATALOG.declare(
+    "rental_epop_percentage_total", Decimal, non_negative=True
+)
+"""Total of the percentages assigned, Form T776 Area G "Total of percentage assigned: Total of
+column 3", entered as the form prints it: a starting amount."""
+
+RENTAL_MINISTER_ALLOCATION_GIVEN = CATALOG.declare(
+    "rental_minister_allocation_given", int, non_negative=True
+)
+"""Whether the minister allocated an amount, Form T776 Area A Note 5 "any amount allocated by the
+minister under subsection 1104(3.4) of the Regulations": 1 if an amount was allocated, 0
+otherwise, a starting count."""
+
+RENTAL_MINISTER_ALLOCATION = CATALOG.declare(
+    "rental_minister_allocation", Decimal, non_negative=True
+)
+"""Amount allocated by the minister, Form T776 Area A Note 5 "any amount allocated by the minister
+under subsection 1104(3.4) of the Regulations": a starting amount, which replaces the immediate
+expensing limit when the minister allocated one."""
+
+RENTAL_IMMEDIATE_EXPENSING_CAP = CATALOG.declare(
+    "rental_immediate_expensing_cap", Decimal, non_negative=True
+)
+"""Immediate expensing limit when not associated, Form T776 Area A Note 5 "$1.5 million, if you are
+not associated with any other eligible person or partnership (EPOP) in the tax year" and Area G
+line iii "Multiply $1.5 million by": the printed $1.5 million, from a dataset."""
+
+RENTAL_EPOP_PERCENTAGE_MAXIMUM = CATALOG.declare(
+    "rental_epop_percentage_maximum", Decimal, non_negative=True
+)
+"""Largest total of the percentages assigned, Form T776 Area G "The total of all percentages
+assigned under the agreement should not be more than 100%" and Note 11 "If the total of column 3
+is more than 100%, enter "0."": the printed 100%, from a dataset, as the form prints a percentage
+(100 for 100%)."""
+
+RENTAL_IMMEDIATE_EXPENSING_SHARE = CATALOG.declare(
+    "rental_immediate_expensing_share", Decimal, non_negative=True
+)
+"""Immediate expensing limit times the percentage, the first step of Form T776 Area G "Line iii:
+Immediate expensing limit allocated to you: Multiply $1.5 million by the percentage assigned to
+you in column 3 (see note 11)": $1.5 million times the percentage assigned to you."""
+
+RENTAL_EPOP_PERCENTAGE_ROOM = CATALOG.declare("rental_epop_percentage_room", Decimal)
+"""Room under 100% in the percentages assigned, the test of Form T776 Area G Note 11 "If the total
+of column 3 is more than 100%, enter "0."": 100 less the total of column 3, signed, negative when
+the total is more than 100%."""
+
+RENTAL_IMMEDIATE_EXPENSING_ALLOCATED = CATALOG.declare(
+    "rental_immediate_expensing_allocated", Decimal, non_negative=True
+)
+"""Immediate expensing limit allocated to the filer, Form T776 Area G "Line iii: Immediate
+expensing limit allocated to you: Multiply $1.5 million by the percentage assigned to you in
+column 3 (see note 11)", Note 11 "If the total of column 3 is more than 100%, enter "0."": the
+multiple, or 0 when the total of column 3 is more than 100%."""
+
+RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT = CATALOG.declare(
+    "rental_immediate_expensing_associated_limit", Decimal, non_negative=True
+)
+"""Immediate expensing limit when associated with an EPOP, Form T776 Area A Note 5 "amount iii of
+Area G, if you are associated with one or more EPOPs in the tax year" and "zero, if you are
+associated with one or more EPOPs and an agreement that assigns a percentage to one or more of the
+associated EPOPs was not filed with the minister in a prescribed form": line iii, or 0 when no
+agreement was filed."""
+
+RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER = CATALOG.declare(
+    "rental_immediate_expensing_limit_before_minister", Decimal, non_negative=True
+)
+"""Immediate expensing limit before any amount allocated by the minister, Form T776 Area A Note 5
+"the immediate expensing limit, which is equal to one of the following, whichever is applicable":
+$1.5 million when not associated with an EPOP, else the limit when associated."""
+
+RENTAL_IMMEDIATE_EXPENSING_LIMIT = CATALOG.declare(
+    "rental_immediate_expensing_limit", Decimal, non_negative=True
+)
+"""Immediate expensing limit, Form T776 Area A Note 5 "the immediate expensing limit, which is
+equal to one of the following, whichever is applicable", including "any amount allocated by the
+minister under subsection 1104(3.4) of the Regulations": the limit above, or the amount allocated
+by the minister when there is one."""
+
+RENTAL_IMMEDIATE_EXPENSING_CLAIM = CATALOG.declare(
+    "rental_immediate_expensing_claim", Decimal, non_negative=True
+)
+"""Total immediate expensing claim for the year, Form T776 Area A "Line i: Total immediate
+expensing claim for the year: Total of column 9", limited by Note 5 to "the lesser of" the
+immediate expensing limit, "the UCC of DIEPs in column 8" and "the amount of income, if any,
+earned from the source of income that is a property (before any CCA deductions)": the total of
+column 9 over the classes."""
+
 RENTAL_PARTNER_SHARE_WITH_REBATE = CATALOG.declare("rental_partner_share_with_rebate", Decimal)
 """Rental partner's share with the GST/HST rebate, the first step of Form T776 line 9946 "For
 partnerships, enter the result from amount 7 plus line 9974 minus line 9943": amount 7 plus
@@ -1163,7 +1271,10 @@ RENTAL_CCA_CLASSES = RecordListKind.declare(
         CCA_CLASS_NUMBER,
         CCA_UCC_AT_START,
         CCA_ADDITIONS,
+        CCA_DIEP_ADDITIONS,
         CCA_PROCEEDS,
+        CCA_DIEP_PROCEEDS,
+        CCA_IMMEDIATE_EXPENSING,
         CCA_AIIP_ADDITIONS,
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
@@ -1172,8 +1283,9 @@ RENTAL_CCA_CLASSES = RecordListKind.declare(
 )
 """Rental classes, Form T776 Area A "Calculation of capital cost allowance (CCA) claim": a
 starting list with one record for each class, holding the columns the filer enters (class
-number, UCC at the start of the year, additions, proceeds, the AIIP and RIIP parts of the
-additions, the CCA claimed) and whether any property is left in the class."""
+number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
+proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
+CCA claimed) and whether any property is left in the class."""
 
 RENTAL_CLOSING_UCC = RecordListKind.declare(
     CATALOG, "rental_closing_ucc", fields=(CCA_CLASS_NUMBER, CCA_UCC_AT_END)
@@ -1291,11 +1403,17 @@ T776_STATEMENTS = RecordListKind.declare(
         RENTAL_PARTNER_SHARE,
         RENTAL_PARTNER_GST_HST_REBATE,
         RENTAL_PARTNER_OTHER_EXPENSES,
+        RENTAL_EPOP_ASSOCIATED,
+        RENTAL_EPOP_AGREEMENT_FILED,
+        RENTAL_EPOP_PERCENTAGE,
+        RENTAL_EPOP_PERCENTAGE_TOTAL,
+        RENTAL_MINISTER_ALLOCATION_GIVEN,
+        RENTAL_MINISTER_ALLOCATION,
     ),
 )
 """Statements of Form T776, one record for each statement of real estate rentals the return
 carries (one for each rental operation): its fields are the starting amounts, counts and lists of
-one statement, Parts 3 and 4, Areas A and B and the partner and co-owner lines, in the order of
+one statement, Parts 3 and 4, Areas A, B and G and the partner and co-owner lines, in the order of
 the form. The form `ca/t776` runs once for each record; T1 line 12600 "Net" adds the lines 9946
 of the records. A field is not an artifact of the return."""
 
