@@ -8,7 +8,15 @@ from __future__ import annotations
 
 # Each feature module's `__all__` is re-exported, so a class added to an existing module needs no
 # edit here; a new feature module adds its name to each of the three lists below.
-from app.jurisdictions.ca.trace import capital_cost, dependants, foreign_tax, gains, rentals
+from app.jurisdictions.ca.trace import (
+    apprenticeship,
+    capital_cost,
+    dependants,
+    foreign_tax,
+    gains,
+    rentals,
+)
+from app.jurisdictions.ca.trace.apprenticeship import *  # noqa: F403
 from app.jurisdictions.ca.trace.capital_cost import *  # noqa: F403
 from app.jurisdictions.ca.trace.dependants import *  # noqa: F403
 from app.jurisdictions.ca.trace.foreign_tax import *  # noqa: F403
@@ -16,7 +24,8 @@ from app.jurisdictions.ca.trace.gains import *  # noqa: F403
 from app.jurisdictions.ca.trace.rentals import *  # noqa: F403
 
 __all__ = (
-    capital_cost.__all__
+    apprenticeship.__all__
+    + capital_cost.__all__
     + dependants.__all__
     + foreign_tax.__all__
     + gains.__all__

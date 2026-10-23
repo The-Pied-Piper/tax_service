@@ -226,3 +226,26 @@ FOREIGN_TAX_CREDIT_SHEETS = RecordListKind.declare(
 """Foreign tax credit sheets, Form T2209 "on a separate sheet": one record for each sheet worked, in
 order, holding line 1 (43100), the net foreign income used on line 2 (43300, after the cap at net
 income) and line 3. The list may be empty."""
+
+ITC_APPRENTICE_SALARY_AND_WAGES = CATALOG.declare(
+    "itc_apprentice_salary_and_wages", Decimal, non_negative=True
+)
+"""Apprentice's eligible salary and wages, Form T2038(IND) Part B Table 1 "The lesser of eligible
+salary and wages** payable in the year or $20,000.": each apprentice's eligible salary and wages
+payable in the year, net of any assistance; a field of each record of the apprentices, not an
+artifact of its own."""
+
+ITC_APPRENTICES = RecordListKind.declare(
+    CATALOG, "itc_apprentices", fields=(ITC_APPRENTICE_SALARY_AND_WAGES,)
+)
+"""Apprentices, Form T2038(IND) Part B Table 1 "Calculation of total Apprenticeship job creation tax
+credit": a starting list with one record for each apprentice, holding the eligible salary and wages
+(column 3). The list may be empty."""
+
+ITC_APPRENTICESHIP_WAGES_TOTAL = CATALOG.declare(
+    "itc_apprenticeship_wages_total", Decimal, non_negative=True
+)
+"""Apprenticeship wages total, Form T2038(IND) Part B Table 1 "Total apprenticeship job creation tax
+credit (Total of amounts in column 3 plus applicable amount from box 40* of your T3 slip)": the
+total of the column 3 amounts, before the 10% and before the box 40 amount, which are not part of
+this figure."""

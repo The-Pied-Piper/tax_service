@@ -78,6 +78,12 @@ def test_importing_the_federal_package_registers_the_other_dependants_medical_ca
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.other_dependants_medical"
 
 
+def test_importing_the_federal_package_registers_the_apprenticeship_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/apprenticeship_wages_total")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.apprenticeship_wages_total"
+
+
 def test_importing_the_federal_package_registers_the_threshold_gate_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/threshold_gate")
 

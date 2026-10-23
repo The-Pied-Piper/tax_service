@@ -212,6 +212,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.domain.trace.record_lists.ItemsTotalLine",
         "app.domain.trace.record_lists.RecordCountLine",
         "app.domain.trace.record_lists.RecordTotalLine",
+        "app.jurisdictions.ca.trace.apprenticeship.ApprenticeWagesLine",
         "app.jurisdictions.ca.trace.capital_cost.CcaClaimLine",
         "app.jurisdictions.ca.trace.capital_cost.ClosingUccLine",
         "app.jurisdictions.ca.trace.capital_cost.RecapturedCcaLine",
