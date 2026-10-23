@@ -158,8 +158,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_AMOUNT,
     AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
-    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+    AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
@@ -2674,10 +2674,10 @@ def test_the_part_2_and_part_8_amounts_are_produced_by_their_capabilities() -> N
     assert isinstance(worksheet.producer_of(AMT_MAXIMUM_CARRYOVER_APPLIED), SubtractNotBelowZero)
     # Line 12: the cap is the lesser of line 1 and line 11, and the claim is at most the cap.
     assert isinstance(worksheet.producer_of(AMT_MAXIMUM_CARRYOVER_CLAIM), LesserOf)
-    assert isinstance(worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_APPLIED), AtMost)
+    assert isinstance(worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM), AtMost)
     # Line 1 and the claim on line 12 are the caller's amounts, and T1 line 125 sums line 124.
     assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS) is None
-    assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_CLAIM) is None
+    assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_APPLIED) is None
     assert isinstance(worksheet.producer_of(CREDITS_AGAINST_BASIC_FEDERAL_TAX), Sum)
     # Part 3 line 2 "Multiply the amount from line 1 by 48%." is a rate; line 3 is a percentage of
     # line 2; line 4 is chosen by the count of its condition, from line 3 or the second branch,

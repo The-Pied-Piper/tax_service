@@ -99,8 +99,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_AMOUNT,
     AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
-    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+    AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
@@ -252,7 +252,7 @@ INPUTS = frozenset(
         "ca/amt_federal_logging_tax_credit",
         "ca/amt_section_119_former_resident_credit",
         "ca/amt_minimum_tax_carryover_from_previous_years",
-        "ca/amt_minimum_tax_carryover_claim",
+        "ca/amt_minimum_tax_carryover_applied",
         "ca/amt_t2203_column_5_percentage",
         "ca/amt_non_resident_or_deemed_resident",
         "ca/amt_investment_tax_credit_claim",
@@ -267,7 +267,11 @@ INPUTS = frozenset(
     }
 )
 
-OUTPUTS = frozenset({"ca/amt_carryover_available_for_2026"})
+OUTPUTS = frozenset(
+    {
+        "ca/amt_carryover_available_for_2026",
+    }
+)
 
 STEPS = {
     # Part 1 line 4 "Line 2 minus line 3 (if negative, enter "0")" and "67820 =", the film
@@ -934,16 +938,17 @@ STEPS = {
         },
         produces={"output": "ca/amt_maximum_carryover_claim"},
     ),
-    # Part 8 line 12 "Enter this amount on line 40427 of your return.": the claim, an election the
-    # filer makes, which may not be more than the cap; it is refused above it.
+    # Part 8 line 12 "Claim an amount that is not more than line 1 or 11, whichever is less.": the
+    # claim the filer enters (`ca/amt_minimum_tax_carryover_applied`, an input) is checked against
+    # the cap, and refused above it. The checked amount is a declared output; nothing else reads it.
     CapabilitySelection(
         name="core/at_most",
         params={},
         consumes={
-            "amount": "ca/amt_minimum_tax_carryover_claim",
+            "amount": "ca/amt_minimum_tax_carryover_applied",
             "bound": "ca/amt_maximum_carryover_claim",
         },
-        produces={"output": "ca/amt_minimum_tax_carryover_applied"},
+        produces={"output": "ca/amt_minimum_tax_carryover_within_maximum"},
     ),
     # Part 3 line 2 "Federal surtax on business income earned outside Canada" "Multiply the amount
     # from line 1 by 48%.": line 1 is the basic federal tax of Part 2 line 7, the rate from its
@@ -1452,7 +1457,7 @@ STEPS = {
         params={},
         consumes={
             "amount": "ca/amt_minimum_tax_carryover_from_previous_years",
-            "less": "ca/amt_minimum_tax_carryover_applied",
+            "less": "ca/amt_minimum_tax_carryover_within_maximum",
         },
         produces={"output": "ca/amt_carryover_balance"},
     ),
@@ -1904,8 +1909,8 @@ WIRING = {
     ),
     (
         AtMost,
-        frozenset({AMT_MINIMUM_TAX_CARRYOVER_CLAIM, AMT_MAXIMUM_CARRYOVER_CLAIM}),
-        frozenset({AMT_MINIMUM_TAX_CARRYOVER_APPLIED}),
+        frozenset({AMT_MINIMUM_TAX_CARRYOVER_APPLIED, AMT_MAXIMUM_CARRYOVER_CLAIM}),
+        frozenset({AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM}),
     ),
     (
         ApplyRate,
@@ -2148,7 +2153,10 @@ WIRING = {
     (
         Subtract,
         frozenset(
-            {AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS, AMT_MINIMUM_TAX_CARRYOVER_APPLIED}
+            {
+                AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+                AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM,
+            }
         ),
         frozenset({AMT_CARRYOVER_BALANCE}),
     ),

@@ -73,12 +73,12 @@ capabilities:
     produces:
       output: ca/amt_additional_taxes_for_carryover
   # Part 8 line 13 "Balance of minimum tax carryover available for later years, if any: line 1 minus
-  # line 12": line 1 less line 12. Line 12 is at most line 1 (the claim is bounded by it), so the
-  # balance is not below zero.
+  # line 12": line 1 less line 12. Line 12 is read after its check against the largest claim, so
+  # a claim above line 1 is refused there and the balance is not below zero.
   - name: core/subtract
     consumes:
       amount: ca/amt_minimum_tax_carryover_from_previous_years
-      less: ca/amt_minimum_tax_carryover_applied
+      less: ca/amt_minimum_tax_carryover_within_maximum
     produces:
       output: ca/amt_carryover_balance
   # Part 8 line 15 "Line 13 plus line 14": line 13 and line 14, the additional 2025 taxes of Part 7
