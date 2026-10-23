@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from app.domain.artifact import ArtifactRegistry
+from app.domain.artifact import ArtifactKind, ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
@@ -60,9 +60,26 @@ from app.jurisdictions.ca.catalog import (
     OTHER_DEPENDANTS,
     OTHER_DEPENDANTS_MEDICAL,
     PRINCIPAL_RESIDENCE_GAIN,
+    PRINCIPAL_RESIDENCE_LINE_27,
+    PRINCIPAL_RESIDENCE_LINE_29,
+    PRINCIPAL_RESIDENCE_LINE_30,
+    PRINCIPAL_RESIDENCE_LINE_32,
+    PRINCIPAL_RESIDENCE_LINE_33,
+    PRINCIPAL_RESIDENCE_LINE_38,
+    PRINCIPAL_RESIDENCE_LINE_39,
+    PRINCIPAL_RESIDENCE_LINE_42,
+    PRINCIPAL_RESIDENCE_LINE_44,
+    PRINCIPAL_RESIDENCE_LINE_45,
+    PRINCIPAL_RESIDENCE_LINE_48,
+    PRINCIPAL_RESIDENCE_LINE_51,
+    PRINCIPAL_RESIDENCE_LINE_53,
     PRINCIPAL_RESIDENCE_PROPERTIES,
     RESIDENCE_ADJUSTED_COST_BASE,
+    RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981,
+    RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981,
+    RESIDENCE_FMV_DEC_31_1981,
     RESIDENCE_OUTLAYS,
+    RESIDENCE_PART_2_APPLIES,
     RESIDENCE_PLUS_ONE_YEAR,
     RESIDENCE_PROCEEDS,
     RESIDENCE_YEARS_DESIGNATED_1972_TO_1981,
@@ -83,6 +100,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSES_CLAIMED,
     UNDER_18_ON_DECEMBER_31,
 )
+from tests.jurisdictions.ca.catalog_snapshot import COUNTS, REGISTERED, SIGNED
 
 
 def test_the_personal_amounts_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
@@ -151,6 +169,16 @@ def test_the_personal_amounts_kinds_are_the_registered_ones(registry: ArtifactRe
     assert registry.get("ca/residence_plus_one_year") is RESIDENCE_PLUS_ONE_YEAR
     assert registry.get("ca/principal_residence_properties") is PRINCIPAL_RESIDENCE_PROPERTIES
     assert registry.get("ca/principal_residence_gain") is PRINCIPAL_RESIDENCE_GAIN
+    assert registry.get("ca/residence_part_2_applies") is RESIDENCE_PART_2_APPLIES
+    assert (
+        registry.get("ca/residence_adjusted_cost_base_dec_31_1981")
+        is RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981
+    )
+    assert registry.get("ca/residence_fmv_dec_31_1981") is RESIDENCE_FMV_DEC_31_1981
+    assert (
+        registry.get("ca/residence_cost_base_adjustments_after_1981")
+        is RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981
+    )
     assert registry.get("ca/cca_class_number") is CCA_CLASS_NUMBER
     assert registry.get("ca/cca_ucc_at_start") is CCA_UCC_AT_START
     assert registry.get("ca/cca_additions") is CCA_ADDITIONS
@@ -257,3 +285,63 @@ def test_the_disability_amount_for_self_callers_are_counts_and_the_care_expenses
         assert count.non_negative is True, count.identifier
     assert DISABILITY_SELF_CARE_EXPENSES.value_type is Decimal
     assert DISABILITY_SELF_CARE_EXPENSES.non_negative is True
+
+
+# --- Form T2091(IND) Part 2: the lines of the pre-1982 and post-1981 gains (lines 27 to 53) -------
+#
+# One output kind per computed line, each the total over the properties of that line. A line that
+# can be negative (a figure of its own, not floored) is signed; the others are never negative.
+
+PART_2_LINE_KINDS: list[tuple[int, ArtifactKind[Decimal]]] = [
+    (27, PRINCIPAL_RESIDENCE_LINE_27),
+    (29, PRINCIPAL_RESIDENCE_LINE_29),
+    (30, PRINCIPAL_RESIDENCE_LINE_30),
+    (32, PRINCIPAL_RESIDENCE_LINE_32),
+    (33, PRINCIPAL_RESIDENCE_LINE_33),
+    (38, PRINCIPAL_RESIDENCE_LINE_38),
+    (39, PRINCIPAL_RESIDENCE_LINE_39),
+    (42, PRINCIPAL_RESIDENCE_LINE_42),
+    (44, PRINCIPAL_RESIDENCE_LINE_44),
+    (45, PRINCIPAL_RESIDENCE_LINE_45),
+    (48, PRINCIPAL_RESIDENCE_LINE_48),
+    (51, PRINCIPAL_RESIDENCE_LINE_51),
+    (53, PRINCIPAL_RESIDENCE_LINE_53),
+]
+
+SIGNED_PART_2_LINES = {27, 30, 32, 39, 42, 44}
+
+
+def test_the_part_2_line_kinds_are_registered_under_their_line(registry: ArtifactRegistry) -> None:
+    for line, kind in PART_2_LINE_KINDS:
+        assert kind.identifier == f"ca/principal_residence_line_{line}", line
+        assert kind.value_type is Decimal, line
+        assert registry.get(f"ca/principal_residence_line_{line}") is kind, line
+
+
+def test_the_part_2_lines_that_can_be_negative_are_signed_kinds() -> None:
+    # Line 27 "Line 25 minus line 26" and line 39 "Line 34 minus line 38" print no "(if negative,
+    # enter "0")"; lines 30, 32, 42 and 44 multiply or divide them, so they can be negative too.
+    for line, kind in PART_2_LINE_KINDS:
+        if line in SIGNED_PART_2_LINES:
+            assert kind.non_negative is False, line
+        else:
+            assert kind.non_negative is True, line
+
+
+def test_the_part_2_lines_are_in_the_snapshot_with_their_signs() -> None:
+    for line, kind in PART_2_LINE_KINDS:
+        assert kind.identifier in REGISTERED, line
+        assert (kind.identifier in SIGNED) is (line in SIGNED_PART_2_LINES), line
+
+
+def test_the_part_2_applies_flag_is_a_count_in_the_snapshot() -> None:
+    assert RESIDENCE_PART_2_APPLIES.identifier in COUNTS
+    assert RESIDENCE_PART_2_APPLIES.identifier in REGISTERED
+    for kind in (
+        RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981,
+        RESIDENCE_FMV_DEC_31_1981,
+        RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981,
+    ):
+        assert kind.identifier in REGISTERED
+        assert kind.identifier not in COUNTS
+        assert kind.identifier not in SIGNED

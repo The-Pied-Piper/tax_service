@@ -35,7 +35,11 @@ from app.jurisdictions.ca.catalog import (
     PRINCIPAL_RESIDENCE_GAIN,
     PRINCIPAL_RESIDENCE_PROPERTIES,
     RESIDENCE_ADJUSTED_COST_BASE,
+    RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981,
+    RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981,
+    RESIDENCE_FMV_DEC_31_1981,
     RESIDENCE_OUTLAYS,
+    RESIDENCE_PART_2_APPLIES,
     RESIDENCE_PLUS_ONE_YEAR,
     RESIDENCE_PROCEEDS,
     RESIDENCE_YEARS_DESIGNATED_1972_TO_1981,
@@ -108,6 +112,10 @@ def properties(*rows: tuple[int, int, str, str, str, int]) -> Artifact[RecordLis
             RESIDENCE_OUTLAYS: D(outlays),
             RESIDENCE_ADJUSTED_COST_BASE: D(cost_base),
             RESIDENCE_PLUS_ONE_YEAR: plus_one,
+            RESIDENCE_PART_2_APPLIES: 0,
+            RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981: D("0"),
+            RESIDENCE_FMV_DEC_31_1981: D("0"),
+            RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981: D("0"),
         }
         for designated, owned, proceeds, outlays, cost_base, plus_one in rows
     ]

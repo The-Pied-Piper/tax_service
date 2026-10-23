@@ -596,7 +596,11 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_UTILITIES_PERSONAL_PORTION,
     RENTAL_UTILITIES_SHORT_TERM_PORTION,
     RESIDENCE_ADJUSTED_COST_BASE,
+    RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981,
+    RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981,
+    RESIDENCE_FMV_DEC_31_1981,
     RESIDENCE_OUTLAYS,
+    RESIDENCE_PART_2_APPLIES,
     RESIDENCE_PLUS_ONE_YEAR,
     RESIDENCE_PROCEEDS,
     RESIDENCE_YEARS_DESIGNATED_1972_TO_1981,
@@ -1752,6 +1756,10 @@ def test_the_principal_residence_properties_are_a_record_list_of_the_forms_input
         RESIDENCE_OUTLAYS,
         RESIDENCE_ADJUSTED_COST_BASE,
         RESIDENCE_PLUS_ONE_YEAR,
+        RESIDENCE_PART_2_APPLIES,
+        RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981,
+        RESIDENCE_FMV_DEC_31_1981,
+        RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981,
     )
     assert registry.get("ca/principal_residence_properties") is PRINCIPAL_RESIDENCE_PROPERTIES
 
@@ -1771,6 +1779,14 @@ def test_the_principal_residence_properties_fields_are_kinds_of_their_own() -> N
     assert RESIDENCE_OUTLAYS.identifier == "ca/residence_outlays"
     assert RESIDENCE_ADJUSTED_COST_BASE.identifier == "ca/residence_adjusted_cost_base"
     assert RESIDENCE_PLUS_ONE_YEAR.identifier == "ca/residence_plus_one_year"
+    assert RESIDENCE_PART_2_APPLIES.identifier == "ca/residence_part_2_applies"
+    assert RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981.identifier == (
+        "ca/residence_adjusted_cost_base_dec_31_1981"
+    )
+    assert RESIDENCE_FMV_DEC_31_1981.identifier == "ca/residence_fmv_dec_31_1981"
+    assert RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981.identifier == (
+        "ca/residence_cost_base_adjustments_after_1981"
+    )
     for kind in PRINCIPAL_RESIDENCE_PROPERTIES.fields:
         assert kind.non_negative is True, kind.identifier
 
@@ -1783,20 +1799,29 @@ def test_the_principal_residence_properties_fields_are_kinds_of_their_own() -> N
         RESIDENCE_YEARS_OWNED_AFTER_1981,
         RESIDENCE_YEARS_OWNED_1972_TO_1981,
         RESIDENCE_PLUS_ONE_YEAR,
+        RESIDENCE_PART_2_APPLIES,
     ],
 )
 def test_the_residence_years_and_the_plus_one_are_non_negative_int_counts(
     kind: ArtifactKind[int], registry: ArtifactRegistry
 ) -> None:
-    # Lines 1, 2, 5 and 6 are numbers of tax years; the "plus one" is a yes or no, taken as a count
-    # of 0 or 1 like the forms' other yes or no questions.
+    # Lines 1, 2, 5 and 6 are numbers of tax years; the "plus one" and whether Part 2 applies are
+    # yes or no questions, taken as a count of 0 or 1 like the forms' other yes or no questions.
     assert kind.value_type is int
     assert kind.non_negative is True
     assert registry.kind(kind.identifier) is kind
 
 
 @pytest.mark.parametrize(
-    "kind", [RESIDENCE_PROCEEDS, RESIDENCE_OUTLAYS, RESIDENCE_ADJUSTED_COST_BASE]
+    "kind",
+    [
+        RESIDENCE_PROCEEDS,
+        RESIDENCE_OUTLAYS,
+        RESIDENCE_ADJUSTED_COST_BASE,
+        RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981,
+        RESIDENCE_FMV_DEC_31_1981,
+        RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981,
+    ],
 )
 def test_the_residence_amounts_are_non_negative_decimals(
     kind: ArtifactKind[Decimal], registry: ArtifactRegistry
@@ -1817,6 +1842,10 @@ def residence_record(**changes: object) -> dict[ArtifactKind[Any], object]:
         RESIDENCE_OUTLAYS: Decimal("5000"),
         RESIDENCE_ADJUSTED_COST_BASE: Decimal("95000"),
         RESIDENCE_PLUS_ONE_YEAR: 1,
+        RESIDENCE_PART_2_APPLIES: 0,
+        RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981: Decimal("0"),
+        RESIDENCE_FMV_DEC_31_1981: Decimal("0"),
+        RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981: Decimal("0"),
     }
     names: dict[str, ArtifactKind[Any]] = {
         "designated_after_1981": RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
@@ -1827,13 +1856,17 @@ def residence_record(**changes: object) -> dict[ArtifactKind[Any], object]:
         "outlays": RESIDENCE_OUTLAYS,
         "adjusted_cost_base": RESIDENCE_ADJUSTED_COST_BASE,
         "plus_one": RESIDENCE_PLUS_ONE_YEAR,
+        "part_2_applies": RESIDENCE_PART_2_APPLIES,
+        "cost_base_1981": RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981,
+        "fmv_1981": RESIDENCE_FMV_DEC_31_1981,
+        "adjustments_after_1981": RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981,
     }
     for name, value in changes.items():
         record[names[name]] = value
     return record
 
 
-def test_the_principal_residence_properties_hold_the_eight_figures_each_in_the_callers_order() -> (
+def test_the_principal_residence_properties_hold_the_twelve_figures_each_in_the_callers_order() -> (
     None
 ):
     properties = RecordList(
@@ -1875,6 +1908,7 @@ def test_the_principal_residence_properties_hold_the_eight_figures_each_in_the_c
         Decimal("95000"),
     ]
     assert [record[RESIDENCE_PLUS_ONE_YEAR] for record in properties.records] == [1, 0]
+    assert [record[RESIDENCE_PART_2_APPLIES] for record in properties.records] == [0, 0]
 
 
 def test_there_may_be_no_principal_residence_properties() -> None:
@@ -1917,6 +1951,13 @@ def test_a_property_with_another_figure_is_an_invalid_record() -> None:
         ({"outlays": Decimal("-1")}, "ca/residence_outlays"),
         ({"adjusted_cost_base": Decimal("-1")}, "ca/residence_adjusted_cost_base"),
         ({"plus_one": -1}, "ca/residence_plus_one_year"),
+        ({"part_2_applies": -1}, "ca/residence_part_2_applies"),
+        ({"cost_base_1981": Decimal("-1")}, "ca/residence_adjusted_cost_base_dec_31_1981"),
+        ({"fmv_1981": Decimal("-0.01")}, "ca/residence_fmv_dec_31_1981"),
+        (
+            {"adjustments_after_1981": Decimal("-1")},
+            "ca/residence_cost_base_adjustments_after_1981",
+        ),
     ],
 )
 def test_a_negative_property_figure_is_refused(change: dict[str, object], identifier: str) -> None:
@@ -1934,6 +1975,11 @@ def test_a_negative_property_figure_is_refused(change: dict[str, object], identi
         {"proceeds": 400000},
         {"outlays": "5000"},
         {"adjusted_cost_base": 95000.0},
+        {"part_2_applies": True},
+        {"part_2_applies": Decimal("1")},
+        {"fmv_1981": 90000},
+        {"cost_base_1981": "40000.00"},
+        {"adjustments_after_1981": 10000.0},
     ],
 )
 def test_a_property_figure_of_the_wrong_type_is_refused(change: dict[str, object]) -> None:

@@ -439,6 +439,30 @@ to use the "plus one" rule in this calculation.": 1 if the property may use it, 
 count like the forms' other yes or no questions; a starting count, a field of each record of the
 properties sold."""
 
+RESIDENCE_PART_2_APPLIES = CATALOG.declare("residence_part_2_applies", int, non_negative=True)
+"""Part 2 applies, Form T2091(IND) Part 2 "Complete Part 2 if the property disposed of is one of two
+or more properties that qualify as principal residences a family member owned on December 31, 1981,
+and continuously thereafter until its disposition.": 1 if the property is one of them, else 0, taken
+as a count like the forms' other yes or no questions; a starting count, a field of each record of
+the properties sold."""
+
+RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981 = CATALOG.declare(
+    "residence_adjusted_cost_base_dec_31_1981", Decimal, non_negative=True
+)
+"""Adjusted cost base on December 31, 1981, Form T2091(IND) line 11 "Adjusted cost base on December
+31, 1981": a starting amount, a field of each record of the properties sold, used by Part 2 only."""
+
+RESIDENCE_FMV_DEC_31_1981 = CATALOG.declare("residence_fmv_dec_31_1981", Decimal, non_negative=True)
+"""Fair market value on December 31, 1981, Form T2091(IND) line 12 "Fair market value on December
+31, 1981": a starting amount, a field of each record of the properties sold, used by Part 2 only."""
+
+RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981 = CATALOG.declare(
+    "residence_cost_base_adjustments_after_1981", Decimal, non_negative=True
+)
+"""Adjustments to the cost base made after 1981, Form T2091(IND) line 13 "Adjustments to the cost
+base made after 1981 (for example, capital expenditures)": a starting amount, a field of each record
+of the properties sold, used by Part 2 only."""
+
 PRINCIPAL_RESIDENCE_PROPERTIES = RecordListKind.declare(
     CATALOG,
     "principal_residence_properties",
@@ -451,18 +475,92 @@ PRINCIPAL_RESIDENCE_PROPERTIES = RecordListKind.declare(
         RESIDENCE_OUTLAYS,
         RESIDENCE_ADJUSTED_COST_BASE,
         RESIDENCE_PLUS_ONE_YEAR,
+        RESIDENCE_PART_2_APPLIES,
+        RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981,
+        RESIDENCE_FMV_DEC_31_1981,
+        RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981,
     ),
 )
 """Properties sold and designated as a principal residence, Form T2091(IND) "Complete a separate
 form for each property you sold.": a starting list with one record for each such property, holding
-the form's input lines 1, 2, 5, 6, 8, 9 and 10 and whether the "plus one" applies (lines 3, 4, 7
-and 14 onward are worked out). The caller lists only the properties the form sends to Section 2
-(Schedule 3 box 2 or 3) that are not flipped properties."""
+the form's input lines 1, 2, 5, 6, 8, 9, 10, 11, 12 and 13, whether the "plus one" applies and
+whether Part 2 applies (lines 3, 4, 7 and 14 onward are worked out). The caller lists only the
+properties the form sends to Section 2 (Schedule 3 box 2 or 3) that are not flipped properties."""
 
 PRINCIPAL_RESIDENCE_GAIN = CATALOG.declare("principal_residence_gain", Decimal, non_negative=True)
 """Capital gain left after the principal residence exemption, Form T2091(IND) Part 3 line 54 "Total
-capital gain": "Otherwise, enter the amount from line 24", each line 24 being "Line 18 minus line
-23 (if negative, enter "0")", totalled over the properties sold."""
+capital gain": "If you completed Part 2, enter whichever amount is less: line 53 above or line 24 of
+Part 1. Otherwise, enter the amount from line 24.", each line 24 being "Line 18 minus line 23 (if
+negative, enter "0")", totalled over the properties sold."""
+
+PRINCIPAL_RESIDENCE_LINE_27 = CATALOG.declare("principal_residence_line_27", Decimal)
+"""Pre-1982 gain before principal residence exemption, Form T2091(IND) Part 2 line 27 "Line 25 minus
+line 26": the total over the properties sold, not floored, so it may be negative; 0 for a property
+whose area A is not completed."""
+
+PRINCIPAL_RESIDENCE_LINE_29 = CATALOG.declare(
+    "principal_residence_line_29", Decimal, non_negative=True
+)
+"""Years designated before 1982 plus one, Form T2091(IND) Part 2 line 29 "Line 2 plus 1 (see note on
+page 4)": the total over the properties sold; 0 for a property whose area A is not completed."""
+
+PRINCIPAL_RESIDENCE_LINE_30 = CATALOG.declare("principal_residence_line_30", Decimal)
+"""Pre-1982 gain multiplied by the years, Form T2091(IND) Part 2 line 30 "Multiply line 28 by line
+29.": the total over the properties sold, not floored, so it may be negative."""
+
+PRINCIPAL_RESIDENCE_LINE_32 = CATALOG.declare("principal_residence_line_32", Decimal)
+"""Pre-1982 exempt part, Form T2091(IND) Part 2 line 32 "Divide line 30 by line 31.": the total over
+the properties sold of each quotient rounded with the dataset's rule; it may be negative."""
+
+PRINCIPAL_RESIDENCE_LINE_33 = CATALOG.declare(
+    "principal_residence_line_33", Decimal, non_negative=True
+)
+"""Pre-1982 gain, Form T2091(IND) Part 2 line 33 "Line 27 minus line 32 (if negative, enter "0")":
+the total over the properties sold, each floored at 0."""
+
+PRINCIPAL_RESIDENCE_LINE_38 = CATALOG.declare(
+    "principal_residence_line_38", Decimal, non_negative=True
+)
+"""Post-1981 cost base, outlays and fair market value, Form T2091(IND) Part 2 line 38 "Add lines 35
+to 37.": the total over the properties sold; 0 for a property whose area B is not completed."""
+
+PRINCIPAL_RESIDENCE_LINE_39 = CATALOG.declare("principal_residence_line_39", Decimal)
+"""Post-1981 gain before principal residence exemption, Form T2091(IND) Part 2 line 39 "Line 34
+minus line 38": the total over the properties sold, not floored, so it may be negative."""
+
+PRINCIPAL_RESIDENCE_LINE_42 = CATALOG.declare("principal_residence_line_42", Decimal)
+"""Post-1981 gain multiplied by the years designated after 1981, Form T2091(IND) Part 2 line 42
+"Multiply line 40 by line 41.": the total over the properties sold, not floored, so it may be
+negative."""
+
+PRINCIPAL_RESIDENCE_LINE_44 = CATALOG.declare("principal_residence_line_44", Decimal)
+"""Post-1981 exempt part, Form T2091(IND) Part 2 line 44 "Divide line 42 by line 43.": the total
+over the properties sold of each quotient rounded with the dataset's rule; it may be negative."""
+
+PRINCIPAL_RESIDENCE_LINE_45 = CATALOG.declare(
+    "principal_residence_line_45", Decimal, non_negative=True
+)
+"""Post-1981 gain, Form T2091(IND) Part 2 line 45 "Line 39 minus line 44 (if negative, enter "0")":
+the total over the properties sold, each floored at 0."""
+
+PRINCIPAL_RESIDENCE_LINE_48 = CATALOG.declare(
+    "principal_residence_line_48", Decimal, non_negative=True
+)
+"""Post-1981 loss, Form T2091(IND) Part 2 line 48 "Line 46 minus line 47 (if negative, enter "0")":
+the total over the properties sold, each floored at 0; 0 for a property whose area C is not
+completed."""
+
+PRINCIPAL_RESIDENCE_LINE_51 = CATALOG.declare(
+    "principal_residence_line_51", Decimal, non_negative=True
+)
+"""Pre-1982 and post-1981 gains together, Form T2091(IND) Part 2 line 51 "Line 49 plus line 50": the
+total over the properties sold."""
+
+PRINCIPAL_RESIDENCE_LINE_53 = CATALOG.declare(
+    "principal_residence_line_53", Decimal, non_negative=True
+)
+"""Net capital gain of Part 2, Form T2091(IND) Part 2 line 53 "Line 51 minus line 52 (if negative,
+enter "0")": the total over the properties sold, each floored at 0."""
 
 CCA_CLASS_NUMBER = CATALOG.declare("cca_class_number", Decimal, non_negative=True)
 """Class number, T776 and T2125 Area A "Column 1: Class number": a number such as 8, 10.1 or 43.1,

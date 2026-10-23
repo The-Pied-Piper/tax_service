@@ -32,7 +32,10 @@ from app.jurisdictions.ca.catalog import (
     DISPOSITION_PROCEEDS,
     OTHER_DEPENDANT_MEDICAL_EXPENSES,
     RESIDENCE_ADJUSTED_COST_BASE,
+    RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981,
+    RESIDENCE_FMV_DEC_31_1981,
     RESIDENCE_OUTLAYS,
+    RESIDENCE_PART_2_APPLIES,
     RESIDENCE_PLUS_ONE_YEAR,
     RESIDENCE_PROCEEDS,
     RESIDENCE_YEARS_DESIGNATED_1972_TO_1981,
@@ -1034,6 +1037,10 @@ def test_return_ai_enters_the_taxable_gains_of_two_properties_on_line_15800() ->
     assert second[RESIDENCE_OUTLAYS] == Decimal("0.00")
     assert second[RESIDENCE_ADJUSTED_COST_BASE] == Decimal("180000.00")
     assert second[RESIDENCE_PLUS_ONE_YEAR] == 1
+    assert first[RESIDENCE_PART_2_APPLIES] == 0
+    assert second[RESIDENCE_PART_2_APPLIES] == 0
+    assert first[RESIDENCE_FMV_DEC_31_1981] == Decimal("0.00")
+    assert second[RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981] == Decimal("0.00")
     expected = {a.kind.identifier: a.value for a in worked.expected}
     # T2091(IND) line 54 of each form: 90000.00 and 46666.67, entered on Schedule 3 line 15800.
     assert expected["ca/principal_residence_gain"] == Decimal("136666.67")
