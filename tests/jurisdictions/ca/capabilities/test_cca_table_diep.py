@@ -19,8 +19,9 @@ The table works those columns when the consumed `classes` record-list kind lists
 0) and at most its maximum plus column 9 less column 22. A row whose column 4 is above column 3,
 whose column 6 is above column 5 or whose column 9 is above column 8 is refused
 (`InvalidRecordError`, naming the item). Recapture depends only on column 7. A terminal loss is
-column 7 less column 9, not below 0: Guide T4036 calls it "an amount you have not deducted as CCA"
-(Regulation 1100(0.2), to be confirmed), so the part expensed is not lost twice.
+column 7 less column 9, not below 0: Regulation 1100(0.2) deducts column 9 from the UCC first, and
+Guide T4036 calls it "an amount you have not deducted as CCA", so the part expensed is not lost
+twice.
 
 Worked rows, Class 8 (20%, half-year rule), by hand:
 

@@ -7,9 +7,9 @@ unless it is a DIEP". Each class of the consumed record list is one row of the t
 its own as `CcaTable` works it: its terminal loss is column 7 less column 9 (the immediate expensing
 amount), not below 0, when column 7 is positive and no property is left in the class, else 0, and 0
 for a class the `class_rates` dataset excludes unless the row has DIEP additions (column 4). Column
-9 comes off because it is an amount you have not deducted as CCA: Guide T4036 calls the terminal
-loss "an amount you have not deducted as CCA" (Regulation 1100(0.2), to be confirmed), so the part
-expensed is not lost twice. Column 7 is exact, so nothing is rounded. The output is the total of
+9 comes off because Regulation 1100(0.2) deducts it from the UCC of the class first, and Guide
+T4036 calls the terminal loss "an amount you have not deducted as CCA", so the part expensed is
+not lost twice. Column 7 is exact, so nothing is rounded. The output is the total of
 the terminal losses, 0 when there are no classes. It records one `TerminalLossLine` for each class,
 by position from 1, then an `ItemsTotalLine`.
 """
