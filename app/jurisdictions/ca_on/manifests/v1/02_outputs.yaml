@@ -16,11 +16,6 @@ outputs:
   - ca/net_capital_loss_balance_1990_to_1999
   - ca/net_capital_loss_balance_2000
   - ca/net_capital_loss_balance_2001_to_2024
-  - ca/rental_short_term_portion
-  - ca/rental_closing_ucc
-  - ca/rental_non_compliant_cca
-  - ca/short_term_rental_non_compliant_cca_by_class
-  - ca/short_term_rental_gross_rents
   - ca/business_closing_ucc
   - ca/business_home_carry_forward
   # Form T2042 Area A column 22 "UCC at the end of the year" (for next year) and Part 7 line

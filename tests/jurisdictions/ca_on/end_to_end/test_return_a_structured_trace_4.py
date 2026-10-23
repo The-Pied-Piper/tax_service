@@ -890,11 +890,13 @@ from app.jurisdictions.ca_on.catalog import (
     SENIORS_CARE_REDUCTION,
 )
 from app.jurisdictions.ca_on.trace import PlacementCreditLine
-from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a
+from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a, run_a
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
-    trace = return_a().trace
+    # The lines of the one T776 statement of Return A, then those of the return form.
+    result = run_a()
+    trace = (*result["ca/t776"][0].trace, *result["ca-on/return"][0].trace)
     floored = {line.output: line for line in trace if isinstance(line, SubtractedNotBelowZeroLine)}
     summed_floored = {line.output: line for line in trace if isinstance(line, SumNotBelowZeroLine)}
     by_count = {line.output: line for line in trace if isinstance(line, AmountByCountLine)}
@@ -4319,6 +4321,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         FLOW_THROUGH_SHARE_EXPENSES: RecordTotalLine(
             FLOW_THROUGH_SHARE_EXPENSES, FLOW_THROUGH_SHARE_SLIP_EXPENSES, (), D("0")
         ),
+        # T1 line 12600 "Net": the lines 9946 of Return A's one T776 statement, a blank one.
+        NET_RENTAL_INCOME: RecordTotalLine(NET_RENTAL_INCOME, NET_RENTAL_INCOME, (D("0"),), D("0")),
     }
     assert quotients == {
         COOP_EDUCATION_PHASE_OUT_SHARE: QuotientLine(

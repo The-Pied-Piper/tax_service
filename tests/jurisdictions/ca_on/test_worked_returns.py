@@ -13,10 +13,12 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+import yaml
 
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import ArtifactRegistry
+from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import Manifest
 from app.domain.parameters.rate import Rate
 from app.jurisdictions.ca.catalog import (
@@ -64,9 +66,13 @@ def load(
     """The worked return at `path` with its blank lines and inputs filled in.
 
     Against the manifest of the file's jurisdiction and tax year and the shared registry, unless a
-    `manifest` and `artifacts` are given.
+    `manifest` and `artifacts` are given. For the shared registry the manifest is composed first,
+    which registers the kinds `<form>.<export>` of its forms, so the file may expect them.
     """
-    artifacts = artifacts if artifacts is not None else ArtifactRegistry.shared()
+    if artifacts is None:
+        artifacts = ArtifactRegistry.shared()
+        head = yaml.safe_load(path.read_text())
+        build_tax_computation().compose(JurisdictionCode(head["jurisdiction"]), head["tax_year"])
     worked = WorkedReturn.load(path, artifacts)
     if manifest is None:
         manifest = (
@@ -482,23 +488,27 @@ expected:
   ca/investment_income_before_prior_years: "0"
   ca/interest_and_other_investment_income: "0"
   ca/income_support_benefits: "0"
-  ca/short_term_rental_gross_rents: "0"
-  ca/rental_gross_rents: "0"
-  ca/gross_rental_income: "0"
-  ca/rental_total_expenses: "0"
-  ca/rental_personal_portion: "0"
-  ca/rental_short_term_portion: "0"
-  ca/rental_non_compliant_expenses: "0"
-  ca/rental_expenses_less_personal_portion: "0"
-  ca/rental_deductible_expenses: "0"
-  ca/rental_net_income_before_adjustments: "0"
-  ca/rental_net_income_share: "0"
-  ca/rental_net_income_after_coowner_expenses: "0"
-  ca/rental_net_income_with_recapture: "0"
-  ca/rental_net_income_after_terminal_loss: "0"
-  ca/rental_net_income_after_cca: "0"
-  ca/rental_partner_share_with_rebate: "0"
-  ca/rental_partnership_net_income: "0"
+  ca/t776:
+    - ca/short_term_rental_gross_rents: "0"
+      ca/rental_gross_rents: "0"
+      ca/gross_rental_income: "0"
+      ca/rental_total_expenses: "0"
+      ca/rental_personal_portion: "0"
+      ca/rental_short_term_portion: "0"
+      ca/rental_non_compliant_expenses: "0"
+      ca/rental_expenses_less_personal_portion: "0"
+      ca/rental_deductible_expenses: "0"
+      ca/rental_net_income_before_adjustments: "0"
+      ca/rental_net_income_share: "0"
+      ca/rental_net_income_after_coowner_expenses: "0"
+      ca/rental_net_income_with_recapture: "0"
+      ca/rental_net_income_after_terminal_loss: "0"
+      ca/rental_net_income_after_cca: "0"
+      ca/rental_partner_share_with_rebate: "0"
+      ca/rental_partnership_net_income: "0"
+      ca/rental_closing_ucc: []
+      ca/rental_non_compliant_cca: "0"
+      ca/short_term_rental_non_compliant_cca_by_class: []
   ca/net_rental_income: "0"
   ca/total_income: "10000"
   ca/cpp_second_additional_earnings_maximum: "9900.00"
@@ -988,8 +998,11 @@ def test_return_ad_reports_rental_income_on_lines_12599_and_12600() -> None:
     (properties,) = [a for a in worked.inputs if a.kind.identifier == "ca/rental_properties"]
     assert len(properties.value.records) == 1
     expected = {a.kind.identifier: a.value for a in worked.expected}
-    # T776 line 8299 is T1 line 12599 and line 9946 is T1 line 12600.
-    assert expected["ca/gross_rental_income"] == Decimal("24000.00")
+    (statement,) = next(f for f in worked.form_expected if f.form == "ca/t776").instances
+    lines = {a.kind.identifier: a.value for a in statement}
+    # T776 line 8299 (on the statement's worksheet) is T1 line 12599 and line 9946 is T1 line
+    # 12600.
+    assert lines["ca/gross_rental_income"] == Decimal("24000.00")
     assert expected["ca/net_rental_income"] == Decimal("12000.00")
     assert expected["ca/total_income"] == Decimal("12000.00")
     check(path)

@@ -531,8 +531,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1311
-    assert len(order) == 1311
+    assert len(order) == 1281
+    assert len(order) == 1281
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
@@ -1733,28 +1733,8 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[SENIORS_CARE_REDUCTION] < position[SENIORS_CARE_BEFORE_CLAIM]
     assert position[SENIORS_CARE_BEFORE_CLAIM] < position[SENIORS_CARE_CREDIT]
     assert position[SENIORS_CARE_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
-    # T776 Parts 3 and 4: lines 8140 and 8141 after the rows, line 8299 after line 8141, the three
-    # totals after their boxes, line 1 after A, 9949 and 9366, line 9369 after line 8299 and line
-    # 1, amounts 2 to 6 in turn, line 9946 after amount 6 and the partnership's amount, and total
-    # income after line 9946.
-    assert position[RENTAL_GROSS_RENTS] < position[GROSS_RENTAL_INCOME]
-    assert position[RENTAL_TOTAL_EXPENSES] < position[RENTAL_EXPENSES_LESS_PERSONAL_PORTION]
-    assert position[RENTAL_PERSONAL_PORTION] < position[RENTAL_EXPENSES_LESS_PERSONAL_PORTION]
-    assert position[RENTAL_EXPENSES_LESS_PERSONAL_PORTION] < position[RENTAL_DEDUCTIBLE_EXPENSES]
-    assert position[RENTAL_NON_COMPLIANT_EXPENSES] < position[RENTAL_DEDUCTIBLE_EXPENSES]
-    assert position[RENTAL_DEDUCTIBLE_EXPENSES] < position[RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS]
-    assert position[GROSS_RENTAL_INCOME] < position[RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS]
-    assert position[RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS] < position[RENTAL_NET_INCOME_SHARE]
-    assert position[RENTAL_NET_INCOME_SHARE] < position[RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES]
-    assert (
-        position[RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES]
-        < position[RENTAL_NET_INCOME_WITH_RECAPTURE]
-        < position[RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS]
-        < position[RENTAL_NET_INCOME_AFTER_CCA]
-        < position[NET_RENTAL_INCOME]
-    )
-    assert position[RENTAL_PARTNER_SHARE_WITH_REBATE] < position[RENTAL_PARTNERSHIP_NET_INCOME]
-    assert position[RENTAL_PARTNERSHIP_NET_INCOME] < position[NET_RENTAL_INCOME]
+    # T1 line 12600 adds the lines 9946 of the statements, which the form exports; total income
+    # comes after it.
     assert position[NET_RENTAL_INCOME] < position[TOTAL_INCOME]
     assert position[SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM] < position[SENIORS_TRANSIT_CREDIT]
     assert position[FLOW_THROUGH_SHARE_EXPENSES] < position[FLOW_THROUGH_SHARE_CREDIT]
@@ -1806,3 +1786,32 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[PROVINCIAL_CREDITS]
         < position[TOTAL_CREDITS]
     )
+
+
+def test_each_t776_capability_runs_after_what_it_consumes() -> None:
+    # The form ca/t776 is wired on its own: its capabilities are ordered inside the form, once
+    # for each statement; the return form reads only the form's exports.
+    order = service().compose(CA_ON, 2025).form("ca/t776").composition.order
+    assert len(order) == 31
+    position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
+    # T776 Parts 3 and 4: lines 8140 and 8141 after the rows, line 8299 after line 8141, the three
+    # totals after their boxes, line 1 after A, 9949 and 9366, line 9369 after line 8299 and line
+    # 1, amounts 2 to 6 in turn, line 9946 after amount 6 and the partnership's amount.
+    assert position[RENTAL_GROSS_RENTS] < position[GROSS_RENTAL_INCOME]
+    assert position[RENTAL_TOTAL_EXPENSES] < position[RENTAL_EXPENSES_LESS_PERSONAL_PORTION]
+    assert position[RENTAL_PERSONAL_PORTION] < position[RENTAL_EXPENSES_LESS_PERSONAL_PORTION]
+    assert position[RENTAL_EXPENSES_LESS_PERSONAL_PORTION] < position[RENTAL_DEDUCTIBLE_EXPENSES]
+    assert position[RENTAL_NON_COMPLIANT_EXPENSES] < position[RENTAL_DEDUCTIBLE_EXPENSES]
+    assert position[RENTAL_DEDUCTIBLE_EXPENSES] < position[RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS]
+    assert position[GROSS_RENTAL_INCOME] < position[RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS]
+    assert position[RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS] < position[RENTAL_NET_INCOME_SHARE]
+    assert position[RENTAL_NET_INCOME_SHARE] < position[RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES]
+    assert (
+        position[RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES]
+        < position[RENTAL_NET_INCOME_WITH_RECAPTURE]
+        < position[RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS]
+        < position[RENTAL_NET_INCOME_AFTER_CCA]
+        < position[NET_RENTAL_INCOME]
+    )
+    assert position[RENTAL_PARTNER_SHARE_WITH_REBATE] < position[RENTAL_PARTNERSHIP_NET_INCOME]
+    assert position[RENTAL_PARTNERSHIP_NET_INCOME] < position[NET_RENTAL_INCOME]

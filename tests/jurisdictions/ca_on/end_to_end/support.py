@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Mapping
 from decimal import ROUND_HALF_UP, Decimal
 from functools import cache
 from typing import Any
@@ -720,6 +720,7 @@ from app.jurisdictions.ca.catalog import (
     T657_PART_2_EXCLUDED_H,
     T657_T2017_LINE_13,
     T657_T2048_LINE_17217_FOR_2024,
+    T776_STATEMENTS,
     T5013_DIVIDEND_TAX_CREDIT,
     T5013_INVESTMENT_INCOME,
     T5013_TAXABLE_DIVIDENDS,
@@ -1034,6 +1035,57 @@ def rental_expense_artifacts(
         for kind, amount in zip(kinds, amounts.get(name, ("0", "0", "0")), strict=True):
             artifacts.append(Artifact(kind, D(amount)))
     return artifacts
+
+
+def t776_statement(
+    *,
+    rental_properties: tuple[tuple[int, str, str], ...] = (),
+    rental_other_income: str = "0",
+    rental_expenses: Mapping[str, tuple[str, str, str]] | None = None,
+    short_term_rental_units_rows: tuple[tuple[str, int, int], ...] = (),
+    short_term_rental_cca_units_rows: tuple[tuple[str, str, int, int], ...] = (),
+    rental_coowner: int = 0,
+    rental_coowner_share: str = "0",
+    rental_coowner_other_expenses: str = "0",
+    rental_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    rental_coowner_recaptured_cca: str = "0",
+    rental_coowner_terminal_loss: str = "0",
+    rental_coowner_cca_claim: str = "0",
+    rental_cca_personal_part: str = "0",
+    rental_cca_business_use_of_home: str = "0",
+    rental_partner: int = 0,
+    rental_partner_share: str = "0",
+    rental_partner_gst_hst_rebate: str = "0",
+    rental_partner_other_expenses: str = "0",
+) -> dict[ArtifactKind[Any], object]:
+    """One Form T776 statement, a record of `ca/t776_statements`: the T776 inputs, as given or 0."""
+    artifacts: list[Artifact[Any]] = [
+        rental_properties_list(*rental_properties),
+        Artifact(RENTAL_OTHER_INCOME, D(rental_other_income)),
+        *rental_expense_artifacts(rental_expenses or {}),
+        short_term_rental_units(*short_term_rental_units_rows),
+        short_term_rental_cca_units(*short_term_rental_cca_units_rows),
+        Artifact(RENTAL_COOWNER, rental_coowner),
+        Artifact(RENTAL_COOWNER_SHARE, D(rental_coowner_share)),
+        Artifact(RENTAL_COOWNER_OTHER_EXPENSES, D(rental_coowner_other_expenses)),
+        rental_cca_classes(*rental_cca_classes_rows),
+        Artifact(RENTAL_COOWNER_RECAPTURED_CCA, D(rental_coowner_recaptured_cca)),
+        Artifact(RENTAL_COOWNER_TERMINAL_LOSS, D(rental_coowner_terminal_loss)),
+        Artifact(RENTAL_COOWNER_CCA_CLAIM, D(rental_coowner_cca_claim)),
+        Artifact(RENTAL_CCA_PERSONAL_PART, D(rental_cca_personal_part)),
+        Artifact(RENTAL_CCA_BUSINESS_USE_OF_HOME, D(rental_cca_business_use_of_home)),
+        Artifact(RENTAL_PARTNER, rental_partner),
+        Artifact(RENTAL_PARTNER_SHARE, D(rental_partner_share)),
+        Artifact(RENTAL_PARTNER_GST_HST_REBATE, D(rental_partner_gst_hst_rebate)),
+        Artifact(RENTAL_PARTNER_OTHER_EXPENSES, D(rental_partner_other_expenses)),
+    ]
+    return {artifact.kind: artifact.value for artifact in artifacts}
+
+
+def t776_statements(statements: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
+    """The statements of Form T776, one record for each mapping of `t776_statement` arguments."""
+    records = [t776_statement(**statement) for statement in statements]
+    return Artifact(T776_STATEMENTS, RecordList(T776_STATEMENTS.fields, records))
 
 
 # The Form T2125 amounts the caller enters, in the form's order: the non-negative ones, then the
@@ -1531,7 +1583,27 @@ def required_cpp_contributions(employment_income: Decimal) -> tuple[Decimal, Dec
     return base_and_first, _cpp_tier(CPP_SECOND_ADDITIONAL_TIER, employment_income)
 
 
-def compute(
+def _worksheet_of[**P](build: Callable[P, tuple[Artifact[Any], ...]]) -> Callable[P, Worksheet]:
+    """`build`'s starting artifacts computed: the worksheet of the form `ca-on/return`."""
+
+    def compute(*args: P.args, **kwargs: P.kwargs) -> Worksheet:
+        return service().compute(CA_ON, 2025, *build(*args, **kwargs))["ca-on/return"][0]
+
+    return compute
+
+
+def _run_of[**P](
+    build: Callable[P, tuple[Artifact[Any], ...]],
+) -> Callable[P, dict[str, tuple[Worksheet, ...]]]:
+    """`build`'s starting artifacts run: the worksheets of every form, one for each instance."""
+
+    def run(*args: P.args, **kwargs: P.kwargs) -> dict[str, tuple[Worksheet, ...]]:
+        return service().compute(CA_ON, 2025, *build(*args, **kwargs))
+
+    return run
+
+
+def starting(
     employment_income: str,
     share_dispositions: tuple[Disposition, ...],
     unused_rrsp_contributions: str,
@@ -1606,6 +1678,7 @@ def compute(
     rental_partner_share: str = "0",
     rental_partner_gst_hst_rebate: str = "0",
     rental_partner_other_expenses: str = "0",
+    rental_statements: tuple[Mapping[str, Any], ...] | None = None,
     business: Mapping[str, str] | None = None,
     business_partner: int = 0,
     business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
@@ -1997,7 +2070,7 @@ def compute(
     amt_foreign_capital_gains_non_taxable_claim: str = "0",
     amt_foreign_non_business_tax_paid: str = "0",
     amt_foreign_business_tax_paid: str = "0",
-) -> Worksheet:
+) -> tuple[Artifact[Any], ...]:
     # The T4 box 16 and 16A amounts default to the required ones for the employment income given,
     # so line 24 is 0 unless a test gives its own.
     required_base_and_first, required_second = required_cpp_contributions(D(employment_income))
@@ -2011,9 +2084,33 @@ def compute(
         if cpp_t4_second_additional_contributions is None
         else D(cpp_t4_second_additional_contributions)
     )
-    return service().compute(
-        CA_ON,
-        2025,
+    statements: tuple[Mapping[str, Any], ...] = (
+        rental_statements
+        if rental_statements is not None
+        else (
+            {
+                "rental_properties": rental_properties,
+                "rental_other_income": rental_other_income,
+                "rental_expenses": rental_expenses,
+                "short_term_rental_units_rows": short_term_rental_units_rows,
+                "short_term_rental_cca_units_rows": short_term_rental_cca_units_rows,
+                "rental_coowner": rental_coowner,
+                "rental_coowner_share": rental_coowner_share,
+                "rental_coowner_other_expenses": rental_coowner_other_expenses,
+                "rental_cca_classes_rows": rental_cca_classes_rows,
+                "rental_coowner_recaptured_cca": rental_coowner_recaptured_cca,
+                "rental_coowner_terminal_loss": rental_coowner_terminal_loss,
+                "rental_coowner_cca_claim": rental_coowner_cca_claim,
+                "rental_cca_personal_part": rental_cca_personal_part,
+                "rental_cca_business_use_of_home": rental_cca_business_use_of_home,
+                "rental_partner": rental_partner,
+                "rental_partner_share": rental_partner_share,
+                "rental_partner_gst_hst_rebate": rental_partner_gst_hst_rebate,
+                "rental_partner_other_expenses": rental_partner_other_expenses,
+            },
+        )
+    )
+    return (
         Artifact(EMPLOYMENT_INCOME, D(employment_income)),
         dispositions(QSBCS_DISPOSITIONS, *qsbcs_dispositions),
         dispositions(QFFP_DISPOSITIONS, *qffp_dispositions),
@@ -2088,24 +2185,7 @@ def compute(
         ),
         Artifact(NET_PARTNERSHIP_INCOME, D(net_partnership_income)),
         Artifact(RDSP_INCOME, D(rdsp_income)),
-        rental_properties_list(*rental_properties),
-        Artifact(RENTAL_OTHER_INCOME, D(rental_other_income)),
-        *rental_expense_artifacts(rental_expenses or {}),
-        short_term_rental_units(*short_term_rental_units_rows),
-        short_term_rental_cca_units(*short_term_rental_cca_units_rows),
-        Artifact(RENTAL_COOWNER, rental_coowner),
-        Artifact(RENTAL_COOWNER_SHARE, D(rental_coowner_share)),
-        Artifact(RENTAL_COOWNER_OTHER_EXPENSES, D(rental_coowner_other_expenses)),
-        rental_cca_classes(*rental_cca_classes_rows),
-        Artifact(RENTAL_COOWNER_RECAPTURED_CCA, D(rental_coowner_recaptured_cca)),
-        Artifact(RENTAL_COOWNER_TERMINAL_LOSS, D(rental_coowner_terminal_loss)),
-        Artifact(RENTAL_COOWNER_CCA_CLAIM, D(rental_coowner_cca_claim)),
-        Artifact(RENTAL_CCA_PERSONAL_PART, D(rental_cca_personal_part)),
-        Artifact(RENTAL_CCA_BUSINESS_USE_OF_HOME, D(rental_cca_business_use_of_home)),
-        Artifact(RENTAL_PARTNER, rental_partner),
-        Artifact(RENTAL_PARTNER_SHARE, D(rental_partner_share)),
-        Artifact(RENTAL_PARTNER_GST_HST_REBATE, D(rental_partner_gst_hst_rebate)),
-        Artifact(RENTAL_PARTNER_OTHER_EXPENSES, D(rental_partner_other_expenses)),
+        t776_statements(statements),
         *business_amount_artifacts(business or {}),
         Artifact(BUSINESS_PARTNER, business_partner),
         business_cca_classes(*business_cca_classes_rows),
@@ -2729,12 +2809,21 @@ def compute(
         ),
         Artifact(AMT_FOREIGN_NON_BUSINESS_TAX_PAID, D(amt_foreign_non_business_tax_paid)),
         Artifact(AMT_FOREIGN_BUSINESS_TAX_PAID, D(amt_foreign_business_tax_paid)),
-    )["ca-on/return"][0]
+    )
+
+
+compute = _worksheet_of(starting)
+run = _run_of(starting)
 
 
 def return_a() -> Worksheet:
+    """The worksheet of the form `ca-on/return` of `run_a()`."""
+    return run_a()["ca-on/return"][0]
+
+
+def run_a() -> dict[str, tuple[Worksheet, ...]]:
     """Return A's inputs, as in `returns/2025_return_a.yaml`, with its chosen tax deducted."""
-    return compute(
+    return run(
         "110000",
         (("20000", "0", "0"),),
         "0",

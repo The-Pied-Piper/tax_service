@@ -37,10 +37,10 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_INCOME,
     TOTAL_PAYABLE,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
 
-def return_ad(**overrides: Any) -> Worksheet:
+def return_ad(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
     """Return AD's inputs, as in `returns/2025_return_ad.yaml`: a landlord with two rental units.
 
     Gross rents of 24000 (one property, two units) are the only income; the expenses are the
@@ -63,18 +63,19 @@ def return_ad(**overrides: Any) -> Worksheet:
             "property_taxes": ("3500", "0", "0"),
         },
     }
-    return compute(**{**inputs, **overrides})
+    return run(**{**inputs, **overrides})
 
 
 def test_return_ads_gross_rents_are_24000_on_line_12599() -> None:
     # Form T776 Part 3: one property of two units, gross rents for all units 24000 and none for
     # short-term rentals, so line 8140 is 0 and line 8141 is 24000; with no other income (line
     # 8230) line 8299, and so T1 line 12599, is 24000.
-    worksheet = return_ad()
+    result = return_ad()
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(SHORT_TERM_RENTAL_GROSS_RENTS).value == D("0")
-    assert worksheet.get(RENTAL_GROSS_RENTS).value == D("24000")
-    assert worksheet.get(GROSS_RENTAL_INCOME).value == D("24000")
+    assert statement.get(SHORT_TERM_RENTAL_GROSS_RENTS).value == D("0")
+    assert statement.get(RENTAL_GROSS_RENTS).value == D("24000")
+    assert statement.get(GROSS_RENTAL_INCOME).value == D("24000")
 
 
 def test_return_ads_net_rental_income_is_12000_on_line_12600() -> None:
@@ -83,28 +84,31 @@ def test_return_ads_net_rental_income_is_12000_on_line_12600() -> None:
     # so line 1 is 12000 and line 9369 is 24000 - 12000 = 12000. Sole proprietor, so amount 2 is
     # line 9369; with no co-owner expenses, recapture, terminal loss or CCA, amounts 3 to 6 are
     # 12000 too, and line 9946, T1 line 12600, is amount 6.
-    worksheet = return_ad()
+    result = return_ad()
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_TOTAL_EXPENSES).value == D("12000")
-    assert worksheet.get(RENTAL_PERSONAL_PORTION).value == D("0")
-    assert worksheet.get(RENTAL_SHORT_TERM_PORTION).value == D("0")
-    assert worksheet.get(RENTAL_NON_COMPLIANT_EXPENSES).value == D("0")
-    assert worksheet.get(RENTAL_EXPENSES_LESS_PERSONAL_PORTION).value == D("12000")
-    assert worksheet.get(RENTAL_DEDUCTIBLE_EXPENSES).value == D("12000")
-    assert worksheet.get(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("12000")
-    assert worksheet.get(RENTAL_NET_INCOME_SHARE).value == D("12000")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES).value == D("12000")
-    assert worksheet.get(RENTAL_NET_INCOME_WITH_RECAPTURE).value == D("12000")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("12000")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("12000")
-    assert worksheet.get(RENTAL_PARTNERSHIP_NET_INCOME).value == D("0")
+    assert statement.get(RENTAL_TOTAL_EXPENSES).value == D("12000")
+    assert statement.get(RENTAL_PERSONAL_PORTION).value == D("0")
+    assert statement.get(RENTAL_SHORT_TERM_PORTION).value == D("0")
+    assert statement.get(RENTAL_NON_COMPLIANT_EXPENSES).value == D("0")
+    assert statement.get(RENTAL_EXPENSES_LESS_PERSONAL_PORTION).value == D("12000")
+    assert statement.get(RENTAL_DEDUCTIBLE_EXPENSES).value == D("12000")
+    assert statement.get(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("12000")
+    assert statement.get(RENTAL_NET_INCOME_SHARE).value == D("12000")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES).value == D("12000")
+    assert statement.get(RENTAL_NET_INCOME_WITH_RECAPTURE).value == D("12000")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("12000")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("12000")
+    assert statement.get(RENTAL_PARTNERSHIP_NET_INCOME).value == D("0")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("12000")
 
 
 def test_return_ads_net_rental_income_is_the_only_income_on_line_15000() -> None:
     # T1 line 13 "Rental income" is line 12600 (net), not line 12599 (gross): total income is the
     # 12000, and so are net income and taxable income, below every tax threshold.
-    worksheet = return_ad()
+    result = return_ad()
+    worksheet = result["ca-on/return"][0]
 
     assert worksheet.get(TOTAL_INCOME).value == D("12000")
     assert worksheet.get(NET_INCOME).value == D("12000.00")
@@ -114,7 +118,8 @@ def test_return_ads_net_rental_income_is_the_only_income_on_line_15000() -> None
 
 
 def test_return_ads_trace_names_each_line_of_the_rental_income() -> None:
-    rendered = EnglishTraceRenderer().render_all(return_ad().trace)
+    result = return_ad()
+    rendered = EnglishTraceRenderer().render_all(result["ca/t776"][0].trace)
 
     for line in (
         "short_term_rental_gross_rents: item 1 rental_property_short_term_rents 0 = 0",
@@ -146,7 +151,9 @@ def test_return_ads_trace_names_each_line_of_the_rental_income() -> None:
         "net_rental_income: rental_net_income_after_cca 12000, chosen as rental_partner is 0",
     ):
         assert line in rendered, line
-    total_income = [text for text in rendered if text.startswith("total_income: ")]
+    returned = EnglishTraceRenderer().render_all(result["ca-on/return"][0].trace)
+    assert "net_rental_income: item 1 net_rental_income 12000 = 12000" in returned
+    total_income = [text for text in returned if text.startswith("total_income: ")]
     assert len(total_income) == 1
     assert "+ rdsp_income 0 + net_rental_income 12000 + taxable_capital_gains 0 " in total_income[0]
     assert total_income[0].endswith("= 12000")
@@ -157,17 +164,19 @@ def test_a_short_term_rental_of_900_with_30_of_90_days_non_compliant_is_300_on_l
     # 900 x 30 / 90 = 300.00. The insurance's short-term portion of 900 (line 9365) is the row's
     # column 3; line 1 is the total expenses of 1200 less line 9949 (0) less line 9366 (300.00),
     # 900.00, so line 9369 is 24000 - 900.00 = 23100.00.
-    worksheet = return_ad(
+    result = return_ad(
         rental_expenses={"insurance": ("1200", "0", "900")},
         short_term_rental_units_rows=(("900", 30, 90),),
     )
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_SHORT_TERM_PORTION).value == D("900")
-    assert worksheet.get(RENTAL_NON_COMPLIANT_EXPENSES).value == D("300.00")
-    assert worksheet.get(RENTAL_DEDUCTIBLE_EXPENSES).value == D("900.00")
-    assert worksheet.get(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("23100.00")
+    assert statement.get(RENTAL_SHORT_TERM_PORTION).value == D("900")
+    assert statement.get(RENTAL_NON_COMPLIANT_EXPENSES).value == D("300.00")
+    assert statement.get(RENTAL_DEDUCTIBLE_EXPENSES).value == D("900.00")
+    assert statement.get(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("23100.00")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("23100.00")
-    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    rendered = EnglishTraceRenderer().render_all(statement.trace)
     assert (
         "rental_non_compliant_expenses: row 1: expenses 900 for 30 non-compliant days of 90 "
         "short-term days = 300 (half-up to 0.01)"
@@ -176,60 +185,67 @@ def test_a_short_term_rental_of_900_with_30_of_90_days_non_compliant_is_300_on_l
 
 
 def test_each_chart_a_row_is_worked_on_its_own_and_added_into_line_9366() -> None:
-    worksheet = return_ad(
+    result = return_ad(
         rental_expenses={"insurance": ("1200", "0", "1000")},
         short_term_rental_units_rows=(("900", 30, 90), ("100", 2, 3)),
     )
+    statement = result["ca/t776"][0]
 
     # 300.00 + 66.67, each row rounded half-up to the cent before the total.
-    assert worksheet.get(RENTAL_NON_COMPLIANT_EXPENSES).value == D("366.67")
-    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert statement.get(RENTAL_NON_COMPLIANT_EXPENSES).value == D("366.67")
+    rendered = EnglishTraceRenderer().render_all(statement.trace)
     assert "rental_non_compliant_expenses: item 1 300 + item 2 66.67 = 366.67" in rendered
 
 
 def test_a_personal_portion_comes_off_the_expenses_before_line_9366() -> None:
     # Line 1 is amount A minus line 9949 minus line 9366: 1200 - 200 = 1000, then 1000 - 0.
-    worksheet = return_ad(rental_expenses={"insurance": ("1200", "200", "0")})
+    result = return_ad(rental_expenses={"insurance": ("1200", "200", "0")})
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_PERSONAL_PORTION).value == D("200")
-    assert worksheet.get(RENTAL_EXPENSES_LESS_PERSONAL_PORTION).value == D("1000")
-    assert worksheet.get(RENTAL_DEDUCTIBLE_EXPENSES).value == D("1000")
+    assert statement.get(RENTAL_PERSONAL_PORTION).value == D("200")
+    assert statement.get(RENTAL_EXPENSES_LESS_PERSONAL_PORTION).value == D("1000")
+    assert statement.get(RENTAL_DEDUCTIBLE_EXPENSES).value == D("1000")
 
 
 def test_other_income_on_line_8230_adds_to_line_8299_but_not_to_line_8141() -> None:
-    worksheet = return_ad(rental_other_income="500")
+    result = return_ad(rental_other_income="500")
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_GROSS_RENTS).value == D("24000")
-    assert worksheet.get(GROSS_RENTAL_INCOME).value == D("24500")
-    assert worksheet.get(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("12500")
+    assert statement.get(RENTAL_GROSS_RENTS).value == D("24000")
+    assert statement.get(GROSS_RENTAL_INCOME).value == D("24500")
+    assert statement.get(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("12500")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("12500")
 
 
 def test_short_term_rents_are_not_added_to_line_8141() -> None:
     # Line 8141 adds the "Gross rents for all units" column; line 8140 the short-term column.
-    worksheet = return_ad(rental_properties=((2, "8000", "24000"), (1, "0", "6000")))
+    result = return_ad(rental_properties=((2, "8000", "24000"), (1, "0", "6000")))
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(SHORT_TERM_RENTAL_GROSS_RENTS).value == D("8000")
-    assert worksheet.get(RENTAL_GROSS_RENTS).value == D("30000")
-    assert worksheet.get(GROSS_RENTAL_INCOME).value == D("30000")
+    assert statement.get(SHORT_TERM_RENTAL_GROSS_RENTS).value == D("8000")
+    assert statement.get(RENTAL_GROSS_RENTS).value == D("30000")
+    assert statement.get(GROSS_RENTAL_INCOME).value == D("30000")
 
 
 def test_a_rental_loss_of_2000_is_line_12600_of_minus_2000_and_lowers_total_income() -> None:
     # Gross rents of 10000 and expenses of 12000: line 9369 is a loss of 2000.00, kept with its
     # sign through amounts 2 to 6 and line 9946 (T1 line 12600), and added to the 50000 of
     # employment income on line 15000.
-    worksheet = return_ad(
+    result = return_ad(
         employment_income="50000",
         rental_properties=((1, "0", "10000"),),
         rental_expenses={"insurance": ("12000", "0", "0")},
     )
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(GROSS_RENTAL_INCOME).value == D("10000")
-    assert worksheet.get(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("-2000")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("-2000")
+    assert statement.get(GROSS_RENTAL_INCOME).value == D("10000")
+    assert statement.get(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("-2000")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("-2000")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("-2000.00")
     assert worksheet.get(TOTAL_INCOME).value == D("48000")
-    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    rendered = EnglishTraceRenderer().render_all(statement.trace)
     assert (
         "net_rental_income: rental_net_income_after_cca -2000, chosen as rental_partner is 0"
     ) in rendered
@@ -238,10 +254,11 @@ def test_a_rental_loss_of_2000_is_line_12600_of_minus_2000_and_lowers_total_inco
 def test_a_rental_loss_with_no_other_income_is_a_negative_total_income() -> None:
     # Total income (line 15000) is not floored, as the form prints it: with no other income the
     # loss of 10000 - 12000 = -2000 on line 12600 is the whole of total income.
-    worksheet = return_ad(
+    result = return_ad(
         rental_properties=((1, "0", "10000"),),
         rental_expenses={"insurance": ("12000", "0", "0")},
     )
+    worksheet = result["ca-on/return"][0]
 
     assert worksheet.get(NET_RENTAL_INCOME).value == D("-2000")
     assert worksheet.get(TOTAL_INCOME).value == D("-2000")
@@ -251,7 +268,7 @@ def test_a_co_owners_share_replaces_line_9369_on_amount_2_and_runs_through_amoun
     # Line 2 is the co-owner's own 6000 of the 12000 (count 1); line 9945 takes 500 off (amount
     # 3 is 5500), line 9947 adds 200 (amount 4, 5700), line 9948 takes 100 off (amount 5, 5600)
     # and line 9936 takes 300 off (amount 6, 5300): line 9946 and T1 line 12600 are 5300.
-    worksheet = return_ad(
+    result = return_ad(
         rental_coowner=1,
         rental_coowner_share="6000",
         rental_coowner_other_expenses="500",
@@ -259,19 +276,21 @@ def test_a_co_owners_share_replaces_line_9369_on_amount_2_and_runs_through_amoun
         rental_coowner_terminal_loss="100",
         rental_coowner_cca_claim="300",
     )
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("12000")
-    assert worksheet.get(RENTAL_NET_INCOME_SHARE).value == D("6000")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES).value == D("5500")
-    assert worksheet.get(RENTAL_NET_INCOME_WITH_RECAPTURE).value == D("5700")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("5600")
-    assert worksheet.get(RENTAL_RECAPTURED_CCA).value == D("200")
-    assert worksheet.get(RENTAL_TERMINAL_LOSS).value == D("100")
-    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("300")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("5300")
+    assert statement.get(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("12000")
+    assert statement.get(RENTAL_NET_INCOME_SHARE).value == D("6000")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES).value == D("5500")
+    assert statement.get(RENTAL_NET_INCOME_WITH_RECAPTURE).value == D("5700")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("5600")
+    assert statement.get(RENTAL_RECAPTURED_CCA).value == D("200")
+    assert statement.get(RENTAL_TERMINAL_LOSS).value == D("100")
+    assert statement.get(RENTAL_CCA_CLAIM).value == D("300")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("5300")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("5300")
     assert worksheet.get(TOTAL_INCOME).value == D("5300")
-    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    rendered = EnglishTraceRenderer().render_all(statement.trace)
     assert (
         "rental_net_income_share: rental_coowner_share 6000, chosen as rental_coowner is 1"
     ) in rendered
@@ -282,7 +301,7 @@ def test_a_sole_proprietor_ignores_the_co_owners_share_and_carries_line_9369() -
     # 12000 - 500 = 11500; the entered share of 6000 and the co-owner's shares of lines 9947,
     # 9948 and 9936 (200, 100 and 300) are not used, and with no Area A classes those three lines
     # are 0, so amount 6 is 11500.
-    worksheet = return_ad(
+    result = return_ad(
         rental_coowner=0,
         rental_coowner_share="6000",
         rental_coowner_other_expenses="500",
@@ -290,66 +309,76 @@ def test_a_sole_proprietor_ignores_the_co_owners_share_and_carries_line_9369() -
         rental_coowner_terminal_loss="100",
         rental_coowner_cca_claim="300",
     )
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_NET_INCOME_SHARE).value == D("12000")
-    assert worksheet.get(RENTAL_RECAPTURED_CCA).value == D("0")
-    assert worksheet.get(RENTAL_TERMINAL_LOSS).value == D("0")
-    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("0")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("11500")
+    assert statement.get(RENTAL_NET_INCOME_SHARE).value == D("12000")
+    assert statement.get(RENTAL_RECAPTURED_CCA).value == D("0")
+    assert statement.get(RENTAL_TERMINAL_LOSS).value == D("0")
+    assert statement.get(RENTAL_CCA_CLAIM).value == D("0")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("11500")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("11500")
 
 
 def test_a_partners_line_9946_is_amount_7_plus_line_9974_minus_line_9943() -> None:
     # Amount 7 is 4000 (the T5013 amount), line 9974 adds 50 and line 9943 takes 30 off:
     # 4000 + 50 - 30 = 4020, which replaces amount 6 (12000) on line 9946.
-    worksheet = return_ad(
+    result = return_ad(
         rental_partner=1,
         rental_partner_share="4000",
         rental_partner_gst_hst_rebate="50",
         rental_partner_other_expenses="30",
     )
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("12000")
-    assert worksheet.get(RENTAL_PARTNER_SHARE_WITH_REBATE).value == D("4050")
-    assert worksheet.get(RENTAL_PARTNERSHIP_NET_INCOME).value == D("4020")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("12000")
+    assert statement.get(RENTAL_PARTNER_SHARE_WITH_REBATE).value == D("4050")
+    assert statement.get(RENTAL_PARTNERSHIP_NET_INCOME).value == D("4020")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("4020")
     assert worksheet.get(TOTAL_INCOME).value == D("4020")
-    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    rendered = EnglishTraceRenderer().render_all(statement.trace)
     assert (
         "net_rental_income: rental_partnership_net_income 4020, chosen as rental_partner is 1"
     ) in rendered
 
 
 def test_a_sole_proprietor_ignores_the_partners_figures() -> None:
-    worksheet = return_ad(
+    result = return_ad(
         rental_partner=0,
         rental_partner_share="4000",
         rental_partner_gst_hst_rebate="50",
         rental_partner_other_expenses="30",
     )
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_PARTNERSHIP_NET_INCOME).value == D("4020")
+    assert statement.get(RENTAL_PARTNERSHIP_NET_INCOME).value == D("4020")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("12000")
 
 
 def test_a_partners_loss_is_negative_on_line_9946() -> None:
-    worksheet = return_ad(
+    result = return_ad(
         employment_income="50000",
         rental_partner=1,
         rental_partner_share="-1000",
         rental_partner_other_expenses="20",
     )
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_PARTNERSHIP_NET_INCOME).value == D("-1020")
+    assert statement.get(RENTAL_PARTNERSHIP_NET_INCOME).value == D("-1020")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("-1020")
     assert worksheet.get(TOTAL_INCOME).value == D("48980")
 
 
 def test_a_co_owners_loss_is_negative_on_amount_2() -> None:
-    worksheet = return_ad(employment_income="50000", rental_coowner=1, rental_coowner_share="-3000")
+    result = return_ad(employment_income="50000", rental_coowner=1, rental_coowner_share="-3000")
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_NET_INCOME_SHARE).value == D("-3000")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("-3000")
+    assert statement.get(RENTAL_NET_INCOME_SHARE).value == D("-3000")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("-3000")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("-3000")
 
 
