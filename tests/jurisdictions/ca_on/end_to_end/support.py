@@ -180,6 +180,7 @@ from app.jurisdictions.ca.catalog import (
     CCA_NO_PROPERTY_LEFT,
     CCA_PERSONAL_PART_REMAINING,
     CCA_PROCEEDS,
+    CCA_RATE_ELECTION,
     CCA_RIIP_ADDITIONS,
     CCA_UCC_AT_START,
     CHARITABLE_DONATIONS,
@@ -944,15 +945,21 @@ def rental_properties_list(*rows: tuple[int, str, str]) -> Artifact[RecordList]:
     return Artifact(RENTAL_PROPERTIES, RecordList(RENTAL_PROPERTIES.fields, records))
 
 
-def rental_cca_classes(
-    *rows: tuple[str, str, str, str, str, str, str, int, str, str, str, str],
-) -> Artifact[RecordList]:
+RentalCcaRow = (
+    tuple[str, str, str, str, str, str, str, int, str, str, str, str]
+    | tuple[str, str, str, str, str, str, str, int, str, str, str, str, int]
+)
+
+
+def rental_cca_classes(*rows: RentalCcaRow) -> Artifact[RecordList]:
     """The Form T776 Area A rows, one record per class: column 1 (class number), column 2, column
     3, column 5, column 11, column 12, the CCA claimed (column 23) as decimal text, 1 if no
     property is left in the class, else 0 (Note 3), column 4 (the DIEP additions), column 6 (the
     proceeds of dispositions of DIEP) and column 9 (the immediate expensing amount), each "0"
     when the class has no DIEP, and Note 9's remaining personal part of the property's cost
-    (subtracted from column 24), "0" when there is none."""
+    (subtracted from column 24), "0" when there is none; and, as a thirteenth value when the row
+    has one, its CCA rate election code (0 none, 1 purpose-built rental, 2 or 3 separate class),
+    else 0."""
     records: list[dict[ArtifactKind[Any], object]] = [
         {
             CCA_CLASS_NUMBER: D(class_number),
@@ -968,6 +975,7 @@ def rental_cca_classes(
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
             CCA_PERSONAL_PART_REMAINING: D(personal_part_remaining),
             CCA_HALF_YEAR_RULE_DIFFERS: 0,
+            CCA_RATE_ELECTION: rate_election,
         }
         for (
             class_number,
@@ -982,7 +990,9 @@ def rental_cca_classes(
             diep_proceeds,
             immediate_expensing,
             personal_part_remaining,
+            *election,
         ) in rows
+        for rate_election in (election[0] if election else 0,)
     ]
     return Artifact(RENTAL_CCA_CLASSES, RecordList(RENTAL_CCA_CLASSES.fields, records))
 
@@ -1106,9 +1116,7 @@ def t776_statement(
     rental_coowner: int = 0,
     rental_coowner_share: str = "0",
     rental_coowner_other_expenses: str = "0",
-    rental_cca_classes_rows: tuple[
-        tuple[str, str, str, str, str, str, str, int, str, str, str, str], ...
-    ] = (),
+    rental_cca_classes_rows: tuple[RentalCcaRow, ...] = (),
     rental_coowner_recaptured_cca: str = "0",
     rental_coowner_terminal_loss: str = "0",
     rental_coowner_cca_claim: str = "0",
@@ -1282,6 +1290,7 @@ def business_vehicles(*vehicles: Mapping[str, str]) -> Artifact[RecordList]:
 BusinessCcaRow = (
     tuple[str, str, str, str, str, str, str, int, str, str, str]
     | tuple[str, str, str, str, str, str, str, int, str, str, str, int]
+    | tuple[str, str, str, str, str, str, str, int, str, str, str, int, int]
 )
 
 
@@ -1292,7 +1301,8 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
     class, else 0 (endnote 3), column 4 (the DIEP additions), column 6 (the proceeds of
     dispositions of DIEP) and column 9 (the immediate expensing amount), each "0" when the class
     has no DIEP; and, as a twelfth value when the row has one, 1 if the half-year rule treats the
-    row's additions the other way from their class, else 0."""
+    row's additions the other way from their class, else 0, and, as a thirteenth value, the row's
+    CCA rate election code (0 none, 1 purpose-built rental, 2 or 3 separate class), else 0."""
     kind = BUSINESS_CCA_CLASSES
     assert isinstance(kind, RecordListKind)
     records: list[dict[ArtifactKind[Any], object]] = [
@@ -1309,6 +1319,7 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
             CCA_HALF_YEAR_RULE_DIFFERS: half_year_rule_differs,
+            CCA_RATE_ELECTION: rate_election,
         }
         for (
             class_number,
@@ -1322,9 +1333,9 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
             diep_additions,
             diep_proceeds,
             immediate_expensing,
-            *differs,
+            *extra,
         ) in rows
-        for half_year_rule_differs in (differs[0] if differs else 0,)
+        for half_year_rule_differs, rate_election in ((*extra, 0, 0)[:2],)
     ]
     return Artifact(kind, RecordList(kind.fields, records))
 
@@ -1487,6 +1498,7 @@ def farm_cca_classes(
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
             CCA_HALF_YEAR_RULE_DIFFERS: 0,
+            CCA_RATE_ELECTION: 0,
         }
         for (
             class_number,
@@ -1628,6 +1640,7 @@ def fish_cca_classes(
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
             CCA_HALF_YEAR_RULE_DIFFERS: 0,
+            CCA_RATE_ELECTION: 0,
         }
         for (
             class_number,

@@ -64,6 +64,7 @@ from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.claim_reduction import CLAIM_REDUCTION, ClaimReduction
 from app.domain.parameters.class_rates import (
     CLASS_RATES,
+    ClassElection,
     ClassRate,
     ClassRates,
     HalfYearRule,
@@ -3784,6 +3785,139 @@ def test_by_default_the_class_rates_parser_comes_from_the_shared_registry(tmp_pa
     ],
 )
 def test_rejects_malformed_class_rates_dataset(tmp_path: Path, content: str, message: str) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+# A class may list `elections`, a mapping keyed by each code as a quoted whole number above 0, each
+# a quoted decimal `rate` between 0 and 1: the rate a row takes when the caller elects that code
+# (Guide T4036 2025, "Class 1 (4%)"). A class that does not list it has none.
+
+ELECTIONS = (
+    "    elections:\n"
+    '      "1": {rate: "0.10"}\n'
+    '      "2":\n'
+    '        rate: "0.06"\n'
+    '      "3": {rate: "0.10"}\n'
+)
+CLASS_RATES_WITH_ELECTIONS = CLASS_RATES_2025.replace('  "10.1":\n', '  "10.1":\n' + ELECTIONS, 1)
+
+
+def test_reads_the_elections_of_a_class_in_the_files_order(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_WITH_ELECTIONS)
+
+    table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
+
+    held = table.for_class(D("10.1"))
+    assert held is not None
+    assert held.elections == (
+        ClassElection(1, Rate(D("0.10"))),
+        ClassElection(2, Rate(D("0.06"))),
+        ClassElection(3, Rate(D("0.10"))),
+    )
+    assert [str(election.rate.value) for election in held.elections] == ["0.10", "0.06", "0.10"]
+    assert held.election_rate(2) == Rate(D("0.06"))
+    assert held.election_rate(4) is None
+
+
+def test_a_class_without_elections_has_none(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_WITH_ELECTIONS)
+
+    table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
+
+    assert table.classes[0] == CLASS_RATES_CLASSES[0]
+    assert table.classes[2] == CLASS_RATES_CLASSES[2]
+    assert table.classes[3] == CLASS_RATES_CLASSES[3]
+
+
+def test_a_dataset_without_elections_reads_as_before(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_2025)
+
+    table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
+
+    assert all(each.elections == () for each in table.classes)
+    assert table.classes == CLASS_RATES_CLASSES
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "message"),
+    [
+        pytest.param(
+            '"1": {rate: "0.10"}',
+            '1: {rate: "0.10"}',
+            r"classes\.10\.1\.elections: key 1 must be a string, got int",
+            id="code-as-yaml-number",
+        ),
+        pytest.param(
+            '"1": {rate: "0.10"}',
+            '"one": {rate: "0.10"}',
+            r"classes\.10\.1\.elections.* is not a whole number: 'one'",
+            id="code-not-a-whole-number",
+        ),
+        pytest.param(
+            '"1": {rate: "0.10"}',
+            '"1.5": {rate: "0.10"}',
+            r"classes\.10\.1\.elections.* is not a whole number: '1.5'",
+            id="code-fractional",
+        ),
+        pytest.param(
+            '"1": {rate: "0.10"}',
+            '"0": {rate: "0.10"}',
+            r"classes\.10\.1.*code must be above 0",
+            id="code-zero",
+        ),
+        pytest.param(
+            '"3": {rate: "0.10"}',
+            '"01": {rate: "0.10"}',
+            r"classes\.10\.1.*election 1 is listed more than once",
+            id="code-twice-by-value",
+        ),
+        pytest.param(
+            '"1": {rate: "0.10"}',
+            '"1": {rate: 0.10}',
+            r"classes\.10\.1\.elections\.1\.rate must be a string, got float",
+            id="rate-as-yaml-number",
+        ),
+        pytest.param(
+            '"1": {rate: "0.10"}',
+            '"1": {rate: "1.5"}',
+            "rate must be between 0 and 1",
+            id="rate-above-one",
+        ),
+        pytest.param(
+            '"1": {rate: "0.10"}',
+            '"1": {rate: "ten"}',
+            r"classes\.10\.1\.elections\.1\.rate is not a decimal: 'ten'",
+            id="rate-not-decimal",
+        ),
+        pytest.param(
+            '"1": {rate: "0.10"}',
+            '"1": {}',
+            r"classes\.10\.1\.elections\.1: missing keys \['rate'\]",
+            id="rate-missing",
+        ),
+        pytest.param(
+            '"1": {rate: "0.10"}',
+            '"1": {rate: "0.10", label: "rental"}',
+            r"classes\.10\.1\.elections\.1: unknown keys \['label'\]",
+            id="unknown-election-key",
+        ),
+        pytest.param(
+            ELECTIONS,
+            '    elections:\n      - {rate: "0.10"}\n',
+            r"classes\.10\.1\.elections must be a mapping",
+            id="elections-as-a-list",
+        ),
+    ],
+)
+def test_rejects_malformed_class_elections(
+    tmp_path: Path, old: str, new: str, message: str
+) -> None:
+    content = CLASS_RATES_WITH_ELECTIONS.replace(old, new, 1)
     write(tmp_path, "ex/parameters/class_rates/2025.yaml", content)
 
     with pytest.raises(InvalidParameterDataError, match=message) as excinfo:

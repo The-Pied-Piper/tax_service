@@ -49,6 +49,7 @@ from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.claim_reduction import CLAIM_REDUCTION
 from app.domain.parameters.class_rates import (
     CLASS_RATES,
+    ClassElection,
     ClassRate,
     ClassRates,
     HalfYearRule,
@@ -217,6 +218,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
                         "half_year_rule": "applies",
                         "recapture_and_terminal_loss": "excluded",
                         "half_year_rule_on_sale": "applies",
+                        "elections": {"1": {"rate": "0.10"}},
                         "aiip_factor": {"numerator": "0", "denominator": "1"},
                         "riip_factor": {"numerator": "1", "denominator": "2"},
                     }
@@ -307,6 +309,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
                 Fraction(0, 1),
                 Fraction(1, 2),
                 half_year_rule_on_sale=HalfYearRuleOnSale.APPLIES,
+                elections=(ClassElection(1, Rate(Decimal("0.10"))),),
             ),
         ),
         full_year_days=365,

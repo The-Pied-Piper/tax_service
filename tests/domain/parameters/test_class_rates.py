@@ -10,6 +10,13 @@ as given, never reduced. Like `RateTable`, the value objects only hold and check
 at least one class, no class number twice (by value, so "10.1" and "10.10" are the same class),
 the classes kept in the order given. `for_class` finds a class by its number, or `None` for a
 class the table does not list. Values are made up.
+
+A class may also list `elections`, a tuple of `ClassElection`: each a whole `code` above 0 and the
+`rate` (a `Rate`) a row takes when the caller elects it (Guide T4036 2025, "Class 1 (4%)": 10% for
+a new purpose-built residential rental, and, by election into a separate class, 6% or 10% for a
+non-residential building). `election_rate(code)` gives the rate of a listed code, or `None` for a
+code the class does not list (and for 0, which is no election). The codes of a class are unique;
+the elections default to none, and are kept in the order given.
 """
 
 from __future__ import annotations
@@ -24,6 +31,7 @@ import pytest
 from app.domain.errors import DomainError, InvalidClassRatesError
 from app.domain.parameters.class_rates import (
     CLASS_RATES,
+    ClassElection,
     ClassRate,
     ClassRates,
     HalfYearRule,
@@ -63,6 +71,19 @@ def entry(
         aiip_factor=aiip_factor,
         riip_factor=riip_factor,
         half_year_rule_on_sale=half_year_rule_on_sale,
+    )
+
+
+def with_elections(*elections: ClassElection) -> ClassRate:
+    return ClassRate(
+        D("1"),
+        Rate(D("0.04")),
+        APPLIES,
+        INCLUDED,
+        ZERO,
+        ONE_HALF,
+        NOT_ON_SALE,
+        elections,
     )
 
 
@@ -126,6 +147,7 @@ def test_a_class_holds_its_fields_in_order() -> None:
         "aiip_factor",
         "riip_factor",
         "half_year_rule_on_sale",
+        "elections",
     ]
 
 
@@ -271,6 +293,101 @@ def test_rejects_a_factor_that_is_not_a_fraction(
 
     with pytest.raises(TypeError, match=f"{factor} must be a Fraction, got {type_name}"):
         ClassRate(D("8"), Rate(D("0.2")), APPLIES, INCLUDED, **parts)  # type: ignore[arg-type]
+
+
+# --- elections ---------------------------------------------------------------------------------
+
+
+def test_an_election_holds_its_code_and_rate_in_order() -> None:
+    held = ClassElection(2, Rate(D("0.06")))
+
+    assert [field.name for field in fields(ClassElection)] == ["code", "rate"]
+    assert (held.code, held.rate) == (2, Rate(D("0.06")))
+    assert held == ClassElection(2, Rate(D("0.06")))
+    assert held != ClassElection(3, Rate(D("0.06")))
+    assert held != ClassElection(2, Rate(D("0.10")))
+    assert hash(held) == hash(ClassElection(2, Rate(D("0.06"))))
+    with pytest.raises(FrozenInstanceError):
+        cast(Any, held).code = 3
+
+
+@pytest.mark.parametrize("code", [0, -1])
+def test_rejects_an_election_code_that_is_not_above_zero(code: int) -> None:
+    with pytest.raises(InvalidClassRatesError, match="code must be above 0"):
+        ClassElection(code, Rate(D("0.10")))
+
+
+@pytest.mark.parametrize("code", [1.0, "1", D("1"), True, None])
+def test_rejects_an_election_code_that_is_not_a_whole_number(code: object) -> None:
+    with pytest.raises(TypeError, match="code must be an int"):
+        ClassElection(code, Rate(D("0.10")))  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("rate", [D("0.10"), 0.1, "0.10", None])
+def test_rejects_an_election_rate_that_is_not_a_rate(rate: object) -> None:
+    with pytest.raises(TypeError, match="rate must be a Rate"):
+        ClassElection(1, rate)  # type: ignore[arg-type]
+
+
+def test_a_class_has_no_elections_by_default() -> None:
+    assert first().elections == ()
+    assert first().election_rate(1) is None
+
+
+def test_a_class_holds_its_elections_in_the_order_given() -> None:
+    purpose_built = ClassElection(1, Rate(D("0.10")))
+    other = ClassElection(2, Rate(D("0.06")))
+
+    assert with_elections(other, purpose_built).elections == (other, purpose_built)
+    assert with_elections(purpose_built, other).elections == (purpose_built, other)
+    assert with_elections(purpose_built) != with_elections()
+    assert with_elections(purpose_built, other) != with_elections(other, purpose_built)
+
+
+def test_a_class_gives_the_rate_of_a_listed_election() -> None:
+    held = with_elections(
+        ClassElection(1, Rate(D("0.10"))),
+        ClassElection(2, Rate(D("0.06"))),
+        ClassElection(3, Rate(D("0.10"))),
+    )
+
+    assert held.election_rate(1) == Rate(D("0.10"))
+    assert held.election_rate(2) == Rate(D("0.06"))
+    assert held.election_rate(3) == Rate(D("0.10"))
+
+
+def test_a_class_gives_no_rate_for_a_code_it_does_not_list() -> None:
+    held = with_elections(ClassElection(1, Rate(D("0.10"))))
+
+    assert held.election_rate(2) is None
+    assert held.election_rate(0) is None
+    assert first().election_rate(1) is None
+
+
+def test_a_class_is_built_positionally_with_elections_last() -> None:
+    purpose_built = ClassElection(1, Rate(D("0.10")))
+
+    assert ClassRate(
+        D("1"), Rate(D("0.04")), APPLIES, INCLUDED, ZERO, ONE_HALF, NOT_ON_SALE, (purpose_built,)
+    ) == with_elections(purpose_built)
+
+
+def test_rejects_an_election_code_listed_twice() -> None:
+    with pytest.raises(InvalidClassRatesError, match="election 1 is listed more than once"):
+        with_elections(ClassElection(1, Rate(D("0.10"))), ClassElection(1, Rate(D("0.06"))))
+
+
+@pytest.mark.parametrize("elections", [[ClassElection(1, Rate(D("0.10")))], "elections", None])
+def test_rejects_elections_that_are_not_a_tuple(elections: object) -> None:
+    with pytest.raises(TypeError, match="elections must be a tuple"):
+        ClassRate(
+            D("1"), Rate(D("0.04")), APPLIES, INCLUDED, ZERO, ONE_HALF, NOT_ON_SALE, elections
+        )  # type: ignore[arg-type]
+
+
+def test_rejects_an_election_that_is_not_an_election() -> None:
+    with pytest.raises(TypeError, match="elections must hold ClassElection"):
+        with_elections((1, Rate(D("0.10"))))  # type: ignore[arg-type]
 
 
 # --- the table ---------------------------------------------------------------------------------
