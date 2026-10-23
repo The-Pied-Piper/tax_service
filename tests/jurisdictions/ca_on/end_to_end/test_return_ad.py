@@ -38,7 +38,17 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_INCOME,
     TOTAL_PAYABLE,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, run
+from tests.jurisdictions.ca_on.end_to_end.support import D, rental_return
+
+RETURN_AD_STATEMENT: dict[str, Any] = {
+    "rental_properties": ((2, "0", "24000"),),
+    "rental_expenses": {
+        "insurance": ("1200", "0", "0"),
+        "interest_and_bank_charges": ("6000", "0", "0"),
+        "repairs_and_maintenance": ("1300", "0", "0"),
+        "property_taxes": ("3500", "0", "0"),
+    },
+}
 
 
 def return_ad(
@@ -50,25 +60,7 @@ def return_ad(
     insurance 1200, the interest 6000, the property taxes 3500 and the repairs 1300, 12000 in all,
     with no personal or short-term portion, so line 9946 and T1 line 12600 are 12000.
     """
-    inputs: dict[str, Any] = {
-        "employment_income": "0",
-        "share_dispositions": (),
-        "unused_rrsp_contributions": "0",
-        "rrsp_contributions": "0",
-        "rrsp_deduction_limit": "0",
-        "rrsp_amount_deducted": "0",
-        "union_dues": "0",
-    }
-    statement: dict[str, Any] = {
-        "rental_properties": ((2, "0", "24000"),),
-        "rental_expenses": {
-            "insurance": ("1200", "0", "0"),
-            "interest_and_bank_charges": ("6000", "0", "0"),
-            "repairs_and_maintenance": ("1300", "0", "0"),
-            "property_taxes": ("3500", "0", "0"),
-        },
-    }
-    return run(**{**inputs, "rental_statements": ({**statement, **(changes or {})},), **overrides})
+    return rental_return(RETURN_AD_STATEMENT, changes, **overrides)
 
 
 def test_return_ads_gross_rents_are_24000_on_line_12599() -> None:

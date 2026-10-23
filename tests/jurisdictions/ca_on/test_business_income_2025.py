@@ -106,15 +106,18 @@ EXPENSE_KINDS: tuple[ArtifactKind[Any], ...] = (
 )
 
 
-def statement(business: dict[str, str] | None = None, **overrides: Any) -> Worksheet:
+CcaRow = tuple[str, str, str, str, str, str, str, int]
+
+
+def statement(
+    business: dict[str, str] | None = None,
+    partner: int = 0,
+    cca_classes: tuple[CcaRow, ...] = (),
+    **overrides: Any,
+) -> Worksheet:
     """A T2125 of gross sales of 50000 and office expenses of 20000, so line 9369 is 30000,
     with `business` changing or adding its amounts and `overrides` the other inputs."""
     amounts = {"gross_sales": "50000", "office_expenses": "20000", **(business or {})}
-    parts: dict[str, Any] = {
-        k: overrides.pop(k)
-        for k in ("business_partner", "business_cca_classes_rows")
-        if k in overrides
-    }
     result = run(
         "0",
         (),
@@ -123,7 +126,13 @@ def statement(business: dict[str, str] | None = None, **overrides: Any) -> Works
         "0",
         "0",
         "0",
-        business_statements=({"business": amounts, **parts},),
+        business_statements=(
+            {
+                "business": amounts,
+                "business_partner": partner,
+                "business_cca_classes_rows": cca_classes,
+            },
+        ),
         **overrides,
     )
     return result["ca/t2125"][0]
@@ -148,7 +157,7 @@ def test_a_recapture_row_adds_the_negative_column_7_to_line_8230() -> None:
     # 53700, and line 9369 is 53700 - 20000 = 33700. No claim is allowed on a negative column 7.
     worksheet = statement(
         {"other_income": "500", "reserves_deducted_last_year": "200"},
-        business_cca_classes_rows=(("8", "1000", "0", "4000", "0", "0", "0", 0),),
+        cca_classes=(("8", "1000", "0", "4000", "0", "0", "0", 0),),
     )
 
     assert line(worksheet, BUSINESS_RECAPTURED_CCA) == D("3000")
@@ -175,7 +184,7 @@ def test_a_terminal_loss_row_takes_the_positive_column_7_off_on_line_9270() -> N
     # line 9270 is 2300, line 9368 is 20000 + 2300 = 22300 and line 9369 is 50000 - 22300 = 27700.
     worksheet = statement(
         {"other_expenses": "300"},
-        business_cca_classes_rows=(("1", "2000", "0", "0", "0", "0", "0", 1),),
+        cca_classes=(("1", "2000", "0", "0", "0", "0", "0", 1),),
     )
 
     assert line(worksheet, BUSINESS_TERMINAL_LOSS) == D("2000")
@@ -190,7 +199,7 @@ def test_a_terminal_loss_row_takes_the_positive_column_7_off_on_line_9270() -> N
 
 
 def test_a_class_with_property_left_has_no_terminal_loss() -> None:
-    worksheet = statement(business_cca_classes_rows=(("1", "2000", "0", "0", "0", "0", "0", 0),))
+    worksheet = statement(cca_classes=(("1", "2000", "0", "0", "0", "0", "0", 0),))
 
     assert line(worksheet, BUSINESS_TERMINAL_LOSS) == D("0")
     assert line(worksheet, BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS) == D("0")
@@ -199,10 +208,8 @@ def test_a_class_with_property_left_has_no_terminal_loss() -> None:
 def test_class_10_1_has_no_recapture_or_terminal_loss() -> None:
     # Endnote 3: "Recapture and terminal loss do not apply to a Class 10.1 property unless it is a
     # DIEP", and DIEPs (columns 4, 6, 8 and 9) are not modelled.
-    recapture = statement(
-        business_cca_classes_rows=(("10.1", "1000", "0", "4000", "0", "0", "0", 0),)
-    )
-    terminal = statement(business_cca_classes_rows=(("10.1", "2000", "0", "0", "0", "0", "0", 1),))
+    recapture = statement(cca_classes=(("10.1", "1000", "0", "4000", "0", "0", "0", 0),))
+    terminal = statement(cca_classes=(("10.1", "2000", "0", "0", "0", "0", "0", 1),))
 
     assert line(recapture, BUSINESS_RECAPTURED_CCA) == D("0")
     assert line(terminal, BUSINESS_TERMINAL_LOSS) == D("0")
@@ -214,7 +221,7 @@ def test_one_class_list_gives_a_claim_a_recapture_and_a_terminal_loss_together()
     # 3000). Line 9936 is 2000; line 8230 is 1000 and line 8299 is 51000; line 9270 is 3000; line
     # 9368 is 20000 + 2000 + 3000 = 25000 and line 9369 is 51000 - 25000 = 26000.
     worksheet = statement(
-        business_cca_classes_rows=(
+        cca_classes=(
             ROW_8,
             ("10", "500", "0", "1500", "0", "0", "0", 0),
             ("1", "3000", "0", "0", "0", "0", "0", 1),
@@ -241,9 +248,7 @@ def test_the_personal_part_and_the_business_use_of_home_cca_come_off_line_9936()
     # expenses": 2000 - 300 - 200 = 1500, so line 9368 is 20000 + 1500 = 21500 and line 9369
     # is 28500. The 200 of CCA for business-use-of-home expenses (amount 7K) is added to amount
     # 7M: 0 + 200 + 0.
-    worksheet = statement(
-        {"cca_personal_part": "300", "home_cca": "200"}, business_cca_classes_rows=(ROW_8,)
-    )
+    worksheet = statement({"cca_personal_part": "300", "home_cca": "200"}, cca_classes=(ROW_8,))
 
     assert line(worksheet, BUSINESS_CCA_CLAIM_LESS_PERSONAL_PART) == D("1700")
     assert line(worksheet, BUSINESS_CCA_CLAIM) == D("1500")
@@ -264,7 +269,7 @@ def test_every_expense_line_from_4b_to_4t_adds_to_line_9368() -> None:
 
     worksheet = statement(
         {**amounts, "other_expenses": "50"},
-        business_cca_classes_rows=(ROW_8,),
+        cca_classes=(ROW_8,),
     )
 
     assert line(worksheet, BUSINESS_TOTAL_EXPENSES) == D("19150")
@@ -325,7 +330,7 @@ def test_a_partner_takes_the_t5013_amount_for_amount_5a() -> None:
             "partner_other_amount_a": "200",
             "partner_other_amount_b": "100",
         },
-        business_partner=1,
+        partner=1,
     )
 
     assert line(worksheet, BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS) == D("30000")
@@ -343,7 +348,7 @@ def test_a_partner_takes_the_t5013_amount_for_amount_5a() -> None:
 
 
 def test_a_sole_proprietor_ignores_the_t5013_amount() -> None:
-    worksheet = statement({"partner_share": "12000"}, business_partner=0)
+    worksheet = statement({"partner_share": "12000"}, partner=0)
 
     assert line(worksheet, BUSINESS_SHARE_OF_NET_INCOME) == D("30000")
     assert worksheet.get(BUSINESS_INCOME).value == D("30000")
@@ -352,7 +357,7 @@ def test_a_sole_proprietor_ignores_the_t5013_amount() -> None:
 def test_a_partners_t5013_amount_may_be_a_loss() -> None:
     # Amount 5A is "Your share of line 9369 or the amount from your T5013 slip": a loss on the
     # slip is entered as a negative figure, and line 9946, "Your net income (loss)", is negative.
-    worksheet = statement({"partner_share": "-4000"}, business_partner=1)
+    worksheet = statement({"partner_share": "-4000"}, partner=1)
 
     assert line(worksheet, BUSINESS_SHARE_OF_NET_INCOME) == D("-4000")
     assert line(worksheet, BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS) == D("-4000")

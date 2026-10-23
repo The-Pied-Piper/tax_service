@@ -2840,6 +2840,25 @@ compute = _worksheet_of(starting)
 run = _run_of(starting)
 
 
+def rental_return(
+    statement: Mapping[str, Any],
+    changes: Mapping[str, Any] | None = None,
+    **overrides: Any,
+) -> dict[str, tuple[Worksheet, ...]]:
+    """The run of a return with no income but one T776 `statement`, `changes` over its fields."""
+    inputs: dict[str, Any] = {
+        "employment_income": "0",
+        "share_dispositions": (),
+        "unused_rrsp_contributions": "0",
+        "rrsp_contributions": "0",
+        "rrsp_deduction_limit": "0",
+        "rrsp_amount_deducted": "0",
+        "union_dues": "0",
+        "rental_statements": ({**statement, **(changes or {})},),
+    }
+    return run(**{**inputs, **overrides})
+
+
 def return_a() -> Worksheet:
     """The worksheet of the form `ca-on/return` of `run_a()`."""
     return run_a()["ca-on/return"][0]

@@ -41,7 +41,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_PAYABLE,
 )
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
-from tests.jurisdictions.ca_on.end_to_end.support import D, run
+from tests.jurisdictions.ca_on.end_to_end.support import D, rental_return
 
 # Chart B rows as (column 1, column 4, column 5, column 6): class 1 with 900 and 30 days of 90,
 # class 1 with 100 and 1 day of 3, class 8 with 500 and 45 days of 90.
@@ -59,6 +59,19 @@ CLASS_1_ROW = ("1", "10000", "0", "0", "0", "0", "66.67", 0)
 CLASS_8_ROW = ("8", "2000", "0", "0", "0", "0", "150.00", 0)
 
 
+RETURN_AV_STATEMENT: dict[str, Any] = {
+    "rental_properties": ((2, "0", "24000"),),
+    "rental_expenses": {
+        "insurance": ("1200", "0", "0"),
+        "interest_and_bank_charges": ("6000", "0", "0"),
+        "repairs_and_maintenance": ("1300", "0", "0"),
+        "property_taxes": ("3500", "0", "0"),
+    },
+    "short_term_rental_cca_units_rows": ROWS,
+    "rental_cca_classes_rows": (CLASS_1_ROW, CLASS_8_ROW),
+}
+
+
 def return_av(
     changes: Mapping[str, Any] | None = None, **overrides: Any
 ) -> dict[str, tuple[Worksheet, ...]]:
@@ -70,27 +83,7 @@ def return_av(
     The claims are 66.67 and 150.00, so line 9936 is 216.67 and line 9946 and T1 line 12600 are
     12000 - 216.67 = 11783.33.
     """
-    inputs: dict[str, Any] = {
-        "employment_income": "0",
-        "share_dispositions": (),
-        "unused_rrsp_contributions": "0",
-        "rrsp_contributions": "0",
-        "rrsp_deduction_limit": "0",
-        "rrsp_amount_deducted": "0",
-        "union_dues": "0",
-    }
-    statement: dict[str, Any] = {
-        "rental_properties": ((2, "0", "24000"),),
-        "rental_expenses": {
-            "insurance": ("1200", "0", "0"),
-            "interest_and_bank_charges": ("6000", "0", "0"),
-            "repairs_and_maintenance": ("1300", "0", "0"),
-            "property_taxes": ("3500", "0", "0"),
-        },
-        "short_term_rental_cca_units_rows": ROWS,
-        "rental_cca_classes_rows": (CLASS_1_ROW, CLASS_8_ROW),
-    }
-    return run(**{**inputs, "rental_statements": ({**statement, **(changes or {})},), **overrides})
+    return rental_return(RETURN_AV_STATEMENT, changes, **overrides)
 
 
 def test_return_avs_line_9367_is_583_33_from_three_chart_b_rows() -> None:

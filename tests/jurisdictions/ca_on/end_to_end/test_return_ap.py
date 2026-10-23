@@ -33,10 +33,22 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_PAYABLE,
 )
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
-from tests.jurisdictions.ca_on.end_to_end.support import D, run
+from tests.jurisdictions.ca_on.end_to_end.support import D, rental_return
 
 BUILDING = ("1", "200000", "0", "0", "0", "0", "8000", 0)
 FURNITURE = ("8", "5000", "2000", "0", "0", "0", "1200", 0)
+
+
+RETURN_AP_STATEMENT: dict[str, Any] = {
+    "rental_properties": ((2, "0", "24000"),),
+    "rental_expenses": {
+        "insurance": ("1200", "0", "0"),
+        "interest_and_bank_charges": ("6000", "0", "0"),
+        "repairs_and_maintenance": ("1300", "0", "0"),
+        "property_taxes": ("3500", "0", "0"),
+    },
+    "rental_cca_classes_rows": (BUILDING, FURNITURE),
+}
 
 
 def return_ap(
@@ -51,26 +63,7 @@ def return_ap(
     (opening UCC 5000, additions 2000, claim 1200), so line 9936 is 9200 and line 9946 and T1
     line 12600 are 12000 - 9200 = 2800.
     """
-    inputs: dict[str, Any] = {
-        "employment_income": "0",
-        "share_dispositions": (),
-        "unused_rrsp_contributions": "0",
-        "rrsp_contributions": "0",
-        "rrsp_deduction_limit": "0",
-        "rrsp_amount_deducted": "0",
-        "union_dues": "0",
-    }
-    statement: dict[str, Any] = {
-        "rental_properties": ((2, "0", "24000"),),
-        "rental_expenses": {
-            "insurance": ("1200", "0", "0"),
-            "interest_and_bank_charges": ("6000", "0", "0"),
-            "repairs_and_maintenance": ("1300", "0", "0"),
-            "property_taxes": ("3500", "0", "0"),
-        },
-        "rental_cca_classes_rows": (BUILDING, FURNITURE),
-    }
-    return run(**{**inputs, "rental_statements": ({**statement, **(changes or {})},), **overrides})
+    return rental_return(RETURN_AP_STATEMENT, changes, **overrides)
 
 
 def test_return_aps_area_a_claims_9200_on_line_9936() -> None:
