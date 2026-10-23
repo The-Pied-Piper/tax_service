@@ -7,6 +7,11 @@ import pytest
 from app.domain.errors import ValidationError
 from app.jurisdictions.ca.catalog import (
     CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    CPP_OVERPAYMENT,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     NET_INCOME,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
@@ -25,6 +30,24 @@ LINES = (
     RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+)
+
+# The T1 line each result of the form is entered on (`05j_cpp_lines.yaml` for lines 30800, 22215
+# and 44800; the sums of lines 42100, 31000 and 22200 add the result to Part 4 and Part 5 of
+# Schedule 8).
+T1_LINES = (
+    (CPP_BASE_CONTRIBUTIONS_ON_RETURN, RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN),
+    (CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN),
+    (CPP_OVERPAYMENT, RC381_CPP_OVERPAYMENT_ON_RETURN),
+    (CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT),
+    (
+        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    ),
+    (
+        CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    ),
 )
 
 
@@ -50,6 +73,17 @@ def test_a_return_with_no_rc381_gives_all_six_totals_0_and_no_form_worksheet() -
     assert worksheet.get(TOTAL_INCOME).value == D("60000")
 
 
+def test_a_return_with_neither_form_has_no_cpp_on_the_t1_lines() -> None:
+    result = run("60000", (), "0", "0", "0", "0", "0", schedule_8_copies=0, rc381_copies=0)
+
+    assert result["ca/schedule_8"] == ()
+    assert result["ca/rc381"] == ()
+    (worksheet,) = result["ca-on/return"]
+    for line, _ in T1_LINES:
+        assert worksheet.get(line).value == D("0"), line.identifier
+    assert worksheet.get(NET_INCOME).value == D("60000.00")
+
+
 def test_a_return_with_one_rc381_totals_the_results_of_that_copy() -> None:
     result = run(
         "60000",
@@ -71,18 +105,83 @@ def test_a_return_with_one_rc381_totals_the_results_of_that_copy() -> None:
         assert worksheet.get(kind).value == rc381.get(kind).value, kind.identifier
 
 
-def test_the_t1_lines_are_still_schedule_8s_while_the_return_carries_form_rc381() -> None:
-    # Until the T1 lines total both forms, a return that carries Form RC381 and no Schedule 8 has
-    # no CPP contributions on the return, while a return that carries Schedule 8 has them.
-    with_rc381 = run("60000", (), "0", "0", "0", "0", "0", schedule_8_copies=0, rc381_copies=1)
-    with_schedule_8 = run("60000", (), "0", "0", "0", "0", "0")
+def test_the_t1_lines_of_a_return_with_one_rc381_are_the_results_of_that_copy() -> None:
+    # Employment income of 60000 and a T4 box 16 total of 3361.75: no pensionable earnings are
+    # entered, so Part 3a gives only the overpayment (line 74), which is line 44800.
+    result = run(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        cpp_t4_base_and_first_additional_contributions="3361.75",
+        schedule_8_copies=0,
+        rc381_copies=1,
+    )
 
-    (rc381_return,) = with_rc381["ca-on/return"]
-    (schedule_8_return,) = with_schedule_8["ca-on/return"]
-    assert rc381_return.get(CPP_BASE_CONTRIBUTIONS_ON_RETURN).value == D("0")
-    assert rc381_return.get(NET_INCOME).value == D("60000.00")
-    assert schedule_8_return.get(CPP_BASE_CONTRIBUTIONS_ON_RETURN).value == D("2796.75")
-    assert with_schedule_8["ca/rc381"] == ()
+    (rc381,) = result["ca/rc381"]
+    (worksheet,) = result["ca-on/return"]
+    assert worksheet.get(CPP_OVERPAYMENT).value == D("3361.75")
+    for line, result_kind in T1_LINES:
+        assert worksheet.get(line).value == rc381.get(result_kind).value, line.identifier
+
+
+def test_an_rc381_return_with_all_earnings_outside_quebec_has_schedule_8s_t1_lines() -> None:
+    # With all of the pensionable earnings outside Quebec and employment income only, Form RC381
+    # gives what Schedule 8 gives on the same income: line 30800 2796.75 and line 22215 565.00.
+    rc381 = run(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        t4_cpp_pensionable_earnings_outside_quebec="60000",
+        schedule_8_copies=0,
+        rc381_copies=1,
+    )
+    schedule_8 = run("60000", (), "0", "0", "0", "0", "0")
+
+    (rc381_return,) = rc381["ca-on/return"]
+    (schedule_8_return,) = schedule_8["ca-on/return"]
+    assert rc381_return.get(CPP_BASE_CONTRIBUTIONS_ON_RETURN).value == D("2796.75")
+    assert rc381_return.get(CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN).value == D("565.00")
+    assert rc381_return.get(NET_INCOME).value == D("59435.00")
+    assert schedule_8["ca/rc381"] == ()
+    for line, _ in T1_LINES:
+        assert rc381_return.get(line).value == schedule_8_return.get(line).value, line.identifier
+
+
+def test_the_self_employment_t1_lines_of_a_return_with_one_rc381_are_its_part_4() -> None:
+    # The same self-employment income as Return BN's case (20000) with all the pensionable earnings
+    # outside Quebec: Part 4 gives line 42100 1764.20, line 31000 559.35 and line 22200 1343.10.
+    result = run(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="3500.00",
+        t4_cpp_pensionable_earnings_outside_quebec="60000",
+        schedule_8_copies=0,
+        rc381_copies=1,
+    )
+
+    (rc381,) = result["ca/rc381"]
+    (worksheet,) = result["ca-on/return"]
+    assert worksheet.get(CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS).value == D("1764.20")
+    assert worksheet.get(CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS).value == D(
+        "559.35"
+    )
+    assert worksheet.get(CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS).value == D("1343.10")
+    for line, result_kind in T1_LINES:
+        assert worksheet.get(line).value == rc381.get(result_kind).value, line.identifier
 
 
 def test_a_second_rc381_is_refused_naming_the_form() -> None:

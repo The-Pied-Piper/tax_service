@@ -114,6 +114,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_SPLIT_INCOME,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
+    RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     RESIDENCY_AMOUNT,
@@ -433,7 +434,9 @@ STEPS = {
         produces={"output": "ca/cpp_part_5_deduction_on_self_employment"},
     ),
     # T1 line 47 (22200): the Part 4 amount plus the Part 5 amount; both are added when both
-    # parts are marked completed, as the form leaves the choice to the filer.
+    # parts are marked completed, as the form leaves the choice to the filer. Plus Form RC381 Part 4
+    # line 129 (the form's total, 0 with no copy; the return carries Schedule 8 or Form RC381,
+    # never both).
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -441,6 +444,7 @@ STEPS = {
             "parts": (
                 "ca/cpp_deduction_on_self_employment",
                 "ca/cpp_part_5_deduction_on_self_employment",
+                "ca/rc381_cpp_deduction_on_self_employment_and_other_earnings",
             ),
         },
         produces={"output": "ca/cpp_deduction_on_self_employment_and_other_earnings"},
@@ -1310,7 +1314,13 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({CPP_DEDUCTION_ON_SELF_EMPLOYMENT, CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT}),
+        frozenset(
+            {
+                CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+                CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+                RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            }
+        ),
         frozenset({CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
     ),
     (

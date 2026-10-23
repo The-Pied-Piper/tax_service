@@ -754,6 +754,12 @@ from app.jurisdictions.ca.catalog import (
     QFFP_FORECLOSURE_GAIN_OR_LOSS,
     QFFP_GAIN_OR_LOSS,
     QSBCS_GAIN_OR_LOSS,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    RC381_CPP_OVERPAYMENT_ON_RETURN,
+    RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_GAIN_OR_LOSS,
@@ -820,6 +826,9 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION,
     RRSP_INCOME,
     SCHEDULE_3_LINE_19900,
+    SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    SCHEDULE_8_CPP_OVERPAYMENT,
     SECURITY_OPTIONS_DEDUCTIONS,
     SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_BASE_CREDIT,
@@ -1198,32 +1207,64 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             total=D("0.00"),
         ),
-        # T1 line 31000, the Part 4 amount plus the Part 5 amount: both 0 for Return A.
+        # T1 line 31000, the Part 4 amount plus the Part 5 amount plus Form RC381's: all 0 for
+        # Return A.
         CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
             output=CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
             parts=(
                 (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
                 (CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+                (RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
             ),
             total=D("0"),
         ),
-        # T1 line 22200, the Part 4 amount plus the Part 5 amount: both 0 for Return A.
+        # T1 line 22200, the Part 4 amount plus the Part 5 amount plus Form RC381's: all 0 for
+        # Return A.
         CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
             output=CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
             parts=(
                 (CPP_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
                 (CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
+                (RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
             ),
             total=D("0"),
         ),
-        # T1 line 42100, the Part 4 amount plus the Part 5 amount: both 0 for Return A.
+        # T1 line 42100, the Part 4 amount plus the Part 5 amount plus Form RC381's: all 0 for
+        # Return A.
         CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
             output=CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
             parts=(
                 (CPP_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
                 (CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
+                (RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
             ),
             total=D("0"),
+        ),
+        # T1 lines 30800, 22215 and 44800, the Schedule 8 total plus the Form RC381 total: Return A
+        # carries Schedule 8, so the Form RC381 totals are 0.
+        CPP_BASE_CONTRIBUTIONS_ON_RETURN: SumLine(
+            output=CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+            parts=(
+                (SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
+                (RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("0")),
+            ),
+            total=D("3356.10"),
+        ),
+        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: SumLine(
+            output=CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            parts=(
+                (SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, D("1074.00")),
+                (RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, D("0")),
+            ),
+            total=D("1074.00"),
+        ),
+        CPP_OVERPAYMENT: SumLine(
+            output=CPP_OVERPAYMENT,
+            parts=(
+                (SCHEDULE_8_CPP_OVERPAYMENT, D("0.00")),
+                (RC381_CPP_OVERPAYMENT_ON_RETURN, D("0")),
+            ),
+            total=D("0.00"),
         ),
         # Schedule 8 Part 5 line 55 "Line 51 plus line 53": line 51 is line 11 and line 53
         # is 0 for Return A.

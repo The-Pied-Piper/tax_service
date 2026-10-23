@@ -34,11 +34,9 @@ from app.jurisdictions.ca.catalog import (
     CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
     CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
-    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASIC_EXEMPTION,
     CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_ENHANCED_CONTRIBUTIONS,
-    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE,
@@ -52,7 +50,6 @@ from app.jurisdictions.ca.catalog import (
     CPP_LINE_24_POSITIVE,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
-    CPP_OVERPAYMENT,
     CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_PART_3_OVERPAYMENT,
@@ -102,6 +99,9 @@ from app.jurisdictions.ca.catalog import (
     NET_SELF_EMPLOYMENT_INCOME,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     PROFESSIONAL_INCOME,
+    SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    SCHEDULE_8_CPP_OVERPAYMENT,
 )
 
 BUSINESS_INCOME_PER_STATEMENT = RecordListKind(
@@ -113,9 +113,9 @@ FISHING_INCOME_PER_STATEMENT = RecordListKind("ca/t2121.fishing_income", fields=
 INPUTS = frozenset({"ca/schedule_8_instances"})
 
 FORM_EXPORTS = (
-    "ca/cpp_base_contributions_on_return",
-    "ca/cpp_enhanced_contributions_on_return",
-    "ca/cpp_overpayment",
+    "ca/schedule_8_cpp_base_contributions_on_return",
+    "ca/schedule_8_cpp_enhanced_contributions_on_return",
+    "ca/schedule_8_cpp_overpayment",
     "ca/cpp_part_5_line_49",
     "ca/cpp_part_5_line_70",
     "ca/cpp_part_5_line_88",
@@ -126,15 +126,16 @@ FORM_EXPORTS = (
 # The form's exports nothing on the return reads (line 13 of Part 3) are no declared outputs.
 OUTPUTS = frozenset[str]()
 
-CPP_BASE_CONTRIBUTIONS_ON_RETURN_PER_INSTANCE = RecordListKind(
-    "ca/schedule_8.cpp_base_contributions_on_return", fields=(CPP_BASE_CONTRIBUTIONS_ON_RETURN,)
+SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN_PER_INSTANCE = RecordListKind(
+    "ca/schedule_8.schedule_8_cpp_base_contributions_on_return",
+    fields=(SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,),
 )
-CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN_PER_INSTANCE = RecordListKind(
-    "ca/schedule_8.cpp_enhanced_contributions_on_return",
-    fields=(CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,),
+SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN_PER_INSTANCE = RecordListKind(
+    "ca/schedule_8.schedule_8_cpp_enhanced_contributions_on_return",
+    fields=(SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,),
 )
-CPP_OVERPAYMENT_PER_INSTANCE = RecordListKind(
-    "ca/schedule_8.cpp_overpayment", fields=(CPP_OVERPAYMENT,)
+SCHEDULE_8_CPP_OVERPAYMENT_PER_INSTANCE = RecordListKind(
+    "ca/schedule_8.schedule_8_cpp_overpayment", fields=(SCHEDULE_8_CPP_OVERPAYMENT,)
 )
 CPP_PART_5_LINE_49_PER_INSTANCE = RecordListKind(
     "ca/schedule_8.cpp_part_5_line_49", fields=(CPP_PART_5_LINE_49,)
@@ -154,24 +155,24 @@ STEPS = {
     CapabilitySelection(
         name="core/record_total",
         params={},
-        consumes={"records": "ca/schedule_8.cpp_base_contributions_on_return"},
-        produces={"output": "ca/cpp_base_contributions_on_return"},
+        consumes={"records": "ca/schedule_8.schedule_8_cpp_base_contributions_on_return"},
+        produces={"output": "ca/schedule_8_cpp_base_contributions_on_return"},
     ),
     # T1 line 22215, Schedule 8 Part 5 line 69 or the Part 3a or Part 3b amount, for each
     # Schedule 8 the return carries, added.
     CapabilitySelection(
         name="core/record_total",
         params={},
-        consumes={"records": "ca/schedule_8.cpp_enhanced_contributions_on_return"},
-        produces={"output": "ca/cpp_enhanced_contributions_on_return"},
+        consumes={"records": "ca/schedule_8.schedule_8_cpp_enhanced_contributions_on_return"},
+        produces={"output": "ca/schedule_8_cpp_enhanced_contributions_on_return"},
     ),
     # T1 line 44800, Schedule 8 Part 5 line 50 or the Part 3a line 29 amount, for each Schedule
     # 8 the return carries, added.
     CapabilitySelection(
         name="core/record_total",
         params={},
-        consumes={"records": "ca/schedule_8.cpp_overpayment"},
-        produces={"output": "ca/cpp_overpayment"},
+        consumes={"records": "ca/schedule_8.schedule_8_cpp_overpayment"},
+        produces={"output": "ca/schedule_8_cpp_overpayment"},
     ),
     # T1 line 42100, Schedule 8 Part 5 line 49, for each Schedule 8 the return carries, added.
     CapabilitySelection(
@@ -206,15 +207,19 @@ STEPS = {
 WIRING = {
     (
         RecordTotal,
-        frozenset({CPP_BASE_CONTRIBUTIONS_ON_RETURN_PER_INSTANCE}),
-        frozenset({CPP_BASE_CONTRIBUTIONS_ON_RETURN}),
+        frozenset({SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN_PER_INSTANCE}),
+        frozenset({SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN}),
     ),
     (
         RecordTotal,
-        frozenset({CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN_PER_INSTANCE}),
-        frozenset({CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN}),
+        frozenset({SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN_PER_INSTANCE}),
+        frozenset({SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN}),
     ),
-    (RecordTotal, frozenset({CPP_OVERPAYMENT_PER_INSTANCE}), frozenset({CPP_OVERPAYMENT})),
+    (
+        RecordTotal,
+        frozenset({SCHEDULE_8_CPP_OVERPAYMENT_PER_INSTANCE}),
+        frozenset({SCHEDULE_8_CPP_OVERPAYMENT}),
+    ),
     (RecordTotal, frozenset({CPP_PART_5_LINE_49_PER_INSTANCE}), frozenset({CPP_PART_5_LINE_49})),
     (RecordTotal, frozenset({CPP_PART_5_LINE_70_PER_INSTANCE}), frozenset({CPP_PART_5_LINE_70})),
     (RecordTotal, frozenset({CPP_PART_5_LINE_88_PER_INSTANCE}), frozenset({CPP_PART_5_LINE_88})),
@@ -745,7 +750,7 @@ FORM_STEPS = {
             "when_none": "ca/cpp_part_3_base_contributions_on_return",
             "when_any": "ca/cpp_part_5_line_57",
         },
-        produces={"output": "ca/cpp_base_contributions_on_return"},
+        produces={"output": "ca/schedule_8_cpp_base_contributions_on_return"},
     ),
     # T1 line 22215: Schedule 8 Part 5 line 69 when Part 5 is completed, else the Part 3a or
     # Part 3b amount.
@@ -757,7 +762,7 @@ FORM_STEPS = {
             "when_none": "ca/cpp_part_3_enhanced_contributions_on_return",
             "when_any": "ca/cpp_part_5_line_69",
         },
-        produces={"output": "ca/cpp_enhanced_contributions_on_return"},
+        produces={"output": "ca/schedule_8_cpp_enhanced_contributions_on_return"},
     ),
     # T1 line 44800: Schedule 8 Part 5 line 50 when Part 5 is completed, else the Part 3a line
     # 29 amount or 0.
@@ -769,7 +774,7 @@ FORM_STEPS = {
             "when_none": "ca/cpp_part_3_overpayment",
             "when_any": "ca/cpp_part_5_line_50",
         },
-        produces={"output": "ca/cpp_overpayment"},
+        produces={"output": "ca/schedule_8_cpp_overpayment"},
     ),
     # Schedule 8 Part 3, each contribution on employment income: line 11 (base, 4.95% of the
     # earnings between the $3,500 exemption and the $71,300 ceiling, lines 2 to 7), line 12
@@ -1130,19 +1135,19 @@ FORM_WIRING = {
         frozenset(
             {CPP_PART_5_COMPLETED, CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_57}
         ),
-        frozenset({CPP_BASE_CONTRIBUTIONS_ON_RETURN}),
+        frozenset({SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN}),
     ),
     (
         ChooseByCount,
         frozenset(
             {CPP_PART_5_COMPLETED, CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_69}
         ),
-        frozenset({CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN}),
+        frozenset({SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN}),
     ),
     (
         ChooseByCount,
         frozenset({CPP_PART_5_COMPLETED, CPP_PART_3_OVERPAYMENT, CPP_PART_5_LINE_50}),
-        frozenset({CPP_OVERPAYMENT}),
+        frozenset({SCHEDULE_8_CPP_OVERPAYMENT}),
     ),
     (
         TieredContribution,

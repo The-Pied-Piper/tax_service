@@ -141,6 +141,7 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_TAX_CREDITS,
     OTHER_PAYMENTS_DEDUCTION,
     QBT_CAPITAL_GAINS_DEDUCTION,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
     SECURITY_OPTIONS_DEDUCTIONS,
@@ -286,7 +287,9 @@ STEPS = {
         produces={"output": "ca/cpp_part_5_base_contributions_on_self_employment"},
     ),
     # T1 line 87 and line 31000: the Part 4 amount plus the Part 5 amount; both are added when
-    # both parts are marked completed, as the form leaves the choice to the filer.
+    # both parts are marked completed, as the form leaves the choice to the filer. Plus Form RC381
+    # Part 4 line 111 (the form's total, 0 with no copy; the return carries Schedule 8 or Form
+    # RC381, never both).
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -294,6 +297,7 @@ STEPS = {
             "parts": (
                 "ca/cpp_base_contributions_on_self_employment",
                 "ca/cpp_part_5_base_contributions_on_self_employment",
+                "ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings",
             ),
         },
         produces={"output": "ca/cpp_base_contributions_on_self_employment_and_other_earnings"},
@@ -1224,6 +1228,7 @@ WIRING = {
             {
                 CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
                 CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+                RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
             }
         ),
         frozenset({CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),

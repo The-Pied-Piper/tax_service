@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1001
+        == 1004
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1001
+        == 1004
     )
 
 
@@ -746,6 +746,9 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/cpp_part_3b_line_46",
         "ca/cpp_part_3b_line_47",
         "ca/cpp_part_3b_line_48",
+        "ca/schedule_8_cpp_base_contributions_on_return",
+        "ca/schedule_8_cpp_enhanced_contributions_on_return",
+        "ca/schedule_8_cpp_overpayment",
         "ca/cpp_base_contributions_on_return",
         "ca/cpp_enhanced_contributions_on_return",
         "ca/cpp_overpayment",
@@ -2360,7 +2363,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1001
+        == 1004
     )
     assert (
         len(
@@ -2368,7 +2371,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1001
+        == 1004
     )
 
 
@@ -2381,7 +2384,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1001
+        == 1004
     )
     assert (
         len(
@@ -2389,7 +2392,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1001
+        == 1004
     )
 
 

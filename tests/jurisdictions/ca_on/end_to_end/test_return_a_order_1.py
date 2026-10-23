@@ -409,9 +409,11 @@ from app.jurisdictions.ca.catalog import (
     PRE_1986_DEDUCTIONS_TOTAL,
     PROVINCIAL_CREDITS,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     RC381_CPP_OVERPAYMENT_ON_RETURN,
+    RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     RC381_PART_2_LINE_B,
     RC381_PART_2_LINE_G,
     RC381_PART_3_LINE_3,
@@ -474,6 +476,9 @@ from app.jurisdictions.ca.catalog import (
     RRSP_CONTRIBUTIONS_AVAILABLE,
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_MAXIMUM,
+    SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    SCHEDULE_8_CPP_OVERPAYMENT,
     SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_BASE_CREDIT,
     SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
@@ -621,8 +626,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1001
-    assert len(order) == 1001
+    assert len(order) == 1004
+    assert len(order) == 1004
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     # Part 8 line 12: the check is ordered after the cap it is made against. The claim is an input,
@@ -1708,6 +1713,46 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     )
 
 
+def test_the_cpp_t1_lines_run_after_the_totals_of_both_forms() -> None:
+    # T1 lines 30800, 22215 and 44800 add the Schedule 8 total and the Form RC381 total, and
+    # everything that reads them runs after the sum.
+    order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
+    position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
+    for line, schedule_8, rc381 in (
+        (
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+            SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+            RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        ),
+        (
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        ),
+        (CPP_OVERPAYMENT, SCHEDULE_8_CPP_OVERPAYMENT, RC381_CPP_OVERPAYMENT_ON_RETURN),
+    ):
+        assert position[schedule_8] < position[line], line.identifier
+        assert position[rc381] < position[line], line.identifier
+    assert position[CPP_BASE_CONTRIBUTIONS_ON_RETURN] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    assert position[CPP_OVERPAYMENT] < position[TOTAL_CREDITS]
+    # T1 lines 42100, 31000 and 22200 add the Form RC381 result to the Part 4 and Part 5 sums.
+    for line, rc381 in (
+        (
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+        ),
+        (
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        ),
+        (
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        ),
+    ):
+        assert position[rc381] < position[line], line.identifier
+
+
 def test_each_schedule_8_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca/schedule_8").composition.order
     assert len(order) == 145
@@ -1716,19 +1761,22 @@ def test_each_schedule_8_capability_runs_after_what_it_consumes() -> None:
     assert (
         position[CPP_CONTRIBUTIONS_DIFFERENCE]
         < position[CPP_LINE_24_POSITIVE]
-        < position[CPP_BASE_CONTRIBUTIONS_ON_RETURN]
+        < position[SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN]
     )
-    assert position[CPP_PART_3B_LINE_48] < position[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
-    assert position[CPP_LINE_24_POSITIVE] < position[CPP_OVERPAYMENT]
+    assert position[CPP_PART_3B_LINE_48] < position[SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+    assert position[CPP_LINE_24_POSITIVE] < position[SCHEDULE_8_CPP_OVERPAYMENT]
     assert (
         position[CPP_LINE_24_POSITIVE]
         < position[CPP_PART_3_OVERPAYMENT]
-        < position[CPP_OVERPAYMENT]
+        < position[SCHEDULE_8_CPP_OVERPAYMENT]
     )
     assert position[CPP_FIRST_ADDITIONAL_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS]
     assert position[CPP_SECOND_ADDITIONAL_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS]
-    assert position[CPP_PART_3B_LINE_36] < position[CPP_BASE_CONTRIBUTIONS_ON_RETURN]
-    assert position[CPP_ENHANCED_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+    assert position[CPP_PART_3B_LINE_36] < position[SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN]
+    assert (
+        position[CPP_ENHANCED_CONTRIBUTIONS]
+        < position[SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+    )
     # Schedule 8 Part 5: line 4 is summed before line 22 takes the lesser of it and line 21, which
     # follows line 20 (line 10 times 16.80672); line 30 follows line 22 and line 29, and line 42
     # follows the count of line 33 more than line 17, the lines 36 and 41 and the lesser of them.
@@ -1870,16 +1918,16 @@ def test_each_schedule_8_capability_runs_after_what_it_consumes() -> None:
     assert (
         position[CPP_PART_3B_LINE_36]
         < position[CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN]
-        < position[CPP_BASE_CONTRIBUTIONS_ON_RETURN]
+        < position[SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN]
     )
-    assert position[CPP_PART_5_LINE_57] < position[CPP_BASE_CONTRIBUTIONS_ON_RETURN]
+    assert position[CPP_PART_5_LINE_57] < position[SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN]
     assert (
         position[CPP_PART_3B_LINE_48]
         < position[CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN]
-        < position[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+        < position[SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
     )
-    assert position[CPP_PART_5_LINE_69] < position[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
-    assert position[CPP_PART_5_LINE_50] < position[CPP_OVERPAYMENT]
+    assert position[CPP_PART_5_LINE_69] < position[SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+    assert position[CPP_PART_5_LINE_50] < position[SCHEDULE_8_CPP_OVERPAYMENT]
 
 
 def test_each_rc381_capability_runs_after_what_it_consumes() -> None:
