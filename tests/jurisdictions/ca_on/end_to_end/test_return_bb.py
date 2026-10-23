@@ -73,7 +73,7 @@ BUSINESS = {
     "home_maintenance": "200",
     "home_property_taxes": "400",
 }
-FURNITURE = ("8", "10000", "0", "0", "0", "0", "2000", 0)
+FURNITURE = ("8", "10000", "0", "0", "0", "0", "2000", 0, "0", "0", "0")
 # Charts A to C for one leased passenger vehicle used half for business: Chart A line 16 (line
 # 9281) is 2500, from the interest of Chart B (400) and the leasing cost of Chart C (2147).
 VEHICLE = {

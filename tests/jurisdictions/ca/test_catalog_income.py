@@ -11,7 +11,23 @@ from app.jurisdictions.ca.catalog import (
     BOND_DISPOSITIONS,
     BOND_GAIN_OR_LOSS,
     BOND_PROCEEDS,
+    BUSINESS_EPOP_AGREEMENT_FILED,
+    BUSINESS_EPOP_ASSOCIATED,
+    BUSINESS_EPOP_PERCENTAGE,
+    BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
+    BUSINESS_EPOP_PERCENTAGE_ROOM,
+    BUSINESS_EPOP_PERCENTAGE_TOTAL,
+    BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
+    BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    BUSINESS_IMMEDIATE_EXPENSING_CAP,
+    BUSINESS_IMMEDIATE_EXPENSING_CLAIM,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    BUSINESS_IMMEDIATE_EXPENSING_SHARE,
     BUSINESS_INCOME,
+    BUSINESS_INCOME_BEFORE_CCA,
+    BUSINESS_MINISTER_ALLOCATION,
+    BUSINESS_MINISTER_ALLOCATION_GIVEN,
     BUSINESS_VEHICLE_DAYS_DIVISOR,
     BUSINESS_VEHICLE_LIST_PRICE,
     BUSINESS_VEHICLE_SALES_TAX_RATE,
@@ -353,6 +369,39 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert registry.get("ca/other_income") is OTHER_INCOME
     assert registry.get("ca/taxable_scholarships") is TAXABLE_SCHOLARSHIPS
     assert registry.get("ca/business_income") is BUSINESS_INCOME
+    assert registry.get("ca/business_epop_associated") is BUSINESS_EPOP_ASSOCIATED
+    assert registry.get("ca/business_epop_agreement_filed") is BUSINESS_EPOP_AGREEMENT_FILED
+    assert registry.get("ca/business_epop_percentage") is BUSINESS_EPOP_PERCENTAGE
+    assert registry.get("ca/business_epop_percentage_total") is BUSINESS_EPOP_PERCENTAGE_TOTAL
+    assert (
+        registry.get("ca/business_minister_allocation_given") is BUSINESS_MINISTER_ALLOCATION_GIVEN
+    )
+    assert registry.get("ca/business_minister_allocation") is BUSINESS_MINISTER_ALLOCATION
+    assert registry.get("ca/business_immediate_expensing_cap") is BUSINESS_IMMEDIATE_EXPENSING_CAP
+    assert registry.get("ca/business_epop_percentage_maximum") is BUSINESS_EPOP_PERCENTAGE_MAXIMUM
+    assert (
+        registry.get("ca/business_immediate_expensing_share") is BUSINESS_IMMEDIATE_EXPENSING_SHARE
+    )
+    assert registry.get("ca/business_epop_percentage_room") is BUSINESS_EPOP_PERCENTAGE_ROOM
+    assert (
+        registry.get("ca/business_immediate_expensing_allocated")
+        is BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED
+    )
+    assert (
+        registry.get("ca/business_immediate_expensing_associated_limit")
+        is BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT
+    )
+    assert (
+        registry.get("ca/business_immediate_expensing_limit_before_minister")
+        is BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER
+    )
+    assert (
+        registry.get("ca/business_immediate_expensing_limit") is BUSINESS_IMMEDIATE_EXPENSING_LIMIT
+    )
+    assert (
+        registry.get("ca/business_immediate_expensing_claim") is BUSINESS_IMMEDIATE_EXPENSING_CLAIM
+    )
+    assert registry.get("ca/business_income_before_cca") is BUSINESS_INCOME_BEFORE_CCA
     assert registry.get("ca/professional_income") is PROFESSIONAL_INCOME
     assert registry.get("ca/commission_income") is COMMISSION_INCOME
     assert registry.get("ca/farming_income") is FARMING_INCOME

@@ -80,7 +80,7 @@ from app.jurisdictions.ca.catalog import (
 )
 from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
-ROW_8 = ("8", "10000", "0", "0", "0", "0", "2000", 0)
+ROW_8 = ("8", "10000", "0", "0", "0", "0", "2000", 0, "0", "0", "0")
 
 # The 18 expense lines of Part 4, amounts 4B to 4T except 4T (motor vehicle expenses, amount 16
 # of Chart A, see test_t2125_motor_vehicle_2025.py).
@@ -106,7 +106,7 @@ EXPENSE_KINDS: tuple[ArtifactKind[Any], ...] = (
 )
 
 
-CcaRow = tuple[str, str, str, str, str, str, str, int]
+CcaRow = tuple[str, str, str, str, str, str, str, int, str, str, str]
 
 
 def statement(
@@ -157,7 +157,7 @@ def test_a_recapture_row_adds_the_negative_column_7_to_line_8230() -> None:
     # 53700, and line 9369 is 53700 - 20000 = 33700. No claim is allowed on a negative column 7.
     worksheet = statement(
         {"other_income": "500", "reserves_deducted_last_year": "200"},
-        cca_classes=(("8", "1000", "0", "4000", "0", "0", "0", 0),),
+        cca_classes=(("8", "1000", "0", "4000", "0", "0", "0", 0, "0", "0", "0"),),
     )
 
     assert line(worksheet, BUSINESS_RECAPTURED_CCA) == D("3000")
@@ -184,7 +184,7 @@ def test_a_terminal_loss_row_takes_the_positive_column_7_off_on_line_9270() -> N
     # line 9270 is 2300, line 9368 is 20000 + 2300 = 22300 and line 9369 is 50000 - 22300 = 27700.
     worksheet = statement(
         {"other_expenses": "300"},
-        cca_classes=(("1", "2000", "0", "0", "0", "0", "0", 1),),
+        cca_classes=(("1", "2000", "0", "0", "0", "0", "0", 1, "0", "0", "0"),),
     )
 
     assert line(worksheet, BUSINESS_TERMINAL_LOSS) == D("2000")
@@ -199,7 +199,7 @@ def test_a_terminal_loss_row_takes_the_positive_column_7_off_on_line_9270() -> N
 
 
 def test_a_class_with_property_left_has_no_terminal_loss() -> None:
-    worksheet = statement(cca_classes=(("1", "2000", "0", "0", "0", "0", "0", 0),))
+    worksheet = statement(cca_classes=(("1", "2000", "0", "0", "0", "0", "0", 0, "0", "0", "0"),))
 
     assert line(worksheet, BUSINESS_TERMINAL_LOSS) == D("0")
     assert line(worksheet, BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS) == D("0")
@@ -208,8 +208,10 @@ def test_a_class_with_property_left_has_no_terminal_loss() -> None:
 def test_class_10_1_has_no_recapture_or_terminal_loss() -> None:
     # Endnote 3: "Recapture and terminal loss do not apply to a Class 10.1 property unless it is a
     # DIEP", and DIEPs (columns 4, 6, 8 and 9) are not modelled.
-    recapture = statement(cca_classes=(("10.1", "1000", "0", "4000", "0", "0", "0", 0),))
-    terminal = statement(cca_classes=(("10.1", "2000", "0", "0", "0", "0", "0", 1),))
+    recapture = statement(
+        cca_classes=(("10.1", "1000", "0", "4000", "0", "0", "0", 0, "0", "0", "0"),)
+    )
+    terminal = statement(cca_classes=(("10.1", "2000", "0", "0", "0", "0", "0", 1, "0", "0", "0"),))
 
     assert line(recapture, BUSINESS_RECAPTURED_CCA) == D("0")
     assert line(terminal, BUSINESS_TERMINAL_LOSS) == D("0")
@@ -223,8 +225,8 @@ def test_one_class_list_gives_a_claim_a_recapture_and_a_terminal_loss_together()
     worksheet = statement(
         cca_classes=(
             ROW_8,
-            ("10", "500", "0", "1500", "0", "0", "0", 0),
-            ("1", "3000", "0", "0", "0", "0", "0", 1),
+            ("10", "500", "0", "1500", "0", "0", "0", 0, "0", "0", "0"),
+            ("1", "3000", "0", "0", "0", "0", "0", 1, "0", "0", "0"),
         ),
     )
 

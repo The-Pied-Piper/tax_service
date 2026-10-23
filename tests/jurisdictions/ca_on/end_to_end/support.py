@@ -81,6 +81,10 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_CLOSING_INVENTORY,
     BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,
     BUSINESS_DIRECT_WAGE_COSTS,
+    BUSINESS_EPOP_AGREEMENT_FILED,
+    BUSINESS_EPOP_ASSOCIATED,
+    BUSINESS_EPOP_PERCENTAGE,
+    BUSINESS_EPOP_PERCENTAGE_TOTAL,
     BUSINESS_FUEL_COSTS,
     BUSINESS_GROSS_SALES,
     BUSINESS_HOME_CARRIED_FORWARD,
@@ -99,6 +103,8 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,
     BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,
     BUSINESS_MEALS_AND_ENTERTAINMENT,
+    BUSINESS_MINISTER_ALLOCATION,
+    BUSINESS_MINISTER_ALLOCATION_GIVEN,
     BUSINESS_OFFICE_EXPENSES,
     BUSINESS_OFFICE_STATIONERY_AND_SUPPLIES,
     BUSINESS_OPENING_INVENTORY,
@@ -1239,12 +1245,14 @@ def business_vehicles(*vehicles: Mapping[str, str]) -> Artifact[RecordList]:
 
 
 def business_cca_classes(
-    *rows: tuple[str, str, str, str, str, str, str, int],
+    *rows: tuple[str, str, str, str, str, str, str, int, str, str, str],
 ) -> Artifact[RecordList]:
     """The Form T2125 Area A rows, one record per class, with the columns of
     `rental_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
-    column 12, the CCA claimed (column 21) as decimal text, and 1 if no property is left in the
-    class, else 0 (endnote 3)."""
+    column 12, the CCA claimed (column 21) as decimal text, 1 if no property is left in the
+    class, else 0 (endnote 3), column 4 (the DIEP additions), column 6 (the proceeds of
+    dispositions of DIEP) and column 9 (the immediate expensing amount), each "0" when the class
+    has no DIEP."""
     kind = BUSINESS_CCA_CLASSES
     assert isinstance(kind, RecordListKind)
     records: list[dict[ArtifactKind[Any], object]] = [
@@ -1257,6 +1265,9 @@ def business_cca_classes(
             CCA_RIIP_ADDITIONS: D(riip_additions),
             CCA_CLAIMED: D(claimed),
             CCA_NO_PROPERTY_LEFT: no_property_left,
+            CCA_DIEP_ADDITIONS: D(diep_additions),
+            CCA_DIEP_PROCEEDS: D(diep_proceeds),
+            CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
         }
         for (
             class_number,
@@ -1267,6 +1278,9 @@ def business_cca_classes(
             riip_additions,
             claimed,
             no_property_left,
+            diep_additions,
+            diep_proceeds,
+            immediate_expensing,
         ) in rows
     ]
     return Artifact(kind, RecordList(kind.fields, records))
@@ -1276,8 +1290,16 @@ def t2125_statement(
     *,
     business: Mapping[str, str] | None = None,
     business_partner: int = 0,
-    business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    business_cca_classes_rows: tuple[
+        tuple[str, str, str, str, str, str, str, int, str, str, str], ...
+    ] = (),
     business_vehicles_rows: tuple[Mapping[str, str], ...] = (),
+    business_epop_associated: int = 0,
+    business_epop_agreement_filed: int = 0,
+    business_epop_percentage: str = "0",
+    business_epop_percentage_total: str = "0",
+    business_minister_allocation_given: int = 0,
+    business_minister_allocation: str = "0",
 ) -> dict[ArtifactKind[Any], object]:
     """One Form T2125 statement, a record of `ca/t2125_statements`: its inputs, as given or 0, and
     its vehicles (one record per mapping of `business_vehicles`, none by default)."""
@@ -1285,6 +1307,12 @@ def t2125_statement(
         *business_amount_artifacts(business or {}),
         Artifact(BUSINESS_PARTNER, business_partner),
         business_cca_classes(*business_cca_classes_rows),
+        Artifact(BUSINESS_EPOP_ASSOCIATED, business_epop_associated),
+        Artifact(BUSINESS_EPOP_AGREEMENT_FILED, business_epop_agreement_filed),
+        Artifact(BUSINESS_EPOP_PERCENTAGE, D(business_epop_percentage)),
+        Artifact(BUSINESS_EPOP_PERCENTAGE_TOTAL, D(business_epop_percentage_total)),
+        Artifact(BUSINESS_MINISTER_ALLOCATION_GIVEN, business_minister_allocation_given),
+        Artifact(BUSINESS_MINISTER_ALLOCATION, D(business_minister_allocation)),
         business_vehicles(*business_vehicles_rows),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
