@@ -1579,35 +1579,22 @@ BUSINESS_VEHICLE_SALES_TAX_RATE = CATALOG.declare(
 """GST or HST rate, Form T2125 Chart C "Use a GST rate of 5% or HST rate applicable to your
 province.": the rate in percent, so 13 is 13%, a starting amount."""
 
-BUSINESS_VEHICLE_INTEREST_LIMIT = CATALOG.declare(
-    "business_vehicle_interest_limit", Decimal, non_negative=True
+BUSINESS_VEHICLE_PURCHASE_YEAR = CATALOG.declare(
+    "business_vehicle_purchase_year", int, non_negative=True
 )
-"""Interest limit for a passenger vehicle, Form T2125 Chart B line 18 "($350*** ÷ 30) × the number
-of days": the printed $350, a dataset of the same name."""
+"""Year the vehicle was bought, Form T2125 Chart B line 18 footnote "*** For passenger vehicles
+bought after 2023. For passenger vehicles bought after 2000 and before 2024, the amount is $300.":
+the year, 0 when it does not apply, a starting count."""
+
+BUSINESS_VEHICLE_LEASE_YEAR = CATALOG.declare("business_vehicle_lease_year", int, non_negative=True)
+"""Year the lease was entered into, Form T2125 Chart C endnotes 11 to 13 (leases entered into in
+2024, 2023, 2022 and before 2022): the year, 0 when it does not apply, a starting count."""
 
 BUSINESS_VEHICLE_DAYS_DIVISOR = CATALOG.declare(
     "business_vehicle_days_divisor", Decimal, non_negative=True
 )
 """Days divisor, Form T2125 Chart B line 18 "($350*** ÷ 30)" and Chart C line 25 "÷ 30": the
 printed 30, a dataset of the same name."""
-
-BUSINESS_VEHICLE_LIST_PRICE_LIMIT = CATALOG.declare(
-    "business_vehicle_list_price_limit", Decimal, non_negative=True
-)
-"""Price limit for a passenger vehicle, Form T2125 Chart C line 23 "($44,706 + GST and PST, or
-$44,706 + HST)": the printed $44,706, a dataset of the same name."""
-
-BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT = CATALOG.declare(
-    "business_vehicle_lease_charge_limit", Decimal, non_negative=True
-)
-"""Lease charge limit, Form T2125 Chart C line 25 "[($1,100 + GST and PST, or $1,100 + HST) ×
-amount 22] ÷ 30": the printed $1,100, a dataset of the same name."""
-
-BUSINESS_VEHICLE_LEASE_COST_LIMIT = CATALOG.declare(
-    "business_vehicle_lease_cost_limit", Decimal, non_negative=True
-)
-"""Lease cost limit, Form T2125 Chart C line 27 "[($38,000 + GST and PST, or $38,000 + HST) ×
-amount 20] ÷ amount 24": the printed $38,000, a dataset of the same name."""
 
 BUSINESS_CCA_PERSONAL_PART = CATALOG.declare(
     "business_cca_personal_part", Decimal, non_negative=True
@@ -1761,13 +1748,16 @@ BUSINESS_VEHICLES = RecordListKind.declare(
         BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
         BUSINESS_VEHICLE_LEASE_DAYS,
         BUSINESS_VEHICLE_LIST_PRICE,
+        BUSINESS_VEHICLE_PURCHASE_YEAR,
+        BUSINESS_VEHICLE_LEASE_YEAR,
     ),
 )
 """Business vehicles, Form T2125 Charts A to C "Motor vehicle expenses": a starting list with one
 record for each vehicle, holding the amounts the filer enters in the charts of that vehicle (Chart
 A amounts 1, 2, 3, 5, 6, 7, 9, 10, 11, 14 and 15, Chart B amount 17 and its days, Chart C amounts
-20, 21, 22 and 23). The charts are worked for each vehicle and their line 16 amounts added, on line
-9281."""
+20, 21, 22 and 23), then the year the vehicle was bought and the year the lease was entered into,
+which choose the printed figures of Charts B and C. The charts are worked for each vehicle and
+their line 16 amounts added, on line 9281."""
 
 T2125_STATEMENTS = RecordListKind.declare(
     CATALOG,

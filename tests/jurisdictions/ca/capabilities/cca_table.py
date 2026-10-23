@@ -22,6 +22,7 @@ column 5, column 11, column 12, the CCA claimed and whether no property is left 
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from decimal import Decimal
 from typing import Any, cast
 
@@ -200,17 +201,21 @@ def service(
     output: ArtifactKind[Any],
     dataset: ParameterDataset[ClassRates] | None = None,
     checks_claim: bool = False,
+    classes_kind: ArtifactKind[Any] = CLASSES,
+    extra: Mapping[str, ArtifactKind[Any]] | None = None,
 ) -> TaxComputationService:
-    """A computation of the one `capability` over `ex/cca_classes`, producing `output`; one that
-    refuses a claim (`checks_claim`) also consumes `ex/non_compliant_cca` as `non_compliant`."""
+    """A computation of the one `capability` over `classes_kind` (`ex/cca_classes` unless given),
+    producing `output`; one that refuses a claim (`checks_claim`) also consumes
+    `ex/non_compliant_cca` as `non_compliant`, and `extra` maps further consumed slot names to
+    their kinds."""
     dataset = dataset or class_rates()
+    extra = extra or {}
     code = JurisdictionCode("CA-ON")
-    consumes = {"classes": CLASSES.identifier}
+    consumes = {"classes": classes_kind.identifier}
     if checks_claim:
         consumes["non_compliant"] = NON_COMPLIANT.identifier
-    inputs = frozenset(
-        {CLASSES.identifier} | ({NON_COMPLIANT.identifier} if checks_claim else set())
-    )
+    consumes |= {slot: kind.identifier for slot, kind in extra.items()}
+    inputs = frozenset(consumes.values())
     selection = CapabilitySelection(
         name=capability,
         params={"class_rates": dataset.family},
@@ -232,7 +237,7 @@ def service(
         ),
     )
     artifacts = ArtifactRegistry()
-    for kind in (CLASSES, NON_COMPLIANT, output):
+    for kind in (classes_kind, NON_COMPLIANT, output, *extra.values()):
         artifacts.register(kind.identifier, kind)
     return TaxComputationService(
         _Jurisdictions(Jurisdiction(code=code, manifests=(manifest,))),

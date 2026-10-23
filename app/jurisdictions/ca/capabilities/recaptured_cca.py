@@ -5,9 +5,9 @@ Note 3: "If you have a negative amount in column 7, add it to income as a recapt
 "Recapture and terminal loss do not apply to a Class 10.1 property unless it is a DIEP". Each class
 of the consumed record list is one row of the table, worked on its own as `CcaTable` works it: its
 recapture is column 7 made positive when column 7 is negative, else 0, and 0 for a class the
-`class_rates` dataset excludes. Column 7 is exact, so nothing is rounded. The output is the total
-of the recaptures, 0 when there are no classes. It records one `RecapturedCcaLine` for each class,
-by position from 1, then an `ItemsTotalLine`.
+`class_rates` dataset excludes unless the row has DIEP additions (column 4). Column 7 is exact, so
+nothing is rounded. The output is the total of the recaptures, 0 when there are no classes. It
+records one `RecapturedCcaLine` for each class, by position from 1, then an `ItemsTotalLine`.
 """
 
 from __future__ import annotations
@@ -55,6 +55,7 @@ class RecapturedCca(CcaTable):
                 -row.column_7
                 if row.zero_reason is CcaZeroReason.COLUMN_7_NEGATIVE and row.note_3_applies
                 else Decimal(0),
+                row.diep_additions > 0,
             )
             for row in self._rows(inputs)
         )

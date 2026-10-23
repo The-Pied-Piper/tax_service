@@ -636,6 +636,8 @@ inputs:
           ca/business_vehicle_lease_payments_before: "0"
           ca/business_vehicle_lease_days: "0"
           ca/business_vehicle_list_price: "0"
+          ca/business_vehicle_purchase_year: "2025"
+          ca/business_vehicle_lease_year: "2025"
       ca/business_vehicle_sales_tax_rate: "0"
       ca/business_cca_personal_part: "0"
       ca/business_other_expenses: "0"

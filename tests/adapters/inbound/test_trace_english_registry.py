@@ -215,6 +215,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.jurisdictions.ca.trace.apprenticeship.ApprenticeWagesLine",
         "app.jurisdictions.ca.trace.capital_cost.CcaClaimLine",
         "app.jurisdictions.ca.trace.capital_cost.ClosingUccLine",
+        "app.jurisdictions.ca.trace.capital_cost.ImmediateExpensingLine",
         "app.jurisdictions.ca.trace.capital_cost.RecapturedCcaLine",
         "app.jurisdictions.ca.trace.capital_cost.TerminalLossLine",
         "app.jurisdictions.ca.trace.vehicles.BusinessVehicleLine",

@@ -427,11 +427,9 @@ FORM_STEPS = {
     CapabilitySelection(
         name="ca/business_vehicle_expenses",
         params={
-            "interest_limit": "ca/business_vehicle_interest_limit",
+            "interest_limits": "ca/business_vehicle_interest_limits",
+            "lease_limits": "ca/business_vehicle_lease_limits",
             "days_divisor": "ca/business_vehicle_days_divisor",
-            "list_price_limit": "ca/business_vehicle_list_price_limit",
-            "lease_charge_limit": "ca/business_vehicle_lease_charge_limit",
-            "lease_cost_limit": "ca/business_vehicle_lease_cost_limit",
             "lease_price_rate": "ca/business_vehicle_lease_price_rate",
             "rounding": "ca/business_vehicle_rounding",
         },

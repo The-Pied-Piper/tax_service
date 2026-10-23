@@ -34,6 +34,7 @@ from app.adapters.outbound.parameter_parsers.rounding_only import RoundingOnlyPa
 from app.adapters.outbound.parameter_parsers.surcharge_tiers import SurchargeTiersParser
 from app.adapters.outbound.parameter_parsers.taper import TaperParser
 from app.adapters.outbound.parameter_parsers.threshold_rate import ThresholdRateParser
+from app.adapters.outbound.parameter_parsers.year_amounts import YearAmountsParser
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.errors import (
@@ -53,6 +54,7 @@ from app.domain.errors import (
     InvalidSurchargeTiersError,
     InvalidTaperError,
     InvalidThresholdRateError,
+    InvalidYearAmountsError,
     NotFoundError,
     UnknownRegistrationError,
 )
@@ -91,6 +93,7 @@ from app.domain.parameters.surcharge_tiers import (
 )
 from app.domain.parameters.taper import TAPER, Taper
 from app.domain.parameters.threshold_rate import THRESHOLD_RATE, ThresholdRate
+from app.domain.parameters.year_amounts import YEAR_AMOUNTS, YearAmounts, YearAmountsRow
 from app.domain.registry import Namespace
 
 D = Decimal
@@ -160,6 +163,21 @@ sources:
 rounding: none
 threshold: "52886"
 rate: "0.0505"
+"""
+
+YEAR_AMOUNTS_2025 = """\
+family: ex/year_amounts
+tax_year: 2025
+kind: year_amounts
+sources:
+  - https://example.org/year-amounts-2025
+rounding: none
+rows:
+  - from_year: 2024
+    amounts: {interest_limit: "350", other_limit: "10.50"}
+  - from_year: 2001
+    amounts: {interest_limit: "300", other_limit: "9"}
+  - amounts: {interest_limit: "250", other_limit: "8"}
 """
 
 CONTRIBUTION_TIER_2025 = """\
@@ -344,6 +362,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(AmountParser)
     registry.register_class(ClaimReductionParser)
     registry.register_class(ThresholdRateParser)
+    registry.register_class(YearAmountsParser)
     registry.register_class(ContributionTierParser)
     registry.register_class(SurchargeTiersParser)
     registry.register_class(TaperParser)
@@ -1804,6 +1823,238 @@ def test_an_invalid_threshold_rate_figure_is_reported_as_a_threshold_rate_error(
         source(tmp_path).get("ex/threshold_rate", 2025, THRESHOLD_RATE)
 
     assert isinstance(raised.value.__cause__, InvalidThresholdRateError)
+
+
+def test_reads_a_year_amounts_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/year_amounts/2025.yaml", YEAR_AMOUNTS_2025)
+
+    result = source(tmp_path).get("ex/year_amounts", 2025, YEAR_AMOUNTS)
+
+    assert result == ParameterDataset(
+        family="ex/year_amounts",
+        tax_year=2025,
+        kind=YEAR_AMOUNTS,
+        values=YearAmounts(
+            (
+                YearAmountsRow(2024, {"interest_limit": D("350"), "other_limit": D("10.50")}),
+                YearAmountsRow(2001, {"interest_limit": D("300"), "other_limit": D("9")}),
+                YearAmountsRow(None, {"interest_limit": D("250"), "other_limit": D("8")}),
+            )
+        ),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/year-amounts-2025",),
+    )
+
+
+def test_reads_a_year_amounts_datasets_figures_exactly(tmp_path: Path) -> None:
+    content = YEAR_AMOUNTS_2025.replace('other_limit: "10.50"', 'other_limit: "10.500"')
+    write(tmp_path, "ex/parameters/year_amounts/2025.yaml", content)
+
+    values = source(tmp_path).get("ex/year_amounts", 2025, YEAR_AMOUNTS).values
+
+    assert str(values.rows[0].amount("other_limit")) == "10.500"
+    assert values.rows[0].from_year == 2024
+    assert values.rows[2].from_year is None
+
+
+def test_reads_a_year_amounts_dataset_written_as_block_mappings(tmp_path: Path) -> None:
+    content = YEAR_AMOUNTS_2025.split("rows:\n")[0] + (
+        "rows:\n"
+        "  - from_year: 2024\n"
+        "    amounts:\n"
+        '      interest_limit: "350"\n'
+        "  - amounts:\n"
+        '      interest_limit: "300"\n'
+    )
+    write(tmp_path, "ex/parameters/year_amounts/2025.yaml", content)
+
+    values = source(tmp_path).get("ex/year_amounts", 2025, YEAR_AMOUNTS).values
+
+    assert values.row_for(2024) == YearAmountsRow(2024, {"interest_limit": D("350")})
+    assert values.row_for(1990) == YearAmountsRow(None, {"interest_limit": D("300")})
+
+
+def test_reads_a_year_amounts_dataset_whose_rows_are_all_dated(tmp_path: Path) -> None:
+    content = YEAR_AMOUNTS_2025.replace("  - amounts:", "  - from_year: 1990\n    amounts:")
+    write(tmp_path, "ex/parameters/year_amounts/2025.yaml", content)
+
+    values = source(tmp_path).get("ex/year_amounts", 2025, YEAR_AMOUNTS).values
+
+    assert values.rows[2].from_year == 1990
+    assert values.row_for(1989) is None
+
+
+def test_reads_a_year_amounts_datasets_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/year_amounts/2025.yaml",
+        YEAR_AMOUNTS_2025.replace("rounding: none", 'rounding: {increment: "0.01", mode: half_up}'),
+    )
+
+    result = source(tmp_path).get("ex/year_amounts", 2025, YEAR_AMOUNTS)
+
+    assert result.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_by_default_the_year_amounts_parser_comes_from_the_shared_registry(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/year_amounts/2025.yaml", YEAR_AMOUNTS_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/year_amounts", 2025, YEAR_AMOUNTS)
+
+    assert result.values.row_for(2010) == YearAmountsRow(
+        2001, {"interest_limit": D("300"), "other_limit": D("9")}
+    )
+
+
+def test_a_year_amounts_dataset_is_not_a_rate_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/year_amounts/2025.yaml", YEAR_AMOUNTS_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'year_amounts' does not match"):
+        source(tmp_path).get("ex/year_amounts", 2025, RATE)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace("from_year: 2024", 'from_year: "2024"'),
+            r"rows\[0\].from_year must be an integer, got str",
+            id="from-year-quoted",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace("from_year: 2024", "from_year: 2024.5"),
+            r"rows\[0\].from_year must be an integer, got float",
+            id="from-year-float",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace("from_year: 2024", "from_year: yes"),
+            r"rows\[0\].from_year must be an integer, got bool",
+            id="from-year-boolean",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace('interest_limit: "350"', "interest_limit: 350"),
+            r"rows\[0\].amounts.interest_limit must be a string, got int",
+            id="amount-as-yaml-number",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace('interest_limit: "300"', 'interest_limit: "lots"'),
+            r"rows\[1\].amounts.interest_limit is not a decimal: 'lots'",
+            id="amount-not-decimal",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace('interest_limit: "300"', 'interest_limit: "Infinity"'),
+            r"rows\[1\].amounts.interest_limit is not a decimal",
+            id="amount-infinite",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace('interest_limit: "250"', 'interest_limit: "-1"'),
+            r"rows\[2\].*must not be negative",
+            id="amount-negative",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace(
+                '    amounts: {interest_limit: "350", other_limit: "10.50"}\n', ""
+            ),
+            r"rows\[0\]: missing keys \['amounts'\]",
+            id="amounts-missing",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace(
+                'amounts: {interest_limit: "350", other_limit: "10.50"}', "amounts: {}"
+            ),
+            r"rows\[0\].*at least one amount",
+            id="amounts-empty",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace(
+                'amounts: {interest_limit: "350", other_limit: "10.50"}', 'amounts: "350"'
+            ),
+            r"rows\[0\].amounts must be a mapping",
+            id="amounts-not-a-mapping",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace('other_limit: "9"', 'third_limit: "9"'),
+            "same amount names",
+            id="amount-names-differ",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace("from_year: 2001", "from_year: 2024"),
+            r"strictly descending",
+            id="years-equal",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace("from_year: 2001", "from_year: 2030"),
+            r"strictly descending",
+            id="years-ascending",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace("  - from_year: 2001\n", "  - \n"),
+            r"only the last row",
+            id="open-ended-row-in-the-middle",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025 + '  - amounts: {interest_limit: "1", other_limit: "1"}\n',
+            r"only the last row",
+            id="two-open-ended-rows",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace(
+                'other_limit: "10.50"}', 'other_limit: "10.50"}\n    note: "x"'
+            ),
+            r"rows\[0\]: unknown keys \['note'\]",
+            id="unknown-row-key",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.replace("rows:", "years:"),
+            r"unknown keys \['years'\]",
+            id="years-are-not-rows",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.split("rows:\n")[0] + "rows: []\n",
+            "at least one row",
+            id="no-rows",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.split("rows:\n")[0] + 'rows:\n  - "2024"\n',
+            r"rows\[0\] must be a mapping",
+            id="row-not-a-mapping",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025.split("rows:\n")[0],
+            r"missing keys \['rows'\]",
+            id="rows-missing",
+        ),
+        pytest.param(
+            YEAR_AMOUNTS_2025 + 'amount: "1"\n',
+            r"unknown keys \['amount'\]",
+            id="unknown-key",
+        ),
+    ],
+)
+def test_rejects_an_invalid_year_amounts_dataset(
+    tmp_path: Path, content: str, message: str
+) -> None:
+    write(tmp_path, "ex/parameters/year_amounts/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/year_amounts", 2025, YEAR_AMOUNTS)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+def test_an_invalid_year_amounts_figure_is_reported_as_a_year_amounts_error(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/year_amounts/2025.yaml",
+        YEAR_AMOUNTS_2025.replace('interest_limit: "250"', 'interest_limit: "-1"'),
+    )
+
+    with pytest.raises(InvalidParameterDataError) as raised:
+        source(tmp_path).get("ex/year_amounts", 2025, YEAR_AMOUNTS)
+
+    assert isinstance(raised.value.__cause__, InvalidYearAmountsError)
 
 
 def test_an_amount_dataset_is_not_a_credit_dataset(tmp_path: Path) -> None:

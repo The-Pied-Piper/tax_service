@@ -229,7 +229,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_SALES_SUBTOTAL,
     BUSINESS_SHARE_OF_NET_INCOME,
     BUSINESS_TERMINAL_LOSS,
-    BUSINESS_VEHICLE_INTEREST_LIMIT,
+    BUSINESS_VEHICLE_DAYS_DIVISOR,
     BUSINESS_VEHICLES,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
@@ -2971,9 +2971,9 @@ def test_each_t2125_amount_is_produced_by_its_capability() -> None:
         worksheet.producer_of(BUSINESS_MOTOR_VEHICLE_EXPENSES), BusinessVehicleExpenses
     )
     with pytest.raises(MissingArtifactError):
-        worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)
+        worksheet.producer_of(BUSINESS_VEHICLE_DAYS_DIVISOR)
     with pytest.raises(MissingArtifactError):
-        return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)
+        return_a().producer_of(BUSINESS_VEHICLE_DAYS_DIVISOR)
 
 
 def test_each_t2042_amount_is_produced_by_its_capability() -> None:

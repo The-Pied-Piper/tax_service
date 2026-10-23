@@ -1,5 +1,5 @@
 """Trace lines for capital cost allowance: one class's claim, recapture, terminal loss and
-closing balance, and why a claim is zero.
+closing balance, one class's immediate expensing, and why a claim is zero.
 """
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ __all__ = [
     "RecapturedCcaLine",
     "TerminalLossLine",
     "ClosingUccLine",
+    "ImmediateExpensingLine",
 ]
 
 
@@ -44,7 +45,8 @@ class CcaClaimLine(TraceLine):
     `column_19` the base amount; `maximum` the class's rate of column 19, or 0 for the
     `zero_reason` it records when column 7 is negative or is positive with `no_property_left` (1
     if no property is left, else 0). Columns 15, 17 and 18 and the maximum are each rounded once
-    with `rounding`; the claim is the caller's, at most the maximum.
+    with `rounding`; the claim is the caller's, at most the maximum plus `column_9` (the immediate
+    expensing amount, 0 unless the class has a DIEP) and at least `column_9`.
 
     Its own class, not a `CappedAmountLine`: the amount is worked on for one class, named by
     position, in many columns that the English rendering shows one by one.
@@ -65,6 +67,7 @@ class CcaClaimLine(TraceLine):
     maximum: Decimal
     rounding: RoundingRule
     claim: Decimal
+    column_9: Decimal = Decimal(0)
 
     @property
     def amount(self) -> Decimal:
@@ -76,7 +79,8 @@ class CcaClaimLine(TraceLine):
 class RecapturedCcaLine(TraceLine):
     """The recapture `result` of one class, by `position` (from 1), for `output`: `column_7` (the
     UCC after additions and dispositions) made positive when it is negative, which `zero_reason`
-    records, else 0, and 0 for a class `class_rate` that recapture does not apply to.
+    records, else 0, and 0 for a class `class_rate` that recapture does not apply to unless the row
+    `has_diep` (it has DIEP additions, column 4), which Note 3 excepts.
     """
 
     output: Money
@@ -85,6 +89,7 @@ class RecapturedCcaLine(TraceLine):
     column_7: Decimal
     zero_reason: CcaZeroReason
     result: Decimal
+    has_diep: bool = False
 
     @property
     def amount(self) -> Decimal:
@@ -97,7 +102,8 @@ class TerminalLossLine(TraceLine):
     """The terminal loss `result` of one class, by `position` (from 1), for `output`: `column_7`
     (the UCC after additions and dispositions) when it is positive with `no_property_left` (1 if
     no property is left in the class, else 0), which `zero_reason` records, else 0, and 0 for a
-    class `class_rate` that a terminal loss does not apply to. `column_7_positive` records whether
+    class `class_rate` that a terminal loss does not apply to unless the row `has_diep` (it has DIEP
+    additions, column 4), which Note 3 excepts. `column_7_positive` records whether
     column 7 is above 0, so a row with property left reads apart from one with nothing to lose.
     """
 
@@ -109,6 +115,7 @@ class TerminalLossLine(TraceLine):
     zero_reason: CcaZeroReason
     column_7_positive: bool
     result: Decimal
+    has_diep: bool = False
 
     @property
     def amount(self) -> Decimal:
@@ -121,7 +128,8 @@ class ClosingUccLine(TraceLine):
     """The UCC at the end of the year `result` of one class, by `position` (from 1), a record of
     the list `output`: `column_7` (the UCC after additions and dispositions) less the `claim`, or
     0 for the `zero_reason` it records when column 7 is negative or is positive with
-    `no_property_left` (1 if no property is left in the class `class_rate`, else 0).
+    `no_property_left` (1 if no property is left in the class `class_rate`, else 0). The `claim`
+    includes `column_9`, the immediate expensing amount of the class (0 unless it has a DIEP).
 
     Its own class, not a `RecordTotalLine`: each class gives a record of a list, not a part of a
     total.
@@ -135,8 +143,33 @@ class ClosingUccLine(TraceLine):
     zero_reason: CcaZeroReason
     claim: Decimal
     result: Decimal
+    column_9: Decimal = Decimal(0)
 
     @property
     def amount(self) -> Decimal:
         """The class's UCC at the end of the year."""
         return self.result
+
+
+@dataclass(frozen=True)
+class ImmediateExpensingLine(TraceLine):
+    """The immediate expensing amount `column_9` of one class, by `position` (from 1), for
+    `output`: the class `class_rate`'s `column_4` (cost of additions that are DIEPs) less
+    `column_6` (proceeds of dispositions of DIEP) is `column_8` (the UCC of DIEP), at most
+    `column_7` (the UCC after additions and dispositions) and at least 0; the amount is the
+    caller's, at most `column_8`.
+    """
+
+    output: Money
+    position: int
+    class_rate: ClassRate
+    column_4: Decimal
+    column_6: Decimal
+    column_7: Decimal
+    column_8: Decimal
+    column_9: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The class's immediate expensing amount."""
+        return self.column_9

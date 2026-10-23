@@ -12,7 +12,7 @@ from app.jurisdictions.ca.catalog import (
     BOND_GAIN_OR_LOSS,
     BOND_PROCEEDS,
     BUSINESS_INCOME,
-    BUSINESS_VEHICLE_INTEREST_LIMIT,
+    BUSINESS_VEHICLE_DAYS_DIVISOR,
     BUSINESS_VEHICLE_LIST_PRICE,
     BUSINESS_VEHICLE_SALES_TAX_RATE,
     BUSINESS_VEHICLES,
@@ -743,13 +743,13 @@ def test_the_t2125_chart_kinds_are_registered_under_their_names(registry: Artifa
     # Form T2125 Charts A to C: the vehicles list, the caller's sales tax rate and the printed
     # constants (each a dataset of the same name, which T2042 and T2121 still produce as kinds); the
     # lines the charts compute are in the trace of `ca/business_vehicle_expenses`, not artifacts.
-    assert registry.get("ca/business_vehicle_interest_limit") is BUSINESS_VEHICLE_INTEREST_LIMIT
+    assert registry.get("ca/business_vehicle_days_divisor") is BUSINESS_VEHICLE_DAYS_DIVISOR
     assert registry.get("ca/business_vehicle_list_price") is BUSINESS_VEHICLE_LIST_PRICE
     assert registry.get("ca/business_vehicle_sales_tax_rate") is BUSINESS_VEHICLE_SALES_TAX_RATE
     assert registry.get("ca/business_vehicles") is BUSINESS_VEHICLES
-    assert BUSINESS_VEHICLE_INTEREST_LIMIT.non_negative is True
+    assert BUSINESS_VEHICLE_DAYS_DIVISOR.non_negative is True
     for kind in (
-        BUSINESS_VEHICLE_INTEREST_LIMIT,
+        BUSINESS_VEHICLE_DAYS_DIVISOR,
         BUSINESS_VEHICLE_LIST_PRICE,
         BUSINESS_VEHICLE_SALES_TAX_RATE,
     ):
@@ -787,7 +787,7 @@ def test_the_t2042_chart_kinds_are_registered_under_their_names(registry: Artifa
     assert registry.get("ca/business_vehicles") is BUSINESS_VEHICLES
     assert registry.get("ca/farm_vehicle_sales_tax_rate") is FARM_VEHICLE_SALES_TAX_RATE
     assert registry.get("ca/farm_motor_vehicle_expenses") is FARM_MOTOR_VEHICLE_EXPENSES
-    assert registry.get("ca/business_vehicle_interest_limit") is BUSINESS_VEHICLE_INTEREST_LIMIT
+    assert registry.get("ca/business_vehicle_days_divisor") is BUSINESS_VEHICLE_DAYS_DIVISOR
 
 
 def test_the_t2042_chart_lines_are_no_longer_artifacts(registry: ArtifactRegistry) -> None:
@@ -821,7 +821,7 @@ def test_the_t2121_chart_kinds_are_registered_under_their_names(registry: Artifa
     assert registry.get("ca/business_vehicles") is BUSINESS_VEHICLES
     assert registry.get("ca/fish_vehicle_sales_tax_rate") is FISH_VEHICLE_SALES_TAX_RATE
     assert registry.get("ca/fish_motor_vehicle_expenses") is FISH_MOTOR_VEHICLE_EXPENSES
-    assert registry.get("ca/business_vehicle_interest_limit") is BUSINESS_VEHICLE_INTEREST_LIMIT
+    assert registry.get("ca/business_vehicle_days_divisor") is BUSINESS_VEHICLE_DAYS_DIVISOR
 
 
 def test_the_t2121_chart_lines_are_no_longer_artifacts(registry: ArtifactRegistry) -> None:

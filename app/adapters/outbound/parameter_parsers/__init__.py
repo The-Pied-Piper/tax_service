@@ -28,6 +28,7 @@ from app.adapters.outbound.parameter_parsers import (
     surcharge_tiers,
     taper,
     threshold_rate,
+    year_amounts,
 )
 from app.adapters.outbound.parameter_parsers.parser import ParameterParser
 
@@ -51,4 +52,5 @@ __all__ = [
     "surcharge_tiers",
     "taper",
     "threshold_rate",
+    "year_amounts",
 ]
