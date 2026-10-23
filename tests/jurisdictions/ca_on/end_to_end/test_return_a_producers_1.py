@@ -2977,10 +2977,6 @@ def test_each_t2042_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(FARM_SHARE_OF_NET_INCOME), ChooseByCount)
     assert isinstance(worksheet.producer_of(FARM_HOME_INCOME_LIMIT), SumNotBelowZero)
     assert isinstance(worksheet.producer_of(FARMING_INCOME), Subtract)
-    # The form holds its own copy of the printed constants; the return form has none.
-    assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
-    with pytest.raises(MissingArtifactError):
-        return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)
 
 
 def test_each_t2121_amount_is_produced_by_its_capability() -> None:
@@ -2997,7 +2993,3 @@ def test_each_t2121_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(FISH_SHARE_OF_NET_INCOME), ChooseByCount)
     assert isinstance(worksheet.producer_of(FISH_HOME_INCOME_LIMIT), SumNotBelowZero)
     assert isinstance(worksheet.producer_of(FISHING_INCOME), Subtract)
-    # The form holds its own copy of the printed constants; the return form has none.
-    assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
-    with pytest.raises(MissingArtifactError):
-        return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)

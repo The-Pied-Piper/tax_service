@@ -26,16 +26,6 @@ from app.jurisdictions.ca.catalog import (
     FISH_SHARE_OF_NET_INCOME,
     FISH_TERMINAL_LOSS,
     FISH_TOTAL_EXPENSES,
-    FISH_VEHICLE_AVAILABLE_INTEREST,
-    FISH_VEHICLE_BUSINESS_USE_PART,
-    FISH_VEHICLE_INTEREST_FOR_PERIOD,
-    FISH_VEHICLE_LEASE_CHARGE_PORTION,
-    FISH_VEHICLE_LEASE_COST_PORTION,
-    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
-    FISH_VEHICLE_LEASE_PRICE_BASE,
-    FISH_VEHICLE_LEASING_COST,
-    FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
-    FISH_VEHICLE_TOTAL_EXPENSES,
     FISHING_INCOME,
     NET_INCOME,
     NET_SELF_EMPLOYMENT_INCOME,
@@ -44,6 +34,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_INCOME,
     TOTAL_PAYABLE,
 )
+from app.jurisdictions.ca.trace import BusinessVehicleLine
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
 from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
@@ -58,18 +49,22 @@ FISH = {
     # Charts A to C for one leased passenger vehicle that is used for no fishing: business
     # kilometres 0 (amount 1), so line 9281 (amount 16 of Chart A) is 0, the same as before the
     # charts; every Chart B and C line is still computed as printed.
-    "vehicle_business_kilometres": "0",
-    "vehicle_total_kilometres": "10000",
-    "vehicle_fuel_and_oil": "1000",
-    "vehicle_insurance": "600",
-    "vehicle_maintenance_and_repairs": "200",
-    "vehicle_other_expenses_10": "653",
-    "vehicle_interest_payable": "400",
-    "vehicle_interest_days": "183",
-    "vehicle_lease_charges": "2550",
-    "vehicle_lease_days": "183",
-    "vehicle_list_price": "60000",
     "vehicle_sales_tax_rate": "13",
+}
+
+# One vehicle of the statement, a record of `ca/business_vehicles`: the amounts of Charts A to C.
+VEHICLE = {
+    "business_kilometres": "0",
+    "total_kilometres": "10000",
+    "fuel_and_oil": "1000",
+    "insurance": "600",
+    "maintenance_and_repairs": "200",
+    "other_expenses_10": "653",
+    "interest_payable": "400",
+    "interest_days": "183",
+    "lease_charges": "2550",
+    "lease_days": "183",
+    "list_price": "60000",
 }
 
 
@@ -79,7 +74,16 @@ def run_bd() -> dict[str, tuple[Worksheet, ...]]:
     line 14299), expenses of 25000 (4Q), so line 9369 is 15000, which is line 9946 and T1 line
     14300.
     """
-    return run("0", (), "0", "0", "0", "0", "0", fish_statements=({"fish": FISH},))
+    return run(
+        "0",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        fish_statements=({"fish": FISH, "fish_vehicles_rows": (VEHICLE,)},),
+    )
 
 
 def return_bd() -> Worksheet:
@@ -216,15 +220,11 @@ def test_return_bds_motor_vehicle_line_9281_is_0_from_charts_a_to_c() -> None:
     # part of 0 x 5000 ÷ 10000 = 0, so line 9281 is 0 and the fishing expenses are still 25000.
     worksheet = statement_bd()
 
-    assert worksheet.get(FISH_VEHICLE_INTEREST_FOR_PERIOD).value == D("2135.00")
-    assert worksheet.get(FISH_VEHICLE_AVAILABLE_INTEREST).value == D("400.00")
-    assert worksheet.get(FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX).value == D("50517.78")
-    assert worksheet.get(FISH_VEHICLE_LEASE_PRICE_BASE).value == D("60000.00")
-    assert worksheet.get(FISH_VEHICLE_LEASE_PRICE_85_PERCENT).value == D("51000.00")
-    assert worksheet.get(FISH_VEHICLE_LEASE_CHARGE_PORTION).value == D("7582.30")
-    assert worksheet.get(FISH_VEHICLE_LEASE_COST_PORTION).value == D("2147.00")
-    assert worksheet.get(FISH_VEHICLE_LEASING_COST).value == D("2147.00")
-    assert worksheet.get(FISH_VEHICLE_TOTAL_EXPENSES).value == D("5000.00")
-    assert worksheet.get(FISH_VEHICLE_BUSINESS_USE_PART).value == D("0.00")
+    (vehicle,) = [each for each in worksheet.trace if isinstance(each, BusinessVehicleLine)]
+    assert vehicle.line_12 == D("5000.00")
+    assert vehicle.line_13 == D("0.00")
+    assert vehicle.line_19 == D("400.00")
+    assert vehicle.line_28 == D("2147.00")
+    assert vehicle.line_16 == D("0.00")
     assert worksheet.get(FISH_MOTOR_VEHICLE_EXPENSES).value == D("0.00")
     assert worksheet.get(FISH_EXPENSES_SUBTOTAL).value == D("25000")

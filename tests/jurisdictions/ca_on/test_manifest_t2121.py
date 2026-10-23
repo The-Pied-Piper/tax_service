@@ -4,8 +4,9 @@ T2121 is the form `ca/t2121`, one instance for each statement (one for each fish
 selections live in the part `03d_t2121.yaml` under the `form:` key; the caller supplies the
 statements as the record list `ca/t2121_statements`, whose fields are the T2121 inputs; and the form
 exports its line 9946, "Your net income (loss)", which T1 line 14300 "Net" totals over the
-statements. The entries of the form are listed in `manifest_families/t2121.py`. The five printed
-constants of Charts B and C are the form's own copies; the return selects none of them.
+statements. The entries of the form are listed in `manifest_families/t2121.py`. The printed
+constants of Charts B and C are the datasets of the form's one motor vehicle step; the return
+selects none of them.
 """
 
 from __future__ import annotations
@@ -81,10 +82,12 @@ def test_the_manifest_has_the_form_t2121_beside_the_other_forms() -> None:
     assert found.exports == t2121.FORM_EXPORTS
 
 
-def test_the_form_holds_the_50_t2121_selections_unchanged() -> None:
+def test_the_form_holds_the_29_t2121_selections() -> None:
+    # The selections of Charts A to C of one vehicle and the five printed constants are now one
+    # step over the statement's vehicles, the form's only selection for them.
     found = form()
 
-    assert len(found.capabilities) == 50
+    assert len(found.capabilities) == 29
     assert set(found.capabilities) == t2121.FORM_STEPS
 
 
@@ -93,19 +96,37 @@ def test_the_return_selects_only_the_total_of_line_9946_and_none_of_the_form_ste
     selected = set(default.capabilities)
 
     assert t2121.STEPS <= selected
-    # What the form holds, the return holds not at all: the five printed constants of Charts B and C
-    # are the form's own copies, and no part of the return selects them.
+    # What the form holds, the return holds not at all: the printed constants of Charts B and C
+    # are datasets of the form's vehicle step, and no part of the return selects them.
     assert not selected & t2121.FORM_STEPS
     produced = set(chain.from_iterable(step.produces.values() for step in selected))
     assert not produced & VEHICLE_CONSTANTS
 
 
-def test_the_form_has_its_own_copy_of_the_five_constants() -> None:
-    own = [step for step in form().capabilities if step.produces["output"] in VEHICLE_CONSTANTS]
+def test_the_form_selects_one_vehicles_step_over_the_printed_constants_datasets() -> None:
+    (own,) = [step for step in form().capabilities if step.name == "ca/business_vehicle_expenses"]
 
-    assert [step.name for step in own] == ["core/credit_amount"] * 5
-    assert {step.produces["output"] for step in own} == VEHICLE_CONSTANTS
-    assert not PART.with_name("03f_t2125_vehicle_limits.yaml").exists()
+    assert own.params == {
+        "interest_limit": "ca/business_vehicle_interest_limit",
+        "days_divisor": "ca/business_vehicle_days_divisor",
+        "list_price_limit": "ca/business_vehicle_list_price_limit",
+        "lease_charge_limit": "ca/business_vehicle_lease_charge_limit",
+        "lease_cost_limit": "ca/business_vehicle_lease_cost_limit",
+        "lease_price_rate": "ca/business_vehicle_lease_price_rate",
+        "rounding": "ca/business_vehicle_rounding",
+    }
+    assert own.consumes == {
+        "vehicles": "ca/business_vehicles",
+        "sales_tax_rate": "ca/fish_vehicle_sales_tax_rate",
+    }
+    assert own.produces == {"output": "ca/fish_motor_vehicle_expenses"}
+
+
+def test_the_form_has_no_step_of_its_own_for_the_chart_lines_or_the_constants() -> None:
+    produced = {step.produces["output"] for step in form().capabilities}
+
+    assert not produced & VEHICLE_CONSTANTS
+    assert not any(identifier.startswith("ca/fish_vehicle_") for identifier in produced)
 
 
 def test_the_t2121_part_is_not_over_30_kb_and_the_other_parts_hold_no_t2121_input() -> None:
@@ -130,15 +151,15 @@ def test_the_statements_kind_is_a_record_list_of_every_t2121_input_in_order() ->
     assert isinstance(T2121_STATEMENTS, RecordListKind)
     assert T2121_STATEMENTS.identifier == "ca/t2121_statements"
     assert frozenset(field.identifier for field in T2121_STATEMENTS.fields) == t2121.FORM_INPUTS
-    assert len(T2121_STATEMENTS.fields) == len(t2121.FORM_INPUTS) == 62
+    assert len(T2121_STATEMENTS.fields) == len(t2121.FORM_INPUTS) == 46
 
 
-def test_the_area_a_list_of_a_statement_is_a_nested_record_list() -> None:
+def test_the_area_a_list_and_the_vehicles_of_a_statement_are_nested_record_lists() -> None:
     nested = {
         field.identifier for field in T2121_STATEMENTS.fields if isinstance(field, RecordListKind)
     }
 
-    assert nested == {"ca/fish_cca_classes"}
+    assert nested == {"ca/business_vehicles", "ca/fish_cca_classes"}
 
 
 def test_the_catalog_registers_the_statements_kind_beside_the_other_record_lists() -> None:

@@ -29,10 +29,12 @@ prints without a floor; a vehicle whose amount 26 is below zero is refused.
 from __future__ import annotations
 
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 import pytest
 
+import app.jurisdictions.ca
 import app.registrations
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
@@ -101,6 +103,25 @@ def test_2025_the_chart_rounding_is_half_up_to_the_cent_with_no_values() -> None
 
     assert data.values == RoundingOnly()
     assert data.rounding == CENT
+
+
+# The five per-line roundings that Charts A to C had for each form before the one
+# `ca/business_vehicle_rounding` (the form states none): the datasets are deleted, so the forms
+# that take the vehicles as a list round with the one dataset.
+PER_LINE_ROUNDINGS = (
+    "ca/business_vehicle_business_use_rounding",
+    "ca/business_vehicle_interest_rounding",
+    "ca/business_vehicle_sales_tax_rounding",
+    "ca/business_vehicle_lease_charge_rounding",
+    "ca/business_vehicle_lease_cost_rounding",
+)
+
+
+@pytest.mark.parametrize("family", PER_LINE_ROUNDINGS)
+def test_2025_the_per_line_chart_roundings_are_deleted(family: str) -> None:
+    parameters = Path(app.jurisdictions.ca.__file__).parent / "parameters"
+
+    assert not (parameters / family.removeprefix("ca/") / "2025.yaml").exists()
 
 
 # A leased passenger vehicle used half for business, the figures of Return BB (see

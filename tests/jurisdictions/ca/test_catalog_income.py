@@ -43,19 +43,11 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
-    FARM_VEHICLE_BUSINESS_USE_PART,
-    FARM_VEHICLE_INTEREST_PAYABLE,
-    FARM_VEHICLE_LEASE_CHARGES_NET,
-    FARM_VEHICLE_LEASING_COST,
-    FARM_VEHICLE_LIST_PRICE,
+    FARM_MOTOR_VEHICLE_EXPENSES,
     FARM_VEHICLE_SALES_TAX_RATE,
     FARMING_INCOME,
     FHSA_INCOME,
-    FISH_VEHICLE_BUSINESS_USE_PART,
-    FISH_VEHICLE_INTEREST_PAYABLE,
-    FISH_VEHICLE_LEASE_CHARGES_NET,
-    FISH_VEHICLE_LEASING_COST,
-    FISH_VEHICLE_LIST_PRICE,
+    FISH_MOTOR_VEHICLE_EXPENSES,
     FISH_VEHICLE_SALES_TAX_RATE,
     FISHING_INCOME,
     FOREIGN_INVESTMENT_INCOME,
@@ -788,42 +780,68 @@ def test_the_t2125_chart_lines_are_no_longer_artifacts(registry: ArtifactRegistr
 
 
 def test_the_t2042_chart_kinds_are_registered_under_their_names(registry: ArtifactRegistry) -> None:
-    # Form T2042 Charts A to C: the caller's chart amounts and the lines the charts compute, which
-    # line 9819 takes as its line 16. The printed constants are the T2125's datasets, shared.
-    assert registry.get("ca/farm_vehicle_interest_payable") is FARM_VEHICLE_INTEREST_PAYABLE
-    assert registry.get("ca/farm_vehicle_list_price") is FARM_VEHICLE_LIST_PRICE
+    # Form T2042 Charts A to C: each vehicle is a record of the shared `ca/business_vehicles`, the
+    # sales tax rate of the province is the statement's input, and the line 9819 kind is
+    # the capability's output over the vehicles.
+    assert BUSINESS_VEHICLES in T2042_STATEMENTS.fields
+    assert registry.get("ca/business_vehicles") is BUSINESS_VEHICLES
     assert registry.get("ca/farm_vehicle_sales_tax_rate") is FARM_VEHICLE_SALES_TAX_RATE
-    assert registry.get("ca/farm_vehicle_business_use_part") is FARM_VEHICLE_BUSINESS_USE_PART
-    assert registry.get("ca/farm_vehicle_leasing_cost") is FARM_VEHICLE_LEASING_COST
-    assert registry.get("ca/farm_vehicle_lease_charges_net") is FARM_VEHICLE_LEASE_CHARGES_NET
-    # Amount 26 is printed without a floor, so it is the one signed chart line; the leasing cost
-    # (line 28) is a non-negative amount, so a negative one is refused.
-    assert FARM_VEHICLE_LEASE_CHARGES_NET.non_negative is False
-    assert FARM_VEHICLE_LEASING_COST.non_negative is True
-    for kind in (
-        FARM_VEHICLE_INTEREST_PAYABLE,
-        FARM_VEHICLE_LIST_PRICE,
-        FARM_VEHICLE_LEASING_COST,
+    assert registry.get("ca/farm_motor_vehicle_expenses") is FARM_MOTOR_VEHICLE_EXPENSES
+    assert registry.get("ca/business_vehicle_interest_limit") is BUSINESS_VEHICLE_INTEREST_LIMIT
+
+
+def test_the_t2042_chart_lines_are_no_longer_artifacts(registry: ArtifactRegistry) -> None:
+    # Each vehicle's lines of Charts A to C are worked inside the capability, as on T2125.
+    for name in (
+        "list_price_limit_tax",
+        "lease_charge_limit_tax",
+        "lease_cost_limit_tax",
+        "list_price_limit_with_tax",
+        "lease_charge_limit_with_tax",
+        "lease_cost_limit_with_tax",
+        "total_expenses",
+        "business_use_part",
+        "interest_for_period",
+        "available_interest",
+        "lease_price_base",
+        "lease_price_85_percent",
+        "lease_charge_portion",
+        "lease_charges_net",
+        "lease_cost_portion",
+        "leasing_cost",
     ):
-        assert kind.value_type is Decimal, kind.identifier
+        assert f"ca/farm_vehicle_{name}" not in registry.identifiers(), name
 
 
 def test_the_t2121_chart_kinds_are_registered_under_their_names(registry: ArtifactRegistry) -> None:
-    # Form T2121 Charts A to C: the caller's chart amounts and the lines the charts compute, which
-    # line 9281 takes as its line 16. The printed constants are the T2125's datasets, shared.
-    assert registry.get("ca/fish_vehicle_interest_payable") is FISH_VEHICLE_INTEREST_PAYABLE
-    assert registry.get("ca/fish_vehicle_list_price") is FISH_VEHICLE_LIST_PRICE
+    # Form T2121 Charts A to C: each vehicle is a record of the shared `ca/business_vehicles`, the
+    # sales tax rate of the province is the statement's input, and the line 9281 kind is
+    # the capability's output over the vehicles.
+    assert BUSINESS_VEHICLES in T2121_STATEMENTS.fields
+    assert registry.get("ca/business_vehicles") is BUSINESS_VEHICLES
     assert registry.get("ca/fish_vehicle_sales_tax_rate") is FISH_VEHICLE_SALES_TAX_RATE
-    assert registry.get("ca/fish_vehicle_business_use_part") is FISH_VEHICLE_BUSINESS_USE_PART
-    assert registry.get("ca/fish_vehicle_leasing_cost") is FISH_VEHICLE_LEASING_COST
-    assert registry.get("ca/fish_vehicle_lease_charges_net") is FISH_VEHICLE_LEASE_CHARGES_NET
-    # Amount 26 is printed without a floor, so it is the one signed chart line; the leasing cost
-    # (line 28) is a non-negative amount, so a negative one is refused.
-    assert FISH_VEHICLE_LEASE_CHARGES_NET.non_negative is False
-    assert FISH_VEHICLE_LEASING_COST.non_negative is True
-    for kind in (
-        FISH_VEHICLE_INTEREST_PAYABLE,
-        FISH_VEHICLE_LIST_PRICE,
-        FISH_VEHICLE_LEASING_COST,
+    assert registry.get("ca/fish_motor_vehicle_expenses") is FISH_MOTOR_VEHICLE_EXPENSES
+    assert registry.get("ca/business_vehicle_interest_limit") is BUSINESS_VEHICLE_INTEREST_LIMIT
+
+
+def test_the_t2121_chart_lines_are_no_longer_artifacts(registry: ArtifactRegistry) -> None:
+    # Each vehicle's lines of Charts A to C are worked inside the capability, as on T2125.
+    for name in (
+        "list_price_limit_tax",
+        "lease_charge_limit_tax",
+        "lease_cost_limit_tax",
+        "list_price_limit_with_tax",
+        "lease_charge_limit_with_tax",
+        "lease_cost_limit_with_tax",
+        "total_expenses",
+        "business_use_part",
+        "interest_for_period",
+        "available_interest",
+        "lease_price_base",
+        "lease_price_85_percent",
+        "lease_charge_portion",
+        "lease_charges_net",
+        "lease_cost_portion",
+        "leasing_cost",
     ):
-        assert kind.value_type is Decimal, kind.identifier
+        assert f"ca/fish_vehicle_{name}" not in registry.identifiers(), name

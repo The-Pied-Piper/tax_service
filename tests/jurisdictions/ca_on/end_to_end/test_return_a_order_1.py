@@ -1911,7 +1911,7 @@ def test_each_t2042_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2042 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2042").composition.order
-    assert len(order) == 49
+    assert len(order) == 28
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Part 3: the recapture of Area A before line 9600, which comes before line 9659, which comes
     # before amount 4A.
@@ -1947,7 +1947,7 @@ def test_each_t2121_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2121 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2121").composition.order
-    assert len(order) == 50
+    assert len(order) == 29
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Part 3: the recapture of Area A before line 9600, which comes before line 9659, which comes
     # before amount 4A.

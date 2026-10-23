@@ -127,11 +127,6 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_SALES_ADJUSTMENTS,
     BUSINESS_SALES_SUBTOTAL,
     BUSINESS_TOTAL_EXPENSES,
-    BUSINESS_VEHICLE_DAYS_DIVISOR,
-    BUSINESS_VEHICLE_INTEREST_LIMIT,
-    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT,
-    BUSINESS_VEHICLE_LEASE_COST_LIMIT,
-    BUSINESS_VEHICLE_LIST_PRICE_LIMIT,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_TRAINING_CREDIT,
     CANADIAN_TUITION_AVAILABLE,
@@ -331,9 +326,6 @@ from app.jurisdictions.ca.catalog import (
     FARM_PARTNER_OTHER_AMOUNTS,
     FARM_PARTNERSHIP_TOTAL,
     FARM_TOTAL_EXPENSES,
-    FARM_VEHICLE_LEASE_CHARGE_PORTION,
-    FARM_VEHICLE_LEASE_CHARGES_NET,
-    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
     FARMING_INCOME,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
     FEDERAL_TUITION_AMOUNT,
@@ -383,9 +375,6 @@ from app.jurisdictions.ca.catalog import (
     FISH_REPAIRS_TOTAL,
     FISH_REPAIRS_YOUR_COST,
     FISH_TOTAL_EXPENSES,
-    FISH_VEHICLE_LEASE_CHARGE_PORTION,
-    FISH_VEHICLE_LEASE_CHARGES_NET,
-    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
     FISHING_INCOME,
     FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
     FOREIGN_TAX_CREDIT_NET_INCOME,
@@ -1410,24 +1399,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         # Form T2042 Chart C line 26 "Amount 25: amount 21" (printed with a subtraction sign): line
         # 25 is 0 for Return A (no leased vehicle), and amount 21 is 0.
-        FARM_VEHICLE_LEASE_CHARGES_NET: SubtractedLine(
-            output=FARM_VEHICLE_LEASE_CHARGES_NET,
-            minuend=FARM_VEHICLE_LEASE_CHARGE_PORTION,
-            minuend_amount=D("0"),
-            subtrahend=FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
-            subtrahend_amount=D("0"),
-            result=D("0"),
-        ),
         # Form T2121 Chart C line 26 "Amount 25: amount 21" (printed with a subtraction sign): line
         # 25 is 0 for Return A (no leased vehicle), and amount 21 is 0.
-        FISH_VEHICLE_LEASE_CHARGES_NET: SubtractedLine(
-            output=FISH_VEHICLE_LEASE_CHARGES_NET,
-            minuend=FISH_VEHICLE_LEASE_CHARGE_PORTION,
-            minuend_amount=D("0"),
-            subtrahend=FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
-            subtrahend_amount=D("0"),
-            result=D("0"),
-        ),
         # Form T691 Part 1 line 20 "Line 15 minus line 19 (if negative, show in brackets)": line 15
         # is Return A's 20000 of capital gains (line 19700) and line 19 is 0.
         AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS: SubtractedLine(
@@ -2436,23 +2409,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         # Schedule 8 Part 3b line 32 "enter "0"": the form's "0", claimed whole.
         CPP_ZERO: CreditAmountLine(CPP_ZERO, Credit(amount=D("0")), CENT, D("0")),
-        # Form T2125 Chart B line 18 and Chart C line 25 "÷ 30": the printed constants, each a
-        # dataset of the same name, claimed whole to the cent.
-        BUSINESS_VEHICLE_INTEREST_LIMIT: CreditAmountLine(
-            BUSINESS_VEHICLE_INTEREST_LIMIT, Credit(amount=D("350.00")), CENT, D("350.00")
-        ),
-        BUSINESS_VEHICLE_DAYS_DIVISOR: CreditAmountLine(
-            BUSINESS_VEHICLE_DAYS_DIVISOR, Credit(amount=D("30.00")), CENT, D("30.00")
-        ),
-        BUSINESS_VEHICLE_LIST_PRICE_LIMIT: CreditAmountLine(
-            BUSINESS_VEHICLE_LIST_PRICE_LIMIT, Credit(amount=D("44706.00")), CENT, D("44706.00")
-        ),
-        BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT: CreditAmountLine(
-            BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT, Credit(amount=D("1100.00")), CENT, D("1100.00")
-        ),
-        BUSINESS_VEHICLE_LEASE_COST_LIMIT: CreditAmountLine(
-            BUSINESS_VEHICLE_LEASE_COST_LIMIT, Credit(amount=D("38000.00")), CENT, D("38000.00")
-        ),
         # Form T657 Chart 2021 Part 1 amount A: "Maximum capital gains deduction for QFFP and/or
         # QSBCS disposed of in 2021" 446,109.00.
         CHART_2021_PART_1_AMOUNT_A: CreditAmountLine(
