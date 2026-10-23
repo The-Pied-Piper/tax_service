@@ -81,12 +81,16 @@ outputs:
   - ca/chart_2022_part_2_amount_m
   - ca/chart_2023_part_1_amount_n
   - ca/chart_2023_part_2_amount_m
-  # Form RC381 Part 3 line 24 "Line 22 plus line 23", line 44 "Line 42 plus line 43" and line 69
-  # "Line 61 plus line 68 (if negative, show in brackets)", which nothing else on the return
-  # reads yet (Part 2 lines G to J and Part 3 lines 21 and 26 are read by lines 27 to 69 now).
+  # Form RC381 Part 3 line 24 "Line 22 plus line 23" and line 44 "Line 42 plus line 43", which nothing
+  # else on the return reads yet (Part 2 lines G to J and Part 3 lines 21 and 26 are read by lines 27
+  # to 69 now), and the three results of Part 3a and Part 3b for employment income only (lines 30800,
+  # 22215 and 44800 of the return), which nothing else on the return reads yet (line 69 is read by
+  # Part 3a and Part 3b now).
   - ca/rc381_part_3_line_24
   - ca/rc381_part_3_line_44
-  - ca/rc381_part_3_line_69
+  - ca/rc381_employment_cpp_base_contributions
+  - ca/rc381_employment_cpp_enhanced_contributions
+  - ca/rc381_cpp_overpayment
   # Form T1206 Part 3 line 33C "Amount from line 33A divided by the tax rate you entered on line
   # 33B": Ontario's provincial Schedule does not add it, so nothing on the return reads it.
   - ca-on/tosi_adjusted_taxable_income

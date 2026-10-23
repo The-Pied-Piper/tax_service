@@ -837,6 +837,21 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_67,
     RC381_PART_3_LINE_68,
     RC381_PART_3_LINE_69,
+    RC381_PART_3_LINE_73,
+    RC381_PART_3_LINE_75,
+    RC381_PART_3_LINE_77,
+    RC381_PART_3_LINE_79,
+    RC381_PART_3_LINE_80,
+    RC381_PART_3_LINE_81,
+    RC381_PART_3_LINE_82,
+    RC381_PART_3_LINE_84,
+    RC381_PART_3_LINE_86,
+    RC381_PART_3_LINE_87,
+    RC381_PART_3_LINE_88,
+    RC381_PART_3_LINE_89,
+    RC381_PART_3_LINE_91,
+    RC381_PART_3_LINE_92,
+    RC381_PART_3_LINE_93,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_GAIN_OR_LOSS,
@@ -1196,6 +1211,45 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         AMT_PART_6_TAX_WITH_SURTAX: SumLine(
             AMT_PART_6_TAX_WITH_SURTAX,
             ((AMT_NET_MINIMUM_TAX_PAYABLE, D("0")), (AMT_PART_6_FEDERAL_SURTAX, D("0"))),
+            D("0"),
+        ),
+        # Form RC381 Part 3a line 73 "Line 71 plus line 72" (lines 59 and 67), and Part 3b lines
+        # 79 "Line 75 plus line 77", 81 "Line 79 plus line 80", 86 "Line 82 plus line 84", 88
+        # "Line 86 plus line 87", 92 "Line 89 plus line 91" and 93 "Line 88 plus line 92": every
+        # part is 0 for Return A, which has no T4 pensionable earnings or contributions.
+        RC381_PART_3_LINE_73: SumLine(
+            RC381_PART_3_LINE_73,
+            ((RC381_PART_3_LINE_59, D("0")), (RC381_PART_3_LINE_67, D("0"))),
+            D("0"),
+        ),
+        RC381_PART_3_LINE_79: SumLine(
+            RC381_PART_3_LINE_79,
+            ((RC381_PART_3_LINE_75, D("0")), (RC381_PART_3_LINE_77, D("0"))),
+            D("0"),
+        ),
+        RC381_PART_3_LINE_81: SumLine(
+            RC381_PART_3_LINE_81,
+            ((RC381_PART_3_LINE_79, D("0")), (RC381_PART_3_LINE_80, D("0"))),
+            D("0"),
+        ),
+        RC381_PART_3_LINE_86: SumLine(
+            RC381_PART_3_LINE_86,
+            ((RC381_PART_3_LINE_82, D("0")), (RC381_PART_3_LINE_84, D("0"))),
+            D("0"),
+        ),
+        RC381_PART_3_LINE_88: SumLine(
+            RC381_PART_3_LINE_88,
+            ((RC381_PART_3_LINE_86, D("0")), (RC381_PART_3_LINE_87, D("0"))),
+            D("0"),
+        ),
+        RC381_PART_3_LINE_92: SumLine(
+            RC381_PART_3_LINE_92,
+            ((RC381_PART_3_LINE_89, D("0")), (RC381_PART_3_LINE_91, D("0"))),
+            D("0"),
+        ),
+        RC381_PART_3_LINE_93: SumLine(
+            RC381_PART_3_LINE_93,
+            ((RC381_PART_3_LINE_88, D("0")), (RC381_PART_3_LINE_92, D("0"))),
             D("0"),
         ),
         # Form RC381 Part 3 line 3 "Line 1 plus line 2 Total pensionable earnings": Return A has

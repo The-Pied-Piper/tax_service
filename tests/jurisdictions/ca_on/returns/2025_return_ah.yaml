@@ -698,6 +698,7 @@ expected:
   ca/rc381_part_3_line_20: "44.06"
   ca/rc381_part_3_line_21: "8.90"
   ca/rc381_part_3_line_69: "52.96"
+  ca/rc381_cpp_overpayment: "52.96"
   ca/amt_adjusted_income_with_gains: "20000.00"
   ca/amt_minimum_amount: "0"
   ca/amt_basic_federal_tax: "-538.83"

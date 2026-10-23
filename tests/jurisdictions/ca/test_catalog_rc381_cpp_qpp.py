@@ -3,9 +3,11 @@
 Form RC381 (2025), "Inter-Provincial Calculation for CPP and QPP Contributions and Overpayments"
 (`docs/cra-forms-2025/rc381-25e.pdf`): Part 2 (the months and the monthly proration table) and
 Part 3 lines 1 to 3, 6 to 11, 14 to 16, 18 to 24, 26 to 31, 34 to 36, 38, 40 to 44, 46, 49, 52, 53,
-56, 59 to 61, 64 and 67 to 69, and the entries on lines 19, 25, 39 and 45. The seven kinds a caller
-enters carry a docstring that quotes the form's own words. Lines 53, 60, 61, 68 and 69 are signed:
-"if negative, show in brackets".
+56, 59 to 61, 64 and 67 to 69, and the entries on lines 19, 25, 39 and 45, then Part 3a and Part 3b
+(lines 73, 75 to 93, the helper under line 87 and the three results for lines 30800, 22215 and
+44800). The seven kinds a caller enters and the three results carry a docstring that quotes the
+form's own words. Lines 53, 60, 61, 68 and 69 are signed: "if negative, show in brackets". So is
+the helper under line 87, "the result of line 68 minus line 80".
 """
 
 from __future__ import annotations
@@ -23,6 +25,9 @@ from app.domain.artifact import ArtifactKind, ArtifactRegistry
 from app.domain.parameters.rate import Rate
 from app.jurisdictions.ca.catalog import (
     QPP_MONTHS,
+    RC381_CPP_OVERPAYMENT,
+    RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
+    RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
     RC381_PART_2_LINE_B,
     RC381_PART_2_LINE_G,
     RC381_PART_2_LINE_H,
@@ -73,6 +78,27 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_67,
     RC381_PART_3_LINE_68,
     RC381_PART_3_LINE_69,
+    RC381_PART_3_LINE_73,
+    RC381_PART_3_LINE_75,
+    RC381_PART_3_LINE_76,
+    RC381_PART_3_LINE_77,
+    RC381_PART_3_LINE_78,
+    RC381_PART_3_LINE_79,
+    RC381_PART_3_LINE_80,
+    RC381_PART_3_LINE_81,
+    RC381_PART_3_LINE_82,
+    RC381_PART_3_LINE_83,
+    RC381_PART_3_LINE_84,
+    RC381_PART_3_LINE_85,
+    RC381_PART_3_LINE_86,
+    RC381_PART_3_LINE_87,
+    RC381_PART_3_LINE_87_DIFFERENCE,
+    RC381_PART_3_LINE_88,
+    RC381_PART_3_LINE_89,
+    RC381_PART_3_LINE_90,
+    RC381_PART_3_LINE_91,
+    RC381_PART_3_LINE_92,
+    RC381_PART_3_LINE_93,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     T4_CPP_SECOND_ADDITIONAL_BOX_16A,
     T4_QPP_CONTRIBUTIONS_BOX_17,
@@ -135,6 +161,34 @@ PART_3_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_3_LINE_59,
     RC381_PART_3_LINE_64,
     RC381_PART_3_LINE_67,
+    RC381_PART_3_LINE_73,
+    RC381_PART_3_LINE_75,
+    RC381_PART_3_LINE_76,
+    RC381_PART_3_LINE_77,
+    RC381_PART_3_LINE_78,
+    RC381_PART_3_LINE_79,
+    RC381_PART_3_LINE_80,
+    RC381_PART_3_LINE_81,
+    RC381_PART_3_LINE_82,
+    RC381_PART_3_LINE_83,
+    RC381_PART_3_LINE_84,
+    RC381_PART_3_LINE_85,
+    RC381_PART_3_LINE_86,
+    RC381_PART_3_LINE_87,
+    RC381_PART_3_LINE_88,
+    RC381_PART_3_LINE_89,
+    RC381_PART_3_LINE_90,
+    RC381_PART_3_LINE_91,
+    RC381_PART_3_LINE_92,
+    RC381_PART_3_LINE_93,
+)
+
+# The three results of Part 3a and Part 3b for "earnings subject to contributions ... from
+# employment income only": lines 30800, 22215 and 44800 of the return.
+RESULT_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
+    RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
+    RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
+    RC381_CPP_OVERPAYMENT,
 )
 
 # Lines whose difference or sum can come out below zero: "if negative, show in brackets".
@@ -144,6 +198,7 @@ SIGNED_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_3_LINE_61,
     RC381_PART_3_LINE_68,
     RC381_PART_3_LINE_69,
+    RC381_PART_3_LINE_87_DIFFERENCE,
 )
 
 
@@ -220,10 +275,45 @@ def test_the_rc381_part_3_line_kinds_are_the_registered_ones(registry: ArtifactR
     assert registry.get("ca/rc381_part_3_line_67") is RC381_PART_3_LINE_67
     assert registry.get("ca/rc381_part_3_line_68") is RC381_PART_3_LINE_68
     assert registry.get("ca/rc381_part_3_line_69") is RC381_PART_3_LINE_69
+    assert registry.get("ca/rc381_part_3_line_73") is RC381_PART_3_LINE_73
+    assert registry.get("ca/rc381_part_3_line_75") is RC381_PART_3_LINE_75
+    assert registry.get("ca/rc381_part_3_line_76") is RC381_PART_3_LINE_76
+    assert registry.get("ca/rc381_part_3_line_77") is RC381_PART_3_LINE_77
+    assert registry.get("ca/rc381_part_3_line_78") is RC381_PART_3_LINE_78
+    assert registry.get("ca/rc381_part_3_line_79") is RC381_PART_3_LINE_79
+    assert registry.get("ca/rc381_part_3_line_80") is RC381_PART_3_LINE_80
+    assert registry.get("ca/rc381_part_3_line_81") is RC381_PART_3_LINE_81
+    assert registry.get("ca/rc381_part_3_line_82") is RC381_PART_3_LINE_82
+    assert registry.get("ca/rc381_part_3_line_83") is RC381_PART_3_LINE_83
+    assert registry.get("ca/rc381_part_3_line_84") is RC381_PART_3_LINE_84
+    assert registry.get("ca/rc381_part_3_line_85") is RC381_PART_3_LINE_85
+    assert registry.get("ca/rc381_part_3_line_86") is RC381_PART_3_LINE_86
+    assert registry.get("ca/rc381_part_3_line_87") is RC381_PART_3_LINE_87
+    # Line 87 "the result of line 68 minus line 80", printed inside the line: a step of its own.
+    assert registry.get("ca/rc381_part_3_line_87_difference") is RC381_PART_3_LINE_87_DIFFERENCE
+    assert registry.get("ca/rc381_part_3_line_88") is RC381_PART_3_LINE_88
+    assert registry.get("ca/rc381_part_3_line_89") is RC381_PART_3_LINE_89
+    assert registry.get("ca/rc381_part_3_line_90") is RC381_PART_3_LINE_90
+    assert registry.get("ca/rc381_part_3_line_91") is RC381_PART_3_LINE_91
+    assert registry.get("ca/rc381_part_3_line_92") is RC381_PART_3_LINE_92
+    assert registry.get("ca/rc381_part_3_line_93") is RC381_PART_3_LINE_93
+    assert registry.get("ca/rc381_employment_cpp_base_contributions") is (
+        RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS
+    )
+    assert registry.get("ca/rc381_employment_cpp_enhanced_contributions") is (
+        RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS
+    )
+    assert registry.get("ca/rc381_cpp_overpayment") is RC381_CPP_OVERPAYMENT
 
 
 def test_the_rc381_amounts_are_money() -> None:
-    for kind in (*INPUT_AMOUNTS, *PART_2_AMOUNTS, *PART_3_AMOUNTS, *SIGNED_AMOUNTS):
+    for kind in (
+        *INPUT_AMOUNTS,
+        *PART_2_AMOUNTS,
+        *PART_3_AMOUNTS,
+        *RESULT_AMOUNTS,
+        *SIGNED_AMOUNTS,
+    ):
         assert kind.value_type is Decimal, kind.identifier
 
 
@@ -247,6 +337,7 @@ def test_every_rc381_kind_is_non_negative() -> None:
         *INPUT_AMOUNTS,
         *PART_2_AMOUNTS,
         *PART_3_AMOUNTS,
+        *RESULT_AMOUNTS,
     )
     for kind in kinds:
         assert kind.non_negative is True, kind.identifier
@@ -259,9 +350,41 @@ def test_the_rc381_lines_that_may_be_negative_are_signed() -> None:
     # brackets)", line 68 "Line 64 minus line 67 (if negative, show in brackets)" and line 69
     # "Line 61 plus line 68 (if negative, show in brackets)": the actual contributions can be less
     # than the required ones, so these are not non-negative.
+    # Line 87 helper "the result of line 68 minus line 80": line 68 may be negative while line
+    # 80 is "0", so the difference can be below zero.
     for kind in SIGNED_AMOUNTS:
         assert kind.non_negative is False, kind.identifier
 
+
+# The words of the form each result's docstring quotes.
+RESULT_QUOTES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "rc381_employment_cpp_base_contributions",
+        (
+            "Enter this amount (in dollars and cents) on line 30800 of your return.",
+            "Part 3a",
+            "Part 3b",
+            "line 69",
+        ),
+    ),
+    (
+        "rc381_employment_cpp_enhanced_contributions",
+        (
+            "Enter this amount (in dollars and cents) on line 22215 of your return.",
+            "Part 3a",
+            "Part 3b",
+            "line 69",
+        ),
+    ),
+    (
+        "rc381_cpp_overpayment",
+        (
+            "Enter this amount (in dollars and cents) on line 44800 of your return.",
+            "Part 3a",
+            "line 69",
+        ),
+    ),
+)
 
 # The words of the form each input's docstring quotes (`docs/cra-forms-2025/rc381-25e.pdf`), and
 # the box number of the line, which the form prints beside it.
@@ -343,6 +466,15 @@ def docstring_of(name: str) -> str:
 
 @pytest.mark.parametrize(("name", "quotes"), INPUT_QUOTES, ids=[n for n, _ in INPUT_QUOTES])
 def test_each_rc381_input_docstring_quotes_the_form(name: str, quotes: tuple[str, ...]) -> None:
+    docstring = squashed(docstring_of(name))
+
+    assert "RC381" in docstring
+    for quote in quotes:
+        assert squashed(quote) in docstring, quote
+
+
+@pytest.mark.parametrize(("name", "quotes"), RESULT_QUOTES, ids=[n for n, _ in RESULT_QUOTES])
+def test_each_rc381_result_docstring_quotes_the_form(name: str, quotes: tuple[str, ...]) -> None:
     docstring = squashed(docstring_of(name))
 
     assert "RC381" in docstring

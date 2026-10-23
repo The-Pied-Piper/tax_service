@@ -675,6 +675,7 @@ from app.jurisdictions.ca.catalog import (
     QBT_TAXABLE_GAINS_LIMIT,
     QBT_TAXABLE_GAINS_NOT_LIMITED,
     QBT_TOTAL_CAPITAL_GAINS,
+    RC381_CPP_OVERPAYMENT,
     RC381_PART_2_LINE_B,
     RC381_PART_2_LINE_G,
     RC381_PART_2_LINE_H,
@@ -706,6 +707,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_42,
     RC381_PART_3_LINE_43,
     RC381_PART_3_LINE_46,
+    RC381_PART_3_LINE_69,
     REFUND,
     RENTAL_CCA_CLAIM,
     RENTAL_CCA_CLAIM_BEFORE_LIMIT,
@@ -4170,6 +4172,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (AMT_FOREIGN_BUSINESS_TAX_PAID, D("0")),
             ),
             total=D("0"),
+        ),
+        # Form RC381 Part 3a line 74 "Overpayment: Enter the amount from line 69." for line 44800,
+        # when line 69 is positive: Return A's line 69 is 4034.10.
+        RC381_CPP_OVERPAYMENT: SumNotBelowZeroLine(
+            output=RC381_CPP_OVERPAYMENT,
+            parts=((RC381_PART_3_LINE_69, D("4034.10")),),
+            total=D("4034.10"),
         ),
         # Form T657 Chart 2016 Part 1 "amount D plus amount E" (signed T2017 lines 6 and 12): 0 for
         # each.

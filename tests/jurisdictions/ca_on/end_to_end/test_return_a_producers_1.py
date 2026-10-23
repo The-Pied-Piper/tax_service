@@ -38,6 +38,7 @@ from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
 from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
 from app.jurisdictions.ca.capabilities.chart_b_zone_a_total import ChartBZoneATotal
 from app.jurisdictions.ca.capabilities.chart_b_zone_b_total import ChartBZoneBTotal
+from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
 from app.jurisdictions.ca.capabilities.count_at_least import CountAtLeast
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
@@ -46,8 +47,10 @@ from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 from app.jurisdictions.ca.capabilities.ei_excluded_slips_net_income import (
     EiExcludedSlipsNetIncome,
 )
+from app.jurisdictions.ca.capabilities.lesser_of_when_positive import LesserOfWhenPositive
 from app.jurisdictions.ca.capabilities.lesser_of_with_maximum import LesserOfWithMaximum
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
+from app.jurisdictions.ca.capabilities.positive_part_of_negation import PositivePartOfNegation
 from app.jurisdictions.ca.capabilities.ratio_truncated import RatioTruncated
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
@@ -645,6 +648,9 @@ from app.jurisdictions.ca.catalog import (
     PRE_1986_DEDUCTIONS_BEFORE_1988,
     PRE_1986_DEDUCTIONS_TOTAL,
     PROFESSIONAL_INCOME,
+    RC381_CPP_OVERPAYMENT,
+    RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
+    RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
     RC381_PART_2_LINE_B,
     RC381_PART_2_LINE_G,
     RC381_PART_2_LINE_H,
@@ -695,6 +701,27 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_67,
     RC381_PART_3_LINE_68,
     RC381_PART_3_LINE_69,
+    RC381_PART_3_LINE_73,
+    RC381_PART_3_LINE_75,
+    RC381_PART_3_LINE_76,
+    RC381_PART_3_LINE_77,
+    RC381_PART_3_LINE_78,
+    RC381_PART_3_LINE_79,
+    RC381_PART_3_LINE_80,
+    RC381_PART_3_LINE_81,
+    RC381_PART_3_LINE_82,
+    RC381_PART_3_LINE_83,
+    RC381_PART_3_LINE_84,
+    RC381_PART_3_LINE_85,
+    RC381_PART_3_LINE_86,
+    RC381_PART_3_LINE_87,
+    RC381_PART_3_LINE_87_DIFFERENCE,
+    RC381_PART_3_LINE_88,
+    RC381_PART_3_LINE_89,
+    RC381_PART_3_LINE_90,
+    RC381_PART_3_LINE_91,
+    RC381_PART_3_LINE_92,
+    RC381_PART_3_LINE_93,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REFUND_OR_BALANCE_OWING,
@@ -1105,6 +1132,32 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_67), Sum)
     assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_68), Subtract)
     assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_69), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_73), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_75), ChooseBySign)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_76), PositivePartOfNegation)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_77), LesserOfWhenPositive)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_78), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_79), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_80), LesserOfWhenPositive)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_81), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_82), ChooseBySign)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_83), PositivePartOfNegation)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_84), LesserOfWhenPositive)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_85), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_86), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_87_DIFFERENCE), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_87), LesserOfWhenPositive)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_88), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_89), ChooseBySign)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_90), PositivePartOfNegation)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_91), LesserOfWhenPositive)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_92), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_93), Sum)
+    assert isinstance(worksheet.producer_of(RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS), ChooseBySign)
+    assert isinstance(
+        worksheet.producer_of(RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS), ChooseBySign
+    )
+    assert isinstance(worksheet.producer_of(RC381_CPP_OVERPAYMENT), SumNotBelowZero)
     assert worksheet.producer_of(RC381_PART_3_LINE_7) is not None
     assert worksheet.producer_of(RC381_PART_3_LINE_8) is not None
     assert worksheet.producer_of(RC381_PART_3_LINE_9) is not None

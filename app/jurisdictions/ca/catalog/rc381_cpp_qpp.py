@@ -1,10 +1,10 @@
-"""The federal catalog: Form RC381 Part 2 and Part 3 lines 1 to 69.
+"""The federal catalog: Form RC381 Part 2 and Part 3 lines 1 to 93.
 
 Form RC381 (2025), "Inter-Provincial Calculation for CPP and QPP Contributions and Overpayments":
 Part 2 (the months and the monthly proration table, lines G to J being the QPP side) and the CPP
 side of Part 3 on employment income (lines 1 to 26), then its QPP side and the totals (lines 27
-to 69). Lines C to F of Part 2 are Schedule 8 Part 2's lines B to E,
-the existing artifacts read with the same months.
+to 69), then Part 3a and Part 3b (lines 70 to 93) with their three results. Lines C to F of
+Part 2 are Schedule 8 Part 2's lines B to E, the existing artifacts read with the same months.
 """
 
 from __future__ import annotations
@@ -264,3 +264,107 @@ actual second additional contributions can be less than the required ones."""
 RC381_PART_3_LINE_69 = CATALOG.declare("rc381_part_3_line_69", Decimal)
 """Form RC381 Part 3 line 69 "Line 61 plus line 68 (if negative, show in brackets)": signed, the
 total of the contributions over or under the required ones."""
+
+RC381_PART_3_LINE_73 = CATALOG.declare("rc381_part_3_line_73", Decimal, non_negative=True)
+"""Deduction for enhanced contributions on employment income, Form RC381 Part 3a line 73 "Line 71
+plus line 72", line 71 being the amount from line 59 and line 72 the amount from line 67 (if
+any)."""
+
+RC381_PART_3_LINE_75 = CATALOG.declare("rc381_part_3_line_75", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 75 "If line 53 is positive or "0", enter the amount from line 52 at line
+75 and line 81, and continue at line 82. If not, enter the amount from line 49 and continue at line
+76." A non-negative amount."""
+
+RC381_PART_3_LINE_76 = CATALOG.declare("rc381_part_3_line_76", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 76 "Enter the amount from line 53 as a positive amount.", when line 53 is
+negative."""
+
+RC381_PART_3_LINE_77 = CATALOG.declare("rc381_part_3_line_77", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 77 "If line 53 is negative and line 60 is positive, enter whichever is
+less: amount from line 60 or line 76. If not, enter "0"." A non-negative amount."""
+
+RC381_PART_3_LINE_78 = CATALOG.declare("rc381_part_3_line_78", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 78 "Line 76 minus line 77"."""
+
+RC381_PART_3_LINE_79 = CATALOG.declare("rc381_part_3_line_79", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 79 "Line 75 plus line 77"."""
+
+RC381_PART_3_LINE_80 = CATALOG.declare("rc381_part_3_line_80", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 80 "If line 68 and line 78 are both positive, enter whichever is less. If
+not, enter "0""."""
+
+RC381_PART_3_LINE_81 = CATALOG.declare("rc381_part_3_line_81", Decimal, non_negative=True)
+"""Base contributions through employment income, Form RC381 Part 3b line 81 "Line 79 plus line
+80"."""
+
+RC381_PART_3_LINE_82 = CATALOG.declare("rc381_part_3_line_82", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 82 "If line 60 is positive or "0", enter the amount from line 59 at line
+82 and line 88, and continue at line 89. If not, enter the amount from line 56 and continue at line
+83." A non-negative amount."""
+
+RC381_PART_3_LINE_83 = CATALOG.declare("rc381_part_3_line_83", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 83 "Enter the amount from line 60 as a positive amount.", when line 60 is
+negative."""
+
+RC381_PART_3_LINE_84 = CATALOG.declare("rc381_part_3_line_84", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 84 "If line 53 is positive, enter whichever is less: amount from line 53
+or line 83. If not, enter "0"." A non-negative amount."""
+
+RC381_PART_3_LINE_85 = CATALOG.declare("rc381_part_3_line_85", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 85 "Line 83 minus line 84"."""
+
+RC381_PART_3_LINE_86 = CATALOG.declare("rc381_part_3_line_86", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 86 "Line 82 plus line 84"."""
+
+RC381_PART_3_LINE_87_DIFFERENCE = CATALOG.declare("rc381_part_3_line_87_difference", Decimal)
+"""Form RC381 Part 3b line 87, the printed "the result of line 68 minus line 80": signed, line 68
+may be negative while line 80 is "0"."""
+
+RC381_PART_3_LINE_87 = CATALOG.declare("rc381_part_3_line_87", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 87 "If line 68 and line 85 are both positive, enter whichever is less:
+amount from line 85 or the result of line 68 minus line 80. If not, enter "0"." A non-negative
+amount."""
+
+RC381_PART_3_LINE_88 = CATALOG.declare("rc381_part_3_line_88", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 88 "Line 86 plus line 87"."""
+
+RC381_PART_3_LINE_89 = CATALOG.declare("rc381_part_3_line_89", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 89 "If line 68 is positive or "0", enter the amount from line 67 at line
+89 and line 92, and continue at line 93. If not, enter the amount from line 64 and continue at line
+90." A non-negative amount."""
+
+RC381_PART_3_LINE_90 = CATALOG.declare("rc381_part_3_line_90", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 90 "Enter the amount from line 68 as a positive amount.", when line 68 is
+negative."""
+
+RC381_PART_3_LINE_91 = CATALOG.declare("rc381_part_3_line_91", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 91 "If line 61 is positive, enter whichever is less: amount from line 61
+or line 90. If not, enter "0"." A non-negative amount."""
+
+RC381_PART_3_LINE_92 = CATALOG.declare("rc381_part_3_line_92", Decimal, non_negative=True)
+"""Form RC381 Part 3b line 92 "Line 89 plus line 91"."""
+
+RC381_PART_3_LINE_93 = CATALOG.declare("rc381_part_3_line_93", Decimal, non_negative=True)
+"""Deduction for enhanced contributions on employment income, Form RC381 Part 3b line 93 "Line 88
+plus line 92"."""
+
+RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS = CATALOG.declare(
+    "rc381_employment_cpp_base_contributions", Decimal, non_negative=True
+)
+"""Base contributions through employment income, Form RC381 Part 3a line 70 (when line 69 is
+positive, the amount from line 52) and Part 3b line 81 "Line 79 plus line 80" (when line 69 is "0"
+or negative): "Enter this amount (in dollars and cents) on line 30800 of your return.", the same
+result by either part."""
+
+RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS = CATALOG.declare(
+    "rc381_employment_cpp_enhanced_contributions", Decimal, non_negative=True
+)
+"""Deduction for enhanced contributions on employment income, Form RC381 Part 3a line 73 (when line
+69 is positive, "Line 71 plus line 72") and Part 3b line 93 "Line 88 plus line 92" (when line 69
+is "0" or negative): "Enter this amount (in dollars and cents) on line 22215 of your return.",
+the same result by either part."""
+
+RC381_CPP_OVERPAYMENT = CATALOG.declare("rc381_cpp_overpayment", Decimal, non_negative=True)
+"""Overpayment, Form RC381 Part 3a line 74 "Enter the amount from line 69.": "Enter this amount (in
+dollars and cents) on line 44800 of your return." Part 3b has no such line, so it is 0 when line 69
+is "0" or negative."""
