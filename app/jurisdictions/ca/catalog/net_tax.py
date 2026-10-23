@@ -90,8 +90,7 @@ line 35000", line 123 the federal dividend tax credit and line 124 the minimum t
 federal tax after credits. Line 131 (`itc_recapture`) is added to it (line 132) and line 134
 (40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax" carries line 132, as line 133
 is not wired. Not modelled: line 127 (foreign surtax, not triggered on a return whose income is all
-allocated to Ontario), line 129 (foreign tax credit), line 133 (logging tax credit) and line 136
-(investment tax credit).
+allocated to Ontario), line 129 (foreign tax credit) and line 133 (logging tax credit).
 """
 
 CPP_PAYABLE_ON_SELF_EMPLOYMENT = CATALOG.declare(

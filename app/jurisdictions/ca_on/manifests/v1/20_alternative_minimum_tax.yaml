@@ -600,12 +600,12 @@ capabilities:
     produces:
       output: ca/amt_federal_tax_payable
   # Part 3 line 12 "Investment tax credit amount up to, but not more than the amount I of Form
-  # T2038(IND)": the claim, the filer's figure, may not be more than amount I, and above it is
-  # refused, not capped.
+  # T2038(IND)": the claim, the filer's figure, may not be more than amount I, which the investment
+  # tax credit family reads from Part D, and above it is refused, not capped.
   - name: core/at_most
     consumes:
       amount: ca/amt_investment_tax_credit_claim
-      bound: ca/amt_t2038_amount_i
+      bound: ca/itc_amount_i
     produces:
       output: ca/amt_investment_tax_credit
   # Part 3 line 14 "Add lines 11 to 13.": line 11 "Federal political contribution tax credit from

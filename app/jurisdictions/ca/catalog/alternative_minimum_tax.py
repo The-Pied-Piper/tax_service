@@ -697,11 +697,6 @@ AMT_INVESTMENT_TAX_CREDIT_CLAIM = CATALOG.declare(
 not more than the amount I of Form T2038(IND)": the amount the filer claims, an election, entered as
 the form takes it; it may not be more than amount I."""
 
-AMT_T2038_AMOUNT_I = CATALOG.declare("amt_t2038_amount_i", Decimal, non_negative=True)
-"""Amount I of Form T2038(IND), Form T691 Part 3 line 12 "Investment tax credit amount up to, but
-not more than the amount I of Form T2038(IND)": the bound on the claim, the caller's figure from
-Form T2038(IND)."""
-
 AMT_INVESTMENT_TAX_CREDIT = CATALOG.declare("amt_investment_tax_credit", Decimal, non_negative=True)
 """Investment tax credit amount, Form T691 Part 3 line 12 "Investment tax credit amount up to, but
 not more than the amount I of Form T2038(IND)": the claim, which may not be more than amount I; a
@@ -812,12 +807,6 @@ AMT_MINIMUM_TAX_AFTER_REGULAR_TAX = CATALOG.declare(
 )
 """Minimum tax after the regular tax, Form T691 Part 5 line 7 "Line 3 minus line 6 (if negative,
 enter "0")": line 3 less line 6, not below zero."""
-
-AMT_T2038_PART_D_AMOUNT_15 = CATALOG.declare(
-    "amt_t2038_part_d_amount_15", Decimal, non_negative=True
-)
-"""Amount 15 of Part D of Form T2038(IND), Form T691 Part 5 line 9 "Amount from line 15 of Part D of
-Form T2038(IND)": the credit claimed on Part D line 15, the caller's figure, never negative."""
 
 AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D = CATALOG.declare(
     "amt_investment_tax_credit_less_part_d", Decimal, non_negative=True

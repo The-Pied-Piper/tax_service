@@ -224,8 +224,13 @@ def return_bg(
         amt_t2203_column_5_percentage=t2203_percentage,
         amt_non_resident_or_deemed_resident=non_resident,
         amt_investment_tax_credit_claim=itc_claim,
-        amt_t2038_amount_i=amount_i,
-        amt_t2038_part_d_amount_15=part_d_amount_15,
+        # Form T2038(IND) Part D: amount I is the lesser of G and H. G is the opening balance (no
+        # credit of Parts A and B, no graduated rate estate), and H is the federal tax of line 40600
+        # less lines 41000 and 41400 (none here), which is above the amounts given, so I is G.
+        itc_opening_balance=amount_i,
+        # Part D amount 15: the claim the filer chooses (a separate election from the claim of Form
+        # T691 Part 3 line 12, `itc_claim` above); it is up to I, as AMT does not apply here.
+        itc_claim=part_d_amount_15,
         amt_foreign_business_income=foreign_business_income,
         amt_foreign_non_business_income=foreign_non_business_income,
         amt_foreign_capital_gains_non_taxable_claim=foreign_capital_gains_claim,
@@ -988,7 +993,7 @@ def test_an_investment_tax_credit_claim_above_t2038_amount_i_is_refused() -> Non
 
     assert str(raised.value).startswith(
         "ca-on/return, instance 1: "
-        "ca/amt_investment_tax_credit_claim 200 is above ca/amt_t2038_amount_i 150"
+        "ca/amt_investment_tax_credit_claim 200 is above ca/itc_amount_i 150"
     )
 
 

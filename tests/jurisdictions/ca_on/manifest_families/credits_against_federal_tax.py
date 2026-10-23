@@ -18,6 +18,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
+    INVESTMENT_TAX_CREDIT,
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
     LABOUR_SPONSORED_FUNDS_NET_COST,
@@ -272,13 +273,17 @@ STEPS = {
         produces={"output": "ca/labour_sponsored_funds_credit"},
     ),
     # T1 line 138 (line 41600) "Add lines 135 to 137.": line 135 (41000, the federal political
-    # contribution tax credit) and line 137 (41400), in line order, as line 136 (41200, the
-    # investment tax credit) is not yet wired.
+    # contribution tax credit), line 136 (41200, the investment tax credit of Form T2038(IND) Part D
+    # amount 15) and line 137 (41400), in line order.
     CapabilitySelection(
         name="core/sum",
         params={},
         consumes={
-            "parts": ("ca/political_credit", "ca/labour_sponsored_funds_credit"),
+            "parts": (
+                "ca/political_credit",
+                "ca/investment_tax_credit",
+                "ca/labour_sponsored_funds_credit",
+            ),
         },
         produces={"output": "ca/credits_against_federal_tax"},
     ),
@@ -416,7 +421,7 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({POLITICAL_CREDIT, LABOUR_SPONSORED_FUNDS_CREDIT}),
+        frozenset({POLITICAL_CREDIT, INVESTMENT_TAX_CREDIT, LABOUR_SPONSORED_FUNDS_CREDIT}),
         frozenset({CREDITS_AGAINST_FEDERAL_TAX}),
     ),
     (
