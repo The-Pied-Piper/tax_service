@@ -81,6 +81,10 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_CLOSING_INVENTORY,
     BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,
     BUSINESS_DIRECT_WAGE_COSTS,
+    BUSINESS_EPOP_AGREEMENT_FILED,
+    BUSINESS_EPOP_ASSOCIATED,
+    BUSINESS_EPOP_PERCENTAGE,
+    BUSINESS_EPOP_PERCENTAGE_TOTAL,
     BUSINESS_FUEL_COSTS,
     BUSINESS_GROSS_SALES,
     BUSINESS_HOME_CARRIED_FORWARD,
@@ -99,6 +103,8 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,
     BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,
     BUSINESS_MEALS_AND_ENTERTAINMENT,
+    BUSINESS_MINISTER_ALLOCATION,
+    BUSINESS_MINISTER_ALLOCATION_GIVEN,
     BUSINESS_OFFICE_EXPENSES,
     BUSINESS_OFFICE_STATIONERY_AND_SUPPLIES,
     BUSINESS_OPENING_INVENTORY,
@@ -373,9 +379,12 @@ from app.jurisdictions.ca.catalog import (
     FISH_SHARESPERSON_INCOME,
     FISH_SUBSIDIES,
     FISH_VEHICLE_SALES_TAX_RATE,
+    FOREIGN_BUSINESS_TAX_PAID,
+    FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
     FOREIGN_NON_BUSINESS_TAX_PAID,
+    FOREIGN_SURTAX_OUTSIDE_CANADA,
     FOREIGN_TAX_COUNTRIES,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
@@ -414,6 +423,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FARMING_INCOME,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FISHING_INCOME,
+    NET_FOREIGN_BUSINESS_INCOME,
     NET_FOREIGN_NON_BUSINESS_INCOME,
     NET_PARTNERSHIP_INCOME,
     NET_PROFESSIONAL_INCOME,
@@ -719,6 +729,7 @@ from app.jurisdictions.ca.catalog import (
     T657_T2048_LINE_17217_FOR_2024,
     T776_STATEMENTS,
     T2042_STATEMENTS,
+    T2048_DISPOSITIONS,
     T2121_STATEMENTS,
     T2125_STATEMENTS,
     T5013_DIVIDEND_TAX_CREDIT,
@@ -1235,12 +1246,14 @@ def business_vehicles(*vehicles: Mapping[str, str]) -> Artifact[RecordList]:
 
 
 def business_cca_classes(
-    *rows: tuple[str, str, str, str, str, str, str, int],
+    *rows: tuple[str, str, str, str, str, str, str, int, str, str, str],
 ) -> Artifact[RecordList]:
     """The Form T2125 Area A rows, one record per class, with the columns of
     `rental_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
-    column 12, the CCA claimed (column 21) as decimal text, and 1 if no property is left in the
-    class, else 0 (endnote 3)."""
+    column 12, the CCA claimed (column 21) as decimal text, 1 if no property is left in the
+    class, else 0 (endnote 3), column 4 (the DIEP additions), column 6 (the proceeds of
+    dispositions of DIEP) and column 9 (the immediate expensing amount), each "0" when the class
+    has no DIEP."""
     kind = BUSINESS_CCA_CLASSES
     assert isinstance(kind, RecordListKind)
     records: list[dict[ArtifactKind[Any], object]] = [
@@ -1253,6 +1266,9 @@ def business_cca_classes(
             CCA_RIIP_ADDITIONS: D(riip_additions),
             CCA_CLAIMED: D(claimed),
             CCA_NO_PROPERTY_LEFT: no_property_left,
+            CCA_DIEP_ADDITIONS: D(diep_additions),
+            CCA_DIEP_PROCEEDS: D(diep_proceeds),
+            CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
         }
         for (
             class_number,
@@ -1263,6 +1279,9 @@ def business_cca_classes(
             riip_additions,
             claimed,
             no_property_left,
+            diep_additions,
+            diep_proceeds,
+            immediate_expensing,
         ) in rows
     ]
     return Artifact(kind, RecordList(kind.fields, records))
@@ -1272,8 +1291,16 @@ def t2125_statement(
     *,
     business: Mapping[str, str] | None = None,
     business_partner: int = 0,
-    business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    business_cca_classes_rows: tuple[
+        tuple[str, str, str, str, str, str, str, int, str, str, str], ...
+    ] = (),
     business_vehicles_rows: tuple[Mapping[str, str], ...] = (),
+    business_epop_associated: int = 0,
+    business_epop_agreement_filed: int = 0,
+    business_epop_percentage: str = "0",
+    business_epop_percentage_total: str = "0",
+    business_minister_allocation_given: int = 0,
+    business_minister_allocation: str = "0",
 ) -> dict[ArtifactKind[Any], object]:
     """One Form T2125 statement, a record of `ca/t2125_statements`: its inputs, as given or 0, and
     its vehicles (one record per mapping of `business_vehicles`, none by default)."""
@@ -1281,6 +1308,12 @@ def t2125_statement(
         *business_amount_artifacts(business or {}),
         Artifact(BUSINESS_PARTNER, business_partner),
         business_cca_classes(*business_cca_classes_rows),
+        Artifact(BUSINESS_EPOP_ASSOCIATED, business_epop_associated),
+        Artifact(BUSINESS_EPOP_AGREEMENT_FILED, business_epop_agreement_filed),
+        Artifact(BUSINESS_EPOP_PERCENTAGE, D(business_epop_percentage)),
+        Artifact(BUSINESS_EPOP_PERCENTAGE_TOTAL, D(business_epop_percentage_total)),
+        Artifact(BUSINESS_MINISTER_ALLOCATION_GIVEN, business_minister_allocation_given),
+        Artifact(BUSINESS_MINISTER_ALLOCATION, D(business_minister_allocation)),
         business_vehicles(*business_vehicles_rows),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
@@ -1561,6 +1594,46 @@ def t2121_statements(statements: Iterable[Mapping[str, Any]]) -> Artifact[Record
     return Artifact(T2121_STATEMENTS, RecordList(T2121_STATEMENTS.fields, records))
 
 
+def t2048_disposition(
+    *,
+    qbt_election_eligible_amount: str = "0",
+    qbt_percentage_allocated: str = "0",
+    qbt_prior_years_claims: str = "0",
+    qbt_capital_gains: str = "0",
+    qbt_2024_reserve: str = "0",
+    qbt_2025_reserve: str = "0",
+    qbt_has_investment_expenses: int = 0,
+    qbt_deduction_claimed: str = "0",
+    qbt_election_is_qbt: int = 0,
+    qbt_gains_are_qsbcs_or_qffp: int = 0,
+    qbt_partnership_losses: str = "0",
+    qbt_other_investment_expenses: str = "0",
+    qbt_other_property_income: str = "0",
+) -> dict[ArtifactKind[Any], object]:
+    """One Form T2048 disposition, a record of `ca/t2048_dispositions`, as given or 0."""
+    return {
+        QBT_ELECTION_ELIGIBLE_AMOUNT: D(qbt_election_eligible_amount),
+        QBT_PERCENTAGE_ALLOCATED: D(qbt_percentage_allocated),
+        QBT_PRIOR_YEARS_CLAIMS: D(qbt_prior_years_claims),
+        QBT_CAPITAL_GAINS: D(qbt_capital_gains),
+        QBT_2024_RESERVE: D(qbt_2024_reserve),
+        QBT_2025_RESERVE: D(qbt_2025_reserve),
+        QBT_HAS_INVESTMENT_EXPENSES: qbt_has_investment_expenses,
+        QBT_DEDUCTION_CLAIMED: D(qbt_deduction_claimed),
+        QBT_ELECTION_IS_QBT: qbt_election_is_qbt,
+        QBT_GAINS_ARE_QSBCS_OR_QFFP: qbt_gains_are_qsbcs_or_qffp,
+        QBT_PARTNERSHIP_LOSSES: D(qbt_partnership_losses),
+        QBT_OTHER_INVESTMENT_EXPENSES: D(qbt_other_investment_expenses),
+        QBT_OTHER_PROPERTY_INCOME: D(qbt_other_property_income),
+    }
+
+
+def t2048_dispositions(dispositions: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
+    """The dispositions of Form T2048: one record for each mapping of `t2048_disposition`."""
+    records = [t2048_disposition(**disposition) for disposition in dispositions]
+    return Artifact(T2048_DISPOSITIONS, RecordList(T2048_DISPOSITIONS.fields, records))
+
+
 def trip(individual: int, zone: int, column_3: str, column_4: str, column_5: str) -> dict[Any, Any]:
     """A Form T2222 Chart B record: the individual, the zone (1 for A, 2 for B), columns 3 to 5."""
     return {
@@ -1648,16 +1721,29 @@ def principal_residence_properties(*rows: ResidenceProperty) -> Artifact[RecordL
     )
 
 
-def foreign_tax_countries(*rows: tuple[str, str]) -> Artifact[RecordList]:
-    """The Form T2209 countries, one record per (line 43100, line 43300) row, in the order given;
-    their business figures (lines 4 to 6) are 0."""
+def foreign_tax_countries(*rows: tuple[str, ...]) -> Artifact[RecordList]:
+    """The Form T2209 countries, one record per row, in the order given.
+
+    A row is (line 43100, line 43300) and may go on with the business figures in the order of the
+    form: the business income tax paid for the year (note 5), the unused business foreign tax
+    credits (note 6), the net foreign business income (line 43900) and the federal surtax on
+    income allocated outside Canada (line 6). A figure a row leaves out is 0.
+    """
+    business_fields = (
+        FOREIGN_BUSINESS_TAX_PAID,
+        FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
+        NET_FOREIGN_BUSINESS_INCOME,
+        FOREIGN_SURTAX_OUTSIDE_CANADA,
+    )
     records: list[dict[ArtifactKind[Any], object]] = []
-    for tax_paid, income in rows:
+    for tax_paid, income, *business in rows:
         record: dict[ArtifactKind[Any], object] = {
             field: D(0) for field in FOREIGN_TAX_COUNTRIES.fields
         }
         record[FOREIGN_NON_BUSINESS_TAX_PAID] = D(tax_paid)
         record[NET_FOREIGN_NON_BUSINESS_INCOME] = D(income)
+        for field, figure in zip(business_fields, business, strict=False):
+            record[field] = D(figure)
         records.append(record)
     return Artifact(FOREIGN_TAX_COUNTRIES, RecordList(FOREIGN_TAX_COUNTRIES.fields, records))
 
@@ -1773,6 +1859,7 @@ def starting(
     fish_statements: tuple[Mapping[str, Any], ...] | None = None,
     schedule_8_copies: int = 1,
     rc381_copies: int = 0,
+    t2048_dispositions_rows: tuple[Mapping[str, Any], ...] | None = None,
     taxable_support_payments: str = "0",
     rrsp_income: str = "0",
     fhsa_income: str = "0",
@@ -2000,7 +2087,7 @@ def starting(
     unused_tuition_amounts_brought_forward: str = "0",
     exempt_income_deductions: str = "0",
     first_nations_abatement: str = "0",
-    foreign_tax_countries_rows: tuple[tuple[str, str], ...] = (),
+    foreign_tax_countries_rows: tuple[tuple[str, ...], ...] = (),
     qbt_election_eligible_amount: str = "0",
     qbt_percentage_allocated: str = "0",
     qbt_prior_years_claims: str = "0",
@@ -2188,6 +2275,30 @@ def starting(
     business_statement_list = blank if business_statements is None else business_statements
     farm_statement_list = blank if farm_statements is None else farm_statements
     fish_statement_list = blank if fish_statements is None else fish_statements
+    one_disposition: tuple[Mapping[str, Any], ...] = (
+        {
+            "qbt_election_eligible_amount": qbt_election_eligible_amount,
+            "qbt_percentage_allocated": qbt_percentage_allocated,
+            "qbt_prior_years_claims": qbt_prior_years_claims,
+            "qbt_capital_gains": qbt_capital_gains,
+            "qbt_2024_reserve": qbt_2024_reserve,
+            "qbt_2025_reserve": qbt_2025_reserve,
+            "qbt_has_investment_expenses": qbt_has_investment_expenses,
+            "qbt_deduction_claimed": qbt_deduction_claimed,
+            "qbt_election_is_qbt": qbt_election_is_qbt,
+            "qbt_gains_are_qsbcs_or_qffp": qbt_gains_are_qsbcs_or_qffp,
+            "qbt_partnership_losses": qbt_partnership_losses,
+            "qbt_other_investment_expenses": qbt_other_investment_expenses,
+            "qbt_other_property_income": qbt_other_property_income,
+        },
+    )
+    # No disposition unless a qbt_* keyword or the rows are given: then Form T2048 has no instance.
+    given_disposition = any(value not in ("0", 0) for value in one_disposition[0].values())
+    disposition_list = (
+        (one_disposition if given_disposition else ())
+        if t2048_dispositions_rows is None
+        else t2048_dispositions_rows
+    )
     return (
         Artifact(EMPLOYMENT_INCOME, D(employment_income)),
         dispositions(QSBCS_DISPOSITIONS, *qsbcs_dispositions),
@@ -2672,19 +2783,7 @@ def starting(
         Artifact(EXEMPT_INCOME_DEDUCTIONS, D(exempt_income_deductions)),
         Artifact(FIRST_NATIONS_ABATEMENT, D(first_nations_abatement)),
         foreign_tax_countries(*foreign_tax_countries_rows),
-        Artifact(QBT_ELECTION_ELIGIBLE_AMOUNT, D(qbt_election_eligible_amount)),
-        Artifact(QBT_PERCENTAGE_ALLOCATED, D(qbt_percentage_allocated)),
-        Artifact(QBT_PRIOR_YEARS_CLAIMS, D(qbt_prior_years_claims)),
-        Artifact(QBT_CAPITAL_GAINS, D(qbt_capital_gains)),
-        Artifact(QBT_2024_RESERVE, D(qbt_2024_reserve)),
-        Artifact(QBT_2025_RESERVE, D(qbt_2025_reserve)),
-        Artifact(QBT_ELECTION_IS_QBT, qbt_election_is_qbt),
-        Artifact(QBT_GAINS_ARE_QSBCS_OR_QFFP, qbt_gains_are_qsbcs_or_qffp),
-        Artifact(QBT_HAS_INVESTMENT_EXPENSES, qbt_has_investment_expenses),
-        Artifact(QBT_PARTNERSHIP_LOSSES, D(qbt_partnership_losses)),
-        Artifact(QBT_OTHER_INVESTMENT_EXPENSES, D(qbt_other_investment_expenses)),
-        Artifact(QBT_OTHER_PROPERTY_INCOME, D(qbt_other_property_income)),
-        Artifact(QBT_DEDUCTION_CLAIMED, D(qbt_deduction_claimed)),
+        t2048_dispositions(disposition_list),
         Artifact(
             AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
             D(amt_film_property_cca_and_carrying_charges),
@@ -3088,7 +3187,7 @@ def step_3(**amounts: Any) -> Worksheet:
     return compute("0", (), "0", "0", "0", "0", "0", **amounts)
 
 
-def return_be(**overrides: Any) -> Worksheet:
+def run_be(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
     """Return BE's inputs, as in `returns/2025_return_be.yaml`.
 
     Employment income of 60000, capital gains of 200000 (taxable capital gains 100000), net
@@ -3131,7 +3230,17 @@ def return_be(**overrides: Any) -> Worksheet:
         "qbt_other_property_income": "500",
         "qbt_deduction_claimed": "60500",
     }
-    return compute(**{**inputs, **overrides})
+    return run(**{**inputs, **overrides})
+
+
+def return_be(**overrides: Any) -> Worksheet:
+    """The return form's worksheet of `run_be`: T1 lines and the T2048 figures it exports."""
+    return run_be(**overrides)["ca-on/return"][0]
+
+
+def form_be(**overrides: Any) -> Worksheet:
+    """The worksheet of Return BE's one Form T2048 disposition, every line of the form."""
+    return run_be(**overrides)["ca/t2048"][0]
 
 
 def return_bf(**overrides: Any) -> Worksheet:

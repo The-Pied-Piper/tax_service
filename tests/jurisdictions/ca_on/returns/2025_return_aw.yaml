@@ -2,24 +2,30 @@
 # the dividends of Return K (a T5 slip and dividends with no information slip) and $15,000
 # of foreign investment income: foreign dividends of two countries, a chosen $10,000 from
 # the United States on which a chosen $1,500 of tax was paid and a chosen $5,000 from the
-# United Kingdom on which a chosen $100 was paid. The total foreign tax, $1,600, is more
-# than $200, so Form T2209 is worked for each country on its own: with a net income (note 3)
-# of $66,990.00 and a basic federal tax (note 4) of $7,285.81 the United States' line 2 is
-# $10,000 x 7,285.81 / 66,990.00 = $1,087.60, below its $1,500, and the United Kingdom's is
-# $543.80, above its $100, so line 3 is $1,087.60 + $100.00 = $1,187.60, not the pooled
-# lesser of $1,600 and $1,631.39, $1,600. Line 13, and so T1 line 129 (line 40500), is that
-# $1,187.60, below the $6,966.62 of line 42900; T1 line 130 is $6,966.62 - $1,187.60 =
-# $5,779.02, which line 132 carries to the net federal tax. Form T2036 is worked on the same
-# two sheets for Ontario: with a provincial tax otherwise payable (ON428 line 81 with "0" on
-# lines 70 and 72) of $3,159.89 the United States' line 3 is $1,500 - $1,087.60 = $412.40,
-# below its line 4 of $471.70, and the United Kingdom's is $100 - $100 = $0, so the total of
-# line 5, and ON428 line 82, is $412.40, which comes off line 81 (ON428 line 83) and leaves an
-# Ontario tax of $3,156.35. Amounts are quoted decimal strings, never floats; counts are
-# quoted digit strings. A line or input this return leaves out is blank, 0, and is checked to
-# compute to 0; intermediate lines that are listed are checked too. The other variants (a
-# total of foreign tax at or under $200, a limit by line 42900 and by the tax otherwise
-# payable, deductions in net income and a First Nations abatement, and no countries) are
-# pinned in `end_to_end/test_return_aw.py`.
+# United Kingdom on which a chosen $100 was paid, and foreign business income of the same
+# two countries: a chosen $6,000 from the United States on which a chosen $400 of tax was
+# paid, with a chosen $50 of unused credits, and a chosen $3,000 from the United Kingdom on
+# which a chosen $60 was paid. The total foreign tax, $2,060, is more than $200, so Form
+# T2209 is worked for each country on its own: with a net income (note 3) of $66,990.00 and
+# a basic federal tax (note 4) of $7,285.81 the United States' line 2 is $10,000 x 7,285.81
+# / 66,990.00 = $1,087.60, below its $1,500, and the United Kingdom's is $543.80, above its
+# $100, so line 3 is $1,087.60 + $100.00 = $1,187.60. The business lines, with a basic
+# federal tax (note 8) of $7,285.81: line 4 is $450 and $60, line 5 is $652.56 and $326.28,
+# lines 7 and 8 follow, line 10 is $6,198.21 and $7,185.81, and line 11 is the least of
+# lines 4, 7 and 10, $450 and $60, $510 in all. Line 13, and so T1 line 129 (line 40500), is
+# $510 + $1,187.60 = $1,697.60, below the $6,966.62 of line 42900; T1 line 130 is $6,966.62
+# - $1,697.60 = $5,269.02, which line 132 carries to the net federal tax. Form T2036 is
+# worked on the same two sheets for Ontario, on the non-business figures only: with a
+# provincial tax otherwise payable (ON428 line 81 with "0" on lines 70 and 72) of $3,159.89
+# the United States' line 3 is $1,500 - $1,087.60 = $412.40, below its line 4 of $471.70,
+# and the United Kingdom's is $100 - $100 = $0, so the total of line 5, and ON428 line 82,
+# is $412.40, which comes off line 81 (ON428 line 83) and leaves an Ontario tax of
+# $3,156.35. Amounts are quoted decimal strings, never floats; counts are quoted digit
+# strings. A line or input this return leaves out is blank, 0, and is checked to compute to
+# 0; intermediate lines that are listed are checked too. The other variants (a total of
+# foreign tax at or under $200, a limit by line 42900 and by the tax otherwise payable,
+# deductions in net income and a First Nations abatement, and no countries) are pinned in
+# `end_to_end/test_return_aw.py`.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -74,27 +80,57 @@ description: >-
   credit (line 40425 of your return)" "minus any" "federal refundable First Nations
   abatement (line 44100 of your return)": 6,966.62 + 319.19 = 7,285.81, less a line 44100 of
   0, 7,285.81 (the federal surtax on income allocated outside Canada and the refundable
-  Quebec abatement are not triggered on an Ontario return). The form's total foreign tax is
-  1,500 + 100 = 1,600, "more than $200", with more than one country, so "the applicable
-  calculation shown on this form" is worked "for each country on a separate sheet" and the
-  total entered. United States: line 1 (43100) is 1,500; line 2 is line 43300, 10,000, at
-  most the net income of 66,990.00 (note 2), x 7,285.81 / 66,990.00 = 72,858,100 / 66,990.00
-  = 1,087.5966..., rounded half-up to the cent: 1,087.60; line 3 is "whichever is less: the
-  amount from line 1 or line 2": 1,087.60. United Kingdom: line 1 is 100; line 2 is 5,000 x
-  7,285.81 / 66,990.00 = 36,429,050 / 66,990.00 = 543.7983..., rounded: 543.80; line 3 is
-  100. The total of line 3 is 1,087.60 + 100 = 1,187.60. Pooled it would be 15,000 x
-  7,285.81 / 66,990.00 = 1,631.3949..., rounded: 1,631.39, and lesser(1,600, 1,631.39) =
-  1,600, which the form does not allow. "The amount on line 3 should not be more than the
-  total of the amount on line 42900 of your return plus any federal surtax on income earned
-  outside of Canada": 1,187.60 is less than 6,966.62 (the surtax, T1 line 127, is not wired
-  and not triggered), and the business lines (4 to 12) are not wired, so line 13, "Federal
-  foreign tax credit", and T1 line 129 (line 40500) are 1,187.60. T1 line 130 "Line 128
-  minus line 129 =", line 128 "Line 126 plus line 127 =" being line 126 as line 127 is 0:
-  6,966.62 - 1,187.60 = 5,779.02. Line 132 "Line 130 plus line 131 =" is 5,779.02 + 0.00 (no
-  recapture) = 5,779.02, as are lines 134 and 139 (no logging tax credit, no credits against
-  federal tax). With no split income Form T1206's line 24 is 0, so its line 29 is 5,779.02 +
-  0 (line 41500, 0) and line 30, the more of the two, is 5,779.02, which with the special
-  taxes (line 41800) of 0 is the net federal tax (line 42000), 5,779.02.
+  Quebec abatement are not triggered on an Ontario return). The form's total foreign tax,
+  non-business and business, is 1,500 + 100 + 400 + 60 = 2,060 (see the business lines
+  below), "more than $200", with more than one country, so "the applicable calculation shown
+  on this form" is worked "for each country on a separate sheet" and the total entered. The
+  non-business lines are worked first. United States: line 1 (43100) is 1,500; line 2 is
+  line 43300, 10,000, at most the net income of 66,990.00 (note 2), x 7,285.81 / 66,990.00 =
+  72,858,100 / 66,990.00 = 1,087.5966..., rounded half-up to the cent: 1,087.60; line 3 is
+  "whichever is less: the amount from line 1 or line 2": 1,087.60. United Kingdom: line 1 is
+  100; line 2 is 5,000 x 7,285.81 / 66,990.00 = 36,429,050 / 66,990.00 = 543.7983...,
+  rounded: 543.80; line 3 is 100. The total of line 3 is 1,087.60 + 100 = 1,187.60. Pooled
+  it would be 15,000 x 7,285.81 / 66,990.00 = 1,631.3949..., rounded: 1,631.39, and
+  lesser(1,600, 1,631.39) = 1,600, which the form does not allow (the form's test of the
+  total tax paid is the one above, 2,060, so the choice of separate sheets is not changed by
+  the pooled comparison). Business lines of the same sheets, "Federal business foreign tax
+  credit". The business figures are chosen: the United States paid 400 of business income
+  tax for the year (note 5) and carries 50 of unused business foreign tax credits (note 6)
+  on 6,000 of net foreign business income (note 7, below the net income of 66,990.00, so not
+  capped), with 0 of federal surtax on income allocated to "Other (Outside Canada)" (line
+  6); the United Kingdom paid 60 of business income tax, with 0 unused credits, on 3,000 of
+  net foreign business income and 0 of line 6. The form's total foreign tax is therefore 1,500 + 100 +
+  400 + 60 = 2,060 (the unused credits are not tax paid for the year), "more than $200", so
+  both countries stay on their own sheets. Basic federal tax for these lines is note (8),
+  "Line 42900 of your return plus any federal dividend tax credit (line 40425 of your
+  return).", 6,966.62 + 319.19 = 7,285.81, which is the same figure as note (4) here as the
+  First Nations abatement is 0. United States: line 4 is 400 + 50 = 450; line 5 is 6,000 x
+  7,285.81 / 66,990.00 = 43,714,860.00 / 66,990.00 = 652.5579..., rounded half-up to the
+  cent: 652.56; line 6 is 0; line 7 is 652.56 + 0 = 652.56; line 8 is 7,285.81 + 0 =
+  7,285.81; line 9 is the line 3 of 1,087.60; line 10 is 7,285.81 - 1,087.60 = 6,198.21;
+  line 11 is "whichever is less: the amount from line 4, 7 or 10": the least of 450, 652.56
+  and 6,198.21, 450. United Kingdom: line 4 is 60 + 0 = 60; line 5 is 3,000 x 7,285.81 /
+  66,990.00 = 21,857,430.00 / 66,990.00 = 326.2789..., rounded: 326.28; line 6 is 0; line 7
+  is 326.28; line 8 is 7,285.81; line 9 is 100; line 10 is 7,285.81 - 100 = 7,185.81; line
+  11 is the least of 60, 326.28 and 7,185.81, 60. The totals over the two sheets are line 4:
+  450 + 60 = 510; line 5: 652.56 + 326.28 = 978.84; line 7: 978.84; line 8: 7,285.81 x 2 =
+  14,571.62; line 10: 6,198.21 + 7,185.81 = 13,384.02; line 11: 450 + 60 = 510. Line 12 is
+  "the amount from line 3", the total of 1,187.60, and line 13, "Add lines 11 and 12.",
+  "Federal foreign tax credit", is 510 + 1,187.60 = 1,697.60. "The amount on line 13 should
+  not be more than the total of the amount on line 42900 of your return, plus any federal
+  surtax on income earned outside of Canada": 1,697.60 is less than 6,966.62 (the surtax,
+  T1 line 127, is not wired and not triggered), so T1 line 129 (line 40500) is 1,697.60.
+  T1 line 130 "Line 128 minus line 129 =", line 128 "Line 126 plus line 127 =" being line
+  126 as line 127 is 0: 6,966.62 - 1,697.60 = 5,269.02. Line 132 "Line 130 plus line 131 ="
+  is 5,269.02 + 0.00 (no recapture) = 5,269.02, as are lines 134 and 139 (no logging tax
+  credit, no credits against federal tax). With no split income Form T1206's line 24 is 0,
+  so its line 29 is 5,269.02 + 0 (line 41500, 0) and line 30, the more of the two, is
+  5,269.02, which with the special taxes (line 41800) of 0 is the net federal tax (line
+  42000), 5,269.02. Form T2036 reads the non-business figures only and is unchanged by the
+  business lines. The alternative minimum tax lines that read the federal foreign tax credit
+  follow it: the special foreign tax credit (Form T691 Part 4 line 11) is the more of the
+  federal foreign tax credit, 1,697.60, and its line 10, 0, so 1,697.60, and the regular net
+  federal tax payable (Part 3 line 15) is 6,966.62 - 1,697.60 = 5,269.02.
   Ontario (Form ON428): the column "Line 1 is more than $52,886 but not more than $105,775":
   line 4 is 66,990.00 - 52,886.00 = 14,104.00, line 6 is 14,104.00 x 9.15% = 1,290.516, line
   7 is 2,670.74 and line 8 is 1,290.516 + 2,670.74 = 3,961.256, rounded half-up to the cent:
@@ -114,11 +150,11 @@ description: >-
   line 80 is 0 and line 81 is 3,159.89 - 0 = 3,159.89. United States: line 1 is 1,500; line
   2 is the T2209 line 3, 1,087.60; line 3 is 1,500 - 1,087.60 = 412.40; line 4 is net
   foreign non-business income 10,000 x 3,159.89 / 66,990.00 = 31,598,900 / 66,990.00 =
-  471.6957..., rounded half-up to the cent: 471.70; line 5 is "whichever amount is less: line
-  3 or line 4": 412.40. United Kingdom: line 1 is 100; line 2 is 100; line 3 is 0; line 4 is
-  5,000 x 3,159.89 / 66,990.00 = 15,799,450 / 66,990.00 = 235.8478..., rounded: 235.85; line
-  5 is 0. "Enter the total from line 5 (for each country if applicable)" on ON428 line 82:
-  412.40 + 0 = 412.40, which "should not be more than the amount entered on the line for
+  471.6957..., rounded half-up to the cent: 471.70; line 5 is "whichever amount is less:
+  line 3 or line 4": 412.40. United Kingdom: line 1 is 100; line 2 is 100; line 3 is 0; line
+  4 is 5,000 x 3,159.89 / 66,990.00 = 15,799,450 / 66,990.00 = 235.8478..., rounded: 235.85;
+  line 5 is 0. "Enter the total from line 5 (for each country if applicable)" on ON428 line
+  82: 412.40 + 0 = 412.40, which "should not be more than the amount entered on the line for
   provincial or territorial tax otherwise payable", 3,159.89, so line 82 is 412.40. Line 83
   "Line 81 minus line 82 (if negative, enter "0")" is 2,968.75 - 412.40 = 2,556.35, which
   line 84 carries. The LIFT credit is 5.05% x 50,000 = 2,525.00, at most 875, less 5% of
@@ -127,16 +163,16 @@ description: >-
   (the community food program donation tax credit for farmers of 25% of a chosen $0 is 0)
   are 2,556.35. The health premium (line 89) for taxable income of 66,990.00, "Row 6:
   Taxable Income more than $48,000 but not more than $72,000", is 600, so the Ontario tax
-  (line 90) is 2,556.35 + 600 = 3,156.35. The net federal tax (line 42000) is 5,779.02 and
-  the total payable (line 43500) is 5,779.02 + 3,156.35 = 8,935.37. The income tax deducted
+  (line 90) is 2,556.35 + 600 = 3,156.35. The net federal tax (line 42000) is 5,269.02 and
+  the total payable (line 43500) is 5,269.02 + 3,156.35 = 8,425.37. The income tax deducted
   (line 43700) is a chosen $9,000. The Canada workers benefit (Schedule 6) is 0: the working
   income is 50,000, so the benefit before the reduction is 1,633, less 15% of the adjusted
   family net income, 66,990.00, over 26,855, 15% x 40,135.00 = 6,020.25 (or 15% x 36,351.00
   = 5,452.65 over 30,639 with an eligible dependant, of whom there are 0), not below zero:
   0. The total credits (line 48200) are 9,000 and the refund or balance owing (line 167) is
-  8,935.37 - 9,000 = -64.63, negative, so a refund (line 48400) of 64.63 and no balance owing,
-  and, with the opportunities fund donation of 0, a net refund of 64.63. The other computed
-  lines follow from the net income and are each claimed for a
+  8,425.37 - 9,000 = -574.63, negative, so a refund (line 48400) of 574.63 and no balance
+  owing, and, with the opportunities fund donation of 0, a net refund of 574.63. The other
+  computed lines follow from the net income and are each claimed for a
   count of 0 or not triggered: the Ontario CARE credit rate for a family adjusted income of
   66,990.00 (Schedule ON479-A line 7, the row "more than $63,600 but not more than $67,200")
   is 47%, applied to a child care expenses deduction of 0; the seniors care at home credit
@@ -148,9 +184,9 @@ description: >-
   on the forms is rounded half-up to the cent, each line being a dollars-and-cents box; the
   lines that only add, subtract, compare or choose take amounts already in cents. Not
   triggered: the minimum tax variant of Form T2036 line 2 (note (1), alternative minimum tax
-  is not wired), the business foreign tax credit
-  (lines 4 to 12 of Form T2209), the federal surtax on income allocated outside Canada (T1
-  line 127) and every other credit and deduction not named here.
+  is not wired), the Quebec multiplication of line 4 by 55% (note (5), an Ontario resident),
+  the federal surtax on income allocated outside Canada (T1 line 127, and line 6 of Form
+  T2209, 0 on both sheets) and every other credit and deduction not named here.
 sources:
   - >-
     CRA, Form T2209 2025, Federal Foreign Tax Credits (docs/cra-forms-2025/t2209-25e.pdf,
@@ -166,22 +202,42 @@ sources:
     2); "Enter whichever is less: the amount from line 1 or line 2." "Federal non-business
     foreign tax credit" (line 3); "The amount on line 3 should not be more than the total of
     the amount on line 42900 of your return plus any federal surtax on income earned outside
-    of Canada."; "Add lines 11 and 12." "Federal foreign tax credit" (line 13); "Enter the
-    amount from line 13 on line 40500 of your return."; note (2): "If your net foreign
-    non-business income is more than your net income, use your net income in the
-    calculation."; note (3), net income: "Amount from line 23600 of your return (or the
-    amount you would have entered if the instructions said "if negative, show in brackets")
-    plus the amount on line 68360 of Form T1206, Total split income, minus any:" the amounts
-    deductible on lines 24400, 24900, 25000, 25300, 25395 and 25400 and "amounts deductible
-    as net employment income from a prescribed international organization, as foreign income
-    exempt under a tax treaty, or as adult basic education tuition assistance (included on
-    line 25600 of your return)"; note (4), basic federal tax: "Line 42900 of your return
-    plus any:" "federal dividend tax credit (line 40425 of your return)" "minus any:"
-    "federal refundable First Nations abatement (line 44100 of your return)". The countries
-    are the chosen United States (line 1 of 1,500, line 2 of 10,000) and United Kingdom (100
-    and 5,000); line 44100 and the six deductions of note (3) are 0. Lines 1 and 3 take
-    amounts already in cents; line 2 is a dollars-and-cents box, rounded half-up to the
-    cent.
+    of Canada."; "Business income tax paid to a foreign country (5) for the year, plus any
+    unused foreign tax credits for that country for the 10 years (6) before, and the 3 years
+    after this year" (line 4, 43400); "Net foreign business income (7)" "43900" "× Basic
+    federal tax (8)" over "Net income (3)" (line 5); "Federal surtax on income allocated to
+    "Other (Outside Canada)":" "Amount from line 10 of Part 2 of Form T2203, Provincial and
+    Territorial Taxes for Multiple Jurisdictions, or 48% of the amount from line 42900 of
+    your return. Enter the amount that applies to the country or countries you identified at
+    the top of this page." (line 6); "Add lines 5 and 6." (line 7); "Add basic federal tax
+    (8) and the amount from line 6." (line 8); "Enter the amount from line 3, if any." (line
+    9); "Line 8 minus line 9" (line 10); "Enter whichever is less: the amount from line 4, 7
+    or 10." "Federal business foreign tax credit" (line 11); "Enter the amount from line 3,
+    if any." (line 12); "Add lines 11 and 12." "Federal foreign tax credit" (line 13);
+    "Enter the amount from line 13 on line 40500 of your return."; note (2): "If your net
+    foreign non-business income is more than your net income, use your net income in the
+    calculation."; note (5): "Total of business income or profits tax you paid to a country
+    or a political subdivision of a country for the year."; note (6): "Unused business
+    foreign tax credits can be carried forward 10 years and carried back 3 years."; note
+    (7): "Net amount by which the business income you earned in a foreign country is more
+    than the business losses you incurred in that country." "If your net foreign business
+    income is more than your net income, use your net income in the calculation."; note (8),
+    basic federal tax: "Line 42900 of your return plus any federal dividend tax credit (line
+    40425 of your return)."; note (3), net income: "Amount from line 23600 of your return
+    (or the amount you would have entered if the instructions said "if negative, show in
+    brackets") plus the amount on line 68360 of Form T1206, Total split income, minus any:"
+    the amounts deductible on lines 24400, 24900, 25000, 25300, 25395 and 25400 and "amounts
+    deductible as net employment income from a prescribed international organization, as
+    foreign income exempt under a tax treaty, or as adult basic education tuition assistance
+    (included on line 25600 of your return)"; note (4), basic federal tax: "Line 42900 of
+    your return plus any:" "federal dividend tax credit (line 40425 of your return)" "minus
+    any:" "federal refundable First Nations abatement (line 44100 of your return)". The
+    countries are the chosen United States (line 1 of 1,500, line 2 of 10,000, business tax
+    paid of 400, unused credits of 50, net foreign business income of 6,000, line 6 of 0)
+    and United Kingdom (100 and 5,000, business tax paid of 60, unused credits of 0,
+    business income of 3,000, line 6 of 0); line 44100 and the six deductions of note (3)
+    are 0. Lines 1 and 3 take amounts already in cents; lines 2 and 5 are dollars-and-cents
+    boxes, rounded half-up to the cent.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2209/t2209-25e.pdf
   - >-
     CRA, the T1-2025 Ontario edition return (form 5006-R,
@@ -197,9 +253,9 @@ sources:
     and line 15000: Line 28 plus line 32 Total income". Line 130 prints no "(if negative,
     enter "0")"; line 129 is at most line 126, so it is not negative. Line 126 is 10,290.46
     - 3,323.84 = 6,966.62 (line 125 is the line 122 of 3,004.65 plus the line 123 of
-    319.19), line 127 is not triggered (0.00), line 128 is 6,966.62, line 129 is 1,187.60,
-    line 130 is 6,966.62 - 1,187.60 = 5,779.02, line 131 is 0.00 and lines 132 and 134 are
-    5,779.02. These lines take amounts already in cents.
+    319.19), line 127 is not triggered (0.00), line 128 is 6,966.62, line 129 is 1,697.60,
+    line 130 is 6,966.62 - 1,697.60 = 5,269.02, line 131 is 0.00 and lines 132 and 134 are
+    5,269.02. These lines take amounts already in cents.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
   - >-
     CRA, the 2025 Federal Worksheet (form 5000-D1, docs/cra-forms-2025/5000-d1-25e.txt,
@@ -356,12 +412,12 @@ sources:
     line 166 (line 48200) "Add lines 150 to 165. Total credits"; line 167 "Line 149 minus
     line 166 If the amount is negative, enter it on line 48400 below. If the amount is
     positive, enter it on line 48500 below. Refund or balance owing". Line 126, 6,966.62,
-    less line 129, 1,187.60, is 5,779.02, carried through lines 132 to 139 to line 142, the
-    net federal tax. Line 148 is 5,779.02 + 3,156.35 = 8,935.37. Line 150 is 9,000, a chosen
+    less line 129, 1,697.60, is 5,269.02, carried through lines 132 to 139 to line 142, the
+    net federal tax. Line 148 is 5,269.02 + 3,156.35 = 8,425.37. Line 150 is 9,000, a chosen
     figure: the tax withheld on the taxpayer's slips, which nothing on this return
     determines. Line 155 is the benefit of Schedule 6 line 28, 0, so line 166 is 9,000 + 0 =
-    9,000. Line 167 is 8,935.37 - 9,000 = -64.63, negative, so line 48400 "Refund" is 64.63.
-    These lines add and subtract amounts already in cents, so each is in cents too.
+    9,000. Line 167 is 8,425.37 - 9,000 = -574.63, negative, so line 48400 "Refund" is
+    574.63. These lines add and subtract amounts already in cents, so each is in cents too.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - >-
     CRA, Schedule ON479-A (form 5006-TCA), "Ontario Childcare Access and Relief from
@@ -423,15 +479,15 @@ inputs:
   ca/foreign_tax_countries:
     - ca/foreign_non_business_tax_paid: "1500"
       ca/net_foreign_non_business_income: "10000"
-      ca/foreign_business_tax_paid: "0"
-      ca/foreign_business_unused_tax_credits: "0"
-      ca/net_foreign_business_income: "0"
+      ca/foreign_business_tax_paid: "400"
+      ca/foreign_business_unused_tax_credits: "50"
+      ca/net_foreign_business_income: "6000"
       ca/foreign_surtax_outside_canada: "0"
     - ca/foreign_non_business_tax_paid: "100"
       ca/net_foreign_non_business_income: "5000"
-      ca/foreign_business_tax_paid: "0"
+      ca/foreign_business_tax_paid: "60"
       ca/foreign_business_unused_tax_credits: "0"
-      ca/net_foreign_business_income: "0"
+      ca/net_foreign_business_income: "3000"
       ca/foreign_surtax_outside_canada: "0"
   ca/cpp_months: "12"
   ca/qpp_months: "12"
@@ -511,16 +567,16 @@ expected:
         - ca/foreign_non_business_tax_paid: "1500"
           ca/net_foreign_non_business_income: "10000"
           ca/foreign_tax_credit_sheet_line_3: "1087.60"
-          ca/foreign_business_tax_paid: "0"
-          ca/foreign_business_unused_tax_credits: "0"
-          ca/net_foreign_business_income: "0"
+          ca/foreign_business_tax_paid: "400"
+          ca/foreign_business_unused_tax_credits: "50"
+          ca/net_foreign_business_income: "6000"
           ca/foreign_surtax_outside_canada: "0"
         - ca/foreign_non_business_tax_paid: "100"
           ca/net_foreign_non_business_income: "5000"
           ca/foreign_tax_credit_sheet_line_3: "100"
-          ca/foreign_business_tax_paid: "0"
+          ca/foreign_business_tax_paid: "60"
           ca/foreign_business_unused_tax_credits: "0"
-          ca/net_foreign_business_income: "0"
+          ca/net_foreign_business_income: "3000"
           ca/foreign_surtax_outside_canada: "0"
       ca/taxable_capital_gains: "0.00"
       ca/slip_taxable_dividends_other_than_eligible: "200"
@@ -655,15 +711,22 @@ expected:
       ca/basic_federal_tax_with_dividend_credit: "7285.81"
       ca/foreign_tax_credit_basic_federal_tax: "7285.81"
       ca/federal_non_business_foreign_tax_credit: "1187.60"
-      ca/federal_foreign_tax_credit: "1187.60"
-      ca/federal_tax_less_foreign_tax_credit: "5779.02"
-      ca/federal_tax_with_itc_recapture: "5779.02"
+      ca/foreign_business_tax_credit_line_4: "510"
+      ca/foreign_business_tax_credit_line_5: "978.84"
+      ca/foreign_business_tax_credit_line_7: "978.84"
+      ca/foreign_business_tax_credit_line_8: "14571.62"
+      ca/foreign_business_tax_credit_line_10: "13384.02"
+      ca/federal_business_foreign_tax_credit: "510"
+      ca/federal_foreign_tax_credit_before_limit: "1697.60"
+      ca/federal_foreign_tax_credit: "1697.60"
+      ca/federal_tax_less_foreign_tax_credit: "5269.02"
+      ca/federal_tax_with_itc_recapture: "5269.02"
       ca/political_credit_before_maximum: "0"
       ca/political_credit: "0"
       ca/labour_sponsored_funds_credit_before_maximum: "0"
       ca/labour_sponsored_funds_credit: "0"
       ca/credits_against_federal_tax: "0"
-      ca/federal_tax_less_credits: "5779.02"
+      ca/federal_tax_less_credits: "5269.02"
       ca/resp_aips_contributions_counted: "0"
       ca/resp_aips_lifetime_limit: "50000"
       ca/resp_aips_limit_remaining: "50000"
@@ -673,8 +736,8 @@ expected:
       ca/resp_aips_part_b_tax: "0"
       ca/resp_aips_additional_tax: "0"
       ca/special_taxes: "0"
-      ca/net_federal_tax: "5779.02"
-      ca/total_payable: "8935.37"
+      ca/net_federal_tax: "5269.02"
+      ca/total_payable: "8425.37"
       ca/working_income: "50000"
       ca/adjusted_family_net_income: "66990.00"
       ca/cwb_before_reduction_without_dependant: "1633.00"
@@ -720,16 +783,16 @@ expected:
       ca/medical_supplement_line_16: "0"
       ca/refundable_medical_expense_supplement: "0"
       ca/total_credits: "9000.00"
-      ca/refund_or_balance_owing: "-64.63"
+      ca/refund_or_balance_owing: "-574.63"
       ca/educator_supplies_expenses_at_most_maximum: "0"
       ca/educator_school_supply_credit: "0"
-      ca/refund: "64.63"
-      ca-on/refund_before_donation: "64.63"
-      ca-on/net_refund: "64.63"
+      ca/refund: "574.63"
+      ca-on/refund_before_donation: "574.63"
+      ca-on/net_refund: "574.63"
       ca/amt_part_1_subtotal: "66990.00"
       ca/amt_basic_federal_tax: "6966.62"
-      ca/amt_regular_net_federal_tax_payable: "5779.02"
-      ca/amt_special_foreign_tax_credit: "1187.60"
+      ca/amt_regular_net_federal_tax_payable: "5269.02"
+      ca/amt_special_foreign_tax_credit: "1697.60"
       ca/amt_alternative_minimum_tax_payable: "0"
       ca/amt_federal_tax_payable_under_minimum_tax: "0"
       ca/amt_carryover_available_for_2026: "0"

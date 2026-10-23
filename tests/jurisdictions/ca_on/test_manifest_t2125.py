@@ -78,12 +78,12 @@ def test_the_manifest_has_the_form_t2125_beside_the_other_forms() -> None:
     assert found.exports == t2125.FORM_EXPORTS
 
 
-def test_the_form_holds_the_34_t2125_selections() -> None:
+def test_the_form_holds_the_44_t2125_selections() -> None:
     # The 55 selections of one vehicle's Charts A to C (22 of them) are now one step over the
     # statement's vehicles.
     found = form()
 
-    assert len(found.capabilities) == 34
+    assert len(found.capabilities) == 44
     assert set(found.capabilities) == t2125.FORM_STEPS
 
 
@@ -146,7 +146,7 @@ def test_the_statements_kind_is_a_record_list_of_every_t2125_input_in_order() ->
     assert isinstance(T2125_STATEMENTS, RecordListKind)
     assert T2125_STATEMENTS.identifier == "ca/t2125_statements"
     assert frozenset(field.identifier for field in T2125_STATEMENTS.fields) == t2125.FORM_INPUTS
-    assert len(T2125_STATEMENTS.fields) == len(t2125.FORM_INPUTS) == 54
+    assert len(T2125_STATEMENTS.fields) == len(t2125.FORM_INPUTS) == 60
 
 
 def test_the_area_a_list_of_a_statement_is_a_nested_record_list() -> None:
@@ -171,11 +171,18 @@ def test_the_return_declares_no_output_for_the_exports_nothing_reads() -> None:
     exports = set(default.exports)
 
     assert t2125.OUTPUTS <= exports
-    assert not {"ca/business_closing_ucc", "ca/business_home_carry_forward"} & exports
+    assert (
+        not {
+            "ca/business_closing_ucc",
+            "ca/business_home_carry_forward",
+            "ca/business_immediate_expensing_claim",
+        }
+        & exports
+    )
     assert not {export for export in exports if "." in export}
 
 
-def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_three_kinds() -> None:
+def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_four_kinds() -> None:
     found = composed()
 
     assert found.instances == T2125_STATEMENTS
@@ -184,6 +191,7 @@ def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_three_kind
         t2125.NET_INCOME_PER_STATEMENT,
         t2125.BUSINESS_CLOSING_UCC_PER_STATEMENT,
         t2125.BUSINESS_HOME_CARRY_FORWARD_PER_STATEMENT,
+        t2125.BUSINESS_IMMEDIATE_EXPENSING_CLAIM_PER_STATEMENT,
     )
 
 

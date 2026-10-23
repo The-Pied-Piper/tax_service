@@ -104,6 +104,10 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_CLOSING_INVENTORY,
     BUSINESS_COST_OF_GOODS_SOLD,
     BUSINESS_COST_OF_GOODS_SUBTOTAL,
+    BUSINESS_EPOP_AGREEMENT_FILED,
+    BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
+    BUSINESS_EPOP_PERCENTAGE_ROOM,
+    BUSINESS_EPOP_PERCENTAGE_TOTAL,
     BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,
     BUSINESS_GROSS_INCOME_FOR_GROSS_PROFIT,
     BUSINESS_GROSS_PROFIT,
@@ -113,6 +117,9 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_HOME_EXPENSES_BUSINESS_PART,
     BUSINESS_HOME_EXPENSES_SUBTOTAL,
     BUSINESS_HOME_PERSONAL_USE_PART,
+    BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
+    BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    BUSINESS_IMMEDIATE_EXPENSING_CAP,
     BUSINESS_INCOME,
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
@@ -418,7 +425,6 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_INCOME_SIGNED,
-    NET_RENTAL_INCOME,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     OAS_BENEFITS_BASE_AMOUNT,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
@@ -441,23 +447,8 @@ from app.jurisdictions.ca.catalog import (
     PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
     PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
     PRE_1986_DEDUCTIONS_TOTAL,
-    QBT_ABIL_REDUCTION,
-    QBT_ALLOCATION_LIMIT,
     QBT_CAPITAL_GAINS_DEDUCTION,
-    QBT_CHART_A_NET_INVESTMENT_LOSS,
-    QBT_DEDUCTION_AVAILABLE,
-    QBT_DEDUCTION_BASE,
-    QBT_ELECTION_DEDUCTION,
-    QBT_ELECTION_IS_QBT,
-    QBT_GAINS_ARE_QSBCS_OR_QFFP,
-    QBT_HAS_INVESTMENT_EXPENSES,
-    QBT_NET_INVESTMENT_LOSS,
-    QBT_NET_INVESTMENT_LOSS_REDUCTION,
-    QBT_NET_RENTAL_INCOME,
-    QBT_NET_RENTAL_LOSS,
-    QBT_REDUCTION_AMOUNT,
     QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
-    QCC_ELECTION_DEDUCTION,
     QFFP_FORECLOSURE_GAIN_OR_LOSS,
     QFFP_GAIN_OR_LOSS,
     QSBCS_GAIN_OR_LOSS,
@@ -1575,35 +1566,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
-        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
-        # are 0 (or, where they read another line, that line's figure).
-        QBT_NET_RENTAL_LOSS: SubtractedLine(
-            QBT_NET_RENTAL_LOSS, QBT_NET_RENTAL_INCOME, D("0"), NET_RENTAL_INCOME, D("0"), D("0")
-        ),
-        QCC_ELECTION_DEDUCTION: SubtractedLine(
-            QCC_ELECTION_DEDUCTION,
-            QBT_DEDUCTION_AVAILABLE,
-            D("0"),
-            QBT_ELECTION_DEDUCTION,
-            D("0"),
-            D("0"),
-        ),
-        QBT_REDUCTION_AMOUNT: SubtractedLine(
-            QBT_REDUCTION_AMOUNT,
-            QBT_DEDUCTION_BASE,
-            D("0"),
-            QBT_CAPITAL_GAINS_DEDUCTION,
-            D("0"),
-            D("0"),
-        ),
-        QBT_NET_INVESTMENT_LOSS_REDUCTION: SubtractedLine(
-            QBT_NET_INVESTMENT_LOSS_REDUCTION,
-            QBT_ALLOCATION_LIMIT,
-            D("0"),
-            QBT_ABIL_REDUCTION,
-            D("0"),
-            D("0"),
-        ),
         # T2125 amounts 3C, 3F, 5D, 7J and 9369, lines 8518, 8519, 9936 (two steps) and 9946
         # (T1 line 13500): Return A has none of these figures, so each is 0.
         BUSINESS_SALES_SUBTOTAL: SubtractedLine(
@@ -1653,6 +1615,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=BUSINESS_HOME_CCA,
             subtrahend_amount=D("0"),
             result=D("0"),
+        ),
+        # Form T2125 Area G "** If the total of column 3 is more than 100%, enter "0."", first
+        # step: 100% less the total of column 3, Return A's being 0.
+        BUSINESS_EPOP_PERCENTAGE_ROOM: SubtractedLine(
+            output=BUSINESS_EPOP_PERCENTAGE_ROOM,
+            minuend=BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
+            minuend_amount=D("100"),
+            subtrahend=BUSINESS_EPOP_PERCENTAGE_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("100"),
         ),
         BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS: SubtractedLine(
             output=BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -1901,6 +1873,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert amounts == {
+        # Form T2125 Area A endnote 5 "$1.5 million, if you are not associated with any other
+        # eligible person or partnership (EPOP) in the tax year" and Area G "Immediate expensing
+        # limit allocated to your business: Multiply $1.5 million by the percentage assigned to
+        # your business in column 3**".
+        BUSINESS_IMMEDIATE_EXPENSING_CAP: CreditAmountLine(
+            output=BUSINESS_IMMEDIATE_EXPENSING_CAP,
+            basis=Credit(amount=D("1500000")),
+            rounding=CENT,
+            value=D("1500000.00"),
+        ),
+        # Form T2125 Area G "should not be more than 100%" and "** If the total of column 3 is
+        # more than 100%, enter "0."".
+        BUSINESS_EPOP_PERCENTAGE_MAXIMUM: CreditAmountLine(
+            output=BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
+            basis=Credit(amount=D("100")),
+            rounding=CENT,
+            value=D("100.00"),
+        ),
         # Form T776 Note 5 "$1.5 million, if you are not associated with any other eligible person
         # or partnership (EPOP) in the tax year" and Area G "Line iii: ... Multiply $1.5 million by
         # the percentage assigned to you in column 3 (see note 11)".
@@ -2841,6 +2831,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert times == {
+        # Form T2125 Area A endnote 5 "zero, if you are associated with one or more EPOPs and an
+        # agreement ... was not filed": amount iii, 0.00 for Return A (no percentage assigned),
+        # times a count of 0 agreements filed, a plain 0.
+        BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT: TimesCountLine(
+            output=BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+            amount_kind=BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
+            amount_value=D("0.00"),
+            count_kind=BUSINESS_EPOP_AGREEMENT_FILED,
+            count=0,
+            result=D("0"),
+        ),
         # Form T776 Note 5 "zero, if you are associated with one or more EPOPs and an agreement ...
         # was not filed": line iii, 0.00 for Return A (no percentage assigned), times a count of 0
         # agreements filed, a plain 0.
@@ -3116,27 +3117,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=SPOUSE_NOT_SEPARATED_90_DAYS,
             count=0,
             result=D("0"),
-        ),
-        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
-        # are 0 (or, where they read another line, that line's figure).
-        QBT_ELECTION_DEDUCTION: TimesCountLine(
-            QBT_ELECTION_DEDUCTION, QBT_DEDUCTION_AVAILABLE, D("0"), QBT_ELECTION_IS_QBT, 0, D("0")
-        ),
-        QBT_NET_INVESTMENT_LOSS: TimesCountLine(
-            QBT_NET_INVESTMENT_LOSS,
-            QBT_CHART_A_NET_INVESTMENT_LOSS,
-            D("0"),
-            QBT_HAS_INVESTMENT_EXPENSES,
-            0,
-            D("0"),
-        ),
-        QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION: TimesCountLine(
-            QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
-            QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
-            D("0"),
-            QBT_GAINS_ARE_QSBCS_OR_QFFP,
-            0,
-            D("0"),
         ),
     }
     assert multiples == {

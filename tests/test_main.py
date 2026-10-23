@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1022
+        == 1004
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1022
+        == 1004
     )
 
 
@@ -244,6 +244,12 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/business_partner_share",
         "ca/business_partner",
         "ca/business_cca_classes",
+        "ca/business_epop_associated",
+        "ca/business_epop_agreement_filed",
+        "ca/business_epop_percentage",
+        "ca/business_epop_percentage_total",
+        "ca/business_minister_allocation_given",
+        "ca/business_minister_allocation",
         "ca/business_vehicles",
         "ca/t2125_statements",
         "ca/business_sales_subtotal",
@@ -278,6 +284,16 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/business_partnership_total",
         "ca/business_net_income_after_adjustments",
         "ca/business_closing_ucc",
+        "ca/business_immediate_expensing_cap",
+        "ca/business_epop_percentage_maximum",
+        "ca/business_immediate_expensing_share",
+        "ca/business_epop_percentage_room",
+        "ca/business_immediate_expensing_allocated",
+        "ca/business_immediate_expensing_associated_limit",
+        "ca/business_immediate_expensing_limit_before_minister",
+        "ca/business_immediate_expensing_limit",
+        "ca/business_immediate_expensing_claim",
+        "ca/business_income_before_cca",
         "ca/professional_income",
         "ca/commission_income",
         "ca/farming_income",
@@ -421,6 +437,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/fish_cca_personal_part",
         "ca/fish_cca_classes",
         "ca/t2121_statements",
+        "ca/t2048_dispositions",
         "ca/fish_partner",
         "ca/fish_partner_share",
         "ca/fish_partner_gst_hst_rebate",
@@ -2346,7 +2363,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1022
+        == 1004
     )
     assert (
         len(
@@ -2354,7 +2371,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1022
+        == 1004
     )
 
 
@@ -2367,7 +2384,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1022
+        == 1004
     )
     assert (
         len(
@@ -2375,7 +2392,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1022
+        == 1004
     )
 
 

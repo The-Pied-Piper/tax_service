@@ -18,7 +18,10 @@ The table works those columns when the consumed `classes` record-list kind lists
 (column 23) includes column 9, so a class's claim is at least column 9 less column 22 (never below
 0) and at most its maximum plus column 9 less column 22. A row whose column 4 is above column 3,
 whose column 6 is above column 5 or whose column 9 is above column 8 is refused
-(`InvalidRecordError`, naming the item). Recapture and terminal loss depend only on column 7.
+(`InvalidRecordError`, naming the item). Recapture depends only on column 7. A terminal loss is
+column 7 less column 9, not below 0: Regulation 1100(0.2) deducts column 9 from the UCC first, and
+Guide T4036 calls it "an amount you have not deducted as CCA", so the part expensed is not lost
+twice.
 
 Worked rows, Class 8 (20%, half-year rule), by hand:
 
@@ -38,7 +41,7 @@ from typing import Any
 
 import pytest
 
-from app.domain.artifact import Artifact
+from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.errors import InputAboveBoundError, InputBelowBoundError, InvalidRecordError
 from app.domain.record_list import RecordList
 from app.domain.trace import ItemsTotalLine
@@ -48,7 +51,12 @@ from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
 from app.jurisdictions.ca.catalog import CCA_CLAIMED, CCA_CLASS_NUMBER, CCA_UCC_AT_END
-from app.jurisdictions.ca.trace import CcaClaimLine, CcaZeroReason, ClosingUccLine
+from app.jurisdictions.ca.trace import (
+    CcaClaimLine,
+    CcaZeroReason,
+    ClosingUccLine,
+    TerminalLossLine,
+)
 from tests.jurisdictions.ca.capabilities.cca_table import (
     CCA_CLAIM,
     CENT,
@@ -495,10 +503,40 @@ def test_a_diep_does_not_cause_a_recapture_when_column_7_is_positive() -> None:
     assert output == Artifact(RECAPTURED_CCA, D("0"))
 
 
-def test_terminal_loss_depends_only_on_column_7() -> None:
-    # Column 7 4,000 with no property left: a terminal loss of 4,000 though all of it is
-    # expensed (column 9 4,000), which the claim of 4,000 (column 21 = 0 + 4,000) records.
-    last = diep_row(
+def last_row(
+    number: str = "8", column_7: str = "4000", column_9: str = "0", additions: str | None = None
+) -> dict[ArtifactKind[Any], Decimal | int]:
+    """A row with nothing left in the class: column 7 `column_7` (all additions), column 9
+    `column_9` of it expensed, and the claim of column 9 (column 21 = 0 + column 9)."""
+    return diep_row(
+        number,
+        "0",
+        additions or column_7,
+        diep_additions=column_7 if column_9 != "0" else "0",
+        immediate_expensing=column_9,
+        claimed=column_9,
+        no_property_left=1,
+    )
+
+
+def terminal_loss(*rows: dict[ArtifactKind[Any], Decimal | int]) -> Decimal:
+    capability = TerminalLoss(class_rates(), DIEP_CLASSES, TERMINAL_LOSS)
+    (output,) = capability.compute((diep_classes(*rows),)).outputs
+    assert isinstance(output.value, Decimal)
+    return output.value
+
+
+def test_terminal_loss_is_column_7_less_column_9() -> None:
+    # Column 7 4,000 with no property left and all of it expensed (column 9 4,000, so the claim
+    # is 4,000): nothing was left undeducted, so no terminal loss. Guide T4036: "an amount you have
+    # not deducted as CCA"; Regulation 1100(0.2).
+    assert terminal_loss(last_row(column_7="4000", column_9="4000")) == D("0")
+
+
+def test_a_class_bought_expensed_and_emptied_in_the_same_year_has_no_terminal_loss() -> None:
+    # Opening UCC 0, additions 4,000 all DIEP, column 9 4,000, then the property is disposed of for
+    # 0 proceeds: column 7 4,000, nothing left, nothing undeducted.
+    same_year = diep_row(
         "8",
         "0",
         "4000",
@@ -507,11 +545,45 @@ def test_terminal_loss_depends_only_on_column_7() -> None:
         claimed="4000",
         no_property_left=1,
     )
+
+    assert terminal_loss(same_year) == D("0")
+
+
+def test_a_partly_expensed_class_has_a_terminal_loss_of_column_7_less_column_9() -> None:
+    assert terminal_loss(last_row(column_7="4000", column_9="1000")) == D("3000")
+
+
+def test_a_terminal_loss_without_immediate_expensing_is_column_7() -> None:
+    assert terminal_loss(last_row(column_7="4000", column_9="0")) == D("4000")
+    assert terminal_loss(diep_row("8", "20000", "0", "15000", no_property_left=1)) == D("5000")
+
+
+def test_the_column_9_is_taken_off_each_class_before_the_losses_are_added() -> None:
+    other = diep_row("12", "0", "1000", no_property_left=1)
+
+    assert terminal_loss(last_row(column_9="1000"), other, last_row(column_9="4000")) == D("4000")
+
+
+def test_the_terminal_loss_line_records_column_9() -> None:
     capability = TerminalLoss(class_rates(), DIEP_CLASSES, TERMINAL_LOSS)
 
-    (output,) = capability.compute((diep_classes(last),)).outputs
+    lines = capability.compute((diep_classes(last_row(column_9="1000")),)).trace
+    (line, total) = lines
 
-    assert output == Artifact(TERMINAL_LOSS, D("4000"))
+    assert isinstance(line, TerminalLossLine)
+    assert (line.column_7, line.column_9, line.result) == (D("4000"), D("1000"), D("3000"))
+    assert line.zero_reason is CcaZeroReason.NO_PROPERTY_LEFT
+    assert isinstance(total, ItemsTotalLine)
+    assert total.total == D("3000")
+
+
+def test_the_terminal_loss_line_records_a_column_9_of_0_without_immediate_expensing() -> None:
+    capability = TerminalLoss(class_rates(), DIEP_CLASSES, TERMINAL_LOSS)
+
+    (line, _total) = capability.compute((diep_classes(last_row(column_9="0")),)).trace
+
+    assert isinstance(line, TerminalLossLine)
+    assert line.column_9 == D("0")
 
 
 def test_a_class_10_1_row_with_a_diep_has_a_recapture() -> None:
@@ -548,8 +620,10 @@ def test_a_class_10_1_row_without_a_diep_has_no_recapture_or_terminal_loss() -> 
 
 def test_a_class_10_1_row_with_a_diep_and_no_property_left_has_a_terminal_loss() -> None:
     last = diep_row("10.1", "0", "4000", diep_additions="4000", no_property_left=1)
-    capability = TerminalLoss(class_rates(), DIEP_CLASSES, TERMINAL_LOSS)
 
-    (output,) = capability.compute((diep_classes(last),)).outputs
+    assert terminal_loss(last) == D("4000")
 
-    assert output == Artifact(TERMINAL_LOSS, D("4000"))
+
+def test_a_class_10_1_diep_row_has_a_terminal_loss_of_column_7_less_column_9() -> None:
+    assert terminal_loss(last_row("10.1", column_7="4000", column_9="1000")) == D("3000")
+    assert terminal_loss(last_row("10.1", column_7="4000", column_9="4000")) == D("0")

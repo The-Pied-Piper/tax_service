@@ -15,6 +15,24 @@ from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.amount_or_divided_by_rate import AmountOrDividedByRate
 from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
+from app.jurisdictions.ca.capabilities.foreign_business_tax_credit_line_4 import (
+    ForeignBusinessTaxCreditLine4,
+)
+from app.jurisdictions.ca.capabilities.foreign_business_tax_credit_line_5 import (
+    ForeignBusinessTaxCreditLine5,
+)
+from app.jurisdictions.ca.capabilities.foreign_business_tax_credit_line_7 import (
+    ForeignBusinessTaxCreditLine7,
+)
+from app.jurisdictions.ca.capabilities.foreign_business_tax_credit_line_8 import (
+    ForeignBusinessTaxCreditLine8,
+)
+from app.jurisdictions.ca.capabilities.foreign_business_tax_credit_line_10 import (
+    ForeignBusinessTaxCreditLine10,
+)
+from app.jurisdictions.ca.capabilities.foreign_business_tax_credit_line_11 import (
+    ForeignBusinessTaxCreditLine11,
+)
 from app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit import (
     ForeignNonBusinessTaxCredit,
 )
@@ -80,7 +98,9 @@ from app.jurisdictions.ca.catalog import (
     EMPLOYMENT_INCOME,
     EXEMPT_INCOME_DEDUCTIONS,
     FEDERAL_BASIC_TAX,
+    FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
@@ -90,6 +110,11 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_TUITION_AMOUNT,
     FIRST_NATIONS_ABATEMENT,
     FIRST_TIER_DONATION_CREDIT,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_4,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_5,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_7,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_8,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_10,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_TAX_COUNTRIES,
     FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
@@ -208,7 +233,17 @@ INPUTS = frozenset(
     }
 )
 
-OUTPUTS = frozenset({"ca/tuition_carried_forward", "ca/foreign_tax_credit_sheets"})
+OUTPUTS = frozenset(
+    {
+        "ca/tuition_carried_forward",
+        "ca/foreign_tax_credit_sheets",
+        "ca/foreign_business_tax_credit_line_4",
+        "ca/foreign_business_tax_credit_line_5",
+        "ca/foreign_business_tax_credit_line_7",
+        "ca/foreign_business_tax_credit_line_8",
+        "ca/foreign_business_tax_credit_line_10",
+    }
+)
 
 STEPS = {
     # T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
@@ -1043,17 +1078,108 @@ STEPS = {
             "sheets": "ca/foreign_tax_credit_sheets",
         },
     ),
-    # T2209 line 13 "Federal foreign tax credit", which is line 3 while the business lines (lines
-    # 4 to 12) are not wired, and T1 line 129 (line 40500) "Federal foreign tax credit (complete
-    # Form T2209)": "The amount on line 3 should not be more than the total of the amount on line
-    # 42900 of your return plus any federal surtax on income earned outside of Canada." Line 127
-    # (the surtax) is not wired, so the limit is line 42900.
+    # Form T2209, federal business foreign tax credit, on the same sheets: line 4 "Business income
+    # tax paid to a foreign country (5) for the year, plus any unused foreign tax credits for that
+    # country for the 10 years (6) before, and the 3 years after this year" (43400); the total of
+    # line 4.
+    CapabilitySelection(
+        name="ca/foreign_business_tax_credit_line_4",
+        params={"rounding": "ca/foreign_business_tax_credit_rounding"},
+        consumes={
+            "sheets": "ca/foreign_tax_credit_sheets",
+            "net_income": "ca/foreign_tax_credit_net_income",
+            "basic_federal_tax": "ca/basic_federal_tax_with_dividend_credit",
+        },
+        produces={"output": "ca/foreign_business_tax_credit_line_4"},
+    ),
+    # Line 5 "Net foreign business income (7)" (43900) "× Basic federal tax (8)" over "Net income
+    # (3)", where note (8) is "Line 42900 of your return plus any federal dividend tax credit (line
+    # 40425 of your return)." and note (7) says "If your net foreign business income is more than
+    # your net income, use your net income in the calculation."; the total of line 5, each sheet
+    # rounded half-up to the cent.
+    CapabilitySelection(
+        name="ca/foreign_business_tax_credit_line_5",
+        params={"rounding": "ca/foreign_business_tax_credit_rounding"},
+        consumes={
+            "sheets": "ca/foreign_tax_credit_sheets",
+            "net_income": "ca/foreign_tax_credit_net_income",
+            "basic_federal_tax": "ca/basic_federal_tax_with_dividend_credit",
+        },
+        produces={"output": "ca/foreign_business_tax_credit_line_5"},
+    ),
+    # Line 7 "Add lines 5 and 6.", line 6 being "Federal surtax on income allocated to "Other
+    # (Outside Canada)":" "Amount from line 10 of Part 2 of Form T2203, Provincial and Territorial
+    # Taxes for Multiple Jurisdictions, or 48% of the amount from line 42900 of your return. Enter
+    # the amount that applies to the country or countries you identified at the top of this
+    # page."; the total of line 7.
+    CapabilitySelection(
+        name="ca/foreign_business_tax_credit_line_7",
+        params={"rounding": "ca/foreign_business_tax_credit_rounding"},
+        consumes={
+            "sheets": "ca/foreign_tax_credit_sheets",
+            "net_income": "ca/foreign_tax_credit_net_income",
+            "basic_federal_tax": "ca/basic_federal_tax_with_dividend_credit",
+        },
+        produces={"output": "ca/foreign_business_tax_credit_line_7"},
+    ),
+    # Line 8 "Add basic federal tax (8) and the amount from line 6."; the total of line 8.
+    CapabilitySelection(
+        name="ca/foreign_business_tax_credit_line_8",
+        params={"rounding": "ca/foreign_business_tax_credit_rounding"},
+        consumes={
+            "sheets": "ca/foreign_tax_credit_sheets",
+            "net_income": "ca/foreign_tax_credit_net_income",
+            "basic_federal_tax": "ca/basic_federal_tax_with_dividend_credit",
+        },
+        produces={"output": "ca/foreign_business_tax_credit_line_8"},
+    ),
+    # Line 9 "Enter the amount from line 3, if any." and line 10 "Line 8 minus line 9", which prints
+    # no "(if negative, enter "0")"; the total of line 10.
+    CapabilitySelection(
+        name="ca/foreign_business_tax_credit_line_10",
+        params={"rounding": "ca/foreign_business_tax_credit_rounding"},
+        consumes={
+            "sheets": "ca/foreign_tax_credit_sheets",
+            "net_income": "ca/foreign_tax_credit_net_income",
+            "basic_federal_tax": "ca/basic_federal_tax_with_dividend_credit",
+        },
+        produces={"output": "ca/foreign_business_tax_credit_line_10"},
+    ),
+    # Line 11 "Enter whichever is less: the amount from line 4, 7 or 10." "Federal business foreign
+    # tax credit"; the total of line 11.
+    CapabilitySelection(
+        name="ca/foreign_business_tax_credit_line_11",
+        params={"rounding": "ca/foreign_business_tax_credit_rounding"},
+        consumes={
+            "sheets": "ca/foreign_tax_credit_sheets",
+            "net_income": "ca/foreign_tax_credit_net_income",
+            "basic_federal_tax": "ca/basic_federal_tax_with_dividend_credit",
+        },
+        produces={"output": "ca/federal_business_foreign_tax_credit"},
+    ),
+    # T2209 line 12 "Enter the amount from line 3, if any." and line 13 "Add lines 11 and 12."
+    # "Federal foreign tax credit": line 11 and line 12, the total of line 3.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/federal_business_foreign_tax_credit",
+                "ca/federal_non_business_foreign_tax_credit",
+            )
+        },
+        produces={"output": "ca/federal_foreign_tax_credit_before_limit"},
+    ),
+    # T1 line 129 (line 40500) "Federal foreign tax credit (complete Form T2209)" and T2209 line
+    # 13: "The amount on line 13 should not be more than the total of the amount on line 42900 of
+    # your return, plus any federal surtax on income earned outside of Canada." Line 127 (the
+    # surtax) is not wired, so the limit is line 42900.
     CapabilitySelection(
         name="core/lesser_of",
         params={},
         consumes={
             "amounts": (
-                "ca/federal_non_business_foreign_tax_credit",
+                "ca/federal_foreign_tax_credit_before_limit",
                 "ca/federal_tax_after_credits",
             )
         },
@@ -1506,8 +1632,79 @@ WIRING = {
         frozenset({FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, FOREIGN_TAX_CREDIT_SHEETS}),
     ),
     (
+        ForeignBusinessTaxCreditLine4,
+        frozenset(
+            {
+                FOREIGN_TAX_CREDIT_SHEETS,
+                FOREIGN_TAX_CREDIT_NET_INCOME,
+                BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+            }
+        ),
+        frozenset({FOREIGN_BUSINESS_TAX_CREDIT_LINE_4}),
+    ),
+    (
+        ForeignBusinessTaxCreditLine5,
+        frozenset(
+            {
+                FOREIGN_TAX_CREDIT_SHEETS,
+                FOREIGN_TAX_CREDIT_NET_INCOME,
+                BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+            }
+        ),
+        frozenset({FOREIGN_BUSINESS_TAX_CREDIT_LINE_5}),
+    ),
+    (
+        ForeignBusinessTaxCreditLine7,
+        frozenset(
+            {
+                FOREIGN_TAX_CREDIT_SHEETS,
+                FOREIGN_TAX_CREDIT_NET_INCOME,
+                BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+            }
+        ),
+        frozenset({FOREIGN_BUSINESS_TAX_CREDIT_LINE_7}),
+    ),
+    (
+        ForeignBusinessTaxCreditLine8,
+        frozenset(
+            {
+                FOREIGN_TAX_CREDIT_SHEETS,
+                FOREIGN_TAX_CREDIT_NET_INCOME,
+                BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+            }
+        ),
+        frozenset({FOREIGN_BUSINESS_TAX_CREDIT_LINE_8}),
+    ),
+    (
+        ForeignBusinessTaxCreditLine10,
+        frozenset(
+            {
+                FOREIGN_TAX_CREDIT_SHEETS,
+                FOREIGN_TAX_CREDIT_NET_INCOME,
+                BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+            }
+        ),
+        frozenset({FOREIGN_BUSINESS_TAX_CREDIT_LINE_10}),
+    ),
+    (
+        ForeignBusinessTaxCreditLine11,
+        frozenset(
+            {
+                FOREIGN_TAX_CREDIT_SHEETS,
+                FOREIGN_TAX_CREDIT_NET_INCOME,
+                BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+            }
+        ),
+        frozenset({FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT}),
+    ),
+    (
+        Sum,
+        frozenset({FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT, FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT}),
+        frozenset({FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT}),
+    ),
+    (
         LesserOf,
-        frozenset({FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, FEDERAL_TAX_AFTER_CREDITS}),
+        frozenset({FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT, FEDERAL_TAX_AFTER_CREDITS}),
         frozenset({FEDERAL_FOREIGN_TAX_CREDIT}),
     ),
     (

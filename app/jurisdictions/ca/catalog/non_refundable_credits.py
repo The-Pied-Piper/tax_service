@@ -676,10 +676,11 @@ FEDERAL_FOREIGN_TAX_CREDIT = CATALOG.declare(
     "federal_foreign_tax_credit", Decimal, non_negative=True
 )
 """Federal foreign tax credit, Form T2209 line 13 "Federal foreign tax credit" and T1 line 129
-(line 40500) "Federal foreign tax credit (complete Form T2209)": line 3, as the business lines 4 to
-12 are not wired, limited as the form says, "The amount on line 13 should not be more than the
-total of the amount on line 42900 of your return, plus any federal surtax on income earned outside
-of Canada", to line 42900, as the surtax is not wired."""
+(line 40500) "Federal foreign tax credit (complete Form T2209)": line 13, the sum of line 11
+(`federal_business_foreign_tax_credit`) and line 12 (`federal_non_business_foreign_tax_credit`),
+limited as the form says, "The amount on line 13 should not be more than the total of the amount
+on line 42900 of your return, plus any federal surtax on income earned outside of Canada", to line
+42900, as the surtax is not wired."""
 
 FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT = CATALOG.declare(
     "federal_tax_less_foreign_tax_credit", Decimal, non_negative=True
