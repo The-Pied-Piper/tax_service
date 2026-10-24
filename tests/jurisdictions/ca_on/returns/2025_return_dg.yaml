@@ -1,5 +1,5 @@
 # Return DG: the federal non-refundable amounts of T1 lines 31220, 31240, 31270, 31285, 31300,
-# 31400 and 31900 (federal part of #179), wired into the line 33500 sum. An adult filer with
+# 31400 and 31900 wired into the line 33500 sum. An adult filer with
 # employment income and a pension, claiming the volunteer firefighters' amount, the home buyers'
 # amount, home accessibility expenses, one adoption, the pension income amount and student loan
 # interest, with no spouse and no line 31400 exclusions.
@@ -10,8 +10,8 @@ description: >-
   spouse. Employment income is $100,000 (T1 line 10100, a chosen figure), and other pension
   income is $20,000 (T1 line 11500, "Other pensions or superannuation", a chosen figure), with
   nothing excluded from the pension and no foreign pension, U.S. IRA or RRIF amounts (all 0,
-  chosen). Taxable income (line 26000) is 118,926.00 as the engine computes it on main for
-  this income, which is not hand-traced here; the amounts below are the new lines.
+  chosen). Taxable income (line 26000) is 118,926.00 (100,000.00 of employment income plus the 20,000.00
+  pension, less the 1,074.00 enhanced CPP deduction); the amounts below are the new lines.
   Volunteer firefighters' amount (line 31220): the filer completed 200 hours of eligible
   volunteer firefighting services (a chosen count of 1), so the amount is 6,000.00. Search and
   rescue volunteers' amount (line 31240): not claimed (a chosen count of 0), so 0.00. The
@@ -25,14 +25,14 @@ description: >-
   not claimed here.
   Adoption expenses (line 31300): one child with eligible expenses of 8,000 (a chosen figure),
   so the list holds one record of 8,000 and line 31300 is 8,000.00. The form has no federal
-  maximum for line 31300 (the check recorded on the ticket), so the amount is taken as entered.
+  maximum for line 31300 (neither the T1 nor the guide prints one), so the amount is taken as entered.
   Pension income amount (Federal Worksheet, line 31400): line 1 is 20,000.00 (line 11500);
   line 2 to line 4 are 0, so line 5 is 0.00 and line 6 is 20,000.00. The filer is under 65 and
   the payments are not because of a spouse's death (a chosen 0), so line 7 is 0.00 and line 8
   is 20,000.00. Line 31400 is the lesser of 20,000.00 and $2,000, which is 2,000.00.
   Student loan interest (line 31900): 600 (a chosen figure), entered as the eligible amount.
-  The federal total of credit amounts (line 33500) is the base of 22,033.58 (the CPP, EI and
-  other amounts main computes for this income, unchanged by this ticket) plus the new amounts:
+  The federal total of credit amounts (line 33500) is the base of 22,033.58 (16,129.00 basic personal
+  amount + 3,356.10 CPP + 1,077.48 EI + 1,471.00 Canada employment amount) plus the new amounts:
   6,000.00 + 10,000.00 + 20,000.00 + 8,000.00 + 2,000.00 + 600.00 = 46,600.00, so 68,633.58.
   At 14.5% that is 9,951.87 (the credit amounts at the credit rate), an increase of 6,757.00
   on the base of 3,194.87. Basic federal tax after credits is
@@ -43,7 +43,7 @@ description: >-
   (line 33800 with the donations credit and the top-up tax credit): 9,951.87 + 56.32 = 10,008.19.
   Not triggered: the surtax on income earned outside Canada, the foreign tax credit, the
   alternative minimum tax and the Canada workers benefit, none of which this return claims.
-  Ontario (the Ontario half is #179, which this ticket does not change): the new federal lines do
+  Ontario (not wired to these lines): the new federal lines do
   not enter the Ontario credits, which stay the basic personal amount 12,747 plus the CPP base
   contributions 3,356.10 and EI premiums 1,077.48, 17,180.58 at 5.05% = 867.62. The Ontario tax on
   taxable income 118,926.00 by the 2025 brackets (5.05% to 52,886; 9.15% to 105,775; 11.16% above)

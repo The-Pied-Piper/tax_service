@@ -592,7 +592,7 @@ def test_the_other_federal_foreign_tax_credit_kinds_are_non_negative(
 
 
 # --- Other federal non-refundable amounts: T1 lines 31220, 31240, 31270, 31285, 31300, 31400 and
-# 31900 (federal part of #179) -------------------------------------------------------------------
+# 31900 -------------------------------------------------------------------
 
 
 def test_the_other_federal_non_refundable_amount_kinds_are_the_registered_ones(

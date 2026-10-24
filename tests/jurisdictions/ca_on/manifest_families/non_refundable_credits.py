@@ -1455,7 +1455,7 @@ STEPS = {
     # Worksheet for line 31285, line 4: "Line 2 minus line 3 Enter this amount on line 31285 of
     # your return." Line 3 is the amount claimed by other qualifying individuals in the same
     # dwelling. The form prints "minus" without "(if negative, enter "0")"; the result is taken
-    # as not below zero (a departure, flagged in the PR body).
+    # as not below zero, so an amount claimed by others above line 2 leaves 0.
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
@@ -1491,8 +1491,8 @@ STEPS = {
     ),
     # Worksheet for line 31400, line 6: "Line 1 minus line 5", line 1 being the amount from line
     # 11500 of the return (`ca/other_pensions_and_superannuation`). The form prints "minus" without
-    # "(if negative, enter "0")"; the result is taken as not below zero (a departure, flagged in the
-    # PR body).
+    # "(if negative, enter "0")"; the result is taken as not below zero, so a total above line
+    # 11500 leaves 0.
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},

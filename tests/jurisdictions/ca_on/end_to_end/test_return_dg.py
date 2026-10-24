@@ -254,3 +254,21 @@ def test_two_children_adoption_expenses_of_8000_and_3000_give_11000() -> None:
     worksheet = return_dg(adoption_children=("8000", "3000"))
 
     assert worksheet.get(ADOPTION_CREDIT).value == D("11000.00")
+
+
+def test_home_accessibility_claimed_by_others_above_line_2_leaves_no_credit() -> None:
+    # Line 2 is the lesser of 25,000 and 20,000 = 20,000; line 4 is 20,000 less 25,000 taken as
+    # not below zero, so 0.00.
+    worksheet = return_dg(
+        home_accessibility_expenses="25000", home_accessibility_claimed_by_others="25000"
+    )
+
+    assert worksheet.get(HOME_ACCESSIBILITY_CREDIT).value == D("0.00")
+
+
+def test_a_pension_exclusion_above_line_11500_leaves_no_pension_credit() -> None:
+    # Line 11500 of 1,500 less the 5,000 of foreign pension income is taken as not below zero:
+    # line 6 is 0.00, so the credit is 0.00.
+    worksheet = return_dg(other_pensions="1500", pension_foreign_income="5000")
+
+    assert worksheet.get(PENSION_INCOME_CREDIT).value == D("0.00")

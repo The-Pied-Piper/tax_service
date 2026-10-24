@@ -948,7 +948,7 @@ def service() -> TaxComputationService:
 
 
 def blank_other_federal_credit_inputs() -> list[Artifact[Any]]:
-    """The inputs of T1 lines 31220 to 31900 (#431) with no claim: counts 0, amounts 0, no
+    """The inputs of T1 lines 31220 to 31900 with no claim: counts 0, amounts 0, no
     children."""
     counts = (
         VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET,
