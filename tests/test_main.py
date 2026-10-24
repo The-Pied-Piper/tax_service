@@ -2014,6 +2014,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/moving_net_expenses_carried",
         "ca/moving_lesser_of_expenses_and_income",
         "ca/moving_expenses_claim",
+        "ca/moving_unused_expenses_before_test",
         "ca/moving_unused_expenses",
         "ca/moving_expenses_deduction",
         "ca/amt_ppip_premiums_deduction",

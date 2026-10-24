@@ -1425,6 +1425,7 @@ MOVING_COMPUTED = (
     "ca/moving_net_expenses_carried",
     "ca/moving_lesser_of_expenses_and_income",
     "ca/moving_expenses_claim",
+    "ca/moving_unused_expenses_before_test",
     "ca/moving_unused_expenses",
     "ca/moving_expenses_deduction",
 )

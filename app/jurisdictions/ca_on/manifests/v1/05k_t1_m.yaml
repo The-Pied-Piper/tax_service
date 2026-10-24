@@ -115,11 +115,22 @@ capabilities:
       gate: ca/moving_distance_difference
     produces:
       output: ca/moving_expenses_claim
-  # T1-M Part 4 "Line 27 minus line 28 (if negative, enter "0")" (line 30) "Your unused moving
-  # expenses available to carry forward to a future year".
+  # T1-M Part 4 "Line 27 minus line 28 (if negative, enter "0")" (line 30).
   - name: core/subtract_not_below_zero
     consumes:
       amount: ca/moving_net_expenses_carried
       less: ca/moving_net_eligible_income
+    produces:
+      output: ca/moving_unused_expenses_before_test
+  # T1-M Part 2 "If the amount on line 3 is less than 40 kilometres, you cannot deduct your moving
+  # expenses. If this is the case, do not complete the rest of this form." The line 30 amount "Your
+  # unused moving expenses available to carry forward to a future year" is kept only when line 3 is
+  # at least the 40 kilometres of the `ca/moving_distance_threshold` dataset, otherwise 0.
+  - name: ca/threshold_gate
+    params:
+      threshold: ca/moving_distance_threshold
+    consumes:
+      amount: ca/moving_unused_expenses_before_test
+      gate: ca/moving_distance_difference
     produces:
       output: ca/moving_unused_expenses
