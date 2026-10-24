@@ -1991,7 +1991,8 @@ def required_ei_premiums(employment_income: Decimal) -> Decimal:
     """The T4 box 18 premiums that equal the premium required on the employment income given.
 
     The 2025 EI tier from its dataset, 1.64% of the earnings up to $65,700 at most $1,077.48,
-    rounded half-up to the cent (Form T2204 line 10).
+    rounded half-up to the cent (Form T2204 line 10). Employment income of $2,000 or less gives a
+    full overpayment on line 45000 and 0 on line 31200 (Form T2204 note (1)).
     """
     return _cpp_tier("ca/ei_premium", employment_income)
 
