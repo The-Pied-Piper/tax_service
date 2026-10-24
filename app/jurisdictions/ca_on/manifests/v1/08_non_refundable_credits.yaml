@@ -159,7 +159,13 @@ capabilities:
         - ca/cpp_base_contributions_on_self_employment_and_other_earnings
         - ca/ei_premiums
         - ca/ei_premiums_on_self_employment
+        - ca/volunteer_firefighters_credit
+        - ca/search_and_rescue_credit
         - ca/canada_employment_amount
+        - ca/home_buyers_credit
+        - ca/home_accessibility_credit
+        - ca/adoption_credit
+        - ca/pension_income_credit
         - ca/disability_amount_for_self
         - ca/disability_transferred_amount
     produces:
