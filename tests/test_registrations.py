@@ -459,6 +459,12 @@ def test_importing_the_federal_package_registers_the_count_at_least_capability()
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.count_at_least"
 
 
+def test_importing_the_federal_package_registers_the_qbt_before_qcc_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/qbt_before_qcc")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.qbt_before_qcc"
+
+
 def test_importing_the_federal_package_registers_the_ratio_truncated_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/ratio_truncated")
 

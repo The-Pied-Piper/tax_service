@@ -1,17 +1,21 @@
 # Form T2048 (2025), Capital Gains Deduction for Qualifying Business Transfers or Qualifying
 # Cooperative Conversions, Parts 2 to 5 and Chart A (line 25395): the form ca/t2048, run once for
 # each disposition of the record list ca/t2048_dispositions (one record for each qualifying
-# disposition, in the order the filer designates; none or one; more are not accepted yet). Each
-# record's fields are the 13 T2048 inputs. The form exports the nine figures of Parts 4 and 5 and
-# line 27 that the return reads or outputs, and the return totals each one over the dispositions
-# (`core/record_total`, 06_taxable_income.yaml). The 34 steps of this part are the form's own; the
-# 54 copies of the return's steps that compute the figures they read are in
+# disposition, in the order the filer designates; any number, none included). Each record's fields
+# are the 13 T2048 inputs. The form exports the nine figures of Parts 4 and 5 and line 27 that the
+# return reads or outputs, and the return totals each one over the dispositions
+# (`core/record_total`, 06_taxable_income.yaml); a tenth export, the run's election answer once it
+# has passed the order check, is read by the form only. With more than one disposition a run reads
+# the earlier runs through the form's own derived kinds `ca/t2048.<export>`: notes (1) to (3) of
+# the form total the earlier runs' line 32, line 41 and line 42 and subtract the total from line 8,
+# line 23 and Chart A line 20, and every step that read the return's line 12700, line 21700 or
+# Chart A line 20 reads the corrected figure. The 41 steps of this part are the form's own; the 54
+# copies of the return's steps that compute the figures they read are in
 # 06a_capital_gains_deduction_qbt_copies.yaml.
 form:
   name: ca/t2048
   instances: ca/t2048_dispositions
   min_instances: 0
-  max_instances: 1
   exports:
     - ca/qbt_allocation_total
     - ca/qcc_election_deduction
@@ -22,6 +26,7 @@ form:
     - ca/qbt_abil_reduction
     - ca/qbt_net_investment_loss_reduction
     - ca/qbt_capital_gains_deduction
+    - ca/qbt_election_is_qbt_in_order
 capabilities:
   # Form T2048 Part 2 line 3 "Line 1 multiplied by the percentage from line 2" (line 1 "Total
   # eligible amount for the joint election (maximum of $10 million per election)", line 2
@@ -56,8 +61,8 @@ capabilities:
       output: ca/qbt_deduction_available
   # Part 3 line 11 "Line 9 plus line 10" (line 9 "Capital gains for the QBT or QCC that occurred
   # in the current year reported on Schedule 3", line 10 "Amount of 2024 reserve claimed for the
-  # QBT or QCC, if any"). Line 8 "Taxable capital gains from line 12700 of your return" is the
-  # artifact ca/taxable_capital_gains, read directly; line 12 "Amount from line 11 of the previous
+  # QBT or QCC, if any"). Line 8 "Taxable capital gains from line 12700 of your return" after note (1)
+  # is the artifact of the step below the Chart A steps; line 12 "Amount from line 11 of the previous
   # page" is line 11.
   - name: core/sum
     consumes:
@@ -84,11 +89,12 @@ capabilities:
       base: ca/qbt_total_capital_gains
     produces:
       output: ca/qbt_taxable_capital_gains
-  # Part 3 line 17 "Enter whichever is less: amount from line 8 or line 16."
+  # Part 3 line 17 "Enter whichever is less: amount from line 8 or line 16." (line 8 after note
+  # (1), `ca/qbt_taxable_capital_gains_after_earlier`).
   - name: core/lesser_of
     consumes:
       amounts:
-        - ca/taxable_capital_gains
+        - ca/qbt_taxable_capital_gains_after_earlier
         - ca/qbt_taxable_capital_gains
     produces:
       output: ca/qbt_taxable_gains_limit
@@ -97,7 +103,7 @@ capabilities:
   # Part 3", line 17 "Line 17 of Part 3") is the same figure, so Chart A reads this artifact.
   - name: core/subtract_not_below_zero
     consumes:
-      amount: ca/taxable_capital_gains
+      amount: ca/qbt_taxable_capital_gains_after_earlier
       less: ca/qbt_taxable_gains_limit
     produces:
       output: ca/qbt_taxable_gains_not_limited
@@ -111,12 +117,12 @@ capabilities:
       output: ca/qbt_net_capital_losses_remaining
   # Part 3 line 24 "Net investment loss for the year: If you have investment expenses in 2025,
   # complete Chart A on page 4 and enter the amount from line 20 of Chart A. Otherwise, enter
-  # "0"." The yes/no answer is a 0 or 1 input; the loss times that count is the loss or 0. Line 23
-  # "Allowable business investment loss (ABIL) for the year (line 21700 of your return)" is the
-  # artifact ca/allowable_business_investment_loss, read directly.
+  # "0"." The yes/no answer is a 0 or 1 input; the loss times that count is the loss or 0 (Chart A
+  # line 20 after note (3)). Line 23 "Allowable business investment loss (ABIL) for the year (line
+  # 21700 of your return)" after note (2) is the artifact of the step below the Chart A steps.
   - name: core/times_count
     consumes:
-      amount: ca/qbt_chart_a_net_investment_loss
+      amount: ca/qbt_chart_a_net_investment_loss_after_earlier
       count: ca/qbt_has_investment_expenses
     produces:
       output: ca/qbt_net_investment_loss
@@ -125,7 +131,7 @@ capabilities:
     consumes:
       parts:
         - ca/qbt_net_capital_losses_remaining
-        - ca/allowable_business_investment_loss
+        - ca/qbt_allowable_business_investment_loss_after_earlier
         - ca/qbt_net_investment_loss
     produces:
       output: ca/qbt_reductions_from_losses
@@ -184,7 +190,7 @@ capabilities:
   - name: core/sum
     consumes:
       parts:
-        - ca/allowable_business_investment_loss
+        - ca/qbt_allowable_business_investment_loss_after_earlier
         - ca/qbt_net_investment_loss
     produces:
       output: ca/qbt_abil_and_net_investment_loss
@@ -205,7 +211,7 @@ capabilities:
     params:
       rounding: ca/qbt_abil_reduction_rounding
     consumes:
-      amount: ca/allowable_business_investment_loss
+      amount: ca/qbt_allowable_business_investment_loss_after_earlier
       numerator: ca/qbt_allocation_limit
       denominator: ca/qbt_abil_and_net_investment_loss
     produces:
@@ -342,3 +348,62 @@ capabilities:
       less: ca/qbt_investment_income
     produces:
       output: ca/qbt_chart_a_net_investment_loss
+  # Note (1) of Part 3 line 8 "If you have more than one QBT or QCC, subtract the sum of all
+  # previous amounts from line 32 of the next page.": the sum of all previous amounts is the total
+  # of the earlier runs' line 32 (the form's own derived kind `ca/t2048.qbt_allocation_total`);
+  # with no earlier run it is 0.
+  - name: core/record_total
+    consumes:
+      records: ca/t2048.qbt_allocation_total
+    produces:
+      output: ca/qbt_earlier_allocation_total
+  # Part 3 line 8 "Taxable capital gains from line 12700 of your return" less that sum (note
+  # (1)). The form prints no floor.
+  - name: core/subtract
+    consumes:
+      amount: ca/taxable_capital_gains
+      less: ca/qbt_earlier_allocation_total
+    produces:
+      output: ca/qbt_taxable_capital_gains_after_earlier
+  # Note (2) of Part 3 line 23 "If you have more than one QBT or QCC, subtract the sum of all
+  # previous amounts from line 41 above.": the total of the earlier runs' line 41 (the form's own
+  # derived kind `ca/t2048.qbt_abil_reduction`).
+  - name: core/record_total
+    consumes:
+      records: ca/t2048.qbt_abil_reduction
+    produces:
+      output: ca/qbt_earlier_abil_reduction_total
+  # Part 3 line 23 "Allowable business investment loss (ABIL) for the year (line 21700 of your
+  # return)" less that sum (note (2)). The form prints no floor.
+  - name: core/subtract
+    consumes:
+      amount: ca/allowable_business_investment_loss
+      less: ca/qbt_earlier_abil_reduction_total
+    produces:
+      output: ca/qbt_allowable_business_investment_loss_after_earlier
+  # Note (3) of Chart A line 20 "If you have more than one QBT or QCC, subtract the sum of all
+  # previous amounts from line 42 of Part 4.": the total of the earlier runs' line 42 (the form's
+  # own derived kind `ca/t2048.qbt_net_investment_loss_reduction`).
+  - name: core/record_total
+    consumes:
+      records: ca/t2048.qbt_net_investment_loss_reduction
+    produces:
+      output: ca/qbt_earlier_net_investment_loss_reduction_total
+  # Chart A line 20 "Line 10 minus line 19 (if negative enter "0")" less that sum (note (3)). The
+  # form prints no floor.
+  - name: core/subtract
+    consumes:
+      amount: ca/qbt_chart_a_net_investment_loss
+      less: ca/qbt_earlier_net_investment_loss_reduction_total
+    produces:
+      output: ca/qbt_chart_a_net_investment_loss_after_earlier
+  # "You must claim any deduction under a QBT before any deduction under a QCC.": the run's answer
+  # to Part 5's "if the election is for a QBT" (1) after a QCC (0) among the earlier runs' answers
+  # (the form's own derived kind `ca/t2048.qbt_election_is_qbt_in_order`) is an input error, a
+  # ValidationError; otherwise the answer passes on as the tenth export.
+  - name: ca/qbt_before_qcc
+    consumes:
+      is_qbt: ca/qbt_election_is_qbt
+      earlier: ca/t2048.qbt_election_is_qbt_in_order
+    produces:
+      output: ca/qbt_election_is_qbt_in_order

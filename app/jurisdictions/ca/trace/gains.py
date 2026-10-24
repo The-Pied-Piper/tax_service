@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from app.domain.artifact import Money
+from app.domain.artifact import ArtifactKind, Money
 from app.domain.parameters.rounding import RoundingRule
 from app.domain.trace.base import TraceLine
 
@@ -62,6 +62,7 @@ __all__ = [
     "DispositionGainOnlyLine",
     "DispositionProceedsLine",
     "NetCapitalLossesRowLine",
+    "QbtBeforeQccLine",
 ]
 
 
@@ -1128,3 +1129,24 @@ class NetCapitalLossesRowLine(TraceLine):
     def amount(self) -> Decimal:
         """Column G."""
         return self.column_g
+
+
+@dataclass(frozen=True)
+class QbtBeforeQccLine(TraceLine):
+    """`output` = `is_qbt_kind` (worth `is_qbt`, 1 for a QBT and 0 for a QCC), unchanged, after
+    `earlier` earlier dispositions of which `earlier_qbts` are QBTs.
+
+    It follows Form T2048, "You must claim any deduction under a QBT before any deduction under a
+    QCC": a QBT after a QCC is an error, so no line is recorded for it.
+    """
+
+    output: ArtifactKind[int]
+    is_qbt_kind: ArtifactKind[int]
+    is_qbt: int
+    earlier: int
+    earlier_qbts: int
+
+    @property
+    def amount(self) -> Decimal:
+        """The answer, as produced."""
+        return Decimal(self.is_qbt)

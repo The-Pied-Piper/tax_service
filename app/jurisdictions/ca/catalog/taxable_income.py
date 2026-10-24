@@ -677,6 +677,58 @@ QBT_CHART_A_NET_INVESTMENT_LOSS = CATALOG.declare(
 """Net investment losses for the year, Form T2048 Chart A line 20 "Line 10 minus line 19 (if
 negative enter "0")": line 10 minus line 19, floored at zero."""
 
+QBT_EARLIER_ALLOCATION_TOTAL = CATALOG.declare(
+    "qbt_earlier_allocation_total", Decimal, non_negative=True
+)
+"""Line 32 of the earlier dispositions, Form T2048 note (1) to line 8 "If you have more than one
+QBT or QCC, subtract the sum of all previous amounts from line 32 of the next page": the sum of the
+line 32 "Line 30 plus line 31" of the earlier runs of the form, 0 for the first."""
+
+QBT_TAXABLE_CAPITAL_GAINS_AFTER_EARLIER = CATALOG.declare(
+    "qbt_taxable_capital_gains_after_earlier", Decimal, non_negative=True
+)
+"""Taxable capital gains after the earlier dispositions, Form T2048 line 8 "Taxable capital gains
+from line 12700 of your return (1)", note (1) "If you have more than one QBT or QCC, subtract the
+sum of all previous amounts from line 32 of the next page": line 12700 minus the earlier line 32
+total, as printed, with no floor."""
+
+QBT_EARLIER_ABIL_REDUCTION_TOTAL = CATALOG.declare(
+    "qbt_earlier_abil_reduction_total", Decimal, non_negative=True
+)
+"""Line 41 of the earlier dispositions, Form T2048 note (2) to line 23 "If you have more than one
+QBT or QCC, subtract the sum of all previous amounts from line 41 above": the sum of the line 41
+"Line 39 multiplied by line 40" of the earlier runs of the form, 0 for the first."""
+
+QBT_ALLOWABLE_BUSINESS_INVESTMENT_LOSS_AFTER_EARLIER = CATALOG.declare(
+    "qbt_allowable_business_investment_loss_after_earlier", Decimal, non_negative=True
+)
+"""Allowable business investment loss after the earlier dispositions, Form T2048 line 23
+"Allowable business investment loss (ABIL) for the year (line 21700 of your return) (2)", note (2)
+"If you have more than one QBT or QCC, subtract the sum of all previous amounts from line 41
+above": line 21700 minus the earlier line 41 total, as printed, with no floor."""
+
+QBT_EARLIER_NET_INVESTMENT_LOSS_REDUCTION_TOTAL = CATALOG.declare(
+    "qbt_earlier_net_investment_loss_reduction_total", Decimal, non_negative=True
+)
+"""Line 42 of the earlier dispositions, Form T2048 note (3) to Chart A line 20 "If you have more
+than one QBT or QCC, subtract the sum of all previous amounts from line 42 of Part 4": the sum of
+the line 42 "Line 36 minus line 41" of the earlier runs of the form, 0 for the first."""
+
+QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER = CATALOG.declare(
+    "qbt_chart_a_net_investment_loss_after_earlier", Decimal, non_negative=True
+)
+"""Net investment losses for the year after the earlier dispositions, Form T2048 Chart A line 20
+"Line 10 minus line 19 (if negative enter "0") (3)", note (3) "If you have more than one QBT or QCC,
+subtract the sum of all previous amounts from line 42 of Part 4": Chart A line 20 minus the earlier
+line 42 total, as printed, with no floor."""
+
+QBT_ELECTION_IS_QBT_IN_ORDER = CATALOG.declare(
+    "qbt_election_is_qbt_in_order", int, non_negative=True
+)
+"""Election is for a QBT, in order, Form T2048 "You must claim any deduction under a QBT before any
+deduction under a QCC": the starting count of Part 5 B, 1 for a QBT and 0 for a QCC, once the check
+that no earlier disposition is a QCC has passed."""
+
 T657_T2017_LINE_13 = CATALOG.declare("t657_t2017_line_13", Decimal)
 """Amount from Form T2017 line 13, Form T657 Step 1 line 2 "Total amount from line 13 of Form T2017
 (if negative, show in brackets)": a starting amount, a loss in brackets."""
