@@ -834,6 +834,21 @@ capital cost allowance classes. The caller decides whether the Guide's condition
 columns of a record work on the record alone (proceeds, no property left), so a class whose
 additions are treated both ways is entered as several records with its proceeds in one of them."""
 
+CCA_RATE_ELECTION = CATALOG.declare("cca_rate_election", int, non_negative=True)
+"""CCA rate election, Guide T4036 2025, "Class 1 (4%)": "Under proposed changes, new buildings or
+parts of a building that are built for use as a purpose-built residential rental (see definition on
+page 8) may now be eligible for an accelerated CCA rate of 10%"; "The CCA rate for eligible
+non-residential buildings acquired by a taxpayer after March 18, 2007, and used in Canada to
+manufacture or process goods for sale or lease includes an additional allowance of 6% for a total
+rate of 10%. The CCA rate for other eligible non-residential buildings includes an additional
+allowance of 2% for a total rate of 6%"; "To be eligible for one of the additional allowances, you
+must elect to put a building in a separate class. [...] If you do not file an election to put it in
+a separate class, the 4% rate will apply." The code of the election the caller makes for the row:
+0 none (the class's own rate), 1 purpose-built residential rental, 2 separate class, other
+non-residential building, 3 separate class, building used to manufacture or process goods. The rate
+of each code comes from the class-rates dataset, and a code the row's class does not list is
+refused. A field of each record of a list of capital cost allowance classes."""
+
 CCA_UCC_AT_END = CATALOG.declare("cca_ucc_at_end", Decimal, non_negative=True)
 """UCC at the end of the year, T776 Area A "Column 24: UCC at the end of the year (column 7 minus
 column 23)" (T2125 column 22): a field of each record of the closing list of capital cost

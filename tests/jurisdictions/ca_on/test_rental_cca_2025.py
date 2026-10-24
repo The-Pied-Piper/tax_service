@@ -205,6 +205,38 @@ def test_the_half_year_rule_on_sale_applies_to_class_10_1_only() -> None:
     assert on_sale == {"10.1"}
 
 
+def test_class_1_lists_the_elections_of_the_guide_and_no_other_class_does() -> None:
+    # Guide T4036 2025, "Class 1 (4%)": 10% for a new purpose-built residential rental (code 1),
+    # and, by election to put a building in a separate class, 6% for other eligible non-residential
+    # buildings (code 2) and 10% for manufacturing or processing ones (code 3).
+    data = SOURCE.get(FAMILY, 2025, CLASS_RATES)
+
+    held = {
+        str(entry.class_number): {e.code: str(e.rate.value) for e in entry.elections}
+        for entry in data.values.classes
+        if entry.elections
+    }
+    assert held == {"1": {1: "0.10", 2: "0.06", 3: "0.10"}}
+    assert [e.code for e in dataset_class("1").elections] == [1, 2, 3]
+    assert str(dataset_class("1").rate.value) == "0.04"
+
+
+def test_the_dataset_header_quotes_the_guide_on_the_class_1_elections() -> None:
+    header = dataset_header().lower()
+
+    for quoted in (
+        "may now be eligible for an accelerated cca rate of 10%.",
+        "the cca rate for eligible non-residential buildings acquired by a taxpayer after march "
+        "18, 2007, and used in canada to manufacture or process goods for sale or lease includes "
+        "an additional allowance of 6% for a total rate of 10%.",
+        "the cca rate for other eligible non-residential buildings includes an additional "
+        "allowance of 2% for a total rate of 6%.",
+        "if you do not file an election to put it in a separate class, the 4% rate will apply.",
+        "under proposed changes",
+    ):
+        assert quoted in header, quoted
+
+
 @pytest.mark.parametrize("number", RATES)
 def test_each_class_has_the_aiip_and_riip_factors_of_notes_7_and_8(number: str) -> None:
     entry = dataset_class(number)
