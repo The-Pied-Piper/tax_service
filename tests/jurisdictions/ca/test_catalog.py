@@ -2431,7 +2431,7 @@ def test_the_rental_cca_classes_are_a_record_list_of_the_area_a_columns(
     assert RENTAL_CCA_CLASSES.value_type is RecordList
     assert RENTAL_CCA_CLASSES.non_negative is False
     # In the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 23), the no-property-left question
-    # of Note 3, the remaining personal part of Note 9 (column 24), which only this list has, and
+    # of Note 3, the remaining personal part of Note 9 (column 24), and
     # the half-year rule flag of column 18, last.
     assert RENTAL_CCA_CLASSES.fields == (
         CCA_CLASS_NUMBER,
@@ -2479,16 +2479,19 @@ def test_a_rental_class_record_with_the_remaining_personal_part_is_accepted() ->
 @pytest.mark.parametrize(
     "kind", [BUSINESS_CCA_CLASSES, FARM_CCA_CLASSES, FISH_CCA_CLASSES], ids=lambda k: k.identifier
 )
-def test_the_other_forms_class_lists_do_not_take_the_remaining_personal_part(
+def test_the_other_forms_class_lists_take_the_remaining_personal_part(
     kind: RecordListKind,
 ) -> None:
-    # Note 9 is the T776's: a T2125, T2042 or T2121 record that carries it is refused (the
-    # other forms' lists are ticket #411).
+    # Endnote 9 of the T2125, T2042 and T2121 is the T776's Note 9: the record carries it, and
+    # it is required like every record field.
     record = _cca_record(kind.fields)
     record[CCA_PERSONAL_PART_REMAINING] = Decimal("5000.00")
+    earlier = tuple(f for f in kind.fields if f is not CCA_PERSONAL_PART_REMAINING)
 
-    with pytest.raises(InvalidRecordError, match="item 1: unknown field ca/cca_personal_part_rem"):
-        RecordList(kind.fields, [record])
+    (kept,) = RecordList(kind.fields, [record]).records
+    assert kept[CCA_PERSONAL_PART_REMAINING] == Decimal("5000.00")
+    with pytest.raises(InvalidRecordError, match="item 1: missing field ca/cca_personal_part_rem"):
+        RecordList(kind.fields, [_cca_record(earlier)])
 
 
 @pytest.mark.parametrize(
@@ -2785,19 +2788,15 @@ def test_the_business_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
-        CCA_HALF_YEAR_RULE_DIFFERS,
-        CCA_RATE_ELECTION,
-    )
-    assert len(BUSINESS_CCA_CLASSES.fields) == 13
-    # Note 9 is the T776's alone (the other forms' lists are ticket #411): the rental list is the
-    # business list with the remaining personal part before the half-year rule flag.
-    assert RENTAL_CCA_CLASSES.fields == (
-        *BUSINESS_CCA_CLASSES.fields[:-2],
         CCA_PERSONAL_PART_REMAINING,
         CCA_HALF_YEAR_RULE_DIFFERS,
         CCA_RATE_ELECTION,
     )
-    assert CCA_PERSONAL_PART_REMAINING not in BUSINESS_CCA_CLASSES.fields
+    assert len(BUSINESS_CCA_CLASSES.fields) == 14
+    # Note 9 is printed on the T776 and, as endnote 9, on the T2125: the rental list is the
+    # business list.
+    assert RENTAL_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
+    assert CCA_PERSONAL_PART_REMAINING in BUSINESS_CCA_CLASSES.fields
     assert BUSINESS_CCA_CLASSES is not RENTAL_CCA_CLASSES
     assert registry.get("ca/business_cca_classes") is BUSINESS_CCA_CLASSES
 
@@ -3106,13 +3105,14 @@ def test_the_farm_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_PERSONAL_PART_REMAINING,
         CCA_HALF_YEAR_RULE_DIFFERS,
         CCA_RATE_ELECTION,
     )
-    assert len(FARM_CCA_CLASSES.fields) == 13
+    assert len(FARM_CCA_CLASSES.fields) == 14
     assert FARM_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
     assert FARM_CCA_CLASSES is not BUSINESS_CCA_CLASSES
-    assert CCA_PERSONAL_PART_REMAINING not in FARM_CCA_CLASSES.fields
+    assert CCA_PERSONAL_PART_REMAINING in FARM_CCA_CLASSES.fields
     assert registry.get("ca/farm_cca_classes") is FARM_CCA_CLASSES
 
 
@@ -3317,13 +3317,14 @@ def test_the_fish_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_PERSONAL_PART_REMAINING,
         CCA_HALF_YEAR_RULE_DIFFERS,
         CCA_RATE_ELECTION,
     )
-    assert len(FISH_CCA_CLASSES.fields) == 13
+    assert len(FISH_CCA_CLASSES.fields) == 14
     assert FISH_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
     assert FISH_CCA_CLASSES is not BUSINESS_CCA_CLASSES
-    assert CCA_PERSONAL_PART_REMAINING not in FISH_CCA_CLASSES.fields
+    assert CCA_PERSONAL_PART_REMAINING in FISH_CCA_CLASSES.fields
     assert registry.get("ca/fish_cca_classes") is FISH_CCA_CLASSES
 
 
