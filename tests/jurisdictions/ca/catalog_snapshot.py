@@ -2168,6 +2168,22 @@ REGISTERED = frozenset(
         "ca/rc381_cpp_payable_on_self_employment",
         "ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings",
         "ca/rc381_cpp_deduction_on_self_employment_and_other_earnings",
+        "ca/rental_epop_associated_checked",
+        "ca/rental_epop_agreement_filed_checked",
+        "ca/rental_minister_allocation_given_checked",
+        "ca/business_epop_associated_checked",
+        "ca/business_epop_agreement_filed_checked",
+        "ca/business_minister_allocation_given_checked",
+        "ca/farm_epop_associated_checked",
+        "ca/farm_epop_agreement_filed_checked",
+        "ca/farm_minister_allocation_given_checked",
+        "ca/fish_epop_associated_checked",
+        "ca/fish_epop_agreement_filed_checked",
+        "ca/fish_minister_allocation_given_checked",
+        "ca/rental_epop_percentage_checked",
+        "ca/business_epop_percentage_checked",
+        "ca/farm_epop_percentage_checked",
+        "ca/fish_epop_percentage_checked",
     }
 )
 
@@ -2659,6 +2675,18 @@ COUNTS = frozenset(
         "ca/amt_part_6_has_amount_on_line_10",
         "ca/amt_part_5_line_11_is_positive",
         "ca/itc_part_d_amount_11_applies",
+        "ca/rental_epop_associated_checked",
+        "ca/rental_epop_agreement_filed_checked",
+        "ca/rental_minister_allocation_given_checked",
+        "ca/business_epop_associated_checked",
+        "ca/business_epop_agreement_filed_checked",
+        "ca/business_minister_allocation_given_checked",
+        "ca/farm_epop_associated_checked",
+        "ca/farm_epop_agreement_filed_checked",
+        "ca/farm_minister_allocation_given_checked",
+        "ca/fish_epop_associated_checked",
+        "ca/fish_epop_agreement_filed_checked",
+        "ca/fish_minister_allocation_given_checked",
     }
 )
 

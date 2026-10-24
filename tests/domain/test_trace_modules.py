@@ -46,6 +46,7 @@ CORE_HOMES: dict[str, tuple[str, ...]] = {
         "ThresholdGateLine",
         "AmountOrDividedByRateLine",
         "CountAtLeastLine",
+        "YesOrNoCountLine",
         "AmountWhenMoreLine",
         "RatioTruncatedLine",
         "PositivePartOfNegationLine",

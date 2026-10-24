@@ -76,7 +76,7 @@ def test_the_form_holds_the_41_t776_selections() -> None:
     # (`ca/fiscal_period_days`), which the two prorated CCA steps consume.
     found = form()
 
-    assert len(found.capabilities) == 41
+    assert len(found.capabilities) == 45
     assert set(found.capabilities) == t776.FORM_STEPS
 
 

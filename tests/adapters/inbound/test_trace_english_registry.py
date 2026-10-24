@@ -194,6 +194,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.domain.trace.arithmetic.SumNotBelowZeroLine",
         "app.domain.trace.arithmetic.ThresholdGateLine",
         "app.domain.trace.arithmetic.TimesCountLine",
+        "app.domain.trace.arithmetic.YesOrNoCountLine",
         "app.domain.trace.choices.ChosenByCountLine",
         "app.domain.trace.choices.ChosenByRangeLine",
         "app.domain.trace.choices.ChosenBySignLine",

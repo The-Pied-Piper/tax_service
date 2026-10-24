@@ -5,6 +5,8 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
+import pytest
+
 from app.domain.artifact import ArtifactKind, ArtifactRegistry
 from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
@@ -12,8 +14,11 @@ from app.jurisdictions.ca.catalog import (
     BOND_GAIN_OR_LOSS,
     BOND_PROCEEDS,
     BUSINESS_EPOP_AGREEMENT_FILED,
+    BUSINESS_EPOP_AGREEMENT_FILED_CHECKED,
     BUSINESS_EPOP_ASSOCIATED,
+    BUSINESS_EPOP_ASSOCIATED_CHECKED,
     BUSINESS_EPOP_PERCENTAGE,
+    BUSINESS_EPOP_PERCENTAGE_CHECKED,
     BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
     BUSINESS_EPOP_PERCENTAGE_ROOM,
     BUSINESS_EPOP_PERCENTAGE_TOTAL,
@@ -30,6 +35,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_INCOME_BEFORE_CCA,
     BUSINESS_MINISTER_ALLOCATION,
     BUSINESS_MINISTER_ALLOCATION_GIVEN,
+    BUSINESS_MINISTER_ALLOCATION_GIVEN_CHECKED,
     BUSINESS_VEHICLE_DAYS_DIVISOR,
     BUSINESS_VEHICLE_LIST_PRICE,
     BUSINESS_VEHICLE_SALES_TAX_RATE,
@@ -62,8 +68,11 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
     FARM_EPOP_AGREEMENT_FILED,
+    FARM_EPOP_AGREEMENT_FILED_CHECKED,
     FARM_EPOP_ASSOCIATED,
+    FARM_EPOP_ASSOCIATED_CHECKED,
     FARM_EPOP_PERCENTAGE,
+    FARM_EPOP_PERCENTAGE_CHECKED,
     FARM_EPOP_PERCENTAGE_MAXIMUM,
     FARM_EPOP_PERCENTAGE_ROOM,
     FARM_EPOP_PERCENTAGE_TOTAL,
@@ -79,13 +88,17 @@ from app.jurisdictions.ca.catalog import (
     FARM_INCOME_BEFORE_CCA,
     FARM_MINISTER_ALLOCATION,
     FARM_MINISTER_ALLOCATION_GIVEN,
+    FARM_MINISTER_ALLOCATION_GIVEN_CHECKED,
     FARM_MOTOR_VEHICLE_EXPENSES,
     FARM_VEHICLE_SALES_TAX_RATE,
     FARMING_INCOME,
     FHSA_INCOME,
     FISH_EPOP_AGREEMENT_FILED,
+    FISH_EPOP_AGREEMENT_FILED_CHECKED,
     FISH_EPOP_ASSOCIATED,
+    FISH_EPOP_ASSOCIATED_CHECKED,
     FISH_EPOP_PERCENTAGE,
+    FISH_EPOP_PERCENTAGE_CHECKED,
     FISH_EPOP_PERCENTAGE_MAXIMUM,
     FISH_EPOP_PERCENTAGE_ROOM,
     FISH_EPOP_PERCENTAGE_TOTAL,
@@ -101,6 +114,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_INCOME_BEFORE_CCA,
     FISH_MINISTER_ALLOCATION,
     FISH_MINISTER_ALLOCATION_GIVEN,
+    FISH_MINISTER_ALLOCATION_GIVEN_CHECKED,
     FISH_MOTOR_VEHICLE_EXPENSES,
     FISH_VEHICLE_SALES_TAX_RATE,
     FISHING_INCOME,
@@ -175,8 +189,11 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_COOWNER_TERMINAL_LOSS,
     RENTAL_DEDUCTIBLE_EXPENSES,
     RENTAL_EPOP_AGREEMENT_FILED,
+    RENTAL_EPOP_AGREEMENT_FILED_CHECKED,
     RENTAL_EPOP_ASSOCIATED,
+    RENTAL_EPOP_ASSOCIATED_CHECKED,
     RENTAL_EPOP_PERCENTAGE,
+    RENTAL_EPOP_PERCENTAGE_CHECKED,
     RENTAL_EPOP_PERCENTAGE_MAXIMUM,
     RENTAL_EPOP_PERCENTAGE_ROOM,
     RENTAL_EPOP_PERCENTAGE_TOTAL,
@@ -202,6 +219,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION,
     RENTAL_MINISTER_ALLOCATION,
     RENTAL_MINISTER_ALLOCATION_GIVEN,
+    RENTAL_MINISTER_ALLOCATION_GIVEN_CHECKED,
     RENTAL_MOTOR_VEHICLE_EXPENSES,
     RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION,
     RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION,
@@ -1032,3 +1050,126 @@ def test_the_t2121_chart_lines_are_no_longer_artifacts(registry: ArtifactRegistr
         "leasing_cost",
     ):
         assert f"ca/fish_vehicle_{name}" not in registry.identifiers(), name
+
+
+# --- the immediate expensing limit checks: a yes or no answer checked to be 0 or 1, and a
+# business's own percentage checked against the total of column 3 (the forms are silent on both).
+
+CHECKED_KINDS = (
+    (
+        "ca/rental_epop_associated",
+        "ca/rental_epop_associated_checked",
+        RENTAL_EPOP_ASSOCIATED_CHECKED,
+        int,
+    ),
+    (
+        "ca/rental_epop_agreement_filed",
+        "ca/rental_epop_agreement_filed_checked",
+        RENTAL_EPOP_AGREEMENT_FILED_CHECKED,
+        int,
+    ),
+    (
+        "ca/rental_minister_allocation_given",
+        "ca/rental_minister_allocation_given_checked",
+        RENTAL_MINISTER_ALLOCATION_GIVEN_CHECKED,
+        int,
+    ),
+    (
+        "ca/rental_epop_percentage",
+        "ca/rental_epop_percentage_checked",
+        RENTAL_EPOP_PERCENTAGE_CHECKED,
+        Decimal,
+    ),
+    (
+        "ca/business_epop_associated",
+        "ca/business_epop_associated_checked",
+        BUSINESS_EPOP_ASSOCIATED_CHECKED,
+        int,
+    ),
+    (
+        "ca/business_epop_agreement_filed",
+        "ca/business_epop_agreement_filed_checked",
+        BUSINESS_EPOP_AGREEMENT_FILED_CHECKED,
+        int,
+    ),
+    (
+        "ca/business_minister_allocation_given",
+        "ca/business_minister_allocation_given_checked",
+        BUSINESS_MINISTER_ALLOCATION_GIVEN_CHECKED,
+        int,
+    ),
+    (
+        "ca/business_epop_percentage",
+        "ca/business_epop_percentage_checked",
+        BUSINESS_EPOP_PERCENTAGE_CHECKED,
+        Decimal,
+    ),
+    (
+        "ca/farm_epop_associated",
+        "ca/farm_epop_associated_checked",
+        FARM_EPOP_ASSOCIATED_CHECKED,
+        int,
+    ),
+    (
+        "ca/farm_epop_agreement_filed",
+        "ca/farm_epop_agreement_filed_checked",
+        FARM_EPOP_AGREEMENT_FILED_CHECKED,
+        int,
+    ),
+    (
+        "ca/farm_minister_allocation_given",
+        "ca/farm_minister_allocation_given_checked",
+        FARM_MINISTER_ALLOCATION_GIVEN_CHECKED,
+        int,
+    ),
+    (
+        "ca/farm_epop_percentage",
+        "ca/farm_epop_percentage_checked",
+        FARM_EPOP_PERCENTAGE_CHECKED,
+        Decimal,
+    ),
+    (
+        "ca/fish_epop_associated",
+        "ca/fish_epop_associated_checked",
+        FISH_EPOP_ASSOCIATED_CHECKED,
+        int,
+    ),
+    (
+        "ca/fish_epop_agreement_filed",
+        "ca/fish_epop_agreement_filed_checked",
+        FISH_EPOP_AGREEMENT_FILED_CHECKED,
+        int,
+    ),
+    (
+        "ca/fish_minister_allocation_given",
+        "ca/fish_minister_allocation_given_checked",
+        FISH_MINISTER_ALLOCATION_GIVEN_CHECKED,
+        int,
+    ),
+    (
+        "ca/fish_epop_percentage",
+        "ca/fish_epop_percentage_checked",
+        FISH_EPOP_PERCENTAGE_CHECKED,
+        Decimal,
+    ),
+)
+
+
+@pytest.mark.parametrize(("input_id", "identifier", "constant", "value_type"), CHECKED_KINDS)
+def test_each_checked_kind_is_registered_and_is_the_output_of_its_check(
+    input_id: str,
+    identifier: str,
+    constant: ArtifactKind[Any],
+    value_type: type,
+    registry: ArtifactRegistry,
+) -> None:
+    # The endnote 5 answers are yes or no questions, taken as a count and checked to be 0 or 1
+    # (`ca/yes_or_no_count`); the percentage is checked not to exceed the total of column 3
+    # (`core/at_most`, a choice, not a form rule). The checked kind is new, beside the input.
+    kind = registry.kind(identifier)
+    assert kind is constant
+    assert kind.identifier == identifier
+    assert kind.value_type is value_type
+    assert kind.non_negative is True
+    assert registry.kind(input_id) is not kind
+    assert registry.kind(input_id).value_type is value_type
