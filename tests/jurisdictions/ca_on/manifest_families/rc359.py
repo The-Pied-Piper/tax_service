@@ -34,6 +34,9 @@ from app.jurisdictions.ca.catalog import (
 
 # The form's export line 9, read by the return as `ca/rc359.<export label>`: a record list of the
 # export's one field, one record for each copy of the form.
+EXCESS_EPSP_AMOUNT_PER_EMPLOYER = RecordListKind(
+    "ca/rc359.rc359_excess_epsp_amount", fields=(RC359_EXCESS_EPSP_AMOUNT,)
+)
 TAX_ON_EXCESS_EPSP_PER_EMPLOYER = RecordListKind(
     "ca/rc359.rc359_tax_on_excess_epsp", fields=(RC359_TAX_ON_EXCESS_EPSP,)
 )

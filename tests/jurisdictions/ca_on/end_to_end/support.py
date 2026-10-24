@@ -1818,6 +1818,11 @@ def t2121_statement(
     return {artifact.kind: artifact.value for artifact in artifacts}
 
 
+def rc359_employers_list(employers: Iterable[Mapping[Any, Any]]) -> Artifact[RecordList]:
+    """The copies of Form RC359, one record for each mapping of field kinds to values."""
+    return Artifact(RC359_EMPLOYERS, RecordList(RC359_EMPLOYERS.fields, list(employers)))
+
+
 def t2121_statements(statements: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
     """The statements of Form T2121, one record for each mapping of `t2121_statement` arguments."""
     records = [t2121_statement(**statement) for statement in statements]
@@ -2169,6 +2174,7 @@ def starting(
     business_statements: tuple[Mapping[str, Any], ...] | None = None,
     farm_statements: tuple[Mapping[str, Any], ...] | None = None,
     fish_statements: tuple[Mapping[str, Any], ...] | None = None,
+    rc359_employers: tuple[Mapping[str, Any], ...] = (),
     schedule_8_copies: int = 1,
     rc381_copies: int = 0,
     t2048_dispositions_rows: tuple[Mapping[str, Any], ...] | None = None,
@@ -2719,7 +2725,7 @@ def starting(
         t2125_statements(business_statement_list),
         t2042_statements(farm_statement_list),
         t2121_statements(fish_statement_list),
-        Artifact(RC359_EMPLOYERS, RecordList(RC359_EMPLOYERS.fields, [])),
+        rc359_employers_list(rc359_employers),
         Artifact(
             SCHEDULE_8_INSTANCES,
             RecordList(SCHEDULE_8_INSTANCES.fields, [{} for _ in range(schedule_8_copies)]),

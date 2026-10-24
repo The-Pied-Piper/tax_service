@@ -6,13 +6,10 @@ from typing import Any
 
 import pytest
 
-from app.domain.artifact import Artifact
 from app.domain.errors import NoAmountForCountError
-from app.domain.record_list import RecordList
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     NET_FEDERAL_TAX,
-    RC359_EMPLOYERS,
     RC359_EMPLOYMENT_INCOME,
     RC359_EPSP_CONTRIBUTIONS,
     RC359_EXCESS_EPSP_AMOUNT,
@@ -53,10 +50,9 @@ def run_dj(*copies: Copy) -> dict[str, tuple[Worksheet, ...]]:
     The filer has no other income: the RC359 copies are the only inputs of the return's special
     taxes (none given: no copy, and the return has no RC359 amount).
     """
-    records = RecordList(RC359_EMPLOYERS.fields, [employer(*each) for each in copies])
-    blank = starting("0", (), "0", "0", "0", "0", "0")
-    artifacts = [each for each in blank if each.kind != RC359_EMPLOYERS]
-    artifacts.append(Artifact(RC359_EMPLOYERS, records))
+    artifacts = starting(
+        "0", (), "0", "0", "0", "0", "0", rc359_employers=tuple(employer(*each) for each in copies)
+    )
     return service().compute(CA_ON, 2025, *artifacts)
 
 

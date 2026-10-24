@@ -25,7 +25,6 @@ from app.domain.manifest import Form, Manifest
 from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog import (
     RC359_EMPLOYERS,
-    RC359_EXCESS_EPSP_AMOUNT,
     RC359_TAX_ON_EXCESS_EPSP,
     RC359_TAX_TOTAL,
     SPECIAL_TAXES,
@@ -168,7 +167,7 @@ def test_the_form_set_runs_the_form_on_the_employers_and_derives_its_two_export_
     assert found.instances == RC359_EMPLOYERS
     assert found.imports == frozenset()
     assert found.derived == (
-        RecordListKind("ca/rc359.rc359_excess_epsp_amount", fields=(RC359_EXCESS_EPSP_AMOUNT,)),
+        rc359.EXCESS_EPSP_AMOUNT_PER_EMPLOYER,
         rc359.TAX_ON_EXCESS_EPSP_PER_EMPLOYER,
     )
 
