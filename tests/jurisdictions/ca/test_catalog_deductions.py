@@ -72,6 +72,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPT20_EARNINGS,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    DISABILITY_SUPPORTS_DEDUCTION,
     EI_BENEFITS_REPAYMENT,
     EI_CONTROLLED_CORPORATION_EARNINGS,
     EI_EARNINGS_SUBJECT_TO_PREMIUM,
@@ -149,6 +150,17 @@ from app.jurisdictions.ca.catalog import (
     STANDARD_AMOUNT_ALLOCATED_2,
     STANDARD_AMOUNT_ALLOCATED_3,
     SUPPORT_PAYMENTS_DEDUCTION,
+    T929_LINE_3,
+    T929_LINE_4,
+    T929_LINE_7,
+    T929_LINE_9,
+    T929_LINE_10,
+    T929_LINE_11,
+    T929_NET_BUSINESS_INCOME,
+    T929_NET_COMMISSION_INCOME,
+    T929_NET_FARMING_INCOME,
+    T929_NET_FISHING_INCOME,
+    T929_NET_PROFESSIONAL_INCOME,
     TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_CARRYING_CHARGES,
@@ -1323,3 +1335,41 @@ def test_the_clergy_residence_lines_8_to_10_and_the_totals_are_signed() -> None:
         CLERGY_RESIDENCE_TOTAL_LIMITED,
     ):
         assert kind.non_negative is False, kind.identifier
+
+
+T929_COMPUTED_NON_NEGATIVE = (
+    T929_NET_BUSINESS_INCOME,
+    T929_NET_FARMING_INCOME,
+    T929_NET_FISHING_INCOME,
+    T929_NET_PROFESSIONAL_INCOME,
+    T929_NET_COMMISSION_INCOME,
+    T929_LINE_4,
+    T929_LINE_7,
+    T929_LINE_9,
+    T929_LINE_10,
+    T929_LINE_11,
+)
+
+
+def test_the_disability_supports_deduction_is_computed_and_registered_here(
+    registry: ArtifactRegistry,
+) -> None:
+    assert registry.get("ca/disability_supports_deduction") is DISABILITY_SUPPORTS_DEDUCTION
+    assert DISABILITY_SUPPORTS_DEDUCTION.value_type is Decimal
+    assert DISABILITY_SUPPORTS_DEDUCTION.non_negative is True
+
+
+def test_the_t929_computed_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    for kind in (*T929_COMPUTED_NON_NEGATIVE, T929_LINE_3):
+        assert registry.get(kind.identifier) is kind, kind.identifier
+
+
+def test_the_t929_computed_amounts_are_non_negative_decimals() -> None:
+    for kind in T929_COMPUTED_NON_NEGATIVE:
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+
+
+def test_t929_line_3_is_signed_as_the_form_does_not_floor_it() -> None:
+    assert T929_LINE_3.value_type is Decimal
+    assert T929_LINE_3.non_negative is False

@@ -106,7 +106,7 @@ STEPS = {
     # T1 line 154 and line 45200 "Refundable medical expense supplement (use Federal
     # Worksheet)"; Federal Worksheet "Line 45200 - Refundable medical expense supplement", one
     # step per printed line, then the conditions it states. The T1 lines it reads that are not
-    # yet computed are caller inputs under their line names: 21500, 22900, 23100, and the
+    # yet computed are caller inputs under their line names: 22900, 23100, and the
     # self-employment lines 13500, 13700, 13900, 14100 and 14300, each the profits only as the
     # worksheet's note asks. "In addition, the total of the following two amounts must be $4,390
     # or more:" "your employment income from lines 10100 and 10400 of your return (other than
@@ -282,9 +282,9 @@ STEPS = {
         },
         produces={"output": "ca/medical_supplement_line_8"},
     ),
-    # Line 9 "Amount from line 21500 of your return" and line 10 "Amount from line 33200 of your
-    # return" are the disability supports deduction and the medical claim; line 11 "Line 9 plus
-    # line 10".
+    # Line 9 "Amount from line 21500 of your return" (the amount computed on Form T929 line 12)
+    # and line 10 "Amount from line 33200 of your return" (the medical claim); line 11 "Line 9
+    # plus line 10".
     CapabilitySelection(
         name="core/sum",
         params={},

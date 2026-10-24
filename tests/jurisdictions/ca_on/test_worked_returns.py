@@ -475,7 +475,6 @@ inputs:
   ca-on/political_contributions: "0"
   ca-on/care_supporting_persons_adjusted_income: "0"
   ca/political_contributions: "0"
-  ca/disability_supports_deduction: "0"
   ca/other_employment_expenses: "0"
   ca/net_business_income: "0"
   ca/net_professional_income: "0"

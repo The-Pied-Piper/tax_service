@@ -208,8 +208,8 @@ capabilities:
     produces:
       output: ca/amt_losses_and_deductions_subtotal
   # Part 1 line 63 "Add lines 54 to 62.", line 53 carried and lines 55 to 62 in line order: the
-  # deductions of the return on lines 21500, 21900 (a caller's amount), 22200, 22215, 22300 (a
-  # caller's amount), 23100, 24400 and 25500.
+  # deductions of the return on lines 21500 (the amount computed on Form T929 line 12),
+  # 21900 (a caller's amount), 22200, 22215, 22300 (a caller's amount), 23100, 24400 and 25500.
   - name: core/sum
     consumes:
       parts:

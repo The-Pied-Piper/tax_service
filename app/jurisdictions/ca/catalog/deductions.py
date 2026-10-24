@@ -780,19 +780,89 @@ SELF_EMPLOYED_EI_PREMIUMS = CATALOG.declare("self_employed_ei_premiums", Decimal
 "Residents of a province or territory other than Quebec: Line 9: Amount from line 8 multiplied by
 1.64% (maximum $1,077.48)". Line 10, for Quebec residents, is not triggered."""
 
+T929_NET_BUSINESS_INCOME = CATALOG.declare("t929_net_business_income", Decimal, non_negative=True)
+"""Net self-employment income from business statements, Form T929 Step 2 line 4 "Enter your earned
+income" and its definition "net self-employment income, either alone or as an active partner (not
+including losses)": the positive net income of each Form T2125 statement, added, so a loss counts
+0."""
+
+T929_NET_FARMING_INCOME = CATALOG.declare("t929_net_farming_income", Decimal, non_negative=True)
+"""Net self-employment income from farming statements, Form T929 Step 2 line 4 and its definition
+"net self-employment income, either alone or as an active partner (not including losses)": the
+positive net income of each Form T2042 statement, added, so a loss counts 0."""
+
+T929_NET_FISHING_INCOME = CATALOG.declare("t929_net_fishing_income", Decimal, non_negative=True)
+"""Net self-employment income from fishing statements, Form T929 Step 2 line 4 and its definition
+"net self-employment income, either alone or as an active partner (not including losses)": the
+positive net income of each Form T2121 statement, added, so a loss counts 0."""
+
+T929_NET_PROFESSIONAL_INCOME = CATALOG.declare(
+    "t929_net_professional_income", Decimal, non_negative=True
+)
+"""Net self-employment income from professional income, Form T929 Step 2 line 4 and its definition
+"net self-employment income, either alone or as an active partner (not including losses)": the
+professional income of T1 line 13700, not below zero, so a loss counts 0."""
+
+T929_NET_COMMISSION_INCOME = CATALOG.declare(
+    "t929_net_commission_income", Decimal, non_negative=True
+)
+"""Net self-employment income from commission income, Form T929 Step 2 line 4 and its definition
+"net self-employment income, either alone or as an active partner (not including losses)": the
+commission income of T1 line 13900, not below zero, so a loss counts 0."""
+
+T929_LINE_3 = CATALOG.declare("t929_line_3", Decimal)
+"""Net disability supports expenses, Form T929 Step 1 line 3 "Subtract line 2 from line 1. This
+amount is your net disability supports expenses": line 1 less line 2, the amounts paid less the
+amounts reimbursed. The form does not floor it, so the kind is signed."""
+
+T929_LINE_4 = CATALOG.declare("t929_line_4", Decimal, non_negative=True)
+"""Earned income, Form T929 Step 2 line 4 "Enter your earned income": the total of the items of the
+definition of earned income, employment income (T1 lines 10100 and 10400), the taxable part of
+scholarships (T1 line 13010), the net self-employment income of the four kinds above, and the
+other items of the definition the filer enters."""
+
+T929_LINE_7 = CATALOG.declare("t929_line_7", Decimal, non_negative=True)
+"""Net income above earned income, Form T929 Step 2 line 7 "Line 5 minus line 6 (if negative, enter
+"0")": the net income with no claim (line 5) less the earned income of line 4 (line 6), not below
+zero."""
+
+T929_LINE_9 = CATALOG.declare("t929_line_9", Decimal, non_negative=True)
+"""Weeks at the weekly amount, Form T929 Step 2 line 9 "Line 8 multiplied by $375": the weeks
+attended (line 8) times $375, rounded half-up to the cent."""
+
+T929_LINE_10 = CATALOG.declare("t929_line_10", Decimal, non_negative=True)
+"""Amount for attending an educational institution, Form T929 Step 2 line 10 "Enter the amount from
+line 7 or line 9, whichever is less. (maximum $15,000)": the lesser of line 7 and line 9, not more
+than the $15,000 maximum."""
+
+T929_LINE_11 = CATALOG.declare("t929_line_11", Decimal, non_negative=True)
+"""Earned income and attendance amount, Form T929 Step 2 line 11 "Add lines 4 and 10": line 4 plus
+line 10."""
+
+DISABILITY_SUPPORTS_DEDUCTION = CATALOG.declare(
+    "disability_supports_deduction", Decimal, non_negative=True
+)
+"""Disability supports deduction, T1 line 21500 "Disability supports deduction (complete Form
+T929)": Form T929 line 12 "Enter the amount from line 3 or line 11, whichever is less", which the
+form says to enter "on line 21500 of your tax return". The Federal Worksheet "Line 45200 -
+Refundable medical expense supplement" line 9 "Amount from line 21500 of your return" reads it, and
+so does Part 1 of the alternative minimum tax. The return totals the form's line 12 and adds it to
+line 23300."""
+
 DEDUCTIONS_FROM_TOTAL_INCOME = CATALOG.declare(
     "deductions_from_total_income", Decimal, non_negative=True
 )
 """Total deductions, T1 line 23300 "Add lines 35 to 52": the sum of the deductions from total
 income, here, in line order, the RPP deduction (line 20700), the RRSP deduction (line 20800), the
 FHSA deduction (line 20805), the elected split-pension deduction (line 21000), union dues (line
-21200), the UCCB repayment (line 21300), the child care expenses (line 21400), the allowable
-business investment loss (line 21700), the deductible support payments (line 22000), carrying
-charges, interest expenses and other expenses (line 22100), the CPP contributions on
-self-employment income (line 22200), the enhanced CPP contributions (line 22215), exploration
-and development expenses (line 22400) and other deductions (line 23200).
+21200), the UCCB repayment (line 21300), the child care expenses (line 21400), the disability
+supports deduction (line 21500), the allowable business investment loss (line 21700), the
+deductible support payments (line 22000), carrying charges, interest expenses and other expenses
+(line 22100), the CPP contributions on self-employment income (line 22200), the enhanced CPP
+contributions (line 22215), exploration and development expenses (line 22400) and other deductions
+(line 23200).
 
-Not wired yet: lines 21500, 21900, 22900 and 23100."""
+Not wired yet: lines 21900 and 22900."""
 
 NET_INCOME_BEFORE_ADJUSTMENTS = CATALOG.declare("net_income_before_adjustments", Decimal)
 """Net income before adjustments, T1 line 54 and line 23400 "Line 34 minus line 53 (if negative,
