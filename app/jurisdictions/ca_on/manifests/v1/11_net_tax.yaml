@@ -85,13 +85,24 @@ capabilities:
       less: ca/split_income_line_21
     produces:
       output: ca/split_income_line_22
-  # Line 24 "Line 22 minus line 23 (if negative, enter "0")": line 23, the federal foreign tax
-  # credit on split income, is not wired yet, so line 24 is line 22, not below zero, over one
-  # part.
-  - name: core/sum_not_below_zero
+  # Line 23 "Part of the amount on line 3 that is from foreign sources" (68370) over "Total income
+  # from foreign sources" (68380), "× Amount from line 40500 of your return": the federal foreign
+  # tax credit times the share of the split income from foreign sources, rounded half-up to the
+  # cent once; 0 when there is no income from foreign sources.
+  - name: ca/apply_ratio_or_zero
+    params:
+      rounding: ca/split_income_line_23_rounding
     consumes:
-      parts:
-        - ca/split_income_line_22
+      amount: ca/federal_foreign_tax_credit
+      numerator: ca/split_income_from_foreign_sources
+      denominator: ca/total_income_from_foreign_sources
+    produces:
+      output: ca/split_income_line_23
+  # Line 24 "Line 22 minus line 23 (if negative, enter "0")".
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/split_income_line_22
+      less: ca/split_income_line_23
     produces:
       output: ca/split_income_line_24
   # Line 25 "Amount from line 40600 of your return", line 26 "Amount from line 41600 of your

@@ -161,12 +161,24 @@ capabilities:
     produces:
       output: ca-on/split_income_line_47
   # "Provincial or territorial foreign tax credit on split income": line 48 "Amount from line 47
-  # on the previous page" and line 50 "Line 48 minus line 49", line 49 (the foreign tax credit)
-  # not being wired yet, so line 50 is line 47 over one part, which prints no floor.
-  - name: core/sum
+  # on the previous page"; line 49 "Part of the amount from line 68370 on page 8 that is
+  # non-business income" over "Part of the amount from line 68380 on page 8 that is non-business
+  # income", "× Amount from line number of your Form 428 shown in column 7 in Chart C on page 5"
+  # (ON428 line 82), rounded half-up to the cent once; 0 when there is no such income.
+  - name: ca/apply_ratio_or_zero
+    params:
+      rounding: ca-on/split_income_line_49_rounding
     consumes:
-      parts:
-        - ca-on/split_income_line_47
+      amount: ca-on/provincial_foreign_tax_credit
+      numerator: ca/split_income_non_business_from_foreign_sources
+      denominator: ca/total_non_business_income_from_foreign_sources
+    produces:
+      output: ca-on/split_income_line_49
+  # Line 50 "Line 48 minus line 49", which prints no floor.
+  - name: core/subtract
+    consumes:
+      amount: ca-on/split_income_line_47
+      less: ca-on/split_income_line_49
     produces:
       output: ca-on/split_income_line_50
   # ON428 line 55 "Line 53 plus line 54 =", line 54 being the Ontario tax on split income of Form

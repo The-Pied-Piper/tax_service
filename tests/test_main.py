@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1037
+        == 1039
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1037
+        == 1039
     )
 
 
@@ -882,6 +882,10 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/split_income_dividends",
         "ca/split_income_dividends_other_than_eligible",
         "ca/other_split_income",
+        "ca/split_income_from_foreign_sources",
+        "ca/total_income_from_foreign_sources",
+        "ca/split_income_non_business_from_foreign_sources",
+        "ca/total_non_business_income_from_foreign_sources",
         "ca/deductions_from_total_income",
         "ca/net_income_before_adjustments",
         "ca/net_income",
@@ -1755,6 +1759,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/split_income_line_20",
         "ca/split_income_line_21",
         "ca/split_income_line_22",
+        "ca/split_income_line_23",
         "ca/split_income_line_24",
         "ca/split_income_line_29",
         "ca/split_income_line_30",
@@ -2347,6 +2352,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/split_income_line_45",
         "ca-on/split_income_line_46",
         "ca-on/split_income_line_47",
+        "ca-on/split_income_line_49",
         "ca-on/split_income_line_50",
         "ca-on/split_income_line_52",
         "ca-on/ontario_health_premium",
@@ -2450,7 +2456,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1037
+        == 1039
     )
     assert (
         len(
@@ -2458,7 +2464,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1037
+        == 1039
     )
 
 
@@ -2471,7 +2477,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1037
+        == 1039
     )
     assert (
         len(
@@ -2479,7 +2485,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1037
+        == 1039
     )
 
 

@@ -737,6 +737,7 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SPLIT_INCOME_LINE_18,
     SPLIT_INCOME_LINE_22,
+    SPLIT_INCOME_LINE_23,
     SPLIT_INCOME_LINE_24,
     SPLIT_INCOME_LINE_29,
     SPLIT_INCOME_LINE_30,
@@ -2252,6 +2253,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=LABOUR_SPONSORED_FUNDS_CREDIT,
             subtrahend_amount=D("0.00"),
             result=D("16951.38"),
+        ),
+        # Form T1206 Part 2 line 24 "Line 22 minus line 23 (if negative, enter "0")": line 22 (0.00)
+        # less the federal foreign tax credit on split income of line 23 (0.00): 0.
+        SPLIT_INCOME_LINE_24: SubtractedNotBelowZeroLine(
+            output=SPLIT_INCOME_LINE_24,
+            minuend=SPLIT_INCOME_LINE_22,
+            minuend_amount=D("0"),
+            subtrahend=SPLIT_INCOME_LINE_23,
+            subtrahend_amount=D("0"),
+            result=D("0"),
         ),
         ITC_AMOUNT_J: SubtractedNotBelowZeroLine(
             output=ITC_AMOUNT_J,
@@ -4025,9 +4036,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             output=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
             parts=((TOTAL_SPLIT_INCOME, D("0")), (NET_INCOME_SIGNED, D("115000"))),
             total=D("115000"),
-        ),
-        SPLIT_INCOME_LINE_24: SumNotBelowZeroLine(
-            output=SPLIT_INCOME_LINE_24, parts=((SPLIT_INCOME_LINE_22, D("0")),), total=D("0")
         ),
         # T1 line 12700 (taxable capital gains): Schedule 3 line 26, line 24 (the included capital
         # gain of 10000.00, half of the 20000 gain) plus line 25 (0).

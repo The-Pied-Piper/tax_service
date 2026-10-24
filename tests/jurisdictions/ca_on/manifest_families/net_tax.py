@@ -7,9 +7,9 @@ from app.domain.capabilities.greater_of import GreaterOf
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
-from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
+from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZero
 from app.jurisdictions.ca.catalog import (
     ADVANCED_CANADA_WORKERS_BENEFIT,
     CPP_PART_4_COMPLETED,
@@ -24,6 +24,7 @@ from app.jurisdictions.ca.catalog import (
     DISABILITY_TRANSFERRED_AMOUNT,
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_SPECIAL_BENEFITS_AGREEMENT,
+    FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     NET_FEDERAL_TAX,
@@ -37,6 +38,7 @@ from app.jurisdictions.ca.catalog import (
     SPECIAL_TAXES,
     SPLIT_INCOME_DIVIDENDS,
     SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    SPLIT_INCOME_FROM_FOREIGN_SOURCES,
     SPLIT_INCOME_LINE_10,
     SPLIT_INCOME_LINE_13,
     SPLIT_INCOME_LINE_14,
@@ -46,9 +48,11 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_20,
     SPLIT_INCOME_LINE_21,
     SPLIT_INCOME_LINE_22,
+    SPLIT_INCOME_LINE_23,
     SPLIT_INCOME_LINE_24,
     SPLIT_INCOME_LINE_29,
     SPLIT_INCOME_LINE_30,
+    TOTAL_INCOME_FROM_FOREIGN_SOURCES,
     TOTAL_PAYABLE,
 )
 from app.jurisdictions.ca_on.catalog import ONTARIO_TAX
@@ -161,13 +165,25 @@ STEPS = {
         consumes={"amount": "ca/split_income_line_15", "less": "ca/split_income_line_21"},
         produces={"output": "ca/split_income_line_22"},
     ),
-    # Line 24 "Line 22 minus line 23 (if negative, enter "0")": line 23, the federal foreign tax
-    # credit on split income, is not wired yet, so line 24 is line 22, not below zero, over one
-    # part.
+    # Line 23 "Part of the amount on line 3 that is from foreign sources" (68370) over "Total income
+    # from foreign sources" (68380), "× Amount from line 40500 of your return": the federal foreign
+    # tax credit times the share of the split income from foreign sources, rounded half-up to the
+    # cent once; 0 when there is no income from foreign sources.
     CapabilitySelection(
-        name="core/sum_not_below_zero",
+        name="ca/apply_ratio_or_zero",
+        params={"rounding": "ca/split_income_line_23_rounding"},
+        consumes={
+            "amount": "ca/federal_foreign_tax_credit",
+            "numerator": "ca/split_income_from_foreign_sources",
+            "denominator": "ca/total_income_from_foreign_sources",
+        },
+        produces={"output": "ca/split_income_line_23"},
+    ),
+    # Line 24 "Line 22 minus line 23 (if negative, enter "0")".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
         params={},
-        consumes={"parts": ("ca/split_income_line_22",)},
+        consumes={"amount": "ca/split_income_line_22", "less": "ca/split_income_line_23"},
         produces={"output": "ca/split_income_line_24"},
     ),
     # Line 25 "Amount from line 40600 of your return", line 26 "Amount from line 41600 of your
@@ -342,7 +358,22 @@ WIRING = {
         frozenset({SPLIT_INCOME_LINE_15, SPLIT_INCOME_LINE_21}),
         frozenset({SPLIT_INCOME_LINE_22}),
     ),
-    (SumNotBelowZero, frozenset({SPLIT_INCOME_LINE_22}), frozenset({SPLIT_INCOME_LINE_24})),
+    (
+        ApplyRatioOrZero,
+        frozenset(
+            {
+                FEDERAL_FOREIGN_TAX_CREDIT,
+                SPLIT_INCOME_FROM_FOREIGN_SOURCES,
+                TOTAL_INCOME_FROM_FOREIGN_SOURCES,
+            }
+        ),
+        frozenset({SPLIT_INCOME_LINE_23}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({SPLIT_INCOME_LINE_22, SPLIT_INCOME_LINE_23}),
+        frozenset({SPLIT_INCOME_LINE_24}),
+    ),
     (
         Sum,
         frozenset({FEDERAL_TAX_LINE_41700, ADVANCED_CANADA_WORKERS_BENEFIT}),

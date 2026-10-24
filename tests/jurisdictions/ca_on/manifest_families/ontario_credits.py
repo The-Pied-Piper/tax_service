@@ -8,6 +8,7 @@ from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.manifest import CapabilitySelection
+from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZero
 from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 from app.jurisdictions.ca.catalog import (
     CPP_BASE_CONTRIBUTIONS_ON_RETURN,
@@ -18,8 +19,10 @@ from app.jurisdictions.ca.catalog import (
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
     SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SPLIT_INCOME_LINE_18,
+    SPLIT_INCOME_NON_BUSINESS_FROM_FOREIGN_SOURCES,
     TAXABLE_DIVIDENDS,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    TOTAL_NON_BUSINESS_INCOME_FROM_FOREIGN_SOURCES,
     TOTAL_SPLIT_INCOME,
 )
 from app.jurisdictions.ca_on import catalog as ontario
@@ -220,12 +223,25 @@ STEPS = {
         produces={"output": "ca-on/split_income_line_47"},
     ),
     # "Provincial or territorial foreign tax credit on split income": line 48 "Amount from line 47
-    # on the previous page" and line 50 "Line 48 minus line 49", line 49 (the foreign tax credit)
-    # not being wired yet, so line 50 is line 47 over one part, which prints no floor.
+    # on the previous page"; line 49 "Part of the amount from line 68370 on page 8 that is
+    # non-business income" over "Part of the amount from line 68380 on page 8 that is non-business
+    # income", "× Amount from line number of your Form 428 shown in column 7 in Chart C on page 5"
+    # (ON428 line 82), rounded half-up to the cent once; 0 when there is no such income.
     CapabilitySelection(
-        name="core/sum",
+        name="ca/apply_ratio_or_zero",
+        params={"rounding": "ca-on/split_income_line_49_rounding"},
+        consumes={
+            "amount": "ca-on/provincial_foreign_tax_credit",
+            "numerator": "ca/split_income_non_business_from_foreign_sources",
+            "denominator": "ca/total_non_business_income_from_foreign_sources",
+        },
+        produces={"output": "ca-on/split_income_line_49"},
+    ),
+    # Line 50 "Line 48 minus line 49", which prints no floor.
+    CapabilitySelection(
+        name="core/subtract",
         params={},
-        consumes={"parts": ("ca-on/split_income_line_47",)},
+        consumes={"amount": "ca-on/split_income_line_47", "less": "ca-on/split_income_line_49"},
         produces={"output": "ca-on/split_income_line_50"},
     ),
     # ON428 line 55 "Line 53 plus line 54 =", line 54 being the Ontario tax on split income of Form
@@ -445,7 +461,22 @@ WIRING = {
         frozenset({ontario.SPLIT_INCOME_LINE_39, ontario.SPLIT_INCOME_LINE_46}),
         frozenset({ontario.SPLIT_INCOME_LINE_47}),
     ),
-    (Sum, frozenset({ontario.SPLIT_INCOME_LINE_47}), frozenset({ontario.SPLIT_INCOME_LINE_50})),
+    (
+        ApplyRatioOrZero,
+        frozenset(
+            {
+                ontario.PROVINCIAL_FOREIGN_TAX_CREDIT,
+                SPLIT_INCOME_NON_BUSINESS_FROM_FOREIGN_SOURCES,
+                TOTAL_NON_BUSINESS_INCOME_FROM_FOREIGN_SOURCES,
+            }
+        ),
+        frozenset({ontario.SPLIT_INCOME_LINE_49}),
+    ),
+    (
+        Subtract,
+        frozenset({ontario.SPLIT_INCOME_LINE_47, ontario.SPLIT_INCOME_LINE_49}),
+        frozenset({ontario.SPLIT_INCOME_LINE_50}),
+    ),
     (
         Sum,
         frozenset({ONTARIO_TAX_AFTER_CREDITS, ontario.ONTARIO_TAX_ON_SPLIT_INCOME}),
