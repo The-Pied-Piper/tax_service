@@ -6,7 +6,7 @@ form's inputs (`FORM_INPUTS`). The form exports line 7 "Excess EPSP amount" and 
 excess EPSP amount" (`FORM_EXPORTS`). The return reads line 9 of every copy through its record
 total, which is T1 line 41800's part `ca/rc359_tax_total` (`STEPS` and `WIRING`); the sum that
 adds it into `ca/special_taxes` is the `core/sum` step of the family `net_tax`. Line 7 is read by
-nothing on this return (line 22900 comes with #446), so the return declares no output for it.
+nothing on this return (line 22900 is wired separately), so the return declares no output for it.
 """
 
 from __future__ import annotations

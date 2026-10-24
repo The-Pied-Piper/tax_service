@@ -25,7 +25,7 @@ description: >-
   is "Other (non-resident)" 49%, and line 9 is 6,000.00 x 49% = 2,940.00. Line 41800 "Special
   taxes" is the total of the four line 9s: 3,211.80 + 0.00 + 3,024.00 + 2,940.00 = 9,175.80; the
   return has no other special tax (the T1172 and RL-10 amounts are 0). Line 22900 is not
-  computed here (it is the total of the line 7 amounts, with #446). With no other tax, the
+  computed here (it is the total of the line 7 amounts,, wired separately). With no other tax, the
   federal net tax (line 42000) is 9,175.80, and with no payments or refundable credits the
   refund or balance owing (line 167) is 9,175.80, a balance owing. The employers' employment
   income is entered on the copies only, as the form's own inputs, and not on the return's T4
