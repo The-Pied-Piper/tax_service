@@ -59,6 +59,16 @@ FARM = {
     # kilometres 0 (amount 1), so line 9819 (amount 16 of Chart A) is 0, as in Return BC.
     "vehicle_sales_tax_rate": "13",
 }
+
+# The farm of Return BX with lines 9941 (optional) 1000 and 9942 (mandatory) 500, which make
+# amount 4C 31500 against line 9899, 30000.00.
+INVENTORY_ADJUSTMENTS = {
+    "farm": {
+        **FARM,
+        "optional_inventory_adjustment_current_year": "1000",
+        "mandatory_inventory_adjustment_current_year": "500",
+    }
+}
 # Area A row as (column 1, column 2, column 3, column 5, column 11, column 12, the claim, no
 # property left, column 4, column 6, column 9): class 8 with a UCC of 10000 and additions of 5000,
 # all DIEPs (column 4 5000), of which 3000 is expensed at once (column 9): column 21 is 11000.00 x
@@ -197,17 +207,6 @@ def test_return_bxs_income_before_cca_is_line_9899_plus_line_9936_not_below_zero
         "farm_income_before_cca: farm_net_income_before_adjustments 30000 "
         "+ farm_cca_claim 5200, not below 0 = 35200"
     ) in rendered
-
-
-# The farm of Return BX with lines 9941 (optional) 1000 and 9942 (mandatory) 500, which make
-# amount 4C 31500 against line 9899, 30000.00.
-INVENTORY_ADJUSTMENTS = {
-    "farm": {
-        **FARM,
-        "optional_inventory_adjustment_current_year": "1000",
-        "mandatory_inventory_adjustment_current_year": "500",
-    }
-}
 
 
 def test_an_inventory_adjustment_moves_amount_4c_but_not_the_income_before_cca() -> None:
