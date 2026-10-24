@@ -412,6 +412,7 @@ from app.jurisdictions.ca.catalog import (
     FOREIGN_TAX_COUNTRIES,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
+    HOME_RENOVATIONS,
     INCOME_TAX_DEDUCTED,
     INFIRM_CHILDREN,
     INFIRM_DEPENDANTS,
@@ -2150,6 +2151,7 @@ def starting(
     spouses_claimed: int = 0,
     spouse_caregiver_eligible: int = 0,
     infirm_dependants: tuple[str, ...] = (),
+    home_renovations: tuple[dict[Any, Any], ...] = (),
     medical_expenses: str = "0",
     other_dependants: tuple[tuple[str, str], ...] = (),
     caregiver_dependants: tuple[tuple[str, int], ...] = (),
@@ -2749,6 +2751,7 @@ def starting(
                 [{DEPENDANT_NET_INCOME: D(income)} for income in infirm_dependants],
             ),
         ),
+        Artifact(HOME_RENOVATIONS, RecordList(HOME_RENOVATIONS.fields, list(home_renovations))),
         Artifact(MEDICAL_EXPENSES, D(medical_expenses)),
         Artifact(
             OTHER_DEPENDANTS,

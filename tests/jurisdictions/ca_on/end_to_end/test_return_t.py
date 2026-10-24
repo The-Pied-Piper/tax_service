@@ -21,6 +21,7 @@ from app.jurisdictions.ca.catalog import (
     INCOME_TAX_DEDUCTED,
     INVESTMENT_TAX_CREDIT_REFUND,
     JOURNALISM_LABOUR_TAX_CREDIT,
+    MULTIGENERATIONAL_HOME_RENOVATION_CREDIT,
     PART_XII_2_TAX_CREDIT,
     PROVINCIAL_CREDITS,
     REFUND,
@@ -112,6 +113,7 @@ def test_return_ts_total_credits_add_lines_150_to_165_in_line_order() -> None:
         (REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT, D("0.00")),
         (CANADA_WORKERS_BENEFIT, D("0")),
         (CANADA_TRAINING_CREDIT, D("0")),
+        (MULTIGENERATIONAL_HOME_RENOVATION_CREDIT, D("0.00")),
         (INVESTMENT_TAX_CREDIT_REFUND, D("0.00")),
         (PART_XII_2_TAX_CREDIT, D("50")),
         (EMPLOYEE_AND_PARTNER_GST_HST_REBATE, D("150")),
@@ -126,7 +128,8 @@ def test_return_ts_total_credits_add_lines_150_to_165_in_line_order() -> None:
         "+ ei_overpayment 0 "
         "+ refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 0 "
-        "+ canada_training_credit 0 + investment_tax_credit_refund 0 + part_xii_2_tax_credit 50 + "
+        "+ canada_training_credit 0 + multigenerational_home_renovation_credit 0 "
+        "+ investment_tax_credit_refund 0 + part_xii_2_tax_credit 50 + "
         "employee_and_partner_gst_hst_rebate 150 "
         "+ educator_school_supply_credit 250 + journalism_labour_tax_credit 75 "
         "+ tax_paid_by_instalments 2000 + provincial_credits 0 = 7454.83"

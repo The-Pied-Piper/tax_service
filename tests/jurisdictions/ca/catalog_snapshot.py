@@ -1484,6 +1484,14 @@ REGISTERED = frozenset(
         "ca/infirm_dependants",
         "ca/caregiver_amount",
         "ca/other_dependant_medical_expenses",
+        "ca/home_renovations",
+        "ca/home_renovation_expenditures",
+        "ca/home_renovation_reimbursed",
+        "ca/home_renovation_claimed_by_others",
+        "ca/home_renovation_line_3",
+        "ca/home_renovation_line_6",
+        "ca/home_renovation_line_8",
+        "ca/multigenerational_home_renovation_credit",
         "ca/other_dependants",
         "ca/other_dependants_medical",
         "ca/medical_expenses",
@@ -2780,6 +2788,7 @@ RATES = frozenset({"ca/rc381_part_3_line_6", "ca/rc381_part_4_line_22"})
 
 RECORD_LISTS = frozenset(
     {
+        "ca/home_renovations",
         "ca/infirm_dependants",
         "ca/disability_dependants",
         "ca/other_dependants",

@@ -209,6 +209,13 @@ inputs:
   - ca/canadian_tuition_fees
   - ca/canada_training_credit_limit
   - ca/canada_training_credit_claimed
+  # Schedule 12 (T1 line 157 and line 45355), Step 1: one record for each qualifying renovation the
+  # caller lists, holding line 1 "Total amount paid from all sales slips and contracts included in
+  # the table above and any additional sheets of paper Total qualifying expenditures", line 2
+  # "Any amount that can reasonably be considered to be reimbursed (including government assistance
+  # received or receivable) included in the amount on line 1" and line 5 "Amount of eligible
+  # expenses being claimed by other eligible individuals".
+  - ca/home_renovations
   - ca/foreign_tuition_fees
   - ca/unused_tuition_from_2024
   - ca/tuition_transfer_elected
