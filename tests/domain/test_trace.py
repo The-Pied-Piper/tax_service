@@ -5096,7 +5096,7 @@ def test_a_cca_vehicle_proceeds_line_is_a_frozen_trace_line_equal_by_value() -> 
     line = cca_vehicle_proceeds_line()
 
     assert isinstance(line, TraceLine)
-    assert type(line) is not ClosingUccLine
+    assert type(line).__name__ == "CcaVehicleProceedsLine"
     assert line == cca_vehicle_proceeds_line()
     assert line is not cca_vehicle_proceeds_line()
     assert hash(line) == hash(cca_vehicle_proceeds_line())

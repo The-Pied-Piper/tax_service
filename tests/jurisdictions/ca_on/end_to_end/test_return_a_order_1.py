@@ -2046,7 +2046,7 @@ def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2125 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2125").composition.order
-    assert len(order) == 45
+    assert len(order) == 46
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Guide T4002 "You were asking?": the days of the fiscal period (the days entered, or a full
     # year) come before the CCA claim and the closing UCC that are prorated by them.
