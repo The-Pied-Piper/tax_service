@@ -231,15 +231,28 @@ capabilities:
       less: ca/rental_terminal_loss
     produces:
       output: ca/rental_net_income_after_terminal_loss
+  # T776 Part 1 "Fiscal period from Date (Year/Month/Day) to (Year/12/31)", the days of the
+  # rental's fiscal period (Guide T4036 Area A "Column 23"; Guide T4002 "You were asking?": "base
+  # your CCA claim on the number of days in your fiscal period compared to 365 days."): the days
+  # the caller enters, or the 365 of a full year when none are.
+  - name: ca/fiscal_period_days
+    params:
+      class_rates: ca/cca_class_rates
+    consumes:
+      entered: ca/rental_fiscal_period_days_entered
+    produces:
+      output: ca/rental_fiscal_period_days
   # T776 Area A "Line ii: Total CCA claim for the year *: Total of column 23": the CCA claimed
   # on each class of the Area A list, at most its maximum (column 19 multiplied by column 20),
-  # totalled. The most each class may claim is its column 21 less its column 22 (Chart B).
-  - name: ca/cca_claim_after_column_22
+  # totalled. The most each class may claim is its column 21 less its column 22 (Chart B), each
+  # maximum prorated by the days of the fiscal period.
+  - name: ca/cca_claim_after_column_22_prorated
     params:
       class_rates: ca/cca_class_rates
     consumes:
       classes: ca/rental_cca_classes
       non_compliant: ca/short_term_rental_non_compliant_cca_by_class
+      fiscal_period_days: ca/rental_fiscal_period_days
     produces:
       output: ca/rental_cca_table_claim
   # T776 Area A "* Sole proprietors and partnerships: Enter the total CCA claim for the year
@@ -291,12 +304,13 @@ capabilities:
   # T776 Area A "Column 24: UCC at the end of the year (column 7 minus column 23)": the class
   # number and column 24 of each class of the Area A list, a product of the return for next
   # year's column 2.
-  - name: ca/closing_ucc_after_column_22
+  - name: ca/closing_ucc_after_column_22_prorated
     params:
       class_rates: ca/cca_class_rates
     consumes:
       classes: ca/rental_cca_classes
       non_compliant: ca/short_term_rental_non_compliant_cca_by_class
+      fiscal_period_days: ca/rental_fiscal_period_days
     produces:
       output: ca/rental_closing_ucc
   # T776 Note 5 "the immediate expensing limit, which is equal to one of the following,

@@ -181,6 +181,8 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_EPOP_PERCENTAGE_ROOM,
     RENTAL_EPOP_PERCENTAGE_TOTAL,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
+    RENTAL_FISCAL_PERIOD_DAYS,
+    RENTAL_FISCAL_PERIOD_DAYS_ENTERED,
     RENTAL_GROSS_RENTS,
     RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
     RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
@@ -712,6 +714,8 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     )
     assert registry.get("ca/rental_immediate_expensing_limit") is RENTAL_IMMEDIATE_EXPENSING_LIMIT
     assert registry.get("ca/rental_immediate_expensing_claim") is RENTAL_IMMEDIATE_EXPENSING_CLAIM
+    assert registry.get("ca/rental_fiscal_period_days_entered") is RENTAL_FISCAL_PERIOD_DAYS_ENTERED
+    assert registry.get("ca/rental_fiscal_period_days") is RENTAL_FISCAL_PERIOD_DAYS
     assert registry.get("ca/rental_partner") is RENTAL_PARTNER
     assert registry.get("ca/rental_partner_share") is RENTAL_PARTNER_SHARE
     assert registry.get("ca/rental_partner_gst_hst_rebate") is RENTAL_PARTNER_GST_HST_REBATE

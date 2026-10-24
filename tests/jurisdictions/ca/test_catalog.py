@@ -566,6 +566,8 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_EPOP_PERCENTAGE_ROOM,
     RENTAL_EPOP_PERCENTAGE_TOTAL,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
+    RENTAL_FISCAL_PERIOD_DAYS,
+    RENTAL_FISCAL_PERIOD_DAYS_ENTERED,
     RENTAL_GROSS_RENTS,
     RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
     RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
@@ -3479,8 +3481,11 @@ def test_the_lines_after_a_floor_are_non_negative(registry: ArtifactRegistry) ->
 
 
 # Guide T4002 "You were asking?": "Since your fiscal period is less than 365 days, you have to
-# prorate your CCA claim." Each of the three statement forms asks for the days of its fiscal period
-# (0 for none entered, a full year) and derives the days it prorates by.
+# prorate your CCA claim." Each of the four statement forms asks for the days of its fiscal period
+# (0 for none entered, a full year) and derives the days it prorates by. T776 Part 1 "Fiscal period
+# from Date (Year/Month/Day) to (Year/12/31)" is the rental's fiscal period, prorated by the same
+# rule (Guide T4036 Area A "Column 23": "In your first year of rental activities, you may have to
+# prorate your CCA claim.").
 FISCAL_PERIOD_DAYS_KINDS = (
     (
         "business",
@@ -3490,6 +3495,7 @@ FISCAL_PERIOD_DAYS_KINDS = (
     ),
     ("farm", FARM_FISCAL_PERIOD_DAYS_ENTERED, FARM_FISCAL_PERIOD_DAYS, T2042_STATEMENTS),
     ("fish", FISH_FISCAL_PERIOD_DAYS_ENTERED, FISH_FISCAL_PERIOD_DAYS, T2121_STATEMENTS),
+    ("rental", RENTAL_FISCAL_PERIOD_DAYS_ENTERED, RENTAL_FISCAL_PERIOD_DAYS, T776_STATEMENTS),
 )
 
 

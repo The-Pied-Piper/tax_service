@@ -1268,6 +1268,28 @@ plus line 9974 minus line 9943. Enter this amount on line 12600 of your income t
 return", T1 line 13 and line 12600 "Net": amount 6, or for a partner the partnership figure;
 signed, a loss is negative."""
 
+RENTAL_FISCAL_PERIOD_DAYS_ENTERED = CATALOG.declare(
+    "rental_fiscal_period_days_entered", int, non_negative=True
+)
+"""Days of the fiscal period of Form T776, the days the filer enters when the fiscal period is
+shorter than a full year, 0 when none are entered (a full year). Form T776 Part 1 "Fiscal period
+from Date (Year/Month/Day) to (Year/12/31)" and Guide T4036 2025 "Fiscal period": "If this is the
+first year of operation, enter the year, month, and day you began your rental operation.
+Otherwise, enter January 1 of the current year." Guide T4036 2025 Area A "Column 23 – CCA claim
+for the year": "In your first year of rental activities, you may have to prorate your CCA claim."
+Guide T4036 prints no formula, so the Guide T4002 2025 "You were asking?" rule applies: "Since your
+fiscal period is less than 365 days, you have to prorate your CCA claim. ... base your CCA claim on
+the number of days in your fiscal period compared to 365 days. In this case, your fiscal period is
+214 days." A starting count."""
+
+RENTAL_FISCAL_PERIOD_DAYS = CATALOG.declare("rental_fiscal_period_days", int, non_negative=True)
+"""Days of the fiscal period of Form T776 that the CCA claim and closing UCC are prorated by: the
+days entered when above 0, else the days in a full year. Guide T4036 2025 Area A "Column 23 – CCA
+claim for the year": "In your first year of rental activities, you may have to prorate your CCA
+claim." Guide T4036 prints no formula, so the Guide T4002 2025 "You were asking?" rule applies:
+"base your CCA claim on the number of days in your fiscal period compared to 365 days" (the
+Guide's example: "your fiscal period is 214 days")."""
+
 RENTAL_CCA_CLASSES = RecordListKind.declare(
     CATALOG,
     "rental_cca_classes",
@@ -1404,6 +1426,7 @@ T776_STATEMENTS = RecordListKind.declare(
         RENTAL_COOWNER,
         RENTAL_COOWNER_SHARE,
         RENTAL_COOWNER_OTHER_EXPENSES,
+        RENTAL_FISCAL_PERIOD_DAYS_ENTERED,
         RENTAL_CCA_CLASSES,
         RENTAL_COOWNER_RECAPTURED_CCA,
         RENTAL_COOWNER_TERMINAL_LOSS,
