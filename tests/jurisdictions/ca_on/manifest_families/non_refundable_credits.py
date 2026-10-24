@@ -6,7 +6,6 @@ from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.choose_by_count import ChooseByCount
-from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.greater_of import GreaterOf
 from app.domain.capabilities.lesser_of import LesserOf
@@ -263,16 +262,6 @@ OUTPUTS = frozenset(
 )
 
 STEPS = {
-    # T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
-    # $1,077.48)": the EI premiums, 1.64% of the employment income up to the $65,700
-    # maximum insurable earnings, with no exemption (the EI premium rates and maximums,
-    # 2025 federal row).
-    CapabilitySelection(
-        name="core/contribution_tier",
-        params={"tier": "ca/ei_premium"},
-        consumes={"earnings": "ca/employment_income"},
-        produces={"output": "ca/ei_premiums"},
-    ),
     # The Canada employment amount: the lesser of the T1's cap and employment income.
     CapabilitySelection(
         name="core/capped_amount",
@@ -1325,7 +1314,6 @@ STEPS = {
 }
 
 WIRING = {
-    (TieredContribution, frozenset({EMPLOYMENT_INCOME}), frozenset({EI_PREMIUMS})),
     (CappedAmount, frozenset({EMPLOYMENT_INCOME}), frozenset({CANADA_EMPLOYMENT_AMOUNT})),
     (
         TimesCount,

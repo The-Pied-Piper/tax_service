@@ -118,7 +118,7 @@ return.": 1 when line 15 is more than $1 and 0 otherwise, the factor of line 450
 
 T2204_LINE_16 = CATALOG.declare("t2204_line_16", Decimal, non_negative=True)
 """Line 16 of Form T2204, "Enter whichever amount is the least: line 7, line 9 or line 12.": the
-least of lines 7, 9 and 12. It is printed for line 31200 of the return, and no step reads it."""
+least of lines 7, 9 and 12. It is entered on line 31200 of the return (`ca/ei_premiums`)."""
 
 EI_OVERPAYMENT = CATALOG.declare("ei_overpayment", Decimal, non_negative=True)
 """Employment insurance (EI) overpayment, T1 line 45000 "Employment insurance (EI) overpayment":

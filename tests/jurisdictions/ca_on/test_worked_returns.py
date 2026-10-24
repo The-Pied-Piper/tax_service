@@ -127,8 +127,9 @@ description: >-
   (T1 line 25300). The CPP contributions are computed from employment
   income by Schedule 8's tiers: base contributions 4.95% x (10000 - 3500) = 321.75, first
   additional 1% x 6500 = 65.00, no second additional below the 71300 ceiling, so enhanced
-  contributions of 65.00. The EI premiums are computed from employment income: 1.64% x 10000
-  = 164.00. The contributions available to deduct (Schedule 7 line 10) are the unused
+  contributions of 65.00. The EI premiums are Form T2204 line 16, from T4 insurable earnings of
+  10000 and premiums deducted of 164.00 (= 1.64% x 10000): 164.00. The contributions available to
+  deduct (Schedule 7 line 10) are the unused
   contributions (line 1) of 0 plus the contributions (line 4) of 0: 0. The most that may be
   deducted (line 17) is the lesser of them and the deduction limit (line 11) of 1800, a
   chosen limit: 0. The amount deducted (line 18) is that 0, so the RRSP deduction (line 20)
@@ -204,6 +205,9 @@ sources:
     Schedule ON428-A, T778 and EI table arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
+  # T4 boxes 24 (= 14) and 18: the premium required on it, Form T2204 line 16 (line 31200).
+  ca/t2204_insurable_earnings: "10000"
+  ca/t2204_premiums_deducted: "164.00"
   ca/cpp_t4_base_and_first_additional_contributions: "386.75"
   ca/cpp_t4_second_additional_contributions: "0"
   ca/qsbcs_dispositions: []

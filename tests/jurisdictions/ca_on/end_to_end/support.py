@@ -2077,6 +2077,16 @@ def required_cpp_contributions(employment_income: Decimal) -> tuple[Decimal, Dec
     return base_and_first, _cpp_tier(CPP_SECOND_ADDITIONAL_TIER, employment_income)
 
 
+def required_ei_premiums(employment_income: Decimal) -> Decimal:
+    """The T4 box 18 premiums that equal the premium required on the employment income given.
+
+    The 2025 EI tier from its dataset, 1.64% of the earnings up to $65,700 at most $1,077.48,
+    rounded half-up to the cent (Form T2204 line 10). Employment income of $2,000 or less gives a
+    full overpayment on line 45000 and 0 on line 31200 (Form T2204 note (1)).
+    """
+    return _cpp_tier("ca/ei_premium", employment_income)
+
+
 def _worksheet_of[**P](build: Callable[P, tuple[Artifact[Any], ...]]) -> Callable[P, Worksheet]:
     """`build`'s starting artifacts computed: the worksheet of the form `ca-on/return`."""
 
@@ -2366,9 +2376,9 @@ def starting(
     ei_excluded_slips: tuple[str, ...] = (),
     ei_insurable_earnings: str = "0",
     ei_special_benefits_agreement: int = 0,
-    t2204_insurable_earnings: str = "0",
+    t2204_insurable_earnings: str | None = None,
     t2204_self_employment_earnings: str = "0",
-    t2204_premiums_deducted: str = "0",
+    t2204_premiums_deducted: str | None = None,
     canadian_tuition_fees: str = "0",
     canada_training_credit_limit: str = "0",
     canada_training_credit_claimed: str = "0",
@@ -2588,6 +2598,17 @@ def starting(
         required_second
         if cpp_t4_second_additional_contributions is None
         else D(cpp_t4_second_additional_contributions)
+    )
+    # The T4 shows the employment income as the insurable earnings (box 24 = box 14) and exactly the
+    # premium required on it, so Form T2204 line 16, T1 line 31200, is that premium and there is no
+    # overpayment, unless a test gives its own.
+    t2204_insurable = (
+        D(employment_income) if t2204_insurable_earnings is None else D(t2204_insurable_earnings)
+    )
+    t2204_premiums = (
+        required_ei_premiums(D(employment_income))
+        if t2204_premiums_deducted is None
+        else D(t2204_premiums_deducted)
     )
     blank: tuple[Mapping[str, Any], ...] = ({},)
     rental_statement_list = blank if rental_statements is None else rental_statements
@@ -3061,9 +3082,9 @@ def starting(
         ei_excluded_slips_list(*ei_excluded_slips),
         Artifact(EI_INSURABLE_EARNINGS, D(ei_insurable_earnings)),
         Artifact(EI_SPECIAL_BENEFITS_AGREEMENT, ei_special_benefits_agreement),
-        Artifact(T2204_INSURABLE_EARNINGS, D(t2204_insurable_earnings)),
+        Artifact(T2204_INSURABLE_EARNINGS, t2204_insurable),
         Artifact(T2204_SELF_EMPLOYMENT_EARNINGS, D(t2204_self_employment_earnings)),
-        Artifact(T2204_PREMIUMS_DEDUCTED, D(t2204_premiums_deducted)),
+        Artifact(T2204_PREMIUMS_DEDUCTED, t2204_premiums),
         Artifact(CANADIAN_TUITION_FEES, D(canadian_tuition_fees)),
         Artifact(CANADA_TRAINING_CREDIT_LIMIT, D(canada_training_credit_limit)),
         Artifact(CANADA_TRAINING_CREDIT_CLAIMED, D(canada_training_credit_claimed)),

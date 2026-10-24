@@ -28,17 +28,6 @@ capabilities:
         - ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings
     produces:
       output: ca/cpp_base_contributions_on_self_employment_and_other_earnings
-  # T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
-  # $1,077.48)": the EI premiums, 1.64% of the employment income up to the $65,700
-  # maximum insurable earnings, with no exemption (the EI premium rates and maximums,
-  # 2025 federal row).
-  - name: core/contribution_tier
-    params:
-      tier: ca/ei_premium
-    consumes:
-      earnings: ca/employment_income
-    produces:
-      output: ca/ei_premiums
   # "Enter the amount from line 9 or line 10, whichever applies, on line 31217 and line
   # 42120 of your return.": Schedule 13 is completed only with an agreement with the Canada
   # Employment Insurance Commission, so line 9 is counted once for each agreement, 1 or 0,

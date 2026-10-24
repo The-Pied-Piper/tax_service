@@ -451,6 +451,9 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-tca/5006-tca-25e.txt
 inputs:
   ca/employment_income: "50000"
+  # T4 boxes 24 (= 14) and 18: the required premium, Form T2204 line 16 (T1 line 31200).
+  ca/t2204_insurable_earnings: "50000"
+  ca/t2204_premiums_deducted: "820.00"
   ca/t5_taxable_dividends_other_than_eligible: "200"
   ca/t5_taxable_dividends: "500"
   ca/eligible_dividends_received_without_a_slip: "1000"
