@@ -401,6 +401,7 @@ inputs:
           ca/cca_vehicle_acquired_year: "0"
           ca/cca_vehicle_cost: "0"
           ca/cca_vehicle_government_assistance: "0"
+          ca/cca_sold_zepvs: []
       ca/business_epop_associated: "0"
       ca/business_epop_agreement_filed: "0"
       ca/business_epop_percentage: "0"

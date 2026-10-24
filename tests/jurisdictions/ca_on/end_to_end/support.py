@@ -966,6 +966,29 @@ def rental_properties_list(*rows: tuple[int, str, str]) -> Artifact[RecordList]:
     return Artifact(RENTAL_PROPERTIES, RecordList(RENTAL_PROPERTIES.fields, records))
 
 
+# One sold zero-emission passenger vehicle of a Class 54 row (Guide T4036 "Class 54 (30%)"): the
+# year it was acquired (0 for no adjustment of its proceeds), its cost, the government assistance
+# received less repaid, its proceeds and the DIEP part of them, the money as decimal text.
+SoldZepvRow = tuple[int, str, str, str, str]
+
+
+def sold_zepvs(kind: RecordListKind, *vehicles: SoldZepvRow) -> RecordList:
+    """The nested list `kind` (`ca/cca_sold_zepvs`) of a Class 54 row, one record per vehicle (none
+    by default), its fields found by identifier."""
+    by_identifier = {field.identifier: field for field in kind.fields}
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            by_identifier["ca/cca_vehicle_acquired_year"]: acquired_year,
+            by_identifier["ca/cca_vehicle_cost"]: D(cost),
+            by_identifier["ca/cca_vehicle_government_assistance"]: D(assistance),
+            by_identifier["ca/cca_zepv_proceeds"]: D(proceeds),
+            by_identifier["ca/cca_zepv_diep_proceeds"]: D(diep_proceeds),
+        }
+        for acquired_year, cost, assistance, proceeds, diep_proceeds in vehicles
+    ]
+    return RecordList(kind.fields, records)
+
+
 RentalCcaRow = (
     tuple[str, str, str, str, str, str, str, int, str, str, str, str]
     | tuple[str, str, str, str, str, str, str, int, str, str, str, str, int]
@@ -1031,7 +1054,9 @@ def rental_cca_classes(*rows: RentalCcaRow) -> Artifact[RecordList]:
         )
         assert vehicle.keys() <= by_identifier.keys()
         for field in kind.fields:
-            if field not in record:
+            if isinstance(field, RecordListKind):
+                record[field] = sold_zepvs(field, *())
+            elif field not in record:
                 record[field] = vehicle.get(
                     field.identifier, 0 if field.value_type is int else D(0)
                 )
@@ -1338,6 +1363,25 @@ BusinessCcaRow = (
     | tuple[str, str, str, str, str, str, str, int, str, str, str, int]
     | tuple[str, str, str, str, str, str, str, int, str, str, str, int, str]
     | tuple[str, str, str, str, str, str, str, int, str, str, str, int, str, int, str, str]
+    | tuple[
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        str,
+        int,
+        str,
+        str,
+        str,
+        int,
+        str,
+        int,
+        str,
+        str,
+        tuple[SoldZepvRow, ...],
+    ]
 )
 
 
@@ -1352,7 +1396,8 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
     remaining personal part of the property's cost as decimal text, else "0", and, as a
     fourteenth, fifteenth and sixteenth, the year a Class 10.1 vehicle was acquired (0 for no
     adjustment of the proceeds), its actual cost and the government assistance received less
-    repaid, as decimal text, else 0, "0" and "0"."""
+    repaid, as decimal text, else 0, "0" and "0"; and, as a seventeenth, the vehicles sold from a
+    Class 54 row (`SoldZepvRow`), else none."""
     kind = BUSINESS_CCA_CLASSES
     assert isinstance(kind, RecordListKind)
     by_identifier = {field.identifier: field for field in kind.fields}
@@ -1398,9 +1443,16 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
             if len(extras) > 2
             else {}
         )
+        business_sold: tuple[SoldZepvRow, ...] = ()
+        if len(extras) > 5:
+            given = extras[5]
+            assert isinstance(given, tuple)
+            business_sold = given
         assert vehicle.keys() <= by_identifier.keys()
         for field in kind.fields:
-            if field not in record:
+            if isinstance(field, RecordListKind):
+                record[field] = sold_zepvs(field, *business_sold)
+            elif field not in record:
                 record[field] = vehicle.get(
                     field.identifier, 0 if field.value_type is int else D(0)
                 )
@@ -1613,7 +1665,9 @@ def farm_cca_classes(
         )
         assert vehicle.keys() <= by_identifier.keys()
         for field in kind.fields:
-            if field not in record:
+            if isinstance(field, RecordListKind):
+                record[field] = sold_zepvs(field, *())
+            elif field not in record:
                 record[field] = vehicle.get(
                     field.identifier, 0 if field.value_type is int else D(0)
                 )
@@ -1777,7 +1831,9 @@ def fish_cca_classes(
         )
         assert vehicle.keys() <= by_identifier.keys()
         for field in kind.fields:
-            if field not in record:
+            if isinstance(field, RecordListKind):
+                record[field] = sold_zepvs(field, *())
+            elif field not in record:
                 record[field] = vehicle.get(
                     field.identifier, 0 if field.value_type is int else D(0)
                 )
