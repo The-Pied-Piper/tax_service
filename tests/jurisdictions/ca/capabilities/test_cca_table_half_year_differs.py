@@ -456,7 +456,7 @@ def test_the_flag_does_not_change_a_terminal_loss_of_column_7() -> None:
 
 def test_the_flag_does_not_change_the_half_year_rule_on_sale() -> None:
     # Class 10.1 with the rule on sale: column 19 is one half of column 2, 5,000, and the flag
-    # changes neither column 19 nor the maximum, which is at most column 7 (10).
+    # changes neither column 19 nor the maximum, 30% of 5,000 (1,500).
     flagged = half_year_row("10.1", "10000", proceeds="9990", no_property_left=1, differs=1)
     plain = half_year_row("10.1", "10000", proceeds="9990", no_property_left=1, differs=0)
     capability = CcaClaim(sale_class_rates(), HALF_YEAR_CLASSES, CCA_CLAIM)
@@ -466,7 +466,7 @@ def test_the_flag_does_not_change_the_half_year_rule_on_sale() -> None:
 
     assert flagged_trace == plain_trace
     assert line_of(flagged_trace).column_19 == D("5000")
-    assert line_of(flagged_trace).maximum == D("10")
+    assert line_of(flagged_trace).maximum == D("1500")
 
 
 # --- the wiring ------------------------------------------------------------------------------

@@ -4676,20 +4676,22 @@ def test_the_claim_line_names_the_half_year_rule_on_sale_at_column_19() -> None:
     )
 
 
-def test_the_claim_line_shows_the_cap_at_column_7_when_it_bites() -> None:
-    line = replace(sale_claim_line(), column_7=D("10"), maximum=D("10"), claim=D("10"))
+def test_the_claim_line_does_not_limit_a_sale_rows_maximum_to_column_7() -> None:
+    line = replace(sale_claim_line(), column_7=D("10"))
 
     assert render(line) == (
         "cca_claim: item 1 class 10.1: column 7 10, column 14 12000, column 15 0, "
         "column 16 12000, column 17 0, column 18 0, column 19 10000 (half-year rule on sale), "
-        "maximum 30% of column 19 = 3000 (half-up to 0.01), limited to column 7 = 10, claim 10"
+        "maximum 30% of column 19 = 3000 (half-up to 0.01), claim 3000"
     )
 
 
-def test_the_claim_line_does_not_show_a_cap_at_column_7_when_it_is_equal() -> None:
-    line = replace(sale_claim_line(), column_7=D("3000"))
+def test_the_claim_line_of_a_sale_row_with_a_negative_column_7_shows_the_maximum() -> None:
+    line = replace(
+        sale_claim_line(), column_7=D("-5000"), zero_reason=CcaZeroReason.COLUMN_7_NEGATIVE
+    )
 
-    assert "limited" not in render(line)
+    assert "maximum 30% of column 19 = 3000" in render(line)
 
 
 def test_the_claim_line_is_unchanged_without_the_half_year_rule_on_sale() -> None:
@@ -4720,13 +4722,13 @@ def test_the_closing_line_names_the_half_year_rule_on_sale_in_the_claim() -> Non
         D("8000.00"),
         CcaZeroReason.NONE,
         D("3000.00"),
-        D("5000.00"),
+        D("0"),
         half_year_rule_on_sale=True,
     )
 
     assert render(line) == (
-        "closing_ucc: item 1 class 10.1: column 7 8000 less claim 3000 (half-year rule on sale) "
-        "= 5000"
+        "closing_ucc: item 1 class 10.1: column 7 8000 less claim 3000 (half-year rule on sale), "
+        "the rest is not deductible later: 0"
     )
 
 

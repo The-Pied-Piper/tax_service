@@ -11,15 +11,18 @@ for CCA (column 13 plus column 15 plus column 17 minus column 18)".
 A row uses the rule when its class has the flag (`half_year_rule_on_sale` of the class rates), its
 column 2 is above 0 and the caller says no property is left in the class. Then column 19 is one
 half of column 2, the exact half rounded once with the dataset's rule, in place of column 13 plus
-columns 15 and 17 minus column 18; the positive-column-7 zero of "no property left" does not apply,
-so the maximum is column 19 times the class's rate and column 24 is column 7 less the claim.
-Recapture and a terminal loss stay 0 for Class 10.1 (Note 3). A negative column 7, a column 2 of 0,
-a class without the flag and a class with property left are worked as before.
+columns 15 and 17 minus column 18; the zero of "no property left" and of a column 7 at or below 0
+does not apply, so the maximum is column 19 times the class's rate, not limited to column 7:
+Regulation 1100(2.5) (https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._945/section-1100.html)
+determines the deduction "as if the property had not been disposed of" with one-half of the days.
+Column 24 is 0, as the rest of the UCC is not deductible later (Folio S3-F4-C1 paragraph 1.106).
+Recapture and a terminal loss stay 0 for Class 10.1 (Note 3). A column 2 of 0, a class without the
+flag and a class with property left are worked as before.
 
 Worked row S, Class 10.1 (30%), column 2 20,000.00, proceeds (column 5) 12,000.00, no property
 left: column 7 is 20,000.00 + 0 - 12,000.00 = 8,000.00; column 19 is one half of 20,000.00 =
 10,000.00; maximum 10,000.00 x 30% = 3,000.00; with a claim of 3,000.00 column 24 is 8,000.00 -
-3,000.00 = 5,000.00.
+3,000.00 = 5,000.00 in the table, but the row closes at 0.
 Row R, column 2 20,001.01: column 7 8,001.01; column 19 is 20,001.01 / 2 = 10,000.505, rounded
 half-up once to 10,000.51; maximum 10,000.51 x 30% = 3,000.153, rounded to 3,000.15.
 Row A, row S with additions of 5,000 (column 3): column 7 13,000.00; column 19 still 10,000.00;
@@ -192,12 +195,14 @@ def test_a_column_2_of_zero_allows_no_claim() -> None:
         claim_total(row("10.1", "0", "30000", "25000", claimed="0.01", no_property_left=1))
 
 
-def test_a_negative_column_7_allows_no_claim() -> None:
-    # Column 7: 20,000.00 - 25,000.00 = -5,000.00.
-    negative = sold("0", proceeds="25000.00")
-    assert claim_total(negative) == D("0")
+def test_a_negative_column_7_still_allows_the_claim_as_if_not_sold() -> None:
+    # Column 7: 20,000.00 - 25,000.00 = -5,000.00; Regulation 1100(2.5) works the deduction as if
+    # the vehicle had not been disposed of, so the maximum is still 3,000.00.
+    negative = sold("3000.00", proceeds="25000.00")
+    assert claim_total(negative) == D("3000.00")
+    assert closing(negative) == [(D("10.1"), D("0"))]
     with pytest.raises(InputAboveBoundError):
-        claim_total(sold("0.01", proceeds="25000.00"))
+        claim_total(sold("3000.01", proceeds="25000.00"))
 
 
 def test_a_claim_after_column_22_is_limited_to_column_21_less_column_22() -> None:
@@ -211,71 +216,62 @@ def test_a_claim_after_column_22_is_limited_to_column_21_less_column_22() -> Non
         capability.compute((column_22, classes(sold("2500.01"))))
 
 
-# Column 7 below the sale's base amount: the maximum is the lesser of 30% of column 19 and column 7
-# (the UCC cannot go below 0). Column 2 10,000.00 gives column 19 5,000.00 and 1,500.00 at 30%.
+# Column 7 below the sale's base amount: the maximum is not limited to column 7. Regulation
+# 1100(2.5) works the deduction as if the vehicle had not been disposed of. Column 2 10,000.00
+# gives column 19 5,000.00 and 1,500.00 at 30%.
 
 
-def test_the_maximum_is_at_most_column_7() -> None:
-    # Proceeds 9,990.00: column 7 10.00, so the maximum is 10.00, not 1,500.00.
-    nearly_all = sold("10.00", column_2="10000.00", proceeds="9990.00")
+def test_the_maximum_is_not_limited_to_column_7() -> None:
+    # Proceeds 9,990.00: column 7 10.00, but the maximum is still 1,500.00.
+    nearly_all = sold("1500.00", column_2="10000.00", proceeds="9990.00")
 
-    assert claim_total(nearly_all) == D("10.00")
+    assert claim_total(nearly_all) == D("1500.00")
     (line, _total) = claim_trace(nearly_all)
-    assert (line.column_7, line.column_19, line.maximum) == (D("10.00"), D("5000.00"), D("10.00"))
-    assert closing(nearly_all) == [(D("10.1"), D("0.00"))]
+    assert (line.column_7, line.column_19, line.maximum) == (D("10.00"), D("5000.00"), D("1500.00"))
+    assert closing(nearly_all) == [(D("10.1"), D("0"))]
 
 
-def test_a_claim_above_column_7_is_refused_for_a_sale_row() -> None:
-    nearly_all = sold("10.01", column_2="10000.00", proceeds="9990.00")
+def test_a_claim_above_the_maximum_is_refused_whatever_column_7_is() -> None:
+    nearly_all = sold("1500.01", column_2="10000.00", proceeds="9990.00")
 
-    with pytest.raises(InputAboveBoundError, match=r"^item 1: ca/cca_claimed 10.01 is above the"):
+    with pytest.raises(InputAboveBoundError, match=r"^item 1: ca/cca_claimed 1500.01 is above the"):
         claim_total(nearly_all)
-    with pytest.raises(InputAboveBoundError, match=r"above the maximum 10.00"):
+    with pytest.raises(InputAboveBoundError, match=r"above the maximum 1500.00"):
         closing(nearly_all)
 
 
-def test_a_column_7_of_zero_takes_no_rule_and_allows_no_claim() -> None:
-    all_sold = sold("0", column_2="10000.00", proceeds="10000.00")
+def test_a_column_7_of_zero_takes_the_rule_too() -> None:
+    all_sold = sold("1500.00", column_2="10000.00", proceeds="10000.00")
 
-    assert claim_total(all_sold) == D("0")
-    assert closing(all_sold) == [(D("10.1"), D("0.00"))]
+    assert claim_total(all_sold) == D("1500.00")
+    assert closing(all_sold) == [(D("10.1"), D("0"))]
     (line, _total) = claim_trace(all_sold)
-    assert line.half_year_rule_on_sale is False
-    assert line.maximum == D("0")
+    assert line.half_year_rule_on_sale is True
+    assert line.maximum == D("1500.00")
     with pytest.raises(InputAboveBoundError):
-        claim_total(sold("0.01", column_2="10000.00", proceeds="10000.00"))
+        claim_total(sold("1500.01", column_2="10000.00", proceeds="10000.00"))
 
 
-def test_a_column_7_equal_to_the_uncapped_maximum_is_not_capped() -> None:
-    # Proceeds 8,500.00: column 7 1,500.00 and 30% of column 19 1,500.00.
-    equal = sold("1500.00", column_2="10000.00", proceeds="8500.00")
-
-    assert claim_total(equal) == D("1500.00")
-    assert claim_trace(equal)[0].maximum == D("1500.00")
-    assert closing(equal) == [(D("10.1"), D("0.00"))]
-    with pytest.raises(InputAboveBoundError):
-        claim_total(sold("1500.01", column_2="10000.00", proceeds="8500.00"))
-
-
-def test_a_claim_after_column_22_is_limited_by_the_capped_maximum() -> None:
-    # Maximum 10.00 less a column 22 of 4.00 leaves 6.00.
+def test_a_claim_after_column_22_is_limited_by_the_maximum() -> None:
+    # Maximum 1,500.00 less a column 22 of 4.00 leaves 1,496.00.
     capability = CcaClaimAfterColumn22(sale_class_rates(), CLASSES, NON_COMPLIANT, CCA_CLAIM)
     column_22 = non_compliant_cca(("10.1", "4.00"))
     nearly_all = dict(column_2="10000.00", proceeds="9990.00")
 
-    (output,) = capability.compute((column_22, classes(sold("6.00", **nearly_all)))).outputs
-    assert output.value == D("6.00")
-    with pytest.raises(InputAboveBoundError, match=r"above the maximum 6.00"):
-        capability.compute((column_22, classes(sold("6.01", **nearly_all))))
+    (output,) = capability.compute((column_22, classes(sold("1496.00", **nearly_all)))).outputs
+    assert output.value == D("1496.00")
+    with pytest.raises(InputAboveBoundError, match=r"above the maximum 1496.00"):
+        capability.compute((column_22, classes(sold("1496.01", **nearly_all))))
 
 
 # --- the closing UCC ----------------------------------------------------------------------------
 
 
-def test_the_closing_ucc_is_column_7_less_the_claim() -> None:
-    # Row S: 8,000.00 - 3,000.00 = 5,000.00; with no claim 8,000.00.
-    assert closing(sold("3000.00")) == [(D("10.1"), D("5000.00"))]
-    assert closing(sold("0")) == [(D("10.1"), D("8000.00"))]
+def test_the_closing_ucc_is_zero_whatever_is_claimed() -> None:
+    # Row S: the 5,000.00 left after a claim of 3,000.00 is not deductible later (Regulation
+    # 1100(2.5); Folio S3-F4-C1 paragraph 1.106), nor is the 8,000.00 left after no claim.
+    assert closing(sold("3000.00")) == [(D("10.1"), D("0"))]
+    assert closing(sold("0")) == [(D("10.1"), D("0"))]
 
 
 def test_the_closing_ucc_refuses_a_claim_above_the_maximum() -> None:
@@ -283,9 +279,9 @@ def test_the_closing_ucc_refuses_a_claim_above_the_maximum() -> None:
         closing(sold("3000.01"))
 
 
-def test_the_closing_ucc_of_a_row_with_additions_uses_column_7() -> None:
-    # Row A: 13,000.00 - 3,000.00 = 10,000.00.
-    assert closing(sold("3000.00", additions="5000")) == [(D("10.1"), D("10000.00"))]
+def test_the_closing_ucc_of_a_row_with_additions_is_zero() -> None:
+    # Row A.
+    assert closing(sold("3000.00", additions="5000")) == [(D("10.1"), D("0"))]
 
 
 def test_the_closing_ucc_is_zero_for_a_column_2_of_zero() -> None:
@@ -378,7 +374,7 @@ def test_traces_the_closing_ucc_as_the_half_year_rule_on_sale() -> None:
             D("8000.00"),
             CcaZeroReason.NONE,
             D("3000.00"),
-            D("5000.00"),
+            D("0"),
             half_year_rule_on_sale=True,
         ),
     )
