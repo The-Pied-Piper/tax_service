@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1129
+        == 1130
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1129
+        == 1130
     )
 
 
@@ -1724,6 +1724,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/pension_rrif_transferred",
         "ca/pension_annuity_payments",
         "ca/pension_annuity_conditions_met",
+        "ca/pension_split_election",
+        "ca/pension_split_amount",
         "ca/student_loan_interest",
         "ca/volunteer_firefighters_credit",
         "ca/search_and_rescue_credit",
@@ -1739,6 +1741,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/pension_chart_line_6",
         "ca/pension_chart_line_7",
         "ca/pension_chart_line_8",
+        "ca/pension_worksheet_amount",
         "ca/pension_income_credit",
         "ca/canadian_tuition_fees",
         "ca/canada_training_credit_limit",
@@ -2680,7 +2683,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1129
+        == 1130
     )
     assert (
         len(
@@ -2688,7 +2691,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1129
+        == 1130
     )
 
 
@@ -2701,7 +2704,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1129
+        == 1130
     )
     assert (
         len(
@@ -2709,7 +2712,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1129
+        == 1130
     )
 
 

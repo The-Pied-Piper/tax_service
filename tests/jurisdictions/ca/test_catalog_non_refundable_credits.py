@@ -97,7 +97,10 @@ from app.jurisdictions.ca.catalog import (
     PENSION_FOREIGN_INCOME,
     PENSION_INCOME_CREDIT,
     PENSION_RRIF_TRANSFERRED,
+    PENSION_SPLIT_AMOUNT,
+    PENSION_SPLIT_ELECTION,
     PENSION_US_IRA_INCOME,
+    PENSION_WORKSHEET_AMOUNT,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
     SEARCH_AND_RESCUE_CONDITIONS_MET,
@@ -630,6 +633,8 @@ def test_the_other_federal_non_refundable_amount_kinds_are_money() -> None:
         PENSION_CHART_LINE_7,
         PENSION_CHART_LINE_8,
         PENSION_INCOME_CREDIT,
+        PENSION_SPLIT_AMOUNT,
+        PENSION_WORKSHEET_AMOUNT,
     ):
         assert kind.value_type is Decimal, kind.identifier
         assert kind.non_negative is True, kind.identifier
@@ -645,6 +650,7 @@ def test_the_conditions_and_the_annuity_gate_are_non_negative_counts() -> None:
         VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET,
         SEARCH_AND_RESCUE_CONDITIONS_MET,
         PENSION_ANNUITY_CONDITIONS_MET,
+        PENSION_SPLIT_ELECTION,
     ):
         assert kind.value_type is int, kind.identifier
         assert kind.non_negative is True, kind.identifier
@@ -675,6 +681,8 @@ OTHER_FEDERAL_NON_REFUNDABLE_KINDS: list[tuple[str, ArtifactKind[Any]]] = [
     ("ca/pension_rrif_transferred", PENSION_RRIF_TRANSFERRED),
     ("ca/pension_annuity_payments", PENSION_ANNUITY_PAYMENTS),
     ("ca/pension_annuity_conditions_met", PENSION_ANNUITY_CONDITIONS_MET),
+    ("ca/pension_split_election", PENSION_SPLIT_ELECTION),
+    ("ca/pension_split_amount", PENSION_SPLIT_AMOUNT),
     ("ca/student_loan_interest", STUDENT_LOAN_INTEREST),
     ("ca/volunteer_firefighters_credit", VOLUNTEER_FIREFIGHTERS_CREDIT),
     ("ca/search_and_rescue_credit", SEARCH_AND_RESCUE_CREDIT),
@@ -690,5 +698,6 @@ OTHER_FEDERAL_NON_REFUNDABLE_KINDS: list[tuple[str, ArtifactKind[Any]]] = [
     ("ca/pension_chart_line_6", PENSION_CHART_LINE_6),
     ("ca/pension_chart_line_7", PENSION_CHART_LINE_7),
     ("ca/pension_chart_line_8", PENSION_CHART_LINE_8),
+    ("ca/pension_worksheet_amount", PENSION_WORKSHEET_AMOUNT),
     ("ca/pension_income_credit", PENSION_INCOME_CREDIT),
 ]

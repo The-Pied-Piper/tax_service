@@ -252,6 +252,8 @@ inputs:
   - ca/pension_rrif_transferred
   - ca/pension_annuity_payments
   - ca/pension_annuity_conditions_met
+  - ca/pension_split_election
+  - ca/pension_split_amount
   - ca/student_loan_interest
   - ca-on/dependent_children
   - ca-on/dependants

@@ -171,7 +171,10 @@ from app.jurisdictions.ca.catalog import (
     PENSION_FOREIGN_INCOME,
     PENSION_INCOME_CREDIT,
     PENSION_RRIF_TRANSFERRED,
+    PENSION_SPLIT_AMOUNT,
+    PENSION_SPLIT_ELECTION,
     PENSION_US_IRA_INCOME,
+    PENSION_WORKSHEET_AMOUNT,
     QBT_CAPITAL_GAINS_DEDUCTION,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     REGULAR_RATE_DONATION_CREDIT,
@@ -292,6 +295,9 @@ INPUTS = frozenset(
         "ca/pension_rrif_transferred",
         "ca/pension_annuity_payments",
         "ca/pension_annuity_conditions_met",
+        # Worksheet for line 31400, last paragraph: the Form T1032 amount and the election.
+        "ca/pension_split_election",
+        "ca/pension_split_amount",
         # T1 line 31900 "Interest paid on your student loans".
         "ca/student_loan_interest",
     }
@@ -1528,12 +1534,25 @@ STEPS = {
         produces={"output": "ca/pension_chart_line_8"},
     ),
     # Worksheet for line 31400, the last line: "Enter on line 31400 of your return whichever amount
-    # is less: line 8 or $2,000." (maximum $2,000, T1 guide 5000-G and the T1 line 97). The T1032
-    # pension split is a spouse-coupled election, an input, not wired here.
+    # is less: line 8 or $2,000." (maximum $2,000, T1 guide 5000-G and the T1 line 97).
     CapabilitySelection(
         name="core/capped_amount",
         params={"cap": "ca/pension_income_maximum"},
         consumes={"base": "ca/pension_chart_line_8"},
+        produces={"output": "ca/pension_worksheet_amount"},
+    ),
+    # The worksheet ends: "However, if you are electing to split your eligible pension with your
+    # spouse or common-law partner, complete Form T1032 ... to calculate the amount to enter on line
+    # 31400 of your return instead." The split is a spouse-coupled election, so the Form T1032
+    # amount is the caller's; the caller's 0 or 1 election picks it over the worksheet amount.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/pension_split_election",
+            "when_none": "ca/pension_worksheet_amount",
+            "when_any": "ca/pension_split_amount",
+        },
         produces={"output": "ca/pension_income_credit"},
     ),
 }
@@ -2146,5 +2165,10 @@ WIRING = {
         frozenset({PENSION_CHART_LINE_6, PENSION_CHART_LINE_7}),
         frozenset({PENSION_CHART_LINE_8}),
     ),
-    (CappedAmount, frozenset({PENSION_CHART_LINE_8}), frozenset({PENSION_INCOME_CREDIT})),
+    (CappedAmount, frozenset({PENSION_CHART_LINE_8}), frozenset({PENSION_WORKSHEET_AMOUNT})),
+    (
+        ChooseByCount,
+        frozenset({PENSION_SPLIT_ELECTION, PENSION_WORKSHEET_AMOUNT, PENSION_SPLIT_AMOUNT}),
+        frozenset({PENSION_INCOME_CREDIT}),
+    ),
 }
