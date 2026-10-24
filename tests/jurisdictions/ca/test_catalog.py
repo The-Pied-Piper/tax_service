@@ -2315,7 +2315,7 @@ def test_the_sold_zepvs_are_a_record_list_of_the_vehicle_and_its_proceeds(
 
 
 def test_a_sold_zepv_record_must_give_each_of_its_fields() -> None:
-    whole = {
+    whole: dict[ArtifactKind[Any], Decimal | int] = {
         CCA_VEHICLE_ACQUIRED_YEAR: 2024,
         CCA_VEHICLE_COST: Decimal("65000"),
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE: Decimal("-100"),
