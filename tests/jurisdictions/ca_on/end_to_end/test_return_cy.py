@@ -259,6 +259,26 @@ def test_government_assistance_received_brings_the_actual_cost_to_the_prescribed
     assert adjusted_proceeds(statement)[-1] == (D("10.1"), D("40000"), D("40000"))
 
 
+def test_government_assistance_repaid_raises_the_actual_cost() -> None:
+    # A repayment is negative: 42940.00 - (-7060.00) = 50000.00, over 42940.00, so the factor is
+    # 42940.00 / 50000.00 = 0.8588 and the proceeds are 40000 x 0.8588 = 34352.00; column 8 is
+    # 42940 - 34352.00 = 8588.00, which with the 3000 of the other rows is 11588.
+    statement = statement_cy(
+        {
+            "rental_cca_classes_rows": (
+                CLASS_1_ROW,
+                CLASS_8_ROW,
+                class_10_1_row(
+                    cost="42940.00", assistance="-7060.00", expensed="8588", claim="8588.00"
+                ),
+            )
+        }
+    )
+
+    assert adjusted_proceeds(statement)[-1] == (D("10.1"), D("34352.00"), D("34352.00"))
+    assert statement.get(RENTAL_IMMEDIATE_EXPENSING_CLAIM).value == D("11588")
+
+
 def test_a_vehicle_acquired_in_2022_has_the_prescribed_amount_of_2022() -> None:
     # 34000 + 13% = 38420.00; 40000 x 38420.00 / 56500.00 = 27200.00 (0.68 exactly); column 8 is
     # 42940 - 27200.00 = 15740.00.
