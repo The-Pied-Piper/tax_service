@@ -3024,8 +3024,11 @@ classes."""
 FARM_INCOME_BEFORE_CCA = CATALOG.declare("farm_income_before_cca", Decimal, non_negative=True)
 """Farming income before CCA, Form T2042 Area A endnote 5 "the amount of income, if any, earned
 from the source of income that is a business (before any CCA deductions) in which the relevant
-DIEP is used for the tax year": amount 4C "Net income (loss) after inventory adjustments" plus
-line 9936, the CCA it deducted, not below zero. The form names no line for this figure."""
+DIEP is used for the tax year": line 9899 "Net income (loss) before inventory adjustments" plus
+line 9936, the CCA it deducted, not below zero. Guide T4002 2025 pairs line 9899 on Form T2042
+with line 9369 on Forms T2125 and T2121, the figure those forms use as income before CCA. The
+recapture on line 9600 is already in gross income and the terminal loss on line 9790 is already
+an expense."""
 
 FARM_FISCAL_PERIOD_DAYS = CATALOG.declare("farm_fiscal_period_days", int, non_negative=True)
 """Days of the fiscal period of Form T2042 that the CCA claim and closing UCC are prorated by:

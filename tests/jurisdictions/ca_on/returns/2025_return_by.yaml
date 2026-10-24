@@ -159,8 +159,9 @@ sources:
     600,000.00. No amount is allocated by the minister (a chosen 0, and the amount a chosen 0), so
     the immediate expensing limit is 600,000.00. The income before CCA is a chosen reading of "the
     amount of income, if any, earned from the source of income that is a business (before any CCA
-    deductions)", to be confirmed: the form names no line for it (looked in Part 4 and endnote
-    5). Line 9369, "Net income (loss) before adjustments: Amount 4A minus line 9368", is after
+    deductions)": the form names no line for it (looked in Part 4 and endnote 5), and Guide
+    T4002 2025, page 65, "Line 9899 or 9369 - Net income (loss) before adjustments", names line
+    9369 for Form T2121 (confirmed from the PDF). Line 9369, "Net income (loss) before adjustments: Amount 4A minus line 9368", is after
     line 9936 (the recapture on line 9600 is in gross income and the terminal loss on line 9270 an
     expense); adding back line 9936, the CCA that line 9369 deducted, not below zero: 15,000.00 +
     9,150.00 = 24,150.00, which is the gross income 49,150 less the other expenses 25,000. The

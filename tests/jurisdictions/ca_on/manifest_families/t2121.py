@@ -661,9 +661,9 @@ FORM_STEPS = {
     # T2121 Area A endnote 5 (page 7) "the amount of income, if any, earned from the source of
     # income that is a business (before any CCA deductions) in which the relevant DIEP is used for
     # the tax year": line 9369 "Net income (loss) before adjustments" plus line 9936, the CCA it
-    # deducted (page 2), not below zero. Built as that sum: the form names no line for this figure.
-    # The recapture on line 9600 is already in gross income and the terminal loss on line 9270 an
-    # expense.
+    # deducted (page 2), not below zero. Guide T4002 (page 65) names line 9369 as "Net income (loss)
+    # before adjustments" for this form. The recapture on line 9600 is already in gross income and
+    # the terminal loss on line 9270 an expense.
     CapabilitySelection(
         name="core/sum_not_below_zero",
         params={},

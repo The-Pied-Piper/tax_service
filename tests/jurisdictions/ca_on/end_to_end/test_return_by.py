@@ -178,10 +178,11 @@ def test_return_bys_line_i_is_6000_the_total_of_column_9() -> None:
 def test_return_bys_income_before_cca_is_line_9369_plus_line_9936_not_below_zero() -> None:
     # Endnote 5 "the amount of income, if any, earned from the source of income that is a business
     # (before any CCA deductions) in which the relevant DIEP is used for the tax year": the form
-    # names no line for it (to be confirmed). Line 9369 is 49150 - 34150.00 = 15000.00, which is
-    # after the 9150.00 of line 9936; adding it back, 15000.00 + 9150.00 = 24150.00, which is the
-    # gross income 49150 less the other expenses 25000 (the recapture on line 9600 is in gross
-    # income, the terminal loss on line 9270 an expense, both 0 here).
+    # names no line for it; Guide T4002 (page 65) names line 9369 as the "Net income (loss) before
+    # adjustments" of Form T2121. Line 9369 is 49150 - 34150.00 = 15000.00, which is after the
+    # 9150.00 of line 9936; adding it back, 15000.00 + 9150.00 = 24150.00, which is the gross income
+    # 49150 less the other expenses 25000 (the recapture on line 9600 is in gross income, the
+    # terminal loss on line 9270 an expense, both 0 here).
     statement = statement_by()
     rendered = EnglishTraceRenderer().render_all(statement.trace)
 

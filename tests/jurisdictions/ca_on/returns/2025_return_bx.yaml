@@ -15,7 +15,7 @@
 # is $3,000, at most the least of endnote 5's three amounts: the immediate expensing limit
 # ($750,000.00, the farm being associated with one other EPOP under a filed agreement that
 # assigns the farm 50% of a total of 100%: $1.5 million x 50%), the UCC of DIEPs ($5,000, the
-# total of column 8) and the income from the farm before CCA ($35,200.00, amount 4C plus line
+# total of column 8) and the income from the farm before CCA ($35,200.00, line 9899 plus line
 # 9936). Line ii, and so line 9936, is $5,200.00, so line 9898 is $50,000 + $5,200.00 =
 # $55,200.00 and line 9899, and with no inventory adjustments amount 4C, is $85,200 -
 # $55,200.00 = $30,000.00, which with no partner and no business-use-of-home expenses is the
@@ -43,7 +43,7 @@ description: >-
   that was filed, the percentage assigned to the farm is 50 and the total of column 3 is 100,
   so the immediate expensing limit allocated to the farm (amount iv) is $1,500,000 x 50% =
   $750,000.00 and no amount is allocated by the minister. The income before CCA (endnote 5) is
-  $35,200.00, amount 4C plus line 9936, a chosen reading (see the sources). A chosen set of
+  $35,200.00, line 9899 plus line 9936 (see the sources). A chosen set of
   figures. The net self-employment income (T1 line 27, "Add lines 22 to 26") is 0 + 0 + 0 +
   30,000 + 0 = $30,000; line 28 is line 21 (0) plus line 27 and total income (line 15000)
   adds line 27 to the other income lines, which are all 0, so total income is $30,000.00.
@@ -162,18 +162,23 @@ sources:
     not more than 100%, so amount iv is 1,500,000 x 50% = 750,000.00 (100 less 100 is 0, not
     negative, so the footnote "**" does not apply), times the 1 agreement filed: 750,000.00. No
     amount is allocated by the minister (a chosen 0, and the amount a chosen 0), so the immediate
-    expensing limit is 750,000.00. The income before CCA is a chosen reading of "the amount of
-    income, if any, earned from the source of income that is a business (before any CCA
-    deductions)", to be confirmed: the form names no line for it (looked in Part 4 and endnote
-    5). Amount 4C, "Net income (loss) after inventory adjustments", is the farm's final net
-    income, the figure Part 5 shares to the partners, and is after line 9936 (the recapture on
-    line 9600 is in gross income and the terminal loss on line 9790 an expense); adding back
-    line 9936, the CCA that 4C deducted, not below zero: 30,000.00 + 5,200.00 = 35,200.00, which
-    is the gross income 85,200 less the other expenses 50,000. The three amounts of endnote 5 are
-    750,000.00, the UCC of DIEPs in column 8, 5,000, and the income before CCA, 35,200.00; the
-    lesser is 5,000. Line i, the total of column 9 (a chosen 3,000 for Class 8), is 3,000, within
-    the lesser, 5,000, and a total above the limit or above the income is refused. Amount iv is a
-    dollars-and-cents box, so it rounds half-up to the cent, which changes nothing here.
+    expensing limit is 750,000.00. The income before CCA is "the amount of income, if any,
+    earned from the source of income that is a business (before any CCA deductions)": the
+    form names no line for it (looked in Part 4 and endnote 5), and Guide T4002
+    (docs/cra-forms-2025/t4002-25e.pdf, page 65, confirmed from the PDF) pairs line 9899
+    with the line 9369 of Forms T2125 and T2121 ("Line 9899 or 9369 - Net income (loss)
+    before adjustments": "For business and professional income, use line 9369 on Form T2125.
+    For farming income, use line 9899 on Form T2042. For fishing income, use line 9369 on
+    Form T2121."), so line 9899 is the figure, before the inventory adjustments of lines
+    9941 and 9942 (this return has none, so amount 4C is the same). Line 9899 is after line
+    9936 (the recapture on line 9600 is in gross income and the terminal loss on line 9790
+    an expense); adding back line 9936, the CCA that 9899 deducted, not below zero:
+    30,000.00 + 5,200.00 = 35,200.00, which is the gross income 85,200 less the other
+    expenses 50,000. The three amounts of endnote 5 are 750,000.00, the UCC of DIEPs in
+    column 8, 5,000, and the income before CCA, 35,200.00; the lesser is 5,000. Line i, the
+    total of column 9 (a chosen 3,000 for Class 8), is 3,000, within the lesser, 5,000, and
+    a total above the limit or above the income is refused. Amount iv is a dollars-and-cents
+    box, so it rounds half-up to the cent, which changes nothing here.
   - >-
     https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2042/t2042-25e.pdf
   - >-
