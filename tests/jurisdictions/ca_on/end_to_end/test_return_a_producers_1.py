@@ -232,6 +232,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_VEHICLE_DAYS_DIVISOR,
     BUSINESS_VEHICLES,
     CANADA_EMPLOYMENT_AMOUNT,
+    CANADA_EMPLOYMENT_AMOUNT_INCOME,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
@@ -1105,6 +1106,7 @@ from app.jurisdictions.ca_on.catalog import (
     FLOW_THROUGH_SHARE_SLIPS,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
+    LIFT_EMPLOYMENT_INCOME,
     LIFT_MAXIMUM_CREDIT,
     LIFT_REDUCTION,
     ONTARIO_BASIC_TAX,
@@ -2297,6 +2299,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         ontario.BASIC_PERSONAL_AMOUNT
     )
     assert isinstance(worksheet.producer_of(CANADA_EMPLOYMENT_AMOUNT), CappedAmount)
+    assert isinstance(worksheet.producer_of(CANADA_EMPLOYMENT_AMOUNT_INCOME), Sum)
+    assert worksheet.producer_of(CANADA_EMPLOYMENT_AMOUNT_INCOME) is not worksheet.producer_of(
+        CANADA_EMPLOYMENT_AMOUNT
+    )
     assert isinstance(
         worksheet.producer_of(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT), SubtractNotBelowZero
     )
@@ -2555,6 +2561,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(ONTARIO_TAX_AFTER_REDUCTION) is not worksheet.producer_of(
         ONTARIO_TAX_AFTER_CREDITS
     )
+    assert isinstance(worksheet.producer_of(LIFT_EMPLOYMENT_INCOME), Sum)
     assert isinstance(worksheet.producer_of(LIFT_CREDIT_BEFORE_MAXIMUM), ApplyRate)
     assert worksheet.producer_of(LIFT_CREDIT_BEFORE_MAXIMUM) is not worksheet.producer_of(
         TAXABLE_CAPITAL_GAINS

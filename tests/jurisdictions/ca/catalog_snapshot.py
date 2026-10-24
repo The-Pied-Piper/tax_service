@@ -1628,6 +1628,7 @@ REGISTERED = frozenset(
         "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
         "ca/ei_premiums",
         "ca/ei_premiums_on_self_employment",
+        "ca/canada_employment_amount_income",
         "ca/canada_employment_amount",
         "ca/volunteer_firefighters_conditions_met",
         "ca/search_and_rescue_conditions_met",

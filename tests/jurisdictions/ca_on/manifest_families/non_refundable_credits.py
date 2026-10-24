@@ -54,6 +54,7 @@ from app.jurisdictions.ca.catalog import (
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
     BASIC_PERSONAL_AMOUNT,
     CANADA_EMPLOYMENT_AMOUNT,
+    CANADA_EMPLOYMENT_AMOUNT_INCOME,
     CANADA_TRAINING_CREDIT,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADA_TRAINING_CREDIT_CLAIMED,
@@ -160,6 +161,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    OTHER_EMPLOYMENT_INCOME,
     OTHER_PAYMENTS_DEDUCTION,
     OTHER_PENSIONS_AND_SUPERANNUATION,
     PENSION_ANNUITY_CONDITIONS_MET,
@@ -317,11 +319,20 @@ OUTPUTS = frozenset(
 )
 
 STEPS = {
-    # The Canada employment amount: the lesser of the T1's cap and employment income.
+    # T1 line 92 (line 31260) "Canada employment amount: Enter whichever is less: $1,471 or line 1
+    # plus line 2.": line 1 "Employment income (box 14 of all T4 slips)" (line 10100) and line 2
+    # "Other employment income" (line 10400), in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/employment_income", "ca/other_employment_income")},
+        produces={"output": "ca/canada_employment_amount_income"},
+    ),
+    # The Canada employment amount: the lesser of the T1's cap and line 1 plus line 2.
     CapabilitySelection(
         name="core/capped_amount",
         params={"cap": "ca/canada_employment_amount"},
-        consumes={"base": "ca/employment_income"},
+        consumes={"base": "ca/canada_employment_amount_income"},
         produces={"output": "ca/canada_employment_amount"},
     ),
     # T1 line 87 and line 31000, entered from Schedule 8 Part 4 line 15: Part 4 is completed only
@@ -1558,7 +1569,16 @@ STEPS = {
 }
 
 WIRING = {
-    (CappedAmount, frozenset({EMPLOYMENT_INCOME}), frozenset({CANADA_EMPLOYMENT_AMOUNT})),
+    (
+        Sum,
+        frozenset({EMPLOYMENT_INCOME, OTHER_EMPLOYMENT_INCOME}),
+        frozenset({CANADA_EMPLOYMENT_AMOUNT_INCOME}),
+    ),
+    (
+        CappedAmount,
+        frozenset({CANADA_EMPLOYMENT_AMOUNT_INCOME}),
+        frozenset({CANADA_EMPLOYMENT_AMOUNT}),
+    ),
     (
         TimesCount,
         frozenset({SELF_EMPLOYED_CPP_BASE_CREDIT, CPP_PART_4_COMPLETED}),

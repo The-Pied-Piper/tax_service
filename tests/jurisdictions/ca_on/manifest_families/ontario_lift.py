@@ -13,6 +13,7 @@ from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.catalog import (
     EMPLOYMENT_INCOME,
+    OTHER_EMPLOYMENT_INCOME,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -28,6 +29,7 @@ from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
+    LIFT_EMPLOYMENT_INCOME,
     LIFT_MAXIMUM_CREDIT,
     LIFT_REDUCTION,
     ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT,
@@ -43,14 +45,20 @@ INPUTS = frozenset(
 OUTPUTS = frozenset[str]()
 
 STEPS = {
-    # Schedule ON428-A line 3 "Line 1 plus line 2", line 1 "Amount from line 10100 of your
-    # return" (line 2, line 10400, not triggered), and line 5 "Line 3 multiplied by the
-    # percentage from line 4 (maximum $875)", line 4 "Applicable rate 5.05%": the rate on
-    # employment income, before its maximum.
+    # Schedule ON428-A line 3 "Line 1 plus line 2" (line 1 "Amount from line 10100 of your return"
+    # and line 2 "Amount from line 10400 of your return"), in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/employment_income", "ca/other_employment_income")},
+        produces={"output": "ca-on/lift_employment_income"},
+    ),
+    # Schedule ON428-A line 5 "Line 3 multiplied by the percentage from line 4 (maximum $875)",
+    # line 4 "Applicable rate 5.05%": the rate on line 3, before its maximum.
     CapabilitySelection(
         name="core/apply_rate",
         params={"rate": "ca-on/lift_rate"},
-        consumes={"base": "ca/employment_income"},
+        consumes={"base": "ca-on/lift_employment_income"},
         produces={"output": "ca-on/lift_credit_before_maximum"},
     ),
     # Line 5's "(maximum $875)" and Part A line 14 "Amount from line 5 above (maximum
@@ -277,7 +285,12 @@ STEPS = {
 }
 
 WIRING = {
-    (ApplyRate, frozenset({EMPLOYMENT_INCOME}), frozenset({LIFT_CREDIT_BEFORE_MAXIMUM})),
+    (
+        Sum,
+        frozenset({EMPLOYMENT_INCOME, OTHER_EMPLOYMENT_INCOME}),
+        frozenset({LIFT_EMPLOYMENT_INCOME}),
+    ),
+    (ApplyRate, frozenset({LIFT_EMPLOYMENT_INCOME}), frozenset({LIFT_CREDIT_BEFORE_MAXIMUM})),
     (CappedAmount, frozenset({LIFT_CREDIT_BEFORE_MAXIMUM}), frozenset({LIFT_MAXIMUM_CREDIT})),
     (
         Sum,

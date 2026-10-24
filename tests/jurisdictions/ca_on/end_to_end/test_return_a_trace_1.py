@@ -259,7 +259,13 @@ def test_the_trace_explains_the_computation() -> None:
         "16129",
     )
     position(
-        "canada_employment_amount: lesser of employment_income 110000 and 1471 (half-up to 0.01)",
+        "canada_employment_amount_income: employment_income 110000 + "
+        "other_employment_income 0 = 110000",
+        "110000",
+    )
+    position(
+        "canada_employment_amount: lesser of canada_employment_amount_income 110000 and 1471 "
+        "(half-up to 0.01)",
         "1471",
     )
     position(
@@ -667,7 +673,12 @@ def test_the_trace_explains_the_computation() -> None:
         "8195.77",
     )
     position(
-        "lift_credit_before_maximum: 5.05% of employment_income 110000 (half-up to 0.01)", "5555"
+        "lift_employment_income: employment_income 110000 + other_employment_income 0 = 110000",
+        "110000",
+    )
+    position(
+        "lift_credit_before_maximum: 5.05% of lift_employment_income 110000 (half-up to 0.01)",
+        "5555",
     )
     position(
         "lift_maximum_credit: lesser of lift_credit_before_maximum 5555 and 875 (half-up to 0.01)",

@@ -93,7 +93,6 @@ from app.jurisdictions.ca.catalog import (
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
     ELIGIBLE_DIVIDENDS_CREDIT,
-    EMPLOYMENT_INCOME,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FIRST_TIER_DONATION_CREDIT,
     HIGH_INCOME_DONATION_CREDIT,
@@ -176,6 +175,7 @@ from app.jurisdictions.ca_on.catalog import (
     FERTILITY_EXPENSES,
     FLOW_THROUGH_SHARE_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
+    LIFT_EMPLOYMENT_INCOME,
     LIFT_REDUCTION,
     ONTARIO_HEALTH_PREMIUM,
     ONTARIO_SURTAX,
@@ -950,11 +950,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("0.00"),
         ),
         # Schedule ON428-A line 5 "Line 3 multiplied by the percentage from line 4 (maximum
-        # $875)", before its maximum: line 3 is employment income (line 10100), as line 2 (line
-        # 10400) is not triggered.
+        # $875)", before its maximum: line 3 is the line 1 plus line 2 sum, 110000 (line 10100)
+        # plus 0 (line 10400).
         LIFT_CREDIT_BEFORE_MAXIMUM: RateAppliedLine(
             LIFT_CREDIT_BEFORE_MAXIMUM,
-            EMPLOYMENT_INCOME,
+            LIFT_EMPLOYMENT_INCOME,
             D("110000"),
             Rate(D("0.0505")),
             CENT,

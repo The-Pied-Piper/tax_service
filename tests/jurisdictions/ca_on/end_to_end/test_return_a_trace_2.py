@@ -101,8 +101,14 @@ def test_the_trace_explains_the_computation() -> None:
         "(range 75532), not below 14538 (half-up to 0.01)",
         "16129",
     )
+    employment_sum = position(
+        "canada_employment_amount_income: employment_income 110000 + "
+        "other_employment_income 0 = 110000",
+        "110000",
+    )
     employment_amount = position(
-        "canada_employment_amount: lesser of employment_income 110000 and 1471 (half-up to 0.01)",
+        "canada_employment_amount: lesser of canada_employment_amount_income 110000 and 1471 "
+        "(half-up to 0.01)",
         "1471",
     )
     federal_dependant = position(
@@ -545,8 +551,13 @@ def test_the_trace_explains_the_computation() -> None:
         "less ontario_tax_reduction 0, not below 0 = 8195.77",
         "8195.77",
     )
+    lift_sum = position(
+        "lift_employment_income: employment_income 110000 + other_employment_income 0 = 110000",
+        "110000",
+    )
     lift_before_maximum = position(
-        "lift_credit_before_maximum: 5.05% of employment_income 110000 (half-up to 0.01)", "5555"
+        "lift_credit_before_maximum: 5.05% of lift_employment_income 110000 (half-up to 0.01)",
+        "5555",
     )
     lift_maximum = position(
         "lift_maximum_credit: lesser of lift_credit_before_maximum 5555 and 875 (half-up to 0.01)",
@@ -1089,7 +1100,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert first_tier_credit < top_up_base
     assert top_up_threshold < top_up_excess
     assert federal_credit < federal_credits < federal_after
-    assert employment_amount < federal_amounts
+    assert employment_sum < employment_amount < federal_amounts
     assert federal_amount < federal_dependant < federal_dependant_claimed < federal_amounts
     assert federal_caregiver < federal_amounts
     assert disability_transfer < federal_amounts
@@ -1144,7 +1155,9 @@ def test_the_trace_explains_the_computation() -> None:
     assert taxable < health_income < premium_first < premium_second < premium_third < premium_fourth
     assert premium_fourth < premium_fifth < ontario_tax
     assert after_food < line_52 < ontario_tax
-    assert lift_before_maximum < lift_maximum < lift < after_lift < after_food < ontario_tax
+    assert (
+        lift_sum < lift_before_maximum < lift_maximum < lift < after_lift < after_food < ontario_tax
+    )
     assert lift_net < lift_adjusted < lift_reduction < lift_single < lift
     assert lift_uccb_and_rdsp < lift_adjusted
     assert lift_spouse_net < lift_spouse_adjusted < lift_family_net < lift_excess_family
