@@ -316,6 +316,7 @@ from app.jurisdictions.ca.catalog import (
     EDUCATOR_SUPPLIES_EXPENSES,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
     EI_MAXIMUM_INSURABLE_EARNINGS,
+    EI_OVERPAYMENT,
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
     EI_SPECIAL_BENEFITS_AGREEMENT,
@@ -572,6 +573,14 @@ from app.jurisdictions.ca.catalog import (
     T657_PART_2_EXCLUDED_H,
     T2203_HAS_TAX_ON_SPLIT_INCOME,
     T2203_LINE_5,
+    T2204_EXEMPTION,
+    T2204_INSURABLE_EARNINGS,
+    T2204_LINE_1,
+    T2204_LINE_1_COUNT,
+    T2204_LINE_1_PLUS_2,
+    T2204_LINE_3,
+    T2204_LINE_15,
+    T2204_LINE_15_COUNT,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_DIVIDENDS,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -2368,6 +2377,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         AMT_BASIC_EXEMPTION: CreditAmountLine(
             AMT_BASIC_EXEMPTION, Credit(amount=D("177882.00")), CENT, D("177882.00")
         ),
+        # Form T2204 line 7 "Amount from line 3 – $2,000": the $2,000 exemption, claimed whole.
+        T2204_EXEMPTION: CreditAmountLine(
+            output=T2204_EXEMPTION,
+            basis=Credit(amount=D("2000.00")),
+            rounding=CENT,
+            value=D("2000.00"),
+        ),
     }
     assert per_unit == {
         # Form T2222 lines 1, 2, 6 and 7 "multiplied by $11.00" and "multiplied by $5.50": Return A
@@ -3263,6 +3279,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             result=D("0"),
         ),
+        # Form T2204 line 1 "Total EI insurable earnings (box 24 or, if blank, box 14 of your T4
+        # slips) (1)": the insurable earnings, 0, times a count of 0, as the note (1) applies.
+        T2204_LINE_1: TimesCountLine(
+            output=T2204_LINE_1,
+            amount_kind=T2204_INSURABLE_EARNINGS,
+            amount_value=D("0"),
+            count_kind=T2204_LINE_1_COUNT,
+            count=0,
+            result=D("0"),
+        ),
+        # T1 line 45000 "Employment insurance (EI) overpayment": Form T2204 line 15, 0, times a
+        # count of 0, as line 15 is not more than $1.
+        EI_OVERPAYMENT: TimesCountLine(
+            output=EI_OVERPAYMENT,
+            amount_kind=T2204_LINE_15,
+            amount_value=D("0"),
+            count_kind=T2204_LINE_15_COUNT,
+            count=0,
+            result=D("0"),
+        ),
     }
     assert multiples == {
         ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS: MultipleOverLine(
@@ -3443,6 +3479,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             cap=Amount(D("5000")),
             rounding=CENT,
             result=D("0.00"),
+        ),
+        # Form T2204 line 3 "Line 1 plus line 2 (maximum $65,700)": 0.00 is below the maximum.
+        T2204_LINE_3: CappedAmountLine(
+            T2204_LINE_3,
+            T2204_LINE_1_PLUS_2,
+            D("0"),
+            Amount(D("65700.00")),
+            CENT,
+            D("0.00"),
         ),
     }
 

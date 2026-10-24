@@ -144,3 +144,6 @@ outputs:
   # the carryover for 2026, which nothing on the return reads (Part 8 line 14 reads Part 7 line 14,
   # not this line).
   - ca/amt_carryover_available_for_2026
+  # Form T2204 line 16 "Enter whichever amount is the least: line 7, line 9 or line 12.", which
+  # equals T1 line 31200 (`ca/ei_premiums`) on the worked return; nothing reads it.
+  - ca/t2204_line_16

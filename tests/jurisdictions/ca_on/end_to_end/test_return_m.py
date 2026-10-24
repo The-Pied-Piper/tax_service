@@ -82,6 +82,7 @@ def test_return_ms_flow_through_share_credit_is_500_and_lowers_the_refund_by_tha
     assert "provincial_credits: ontario_credits 8230 = 8230" in rendered
     assert (
         "total_credits: income_tax_deducted 8000 + cpp_overpayment 0 "
+        "+ ei_overpayment 0 "
         "+ refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 0 "
         "+ canada_training_credit 0 + part_xii_2_tax_credit 0 + "

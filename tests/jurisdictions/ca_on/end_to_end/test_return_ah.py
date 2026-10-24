@@ -14,6 +14,7 @@ from app.domain.trace import (
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     CPP_OVERPAYMENT,
+    EI_OVERPAYMENT,
     INCOME_TAX_DEDUCTED,
     MEDICAL_CLAIM,
     MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
@@ -98,9 +99,10 @@ def test_return_ah_claims_the_refundable_medical_expense_supplement_of_1500_on_l
         for line in worksheet.trace
         if isinstance(line, SumLine) and line.output == TOTAL_CREDITS
     ]
-    assert total.parts[:3] == (
+    assert total.parts[:4] == (
         (INCOME_TAX_DEDUCTED, D("500")),
         (CPP_OVERPAYMENT, D("0")),
+        (EI_OVERPAYMENT, D("0")),
         (REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT, D("1500.00")),
     )
 
