@@ -217,6 +217,7 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GIFTS_TOTAL,
     CAPITAL_PROPERTY_GIFTS,
     CAREGIVER_AMOUNT,
+    CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT,
     CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
     CHARITABLE_DONATIONS,
     CHARITABLE_DONATIONS_CLAIMED,
@@ -390,6 +391,8 @@ from app.jurisdictions.ca.catalog import (
     CURRENT_YEAR_TUITION_CLAIMED,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    DEPENDANT_CAREGIVER_AMOUNT,
+    DEPENDANT_INFIRMITY_SUPPLEMENT,
     DEPRECIABLE_GIFTS,
     DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_SELF_BASE_AMOUNT,
@@ -421,6 +424,7 @@ from app.jurisdictions.ca.catalog import (
     ELECTED_SPLIT_PENSION_AMOUNT,
     ELECTED_SPLIT_PENSION_DEDUCTION,
     ELIGIBLE_DEPENDANT_AMOUNT,
+    ELIGIBLE_DEPENDANT_AMOUNT_BASIS,
     ELIGIBLE_DIVIDENDS_CREDIT,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_TAXABLE_CAPITAL_GAINS_2002_TO_2025,
@@ -1059,6 +1063,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     )
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Schedule 5 line 30400 basis: basic personal amount 16129.00 plus the infirmity supplement
+        # 0.00 (no infirm dependant on Return A).
+        ELIGIBLE_DEPENDANT_AMOUNT_BASIS: SumLine(
+            ELIGIBLE_DEPENDANT_AMOUNT_BASIS,
+            ((BASIC_PERSONAL_AMOUNT, D("16129.00")), (DEPENDANT_INFIRMITY_SUPPLEMENT, D("0.00"))),
+            D("16129.00"),
+        ),
+        # Schedule 5 line 30425 total: spouse caregiver amount 0 plus dependant caregiver amount 0.
+        CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT: SumLine(
+            CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT,
+            ((SPOUSE_CAREGIVER_AMOUNT, D("0")), (DEPENDANT_CAREGIVER_AMOUNT, D("0"))),
+            D("0"),
+        ),
         # Form T2038(IND) itc refundable credits: every part is 0.
         ITC_REFUNDABLE_CREDITS: SumLine(
             ITC_REFUNDABLE_CREDITS,
@@ -2487,7 +2504,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (AGE_AMOUNT, D("0")),
                 (SPOUSE_AMOUNT, D("0")),
                 (ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
-                (SPOUSE_CAREGIVER_AMOUNT, D("0")),
+                (CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT, D("0")),
                 (CAREGIVER_AMOUNT, D("0")),
                 (INFIRM_CHILDREN_AMOUNT, D("0")),
                 (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
@@ -3421,7 +3438,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (AGE_AMOUNT, D("0")),
                 (SPOUSE_AMOUNT, D("0")),
                 (ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
-                (SPOUSE_CAREGIVER_AMOUNT, D("0")),
+                (CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT, D("0")),
                 (CAREGIVER_AMOUNT, D("0")),
                 (INFIRM_CHILDREN_AMOUNT, D("0.00")),
                 (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),

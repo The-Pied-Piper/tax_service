@@ -26,6 +26,13 @@ from app.jurisdictions.ca.catalog import (
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
     CAREGIVER_AMOUNT,
+    CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT,
+    DEPENDANT_CAREGIVER_AMOUNT,
+    DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT,
+    DEPENDANT_CAREGIVER_BEFORE_MAXIMUM,
+    DEPENDANT_CAREGIVER_ELIGIBLE,
+    DEPENDANT_CAREGIVER_LIMIT,
+    DEPENDANT_INFIRMITY_SUPPLEMENT,
     DEPENDANT_NET_INCOME,
     DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
@@ -39,6 +46,7 @@ from app.jurisdictions.ca.catalog import (
     DISABILITY_SELF_WORKSHEET_AMOUNT,
     DISABILITY_TRANSFERRED_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT,
+    ELIGIBLE_DEPENDANT_AMOUNT_BASIS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
     ELIGIBLE_FOR_DISABILITY_AMOUNT,
@@ -75,6 +83,7 @@ INPUTS = frozenset(
     {
         "ca/eligible_dependants",
         "ca/dependant_net_income",
+        "ca/dependant_caregiver_eligible",
         "ca/infirm_dependants",
         "ca/medical_expenses",
         "ca/other_dependants",
@@ -303,15 +312,33 @@ STEPS = {
         },
         produces={"output": "ca/spouse_amount"},
     ),
-    # Schedule 5, "Line 30400 - Amount for an eligible dependant": line 1 "Basic personal
-    # amount from line 30000 of your return", line 3 "Line 1 plus line 2" with line 2 (an
-    # infirm eligible dependant 18 or older) not triggered, line 4 (51106) "Dependant's net
-    # income from line 23600 of their return" and line 5 "Line 3 minus line 4 (if negative,
-    # enter "0") Enter this amount on line 30400 of your return.".
+    # Schedule 5, "Line 30400 - Amount for an eligible dependant": line 2 and line 51100 "If you
+    # are eligible for the Canada caregiver amount for your dependant (other than your infirm
+    # child under 18 years of age), enter $2,687" (Note 2 sends an infirm child under 18 to line
+    # 30500), for an eligible dependant who has a mental or physical infirmity ("Does this
+    # dependant have a mental or physical infirmity? Yes or No"), at most one.
+    CapabilitySelection(
+        name="core/per_unit_amount",
+        params={"amount": "ca/dependant_infirmity_amount"},
+        consumes={"count": "ca/dependant_caregiver_eligible"},
+        produces={"output": "ca/dependant_infirmity_supplement"},
+    ),
+    # Line 3 "Line 1 plus line 2", line 1 "Basic personal amount from line 30000 of your return".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/basic_personal_amount", "ca/dependant_infirmity_supplement")},
+        produces={"output": "ca/eligible_dependant_amount_basis"},
+    ),
+    # Line 4 (51106) "Dependant's net income from line 23600 of their return" and line 5 "Line 3
+    # minus line 4 (if negative, enter "0") Enter this amount on line 30400 of your return.".
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
-        consumes={"amount": "ca/basic_personal_amount", "less": "ca/dependant_net_income"},
+        consumes={
+            "amount": "ca/eligible_dependant_amount_basis",
+            "less": "ca/dependant_net_income",
+        },
         produces={"output": "ca/eligible_dependant_amount_before_count"},
     ),
     # T1 line 80 (line 30400) "Amount for an eligible dependant (complete Schedule 5)": line
@@ -359,10 +386,9 @@ STEPS = {
         consumes={"amount": "ca/spouse_caregiver_limit", "less": "ca/spouse_amount"},
         produces={"output": "ca/spouse_caregiver_amount_before_count"},
     ),
-    # T1 line 81 (line 30425) "Canada caregiver amount for spouse or common-law partner,
-    # or eligible dependant age 18 or older (complete Schedule 5)": line 5 once if the
-    # spouse is eligible for the Canada caregiver amount (line 51090), else 0. The eligible
-    # dependant 18 or older (line 30400) is not wired here.
+    # Schedule 5, "Line 30425 - Canada caregiver amount for spouse or common-law partner, or
+    # eligible dependant age 18 or older": line 5 once if the spouse is eligible for the Canada
+    # caregiver amount (line 51090), else 0.
     CapabilitySelection(
         name="core/times_count",
         params={},
@@ -371,6 +397,56 @@ STEPS = {
             "count": "ca/spouse_caregiver_eligible",
         },
         produces={"output": "ca/spouse_caregiver_amount"},
+    ),
+    # Schedule 5, "Line 30425 - Canada caregiver amount for spouse or common-law partner, or
+    # eligible dependant age 18 or older": line 1 "Base amount 28,798.00" is the spouse's base
+    # above, the same printed figure, and line 2 "Net income for this person from line 23600 of
+    # their return", the dependant's net income, and line 3 "Line 1 minus line 2 (if negative,
+    # enter "0") (maximum $8,601)", before its maximum, then at most it.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={"amount": "ca/spouse_caregiver_base", "less": "ca/dependant_net_income"},
+        produces={"output": "ca/dependant_caregiver_before_maximum"},
+    ),
+    CapabilitySelection(
+        name="core/capped_amount",
+        params={"cap": "ca/spouse_caregiver_maximum"},
+        consumes={"base": "ca/dependant_caregiver_before_maximum"},
+        produces={"output": "ca/dependant_caregiver_limit"},
+    ),
+    # Line 4 "Amount claimed on line 30300 or line 30400 of your return, if applicable", the
+    # amount for this dependant on line 30400, and line 5 "Line 3 minus line 4 (if negative,
+    # enter "0") Enter this amount on line 30425 of your return."
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/dependant_caregiver_limit",
+            "less": "ca/eligible_dependant_amount",
+        },
+        produces={"output": "ca/dependant_caregiver_amount_before_count"},
+    ),
+    # Schedule 5, "Line 30425 - Canada caregiver amount for spouse or common-law partner, or
+    # eligible dependant age 18 or older": line 5 once if the eligible dependant is infirm and 18
+    # or older (line 2 of line 30400 above), else 0.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/dependant_caregiver_amount_before_count",
+            "count": "ca/dependant_caregiver_eligible",
+        },
+        produces={"output": "ca/dependant_caregiver_amount"},
+    ),
+    # T1 line 81 (line 30425) "Canada caregiver amount for spouse or common-law partner, or
+    # eligible dependant age 18 or older (complete Schedule 5)": the spouse's line 5 and the
+    # dependant's line 5, added, as the one line 81.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/spouse_caregiver_amount", "ca/dependant_caregiver_amount")},
+        produces={"output": "ca/caregiver_amount_for_spouse_or_dependant"},
     ),
     # T1 line 82 (line 30450) "Canada caregiver amount for other infirm dependants age 18 or
     # older (complete Schedule 5)", Schedule 5 "Line 30450 - Canada caregiver amount for other
@@ -483,8 +559,18 @@ WIRING = {
         frozenset({SPOUSE_AMOUNT}),
     ),
     (
+        PerUnitAmount,
+        frozenset({DEPENDANT_CAREGIVER_ELIGIBLE}),
+        frozenset({DEPENDANT_INFIRMITY_SUPPLEMENT}),
+    ),
+    (
+        Sum,
+        frozenset({BASIC_PERSONAL_AMOUNT, DEPENDANT_INFIRMITY_SUPPLEMENT}),
+        frozenset({ELIGIBLE_DEPENDANT_AMOUNT_BASIS}),
+    ),
+    (
         SubtractNotBelowZero,
-        frozenset({BASIC_PERSONAL_AMOUNT, DEPENDANT_NET_INCOME}),
+        frozenset({ELIGIBLE_DEPENDANT_AMOUNT_BASIS, DEPENDANT_NET_INCOME}),
         frozenset({ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT}),
     ),
     (
@@ -512,6 +598,31 @@ WIRING = {
         TimesCount,
         frozenset({SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT, SPOUSE_CAREGIVER_ELIGIBLE}),
         frozenset({SPOUSE_CAREGIVER_AMOUNT}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({SPOUSE_CAREGIVER_BASE, DEPENDANT_NET_INCOME}),
+        frozenset({DEPENDANT_CAREGIVER_BEFORE_MAXIMUM}),
+    ),
+    (
+        CappedAmount,
+        frozenset({DEPENDANT_CAREGIVER_BEFORE_MAXIMUM}),
+        frozenset({DEPENDANT_CAREGIVER_LIMIT}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({DEPENDANT_CAREGIVER_LIMIT, ELIGIBLE_DEPENDANT_AMOUNT}),
+        frozenset({DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT}),
+    ),
+    (
+        TimesCount,
+        frozenset({DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT, DEPENDANT_CAREGIVER_ELIGIBLE}),
+        frozenset({DEPENDANT_CAREGIVER_AMOUNT}),
+    ),
+    (
+        Sum,
+        frozenset({SPOUSE_CAREGIVER_AMOUNT, DEPENDANT_CAREGIVER_AMOUNT}),
+        frozenset({CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT}),
     ),
     (CaregiverAmount, frozenset({INFIRM_DEPENDANTS}), frozenset({CAREGIVER_AMOUNT})),
     (ApplyRate, frozenset({NET_INCOME}), frozenset({MEDICAL_NET_INCOME_SHARE})),

@@ -20,6 +20,7 @@ from app.domain.trace import (
     PerUnitAmountLine,
     SignChosenDifferenceLine,
     SubtractedLine,
+    SumLine,
     TaperedAmountLine,
     ThresholdGateLine,
     TimesCountLine,
@@ -149,6 +150,7 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GIFT_GAINS_DEDUCTION,
     CAPITAL_GIFT_TAXABLE_GAINS,
     CAPITAL_PROPERTY_GIFTS,
+    CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT,
     CHART_2_LINE_4,
     CHART_2_LINE_8,
     CHART_2_LINE_12,
@@ -301,6 +303,12 @@ from app.jurisdictions.ca.catalog import (
     CPP_ZERO,
     CURRENT_YEAR_TUITION_AVAILABLE,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    DEPENDANT_CAREGIVER_AMOUNT,
+    DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT,
+    DEPENDANT_CAREGIVER_BEFORE_MAXIMUM,
+    DEPENDANT_CAREGIVER_ELIGIBLE,
+    DEPENDANT_CAREGIVER_LIMIT,
+    DEPENDANT_INFIRMITY_SUPPLEMENT,
     DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
     DISABILITY_SELF_BASE_AMOUNT,
@@ -322,6 +330,7 @@ from app.jurisdictions.ca.catalog import (
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
     EI_SPECIAL_BENEFITS_AGREEMENT,
     ELIGIBLE_DEPENDANT_AMOUNT,
+    ELIGIBLE_DEPENDANT_AMOUNT_BASIS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
@@ -696,6 +705,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     multiples = {line.output: line for line in trace if isinstance(line, MultipleOverLine)}
     times = {line.output: line for line in trace if isinstance(line, TimesCountLine)}
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
+    sums = {
+        line.output: line
+        for line in trace
+        if isinstance(line, SumLine)
+        and line.output
+        in (ELIGIBLE_DEPENDANT_AMOUNT_BASIS, CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT)
+    }
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     divided = {
         line.output: line
@@ -712,6 +728,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rate=Rate(D("0.04")),
             rounding=CENT,
             result=D("9900.00"),
+        ),
+    }
+    # Schedule 5 line 30400 basis: basic personal amount 16129.00 plus the infirmity supplement
+    # 0.00 (no infirm dependant on Return A). Line 30425 total: spouse caregiver amount 0 plus
+    # dependant caregiver amount 0, and the non-refundable credit total takes that sum.
+    assert sums == {
+        ELIGIBLE_DEPENDANT_AMOUNT_BASIS: SumLine(
+            output=ELIGIBLE_DEPENDANT_AMOUNT_BASIS,
+            parts=(
+                (BASIC_PERSONAL_AMOUNT, D("16129.00")),
+                (DEPENDANT_INFIRMITY_SUPPLEMENT, D("0.00")),
+            ),
+            total=D("16129.00"),
+        ),
+        CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT: SumLine(
+            output=CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT,
+            parts=((SPOUSE_CAREGIVER_AMOUNT, D("0")), (DEPENDANT_CAREGIVER_AMOUNT, D("0"))),
+            total=D("0"),
         ),
     }
     assert subtracted == {
@@ -2548,6 +2582,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=CENT,
             result=D("0"),
         ),
+        # Schedule 5 line 30400 "enter $2,687" for an infirm eligible dependant: Return A has no
+        # infirm dependant caregiver.
+        DEPENDANT_INFIRMITY_SUPPLEMENT: PerUnitAmountLine(
+            output=DEPENDANT_INFIRMITY_SUPPLEMENT,
+            count_kind=DEPENDANT_CAREGIVER_ELIGIBLE,
+            count=0,
+            per_unit=Amount(D("2687")),
+            rounding=CENT,
+            result=D("0"),
+        ),
         # T1 line 30500 "Number of children you are claiming this amount for Line 30499"
         # "multiplied by $2,687": Return A has no infirm child.
         INFIRM_CHILDREN_AMOUNT: PerUnitAmountLine(
@@ -3265,6 +3309,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             result=D("0"),
         ),
+        # Schedule 5 line 30425 for an eligible dependant: 8601.00 times a count of 0 eligible
+        # dependants claiming the caregiver amount, a plain 0.
+        DEPENDANT_CAREGIVER_AMOUNT: TimesCountLine(
+            output=DEPENDANT_CAREGIVER_AMOUNT,
+            amount_kind=DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT,
+            amount_value=D("8601.00"),
+            count_kind=DEPENDANT_CAREGIVER_ELIGIBLE,
+            count=0,
+            result=D("0"),
+        ),
         # The caller's count "claims the Ontario seniors care at home tax credit" times ON479 line
         # 13: Return A claims none, so a plain 0.
         SENIORS_CARE_CREDIT: TimesCountLine(
@@ -3554,6 +3608,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         SPOUSE_CAREGIVER_LIMIT: CappedAmountLine(
             SPOUSE_CAREGIVER_LIMIT,
             SPOUSE_CAREGIVER_BEFORE_MAXIMUM,
+            D("28798.00"),
+            Amount(D("8601")),
+            CENT,
+            D("8601"),
+        ),
+        # Schedule 5 line 30425 maximum of $8,601: the dependant's 28798.00 is above it.
+        DEPENDANT_CAREGIVER_LIMIT: CappedAmountLine(
+            DEPENDANT_CAREGIVER_LIMIT,
+            DEPENDANT_CAREGIVER_BEFORE_MAXIMUM,
             D("28798.00"),
             Amount(D("8601")),
             CENT,

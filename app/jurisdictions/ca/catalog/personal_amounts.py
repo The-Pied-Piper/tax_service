@@ -140,18 +140,42 @@ DEPENDANT_NET_INCOME = CATALOG.declare("dependant_net_income", Decimal, non_nega
 of their return": a starting amount, also ON428 line 15 "Your eligible dependant's net income from
 line 23600 of their return"."""
 
+DEPENDANT_CAREGIVER_ELIGIBLE = CATALOG.declare(
+    "dependant_caregiver_eligible", int, non_negative=True
+)
+"""Eligible for the Canada caregiver amount for the eligible dependant, Schedule 5 line 2 and line
+51100 "If you are eligible for the Canada caregiver amount for your dependant (other than your
+infirm child under 18 years of age), enter $2,687 (Note 2) (see line 30425 below)": a starting
+count, 0 or 1.
+
+Eligibility is the filer's statement, as the schedule takes it ("Does this dependant have a mental
+or physical infirmity? Yes or No"), and is not computed here. It adds the $2,687 at line 2 of line
+30400 and triggers line 30425, which the schedule asks for only for a dependant 18 years of age or
+older. One count serves both lines, so the age condition on line 30425 is the filer's to keep.
+"""
+
+DEPENDANT_INFIRMITY_SUPPLEMENT = CATALOG.declare(
+    "dependant_infirmity_supplement", Decimal, non_negative=True
+)
+"""Supplement for an eligible dependant with an infirmity, Schedule 5, "Line 30400 - Amount for an
+eligible dependant", line 2 and line 51100 "If you are eligible for the Canada caregiver amount for
+your dependant (other than your infirm child under 18 years of age), enter $2,687": the dataset
+once if eligible, else 0."""
+
+ELIGIBLE_DEPENDANT_AMOUNT_BASIS = CATALOG.declare(
+    "eligible_dependant_amount_basis", Decimal, non_negative=True
+)
+"""Basis of the amount for an eligible dependant, Schedule 5, "Line 30400 - Amount for an eligible
+dependant", line 3 "Line 1 plus line 2": line 1 "Basic personal amount from line 30000 of your
+return" plus the supplement of line 2."""
+
 ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT = CATALOG.declare(
     "eligible_dependant_amount_before_count", Decimal, non_negative=True
 )
 """Amount for an eligible dependant before it is claimed, Schedule 5 line 5 "Line 3 minus line 4
-(if negative, enter "0") Enter this amount on line 30400 of your return.": the basic personal
-amount (line 1 "Basic personal amount from line 30000 of your return") less the dependant's net
-income (line 4), not below zero.
-
-Line 3 is "Line 1 plus line 2"; line 2 "If you are eligible for the Canada caregiver amount for
-your dependant (other than your infirm child under 18 years of age), enter $2,687" is not
-triggered, so line 3 is line 1.
-"""
+(if negative, enter "0") Enter this amount on line 30400 of your return.": line 3 (the basis, the
+basic personal amount plus the infirmity supplement) less the dependant's net income (line 4), not
+below zero."""
 
 ELIGIBLE_DEPENDANT_AMOUNT = CATALOG.declare("eligible_dependant_amount", Decimal, non_negative=True)
 """Amount for an eligible dependant, T1 line 80 (line 30400) "Amount for an eligible dependant
@@ -189,15 +213,55 @@ amount for this person": line 3 less line 4 "Amount claimed on line 30300 or lin
 return, if applicable", here the spouse amount, not below zero.
 
 The condition "a person whose net income is between $8,624 and $28,798" needs no gate: below $8,624
-line 4 is already more than $8,601, so line 5 is 0. The eligible dependant 18 or older (line 30400)
-is not wired here.
+line 4 is already more than $8,601, so line 5 is 0.
 """
 
 SPOUSE_CAREGIVER_AMOUNT = CATALOG.declare("spouse_caregiver_amount", Decimal, non_negative=True)
-"""Canada caregiver amount for a spouse, T1 line 81 (line 30425) "Canada caregiver amount for spouse
-or common-law partner, or eligible dependant age 18 or older (complete Schedule 5)": Schedule 5 line
-5 once if the spouse is eligible for it (line 51090), else 0; a part of the total of the credit
-amounts."""
+"""Canada caregiver amount for a spouse, Schedule 5 line 5 "Line 30425" once if the spouse is
+eligible for it (line 51090), else 0; a part of T1 line 81 (line 30425) "Canada caregiver amount
+for spouse or common-law partner, or eligible dependant age 18 or older (complete Schedule 5)",
+with the dependant's amount."""
+
+DEPENDANT_CAREGIVER_BEFORE_MAXIMUM = CATALOG.declare(
+    "dependant_caregiver_before_maximum", Decimal, non_negative=True
+)
+"""Canada caregiver amount for an eligible dependant 18 or older before its maximum, Schedule 5
+"Line 30425", line 3 "Line 1 minus line 2 (if negative, enter "0") (maximum $8,601)": line 1 "Base
+amount 28,798.00" (the spouse's base) less line 2 "Net income for this person from line 23600 of
+their return" (the dependant's net income), not below zero, before the "(maximum $8,601)" is
+applied."""
+
+DEPENDANT_CAREGIVER_LIMIT = CATALOG.declare("dependant_caregiver_limit", Decimal, non_negative=True)
+"""Canada caregiver amount for an eligible dependant 18 or older at most its maximum, Schedule 5
+(form 5000-S5), "Line 30425", line 3 "Line 1 minus line 2 (if negative, enter "0") (maximum
+$8,601)": the amount before its maximum, at most $8,601.
+"""
+
+DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT = CATALOG.declare(
+    "dependant_caregiver_amount_before_count", Decimal, non_negative=True
+)
+"""Canada caregiver amount for an eligible dependant 18 or older before it is claimed, Schedule 5,
+"Line 30425", line 5 "Line 3 minus line 4 (if negative, enter "0") Enter this amount on line 30425
+of your return. Allowable amount for this person": line 3 less line 4 "Amount claimed on line 30300
+or line 30400 of your return, if applicable", here the amount for this dependant on line 30400, not
+below zero."""
+
+DEPENDANT_CAREGIVER_AMOUNT = CATALOG.declare(
+    "dependant_caregiver_amount", Decimal, non_negative=True
+)
+"""Canada caregiver amount for an eligible dependant 18 or older, Schedule 5 line 5 "Line 30425"
+once if the dependant is infirm and 18 or older (line 2 of line 30400), else 0; a part of T1 line 81
+(line 30425), with the spouse's amount."""
+
+CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT = CATALOG.declare(
+    "caregiver_amount_for_spouse_or_dependant", Decimal, non_negative=True
+)
+"""Canada caregiver amount for spouse or common-law partner, or eligible dependant age 18 or older,
+T1 line 81 (line 30425) "Canada caregiver amount for spouse or common-law partner, or eligible
+dependant age 18 or older (complete Schedule 5)": the spouse's Schedule 5 line 5 and the
+dependant's, added; a part of the total of the credit amounts. Only one claim can be made for this
+amount, which the schedule leaves to the return: the two counts are not checked against each
+other."""
 
 INFIRM_DEPENDANTS = RecordListKind.declare(
     CATALOG, "infirm_dependants", fields=(DEPENDANT_NET_INCOME,)

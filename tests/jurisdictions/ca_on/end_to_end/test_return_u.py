@@ -333,7 +333,8 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
         "+ other_deductions 0 "
         "+ total_split_income 0 = 3231.75",
         "non_refundable_credit_amounts: basic_personal_amount 16129 + age_amount 0 "
-        "+ spouse_amount 0 + eligible_dependant_amount 0 + spouse_caregiver_amount 0 "
+        "+ spouse_amount 0 + eligible_dependant_amount 0 "
+        "+ caregiver_amount_for_spouse_or_dependant 0 "
         "+ caregiver_amount 0 + infirm_children_amount 0 + cpp_base_contributions_on_return 0 "
         "+ cpp_base_contributions_on_self_employment_and_other_earnings 2301.75 + ei_premiums 0 "
         "+ ei_premiums_on_self_employment 820 + volunteer_firefighters_credit 0 + "

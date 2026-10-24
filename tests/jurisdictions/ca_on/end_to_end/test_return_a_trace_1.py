@@ -269,7 +269,12 @@ def test_the_trace_explains_the_computation() -> None:
         "1471",
     )
     position(
-        "eligible_dependant_amount_before_count: basic_personal_amount 16129 "
+        "eligible_dependant_amount_basis: basic_personal_amount 16129 "
+        "+ dependant_infirmity_supplement 0 = 16129",
+        "16129",
+    )
+    position(
+        "eligible_dependant_amount_before_count: eligible_dependant_amount_basis 16129 "
         "less dependant_net_income 0, not below 0 = 16129",
         "16129",
     )
@@ -388,10 +393,41 @@ def test_the_trace_explains_the_computation() -> None:
         "for each of 0 spouse_caregiver_eligible = 0",
         "0",
     )
+    position(
+        "dependant_infirmity_supplement: 2687 for each of 0 dependant_caregiver_eligible = 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    position(
+        "dependant_caregiver_before_maximum: spouse_caregiver_base 28798 "
+        "less dependant_net_income 0, not below 0 = 28798",
+        "28798",
+    )
+    position(
+        "dependant_caregiver_limit: lesser of dependant_caregiver_before_maximum 28798 "
+        "and 8601 (half-up to 0.01)",
+        "8601",
+    )
+    position(
+        "dependant_caregiver_amount_before_count: dependant_caregiver_limit 8601 "
+        "less eligible_dependant_amount 0, not below 0 = 8601",
+        "8601",
+    )
+    position(
+        "dependant_caregiver_amount: dependant_caregiver_amount_before_count 8601 "
+        "for each of 0 dependant_caregiver_eligible = 0",
+        "0",
+    )
+    position(
+        "caregiver_amount_for_spouse_or_dependant: spouse_caregiver_amount 0 "
+        "+ dependant_caregiver_amount 0 = 0",
+        "0",
+    )
     federal_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 16129 "
         "+ age_amount 0 + spouse_amount 0 "
-        "+ eligible_dependant_amount 0 + spouse_caregiver_amount 0 + caregiver_amount 0 "
+        "+ eligible_dependant_amount 0 + caregiver_amount_for_spouse_or_dependant 0 "
+        "+ caregiver_amount 0 "
         "+ infirm_children_amount 0 "
         "+ cpp_base_contributions_on_return 3356.1 + "
         "cpp_base_contributions_on_self_employment_and_other_earnings 0 "
