@@ -1410,7 +1410,7 @@ property used for both personal and rental use (Note 9), and whether the
 additions are treated the opposite way from their class for the half-year rule (column 18), and the
 CCA rate the caller elects for it (a purpose-built rental or a building in a separate class),
 then the year the vehicle was acquired, its actual cost and the government assistance for it
-(Note 2), last."""
+(Note 2), then the vehicles sold from a Class 54 row, last."""
 
 RENTAL_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
     CATALOG,
@@ -1431,8 +1431,9 @@ RENTAL_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
 disposition of [...] a passenger vehicle bought after April 18, 2021, that has been included in
 Class 10.1, and whose cost is more than the prescribed amount will be adjusted based on a factor
 equal to its prescribed amount as a proportion of the actual cost of the vehicle". The list of
-rental classes without the year the vehicle was acquired, its cost and the government
-assistance, with columns 5 and 6 (the proceeds and the proceeds of DIEPs) adjusted."""
+rental classes without the year the vehicle was acquired, its cost, the government
+assistance and the vehicles sold from a Class 54 row, with columns 5 and 6 (the proceeds and the
+proceeds of DIEPs) adjusted."""
 
 RENTAL_CLOSING_UCC = RecordListKind.declare(
     CATALOG, "rental_closing_ucc", fields=(CCA_CLASS_NUMBER, CCA_UCC_AT_END)
@@ -2007,7 +2008,8 @@ CCA claimed), whether any property is left in the class, the remaining personal 
 property used for both personal and business use (endnote 9), whether the additions are treated the
 opposite way from their class for the half-year rule (column 18), and the CCA rate the
 caller elects for it (a purpose-built rental or a building in a separate class), then the year the
-vehicle was acquired, its actual cost and the government assistance for it (endnote 2), last."""
+vehicle was acquired, its actual cost and the government assistance for it (endnote 2),
+then the vehicles sold from a Class 54 row, last."""
 
 BUSINESS_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
     CATALOG,
@@ -2028,8 +2030,9 @@ BUSINESS_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
 disposition of [...] a passenger vehicle bought after April 18, 2021, that has been included in
 Class 10.1, and whose cost is more than the prescribed amount will be adjusted based on a factor
 equal to its prescribed amount as a proportion of the actual cost of the vehicle". The list of
-business classes without the year the vehicle was acquired, its cost and the government
-assistance, with columns 5 and 6 (the proceeds and the proceeds of DIEPs) adjusted."""
+business classes without the year the vehicle was acquired, its cost, the government
+assistance and the vehicles sold from a Class 54 row, with columns 5 and 6 (the proceeds and the
+proceeds of DIEPs) adjusted."""
 
 BUSINESS_EPOP_ASSOCIATED = CATALOG.declare("business_epop_associated", int, non_negative=True)
 """Whether the filer is associated with an EPOP, Form T2125 Area A endnote 5 "$1.5 million, if you
@@ -3027,7 +3030,8 @@ CCA claimed), whether any property is left in the class, the remaining personal 
 property used for both personal and business use (endnote 9), whether the additions are treated the
 opposite way from their class for the half-year rule (column 18), the CCA rate the
 caller elects for it (a purpose-built rental or a building in a separate class), then the year the
-vehicle was acquired, its actual cost and the government assistance for it (endnote 2), last."""
+vehicle was acquired, its actual cost and the government assistance for it (endnote 2),
+then the vehicles sold from a Class 54 row, last."""
 
 FARM_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
     CATALOG,
@@ -3048,8 +3052,9 @@ FARM_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
 disposition of [...] a passenger vehicle bought after April 18, 2021, that has been included in
 Class 10.1, and whose cost is more than the prescribed amount will be adjusted based on a factor
 equal to its prescribed amount as a proportion of the actual cost of the vehicle". The list of
-farming classes without the year the vehicle was acquired, its cost and the government
-assistance, with columns 5 and 6 (the proceeds and the proceeds of DIEPs) adjusted."""
+farming classes without the year the vehicle was acquired, its cost, the government
+assistance and the vehicles sold from a Class 54 row, with columns 5 and 6 (the proceeds and the
+proceeds of DIEPs) adjusted."""
 
 FARM_EPOP_ASSOCIATED = CATALOG.declare("farm_epop_associated", int, non_negative=True)
 """Whether the filer is associated with an EPOP, Form T2042 Area A endnote 5 "$1.5 million, if you
@@ -3504,7 +3509,7 @@ property used for both personal and business use (endnote 9), whether the additi
 opposite way from their class for the half-year rule (column 18), and the CCA rate the
 caller elects for it (a purpose-built rental or a building in a separate class), then
 the year the vehicle was acquired, its actual cost and the government assistance for it
-(endnote 2), last."""
+(endnote 2), then the vehicles sold from a Class 54 row, last."""
 
 FISH_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
     CATALOG,
@@ -3525,8 +3530,9 @@ FISH_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
 disposition of [...] a passenger vehicle bought after April 18, 2021, that has been included in
 Class 10.1, and whose cost is more than the prescribed amount will be adjusted based on a factor
 equal to its prescribed amount as a proportion of the actual cost of the vehicle". The list of
-fishing classes without the year the vehicle was acquired, its cost and the government
-assistance, with columns 5 and 6 (the proceeds and the proceeds of DIEPs) adjusted."""
+fishing classes without the year the vehicle was acquired, its cost, the government
+assistance and the vehicles sold from a Class 54 row, with columns 5 and 6 (the proceeds and the
+proceeds of DIEPs) adjusted."""
 
 FISH_PARTNER = CATALOG.declare("fish_partner", int, non_negative=True)
 """Whether the filer is a partner in the fishing business, Form T2121 amount 5A "Your share of line
