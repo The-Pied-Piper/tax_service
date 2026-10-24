@@ -14,6 +14,8 @@ from app.jurisdictions.ca.catalog import (
     CREDITS_AGAINST_FEDERAL_TAX,
     FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
+    FEDERAL_LOGGING_TAX_CREDIT,
+    FEDERAL_TAX,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LINE_41700,
     FOREIGN_BUSINESS_TAX_CREDIT_LINE_4,
@@ -34,8 +36,13 @@ from app.jurisdictions.ca.catalog import (
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
     LABOUR_SPONSORED_FUNDS_NET_COST,
+    LOGGING_CREDIT_BASE,
+    LOGGING_CREDIT_CAP,
+    LOGGING_OPERATIONS,
+    LOGGING_TAX_PAID,
     NET_FOREIGN_BUSINESS_INCOME,
     NET_FOREIGN_NON_BUSINESS_INCOME,
+    NET_LOGGING_INCOME,
     POLITICAL_CREDIT,
     POLITICAL_CREDIT_BEFORE_MAXIMUM,
     POLITICAL_CREDIT_CHOSEN_COLUMN,
@@ -56,6 +63,7 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
     POLITICAL_CREDIT_SHORTCUT_AMOUNT,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+    PROVINCES_LOGGING_TAX_CREDIT,
 )
 
 
@@ -470,3 +478,91 @@ def test_the_itc_apprenticeship_wages_total_is_a_non_negative_decimal(
     assert ITC_APPRENTICESHIP_WAGES_TOTAL.value_type is Decimal
     assert ITC_APPRENTICESHIP_WAGES_TOTAL.non_negative is True
     assert registry.kind("ca/itc_apprenticeship_wages_total") is ITC_APPRENTICESHIP_WAGES_TOTAL
+
+
+# --- the federal logging tax credit, T1 line 133, and line 134 (40600) ----------------------------
+
+# The caller's figures, one record per province with a logging operation: the logging tax paid to
+# the province and the net logging income in it (5000-G, "Federal logging tax credit").
+LOGGING_FIELDS = (LOGGING_TAX_PAID, NET_LOGGING_INCOME)
+
+# The computed figures: the sum over the provinces, the base and the cap of line 133, line 133 and
+# line 134 (40600).
+LOGGING_COMPUTED = (
+    PROVINCES_LOGGING_TAX_CREDIT,
+    LOGGING_CREDIT_BASE,
+    LOGGING_CREDIT_CAP,
+    FEDERAL_LOGGING_TAX_CREDIT,
+    FEDERAL_TAX,
+)
+
+
+def test_the_logging_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    for kind in (LOGGING_OPERATIONS, *LOGGING_FIELDS, *LOGGING_COMPUTED):
+        assert registry.get(kind.identifier) is kind, kind.identifier
+
+
+def test_the_logging_operations_list_one_record_per_province_of_two_fields(
+    registry: ArtifactRegistry,
+) -> None:
+    assert isinstance(LOGGING_OPERATIONS, RecordListKind)
+    assert LOGGING_OPERATIONS.identifier == "ca/logging_operations"
+    assert LOGGING_OPERATIONS.fields == LOGGING_FIELDS
+    assert registry.get("ca/logging_operations") is LOGGING_OPERATIONS
+
+
+def test_the_logging_operations_may_be_empty() -> None:
+    assert RecordList(LOGGING_OPERATIONS.fields, []).records == ()
+
+
+def test_a_logging_operation_refuses_negative_tax_paid_or_income_naming_the_row() -> None:
+    with pytest.raises(NegativeArtifactError, match="item 1"):
+        RecordList(
+            LOGGING_OPERATIONS.fields,
+            [{LOGGING_TAX_PAID: Decimal("-1"), NET_LOGGING_INCOME: Decimal("1")}],
+        )
+
+    with pytest.raises(NegativeArtifactError, match="item 2"):
+        RecordList(
+            LOGGING_OPERATIONS.fields,
+            [
+                {LOGGING_TAX_PAID: Decimal("1"), NET_LOGGING_INCOME: Decimal("1")},
+                {LOGGING_TAX_PAID: Decimal("1"), NET_LOGGING_INCOME: Decimal("-1")},
+            ],
+        )
+
+
+def test_a_logging_operation_missing_a_field_is_refused_naming_the_row() -> None:
+    with pytest.raises(InvalidRecordError, match="item 1.*net_logging_income"):
+        RecordList(LOGGING_OPERATIONS.fields, [{LOGGING_TAX_PAID: Decimal("300")}])
+
+
+def test_the_logging_fields_are_non_negative_decimals(registry: ArtifactRegistry) -> None:
+    # The tax paid to a province and the net logging income in it are amounts, never below zero.
+    for kind in LOGGING_FIELDS:
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+
+
+def test_the_logging_computed_figures_are_non_negative_decimals() -> None:
+    # The sum, the base and the cap are sums or products of amounts, and line 133 is a lesser
+    # amount; line 134 is "if negative, enter 0", so it is never below zero either.
+    for kind in LOGGING_COMPUTED:
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+
+
+def test_line_134_is_named_federal_tax_and_is_the_federal_tax_of_line_40600() -> None:
+    # 5006-R Ontario edition: "Line 134 and line 40600: Line 132 minus line 133 (if negative, enter
+    # "0") Federal tax =". The kind is `federal_tax`, not a name that already exists.
+    assert FEDERAL_TAX.identifier == "ca/federal_tax"
+
+
+def test_line_133_is_the_federal_logging_tax_credit_kind() -> None:
+    assert FEDERAL_LOGGING_TAX_CREDIT.identifier == "ca/federal_logging_tax_credit"
+
+
+def test_the_amt_logging_stand_in_is_no_longer_a_kind(registry: ArtifactRegistry) -> None:
+    # Form T691 Part 1 line 100 is "Federal logging tax credit (line 133 of your return)": the
+    # alternative minimum tax reads the computed line 133, so the caller's stand-in is removed.
+    assert "ca/amt_federal_logging_tax_credit" not in registry.identifiers()

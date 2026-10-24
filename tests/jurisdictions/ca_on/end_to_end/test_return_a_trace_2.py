@@ -706,8 +706,13 @@ def test_the_trace_explains_the_computation() -> None:
         "and 750 (half-up to 0.01)",
         "0",
     )
+    position(
+        "federal_tax: federal_tax_with_itc_recapture 16951.38 "
+        "less federal_logging_tax_credit 0, not below 0 = 16951.38",
+        "16951.38",
+    )
     less_credits = position(
-        "federal_tax_less_credits: federal_tax_with_itc_recapture 16951.38 "
+        "federal_tax_less_credits: federal_tax 16951.38 "
         "less credits_against_federal_tax 0, not below 0 = 16951.38",
         "16951.38",
     )

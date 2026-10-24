@@ -173,7 +173,7 @@ line 35000", line 123 the federal dividend tax credit and line 124 the minimum t
 federal tax after credits. Line 127 is added to it on line 128 (`federal_tax_with_surtax`), line 129
 comes off on line 130 (`federal_tax_less_foreign_tax_credit`), and line 131 (`itc_recapture`) is
 added on line 132. Line 134 (40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax"
-carries line 132, as line 133 is not wired. Not modelled: line 133 (logging tax credit).
+is `federal_tax` (line 133 is `federal_logging_tax_credit`).
 """
 
 CPP_PAYABLE_ON_SELF_EMPLOYMENT = CATALOG.declare(

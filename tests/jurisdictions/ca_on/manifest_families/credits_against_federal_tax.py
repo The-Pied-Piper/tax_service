@@ -6,22 +6,34 @@ from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.credit_amount import CreditAmount
+from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
+from app.jurisdictions.ca.capabilities.logging_tax_credit import LoggingTaxCredit
 from app.jurisdictions.ca.catalog import (
     AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
     AMT_PART_5_LINE_11_IS_POSITIVE,
+    CHILD_CARE_EXPENSES,
     CREDITS_AGAINST_FEDERAL_TAX,
+    DISABILITY_SUPPORTS_DEDUCTION,
+    ELECTED_SPLIT_PENSION_DEDUCTION,
+    FEDERAL_LOGGING_TAX_CREDIT,
+    FEDERAL_TAX,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
+    FHSA_DEDUCTION,
     INVESTMENT_TAX_CREDIT,
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
     LABOUR_SPONSORED_FUNDS_NET_COST,
+    LOGGING_CREDIT_BASE,
+    LOGGING_CREDIT_CAP,
+    LOGGING_OPERATIONS,
+    MOVING_EXPENSES_DEDUCTION,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT,
     POLITICAL_CREDIT_BEFORE_MAXIMUM,
@@ -43,12 +55,17 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
     POLITICAL_CREDIT_SHORTCUT_AMOUNT,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+    PROVINCES_LOGGING_TAX_CREDIT,
+    RRSP_DEDUCTION,
+    SUPPORT_PAYMENTS_DEDUCTION,
+    TAXABLE_INCOME,
 )
 from app.jurisdictions.ca_on.capabilities.choose_by_range import ChooseByRange
 
 INPUTS = frozenset(
     {
         "ca/labour_sponsored_funds_net_cost",
+        "ca/logging_operations",
     }
 )
 
@@ -287,14 +304,79 @@ STEPS = {
         },
         produces={"output": "ca/credits_against_federal_tax"},
     ),
-    # T1 line 139 (line 41700) "Line 134 minus line 138 (if negative, enter "0")": line 134
-    # (40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax" carries line 132,
-    # as line 133 (the federal logging tax credit) is not yet wired.
+    # Federal logging tax credit, one item per province with a logging operation: "To calculate
+    # your credit for each province where you operated, use the lower of the following amounts for
+    # each province you had a logging operation in: 66.6667% of the logging tax that you paid to
+    # that province for the year; 6.6667% of your net logging income in that province for the
+    # year." The per-item capability does the lower of the two amounts for each province, one
+    # trace line each, and gives their total.
+    CapabilitySelection(
+        name="ca/logging_tax_credit",
+        params={
+            "tax_rate": "ca/logging_tax_rate",
+            "income_rate": "ca/logging_income_rate",
+        },
+        consumes={"provinces": "ca/logging_operations"},
+        produces={"output": "ca/provinces_logging_tax_credit"},
+    ),
+    # Federal logging tax credit, the base and the cap: "up to 6.6667% of your taxable income from
+    # line 26000 of your return, not including any amounts on lines 20800, 20805, 21000, 21400,
+    # 21500, 21900, and 22000 of your return." The base is line 26000 with those seven lines added
+    # back, and the cap is 6.6667% of it.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/taxable_income",
+                "ca/rrsp_deduction",
+                "ca/fhsa_deduction",
+                "ca/elected_split_pension_deduction",
+                "ca/child_care_expenses",
+                "ca/disability_supports_deduction",
+                "ca/moving_expenses_deduction",
+                "ca/support_payments_deduction",
+            ),
+        },
+        produces={"output": "ca/logging_credit_base"},
+    ),
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/logging_income_rate"},
+        consumes={"base": "ca/logging_credit_base"},
+        produces={"output": "ca/logging_credit_cap"},
+    ),
+    # T1 line 133 (5006-R Ontario edition): "Line 133: Federal logging tax credit", the lesser of
+    # the provinces' total and the cap.
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/provinces_logging_tax_credit",
+                "ca/logging_credit_cap",
+            ),
+        },
+        produces={"output": "ca/federal_logging_tax_credit"},
+    ),
+    # T1 line 134 and line 40600 (5006-R Ontario edition): "Line 134 and line 40600: Line 132 minus
+    # line 133 (if negative, enter "0") Federal tax =", never below zero.
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
         consumes={
             "amount": "ca/federal_tax_with_itc_recapture",
+            "less": "ca/federal_logging_tax_credit",
+        },
+        produces={"output": "ca/federal_tax"},
+    ),
+    # T1 line 139 (line 41700) "Line 134 minus line 138 (if negative, enter "0")": line 134
+    # (40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax", see above.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/federal_tax",
             "less": "ca/credits_against_federal_tax",
         },
         produces={"output": "ca/federal_tax_less_credits"},
@@ -426,8 +508,44 @@ WIRING = {
     ),
     (
         SubtractNotBelowZero,
-        frozenset({FEDERAL_TAX_WITH_ITC_RECAPTURE, CREDITS_AGAINST_FEDERAL_TAX}),
+        frozenset({FEDERAL_TAX, CREDITS_AGAINST_FEDERAL_TAX}),
         frozenset({FEDERAL_TAX_LESS_CREDITS}),
+    ),
+    (
+        LoggingTaxCredit,
+        frozenset({LOGGING_OPERATIONS}),
+        frozenset({PROVINCES_LOGGING_TAX_CREDIT}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                TAXABLE_INCOME,
+                RRSP_DEDUCTION,
+                FHSA_DEDUCTION,
+                ELECTED_SPLIT_PENSION_DEDUCTION,
+                CHILD_CARE_EXPENSES,
+                DISABILITY_SUPPORTS_DEDUCTION,
+                MOVING_EXPENSES_DEDUCTION,
+                SUPPORT_PAYMENTS_DEDUCTION,
+            }
+        ),
+        frozenset({LOGGING_CREDIT_BASE}),
+    ),
+    (
+        ApplyRate,
+        frozenset({LOGGING_CREDIT_BASE}),
+        frozenset({LOGGING_CREDIT_CAP}),
+    ),
+    (
+        LesserOf,
+        frozenset({PROVINCES_LOGGING_TAX_CREDIT, LOGGING_CREDIT_CAP}),
+        frozenset({FEDERAL_LOGGING_TAX_CREDIT}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({FEDERAL_TAX_WITH_ITC_RECAPTURE, FEDERAL_LOGGING_TAX_CREDIT}),
+        frozenset({FEDERAL_TAX}),
     ),
     (
         CountByConditions,

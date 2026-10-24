@@ -218,7 +218,11 @@ def test_return_vs_credit_comes_off_line_132_and_line_139_is_3977_93() -> None:
         "+ labour_sponsored_funds_credit 600 = 600"
     ) in rendered
     assert (
-        "federal_tax_less_credits: federal_tax_with_itc_recapture 4577.93 "
+        "federal_tax: federal_tax_with_itc_recapture 4577.93 "
+        "less federal_logging_tax_credit 0, not below 0 = 4577.93"
+    ) in rendered
+    assert (
+        "federal_tax_less_credits: federal_tax 4577.93 "
         "less credits_against_federal_tax 600, not below 0 = 3977.93"
     ) in rendered
 

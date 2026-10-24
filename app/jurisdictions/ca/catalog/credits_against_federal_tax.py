@@ -164,6 +164,50 @@ Line 41300: Net cost of shares of a provincially registered fund Line 41300: All
 guide's "allowable credit on line 41400 of your return that is equal to 15% of the net cost
 reported on line 41300 of your return, to a maximum of $750."."""
 
+LOGGING_TAX_PAID = CATALOG.declare("logging_tax_paid", Decimal, non_negative=True)
+"""Logging tax paid to a province, 5000-G "Federal logging tax credit": "66.6667% of the logging tax
+that you paid to that province for the year": the caller's figure for that province; a field of
+each record of the logging operations, not an artifact of its own."""
+
+NET_LOGGING_INCOME = CATALOG.declare("net_logging_income", Decimal, non_negative=True)
+"""Net logging income in a province, 5000-G "Federal logging tax credit": "6.6667% of your net
+logging income in that province for the year": the caller's figure for that province; a field of
+each record of the logging operations, not an artifact of its own."""
+
+LOGGING_OPERATIONS = RecordListKind.declare(
+    CATALOG, "logging_operations", fields=(LOGGING_TAX_PAID, NET_LOGGING_INCOME)
+)
+"""Provinces with a logging operation, 5000-G "Federal logging tax credit": "for each province you
+had a logging operation in": a starting list with one record for each such province, holding the
+logging tax paid to it and the net logging income in it. The list may be empty."""
+
+PROVINCES_LOGGING_TAX_CREDIT = CATALOG.declare(
+    "provinces_logging_tax_credit", Decimal, non_negative=True
+)
+"""Federal logging tax credit over the provinces, 5000-G "To calculate your credit for each
+province where you operated, use the lower of the following amounts for each province": the sum
+over the provinces of the lesser of 66.6667% of the logging tax paid and 6.6667% of the net
+logging income, before the cap of line 133."""
+
+LOGGING_CREDIT_BASE = CATALOG.declare("logging_credit_base", Decimal, non_negative=True)
+"""Base of the federal logging tax credit cap, 5000-G "up to 6.6667% of your taxable income from
+line 26000 of your return, not including any amounts on lines 20800, 20805, 21000, 21400, 21500,
+21900, and 22000": line 26000 with those seven lines added back, the sum of its parts."""
+
+LOGGING_CREDIT_CAP = CATALOG.declare("logging_credit_cap", Decimal, non_negative=True)
+"""Cap of the federal logging tax credit, 5000-G "up to 6.6667% of your taxable income from line
+26000 of your return": 6.6667% of the base."""
+
+FEDERAL_LOGGING_TAX_CREDIT = CATALOG.declare(
+    "federal_logging_tax_credit", Decimal, non_negative=True
+)
+"""Federal logging tax credit, T1 line 133 "Line 133: Federal logging tax credit", the lesser of
+the provinces' total and the cap."""
+
+FEDERAL_TAX = CATALOG.declare("federal_tax", Decimal, non_negative=True)
+"""Federal tax, T1 line 134 and line 40600 "Line 134 and line 40600: Line 132 minus line 133 (if
+negative, enter "0") Federal tax =": line 132 less line 133, not below zero."""
+
 CREDITS_AGAINST_FEDERAL_TAX = CATALOG.declare(
     "credits_against_federal_tax", Decimal, non_negative=True
 )
@@ -173,8 +217,7 @@ CREDITS_AGAINST_FEDERAL_TAX = CATALOG.declare(
 
 FEDERAL_TAX_LESS_CREDITS = CATALOG.declare("federal_tax_less_credits", Decimal, non_negative=True)
 """Federal tax less credits, T1 line 139 (line 41700) "Line 134 minus line 138 (if negative, enter
-"0")": line 134 (40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax", here line
-132 (`federal_tax_with_itc_recapture`) as line 133 is not wired, less line 138, not below zero."""
+"0")": line 134 (`federal_tax`, 40600) less line 138, not below zero."""
 
 FEDERAL_TAX_LINE_41700 = CATALOG.declare("federal_tax_line_41700", Decimal, non_negative=True)
 """Federal tax, T1 line 139 and line 41700 "Line 134 minus line 138 (if negative, enter "0")", or,

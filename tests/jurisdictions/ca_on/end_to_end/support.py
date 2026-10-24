@@ -26,7 +26,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
     AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
     AMT_EXCESS_EPSP_AMOUNTS,
-    AMT_FEDERAL_LOGGING_TAX_CREDIT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
     AMT_FINANCING_EXPENSES,
@@ -446,6 +445,8 @@ from app.jurisdictions.ca.catalog import (
     LABOUR_SPONSORED_FUNDS_NET_COST,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     LISTED_PERSONAL_PROPERTY_DISPOSITIONS,
+    LOGGING_OPERATIONS,
+    LOGGING_TAX_PAID,
     MEDICAL_EXPENSES,
     MOVING_ACCOMMODATION_EXPENSES,
     MOVING_BUYING_LEGAL_FEES,
@@ -475,6 +476,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FISHING_INCOME,
     NET_FOREIGN_BUSINESS_INCOME,
     NET_FOREIGN_NON_BUSINESS_INCOME,
+    NET_LOGGING_INCOME,
     NET_PARTNERSHIP_INCOME,
     NET_PROFESSIONAL_INCOME,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
@@ -1952,6 +1954,24 @@ def t1_m_moves(moves: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
     return Artifact(T1_M_MOVES, RecordList(T1_M_MOVES.fields, records))
 
 
+def logging_operation(
+    *, tax_paid: str = "0", net_logging_income: str = "0"
+) -> dict[ArtifactKind[Any], object]:
+    """One province with a logging operation, a record of `ca/logging_operations`: the logging tax
+    paid to it and the net logging income in it, as given or 0."""
+    return {
+        LOGGING_TAX_PAID: D(tax_paid),
+        NET_LOGGING_INCOME: D(net_logging_income),
+    }
+
+
+def logging_operations_list(provinces: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
+    """The provinces with a logging operation, one record for each mapping of `logging_operation`
+    arguments; none is an empty list."""
+    records = [logging_operation(**province) for province in provinces]
+    return Artifact(LOGGING_OPERATIONS, RecordList(LOGGING_OPERATIONS.fields, records))
+
+
 def t2048_disposition(
     *,
     qbt_election_eligible_amount: str = "0",
@@ -2299,6 +2319,7 @@ def starting(
     fish_statements: tuple[Mapping[str, Any], ...] | None = None,
     rc359_employers: tuple[Mapping[str, Any], ...] = (),
     moving_moves: tuple[Mapping[str, Any], ...] | None = None,
+    logging_provinces: tuple[Mapping[str, Any], ...] = (),
     schedule_8_copies: int = 1,
     rc381_copies: int = 0,
     t929_copies: int = 0,
@@ -2697,7 +2718,6 @@ def starting(
     amt_repayment_of_wage_loss_replacement: str = "0",
     cpp_t4_base_and_first_additional_contributions: str | None = None,
     cpp_t4_second_additional_contributions: str | None = None,
-    amt_federal_logging_tax_credit: str = "0",
     amt_section_119_former_resident_credit: str = "0",
     amt_minimum_tax_carryover_from_previous_years: str = "0",
     amt_minimum_tax_carryover_applied: str = "0",
@@ -2860,6 +2880,7 @@ def starting(
         t2121_statements(fish_statement_list),
         rc359_employers_list(rc359_employers),
         t1_m_moves(moving_move_list),
+        logging_operations_list(logging_provinces),
         Artifact(
             SCHEDULE_8_INSTANCES,
             RecordList(SCHEDULE_8_INSTANCES.fields, [{} for _ in range(schedule_8_copies)]),
@@ -3487,7 +3508,6 @@ def starting(
             AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT,
             D(amt_repayment_of_wage_loss_replacement),
         ),
-        Artifact(AMT_FEDERAL_LOGGING_TAX_CREDIT, D(amt_federal_logging_tax_credit)),
         Artifact(
             AMT_SECTION_119_FORMER_RESIDENT_CREDIT,
             D(amt_section_119_former_resident_credit),

@@ -16,7 +16,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_AMOUNT,
     AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     FEDERAL_FOREIGN_TAX_CREDIT,
-    FEDERAL_TAX_WITH_ITC_RECAPTURE,
+    FEDERAL_TAX,
     INVESTMENT_TAX_CREDIT,
     INVESTMENT_TAX_CREDIT_REFUND,
     ITC_AGRICULTURAL_SRED_CONTRIBUTIONS,
@@ -295,7 +295,7 @@ STEPS = {
         name="core/subtract_not_below_zero",
         params={},
         consumes={
-            "amount": "ca/federal_tax_with_itc_recapture",
+            "amount": "ca/federal_tax",
             "less": "ca/political_credit",
         },
         produces={"output": "ca/itc_part_d_amount_9"},
@@ -638,7 +638,7 @@ WIRING = {
     ),
     (
         SubtractNotBelowZero,
-        frozenset({FEDERAL_TAX_WITH_ITC_RECAPTURE, POLITICAL_CREDIT}),
+        frozenset({FEDERAL_TAX, POLITICAL_CREDIT}),
         frozenset({ITC_PART_D_AMOUNT_9}),
     ),
     (

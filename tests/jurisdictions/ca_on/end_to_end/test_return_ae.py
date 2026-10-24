@@ -120,7 +120,11 @@ def test_return_aes_federal_political_contribution_credit_is_558_33_and_lowers_t
         "+ investment_tax_credit 0 + labour_sponsored_funds_credit 0 = 558.33"
     ) in rendered
     assert (
-        "federal_tax_less_credits: federal_tax_with_itc_recapture 3909.94 "
+        "federal_tax: federal_tax_with_itc_recapture 3909.94 "
+        "less federal_logging_tax_credit 0, not below 0 = 3909.94"
+    ) in rendered
+    assert (
+        "federal_tax_less_credits: federal_tax 3909.94 "
         "less credits_against_federal_tax 558.33, not below 0 = 3351.61"
     ) in rendered
 

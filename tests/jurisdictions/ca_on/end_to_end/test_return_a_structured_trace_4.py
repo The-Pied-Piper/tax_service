@@ -581,8 +581,10 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
+    FEDERAL_LOGGING_TAX_CREDIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_SURTAX_OUTSIDE_CANADA,
+    FEDERAL_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
@@ -680,6 +682,7 @@ from app.jurisdictions.ca.catalog import (
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LISTED_PERSONAL_PROPERTY_GAIN_OR_LOSS,
     LISTED_PERSONAL_PROPERTY_NET_GAIN,
+    LOGGING_CREDIT_CAP,
     MEDICAL_EXPENSES,
     MEDICAL_EXPENSES_OVER_THRESHOLD,
     MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
@@ -732,6 +735,7 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_2,
     POLITICAL_CREDIT_COLUMN_3_LINE_3,
     PRE_1986_CAPITAL_LOSS_BALANCE,
+    PROVINCES_LOGGING_TAX_CREDIT,
     QBT_ABIL_REDUCTION,
     QBT_ALLOCATION_TOTAL,
     QBT_CAPITAL_GAINS_DEDUCTION,
@@ -2020,6 +2024,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             result=D("1077.48"),
         ),
+        # T1 line 133 "Federal logging tax credit": the lesser of the provinces' total (0, no
+        # logging operation) and the cap (7795.11): 0.
+        FEDERAL_LOGGING_TAX_CREDIT: LesserOfLine(
+            output=FEDERAL_LOGGING_TAX_CREDIT,
+            parts=((PROVINCES_LOGGING_TAX_CREDIT, D("0")), (LOGGING_CREDIT_CAP, D("7795.11"))),
+            result=D("0"),
+        ),
     }
     assert at_most == {
         # Form T2038(IND) Part D amount 15, the claim (0, the caller's election) at most the claim
@@ -2449,6 +2460,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # T1 line 134 and line 40600 "Line 132 minus line 133 (if negative, enter "0")": the federal
+        # tax with the investment tax credit recapture, 16951.38, less the federal logging tax
+        # credit, 0, not below zero: 16951.38.
+        FEDERAL_TAX: SubtractedNotBelowZeroLine(
+            output=FEDERAL_TAX,
+            minuend=FEDERAL_TAX_WITH_ITC_RECAPTURE,
+            minuend_amount=D("16951.38"),
+            subtrahend=FEDERAL_LOGGING_TAX_CREDIT,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Form T2209 note (4), basic federal tax less the First Nations abatement, not below zero:
         # 16951.38 less 0.00 (line 44100, none on Return A) is 16951.38.
         # Federal Worksheet 31285 line 4 "Line 2 minus line 3": the home accessibility credit, 0.00
@@ -2487,7 +2509,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # amount 13 (16951.38) less the minimum amount from line 103 of Form T691 (0): 16951.38.
         ITC_PART_D_AMOUNT_9: SubtractedNotBelowZeroLine(
             output=ITC_PART_D_AMOUNT_9,
-            minuend=FEDERAL_TAX_WITH_ITC_RECAPTURE,
+            minuend=FEDERAL_TAX,
             minuend_amount=D("16951.38"),
             subtrahend=POLITICAL_CREDIT,
             subtrahend_amount=D("0.00"),
@@ -3365,7 +3387,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # 134 carrying line 132: no credit against a federal tax of 16951.38.
         FEDERAL_TAX_LESS_CREDITS: SubtractedNotBelowZeroLine(
             output=FEDERAL_TAX_LESS_CREDITS,
-            minuend=FEDERAL_TAX_WITH_ITC_RECAPTURE,
+            minuend=FEDERAL_TAX,
             minuend_amount=D("16951.38"),
             subtrahend=CREDITS_AGAINST_FEDERAL_TAX,
             subtrahend_amount=D("0"),

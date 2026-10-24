@@ -111,9 +111,13 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GAIN,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LINE_41700,
+    ITC_AMOUNT_I,
+    ITC_AMOUNT_J,
+    ITC_AMOUNT_K,
     NET_FEDERAL_TAX,
     REFUND_OR_BALANCE_OWING,
     SPLIT_INCOME_LINE_22,
@@ -125,6 +129,16 @@ from app.jurisdictions.ca.catalog import (
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from tests.jurisdictions.ca_on.end_to_end.support import D, Disposition, compute
+
+
+def _logging_provinces(credit: str) -> tuple[dict[str, str], ...]:
+    """The province records that give line 133 `credit`: one province whose logging tax paid is
+    1.5 times the credit (66.6667% of it is the credit, 1800.00 for 2700) and whose net logging
+    income is 30,000 (6.6667% of it is 2000.01, above the credit, so the tax side is the lesser).
+    No credit gives no province."""
+    if credit == "0":
+        return ()
+    return ({"tax_paid": str(int(credit) * 3 // 2), "net_logging_income": "30000"},)
 
 
 def return_bg(
@@ -247,11 +261,13 @@ def return_bg(
         # K when T691 Part 5 line 7 is more than 0 (K is the lesser of G and J, J being the federal
         # tax of line 40600 less the T691 minimum amount of line 103); see `logging_credit`.
         itc_claim=part_d_amount_15,
-        # T691 Part 1 line 100 and Part 3 line 8, the federal logging tax credit: it lowers the
-        # minimum amount (line 103) and the regular net federal tax payable (line 15) alike, so
-        # Part 5 line 7 does not change, but it leaves the federal tax of line 40600 that Form T2038
-        # amount J starts from as it was, so J (and the claim limit K) rises by this credit.
-        amt_federal_logging_tax_credit=logging_credit,
+        # The federal logging tax credit (T1 line 133, `logging_credit` above) is computed from the
+        # province records: one province, see `_logging_provinces`. It lowers the federal tax of
+        # line 134 (40600) and so Form T2038 amount J's starting figure, and it is the T691 Part 1
+        # line 100 and Part 3 line 8 amount: it lowers the minimum amount (line 103) and the
+        # regular net federal tax payable (line 15) alike, so Part 5 line 7 does not change by it.
+        # J is then line 132 less the T691 minimum amount before the credit, whatever the credit.
+        logging_provinces=_logging_provinces(logging_credit),
         amt_foreign_business_income=foreign_business_income,
         amt_foreign_non_business_income=foreign_non_business_income,
         amt_foreign_capital_gains_non_taxable_claim=foreign_capital_gains_claim,
@@ -1230,42 +1246,55 @@ def test_return_bg_part_5_line_6_adds_back_a_negative_surtax() -> None:
 
 
 def test_return_bg_part_5_line_10_is_line_8_less_amount_15_of_part_d() -> None:
-    # With the security options at 150000.00 and an investment tax credit claim of 100.00 (within
-    # amount I of 150.00), the claim is line 12 of Part 3. A federal logging tax credit of 1800.00
-    # lowers the minimum amount to 5605.42 and the regular net federal tax payable (line 15) to
-    # 3946.47 (5846.47 less 1800.00 less 100.00), so line 6 is 3946.47 and line 7 is 5605.42 less
-    # 3946.47, 1658.95, as without the credit, which is more than 0, so the claim limit of Part D is
-    # K: amount J is 5846.47 less 5605.42, 241.05, so K is the lesser of G (150.00) and J, 150.00,
-    # and amount 15 of 60.00 is within it. Line 8 is the claim, 100.00, and line 9, amount 15 of
-    # Part D of Form T2038(IND), is 60.00: line 10 is 40.00 and line 11 is 1658.95 less 40.00,
-    # 1618.95.
+    # With the security options at 142000.00, line 93 of Part 1 is 213567.50, so line 95 is 35685.50
+    # (less the exemption of 177882.00) and line 97 is 20.5% of it, 7315.5275, rounded to 7315.53;
+    # less line 102 of 1550.11 that is 5765.42, and less the federal logging tax credit of 1800.00
+    # (line 100) the minimum amount of line 103 is 3965.42. The federal tax of line 132 is 5846.47,
+    # so line 134 (40600) is 5846.47 less 1800.00, 4046.47. With an investment tax credit claim of
+    # 100.00 (within amount I of 150.00), the claim is line 12 of Part 3, and the regular net
+    # federal tax payable (line 15) is 5846.47 less 1800.00 less 100.00, 3946.47, so line 6 is
+    # 3946.47 and line 7 is 3965.42 less 3946.47, 18.95, which is more than 0, so the claim limit of
+    # Part D is K: amount J is the 4046.47 of line 40600 less the minimum amount 3965.42, 81.05, so
+    # K is the lesser of G (150.00) and J, 81.05, and amount 15 of 60.00 is within it. Line 8 is the
+    # claim, 100.00, and line 9, amount 15 of Part D of Form T2038(IND), is 60.00: line 10 is 40.00
+    # and line 11 is line 7 (18.95) less 40.00, below zero, so 0.00.
     worksheet = return_bg(
-        security_t4_39_and_91="150000",
+        security_t4_39_and_91="142000",
         itc_claim="100",
         amount_i="150",
         part_d_amount_15="60",
         logging_credit="1800",
     )
 
+    assert worksheet.get(AMT_MINIMUM_AMOUNT).value == D("3965.42")
+    assert worksheet.get(FEDERAL_TAX).value == D("4046.47")
     assert worksheet.get(AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE).value == D("3946.47")
-    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("1658.95")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("18.95")
+    assert worksheet.get(ITC_AMOUNT_J).value == D("81.05")
+    assert worksheet.get(ITC_AMOUNT_K).value == D("81.05")
     assert worksheet.get(AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D).value == D("40.00")
-    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1618.95")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
 
 
 def test_return_bg_part_5_line_10_is_zero_when_amount_15_of_part_d_is_more_than_the_claim() -> None:
-    # The same return with amount 15 of Part D at 150.00, above the claim of 100.00 and at the
-    # claim limit K of 150.00: line 10 is 0.00, and line 11 is line 7, 1658.95.
+    # With line 7 of Part 5 more than 0, amount 15 is limited by K, which is less than the claim
+    # (J is line 40600 less the minimum amount and line 7 is the claim less J, so K is below the
+    # claim), so amount 15 cannot be above the claim there. With the default security options of
+    # 1000.00 the minimum amount is 0.00 and AMT does not apply (line 7 is 0.00), so amount 15 is
+    # limited by amount I of 150.00 instead: the claim of 100.00 (line 8) with amount 15 of 150.00,
+    # the claim limit I and above the claim, makes line 10 100.00 less 150.00, below zero, so 0.00,
+    # and line 11 is line 7, 0.00.
     worksheet = return_bg(
-        security_t4_39_and_91="150000",
         itc_claim="100",
         amount_i="150",
         part_d_amount_15="150",
         logging_credit="1800",
     )
 
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("0")
+    assert worksheet.get(ITC_AMOUNT_I).value == D("150.00")
     assert worksheet.get(AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D).value == D("0")
-    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1658.95")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
 
 
 def test_return_bg_part_6_line_9_is_the_surtax_on_line_7_and_line_14_is_zero_by_default() -> None:
