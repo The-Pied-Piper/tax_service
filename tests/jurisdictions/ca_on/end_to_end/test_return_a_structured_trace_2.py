@@ -774,6 +774,7 @@ from app.jurisdictions.ca.catalog import (
     QFFP_FORECLOSURE_GAIN_OR_LOSS,
     QFFP_GAIN_OR_LOSS,
     QSBCS_GAIN_OR_LOSS,
+    RC359_TAX_TOTAL,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
@@ -2769,7 +2770,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # T1 line 141 (line 41800) "Special taxes": Form T1172's line 10 or 13 and the RL-10 amount.
         SPECIAL_TAXES: SumLine(
             SPECIAL_TAXES,
-            ((RESP_AIPS_ADDITIONAL_TAX, D("0")), (RL_10_LABOUR_SPONSORED_FUND_AMOUNT, D("0"))),
+            (
+                (RESP_AIPS_ADDITIONAL_TAX, D("0")),
+                (RL_10_LABOUR_SPONSORED_FUND_AMOUNT, D("0")),
+                (RC359_TAX_TOTAL, D("0")),
+            ),
             D("0"),
         ),
         # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable", in line order: line

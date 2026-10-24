@@ -522,6 +522,7 @@ from app.jurisdictions.ca.catalog import (
     QFFP_FORECLOSURE_DISPOSITIONS,
     QPP_MONTHS,
     QSBCS_DISPOSITIONS,
+    RC359_EMPLOYERS,
     RC381_INSTANCES,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
@@ -2718,6 +2719,7 @@ def starting(
         t2125_statements(business_statement_list),
         t2042_statements(farm_statement_list),
         t2121_statements(fish_statement_list),
+        Artifact(RC359_EMPLOYERS, RecordList(RC359_EMPLOYERS.fields, [])),
         Artifact(
             SCHEDULE_8_INSTANCES,
             RecordList(SCHEDULE_8_INSTANCES.fields, [{} for _ in range(schedule_8_copies)]),

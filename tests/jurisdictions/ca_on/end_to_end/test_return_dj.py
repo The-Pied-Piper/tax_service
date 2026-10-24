@@ -54,7 +54,9 @@ def run_dj(*copies: Copy) -> dict[str, tuple[Worksheet, ...]]:
     taxes (none given: no copy, and the return has no RC359 amount).
     """
     records = RecordList(RC359_EMPLOYERS.fields, [employer(*each) for each in copies])
-    artifacts = [*starting("0", (), "0", "0", "0", "0", "0"), Artifact(RC359_EMPLOYERS, records)]
+    blank = starting("0", (), "0", "0", "0", "0", "0")
+    artifacts = [each for each in blank if each.kind != RC359_EMPLOYERS]
+    artifacts.append(Artifact(RC359_EMPLOYERS, records))
     return service().compute(CA_ON, 2025, *artifacts)
 
 

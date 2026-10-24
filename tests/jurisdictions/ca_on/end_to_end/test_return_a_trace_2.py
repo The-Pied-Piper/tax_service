@@ -740,7 +740,9 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     special = position(
-        "special_taxes: resp_aips_additional_tax 0 + rl_10_labour_sponsored_fund_amount 0 = 0", "0"
+        "special_taxes: resp_aips_additional_tax 0 + rl_10_labour_sponsored_fund_amount 0 "
+        "+ rc359_tax_total 0 = 0",
+        "0",
     )
     net_federal = position(
         "net_federal_tax: split_income_line_30 16951.38 + special_taxes 0 = 16951.38",

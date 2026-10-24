@@ -269,7 +269,7 @@ def test_return_vs_t1172_part_b_on_10000_of_aips_is_2000_on_line_13_and_line_418
     ) in rendered
     assert (
         "special_taxes: resp_aips_additional_tax 2000 + rl_10_labour_sponsored_fund_amount 150 "
-        "= 2150"
+        "+ rc359_tax_total 0 = 2150"
     ) in rendered
 
 
