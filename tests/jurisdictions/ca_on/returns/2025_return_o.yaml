@@ -98,19 +98,20 @@ description: >-
   line 25700 is $0 and taxable income (line 26000) is $45,500.00, in the lowest federal and
   first Ontario brackets. The non-refundable credit amounts are the basic personal amount
   (federal line 30000 $16,129, since net income is $177,882 or less; Ontario ON428 line
-  58040 $12,747) and nothing else: no base CPP contributions or EI premiums, a Canada
+  58040 $12,747) and the pension income amount (line 31400) of $2,000.00 (see below), and nothing else: no base
+  CPP contributions or EI premiums, a Canada
   employment amount (line 31260) of $0, an age amount (line 30100) of $0 (the filer is born
   in 1961 or later, a chosen figure, so the count of filers born in 1960 or earlier is 0),
   no spouse amount (line 30300), no Canada caregiver amount for a spouse (line 30425), no
   eligible dependant (lines 30400 and 58160) and no infirm children (line 30500): line 33500
-  of $16,129.00 and ON428 line 58800 of $12,747.00. Schedule 9's inputs are all a chosen $0,
+  of $18,129.00 and ON428 line 58800 of $12,747.00. Schedule 9's inputs are all a chosen $0,
   so the donations and gifts credit (line 34900), the top-up tax credit (line 34990) and
   ON428's donations and gifts credit (line 58969) are $0. At 14.5% federally (line 33800)
   and 5.05% for Ontario (ON428 line 58840), each product rounded half-up to the cent is its
-  form's non-refundable tax credits: federal $2,338.71 (line 35000, 14.5% of $16,129.00 is
-  $2,338.705, a tie, up) and Ontario $643.72 (ON428 line 61500, 5.05% of $12,747.00 is
+  form's non-refundable tax credits: federal $2,628.71 (line 35000, 14.5% of $18,129.00 is
+  $2,628.705, a tie, up) and Ontario $643.72 (ON428 line 61500, 5.05% of $12,747.00 is
   $643.7235), each taken off its form's basic tax ($6,597.50 federally, 14.5% of $45,500.00;
-  $2,297.75 for Ontario, 5.05% of $45,500.00), not below zero: $4,258.79 and $1,654.03. The
+  $2,297.75 for Ontario, 5.05% of $45,500.00), not below zero: $3,968.79 and $1,654.03. The
   Ontario surtax (ON428 line 68) is $0, as the Ontario tax after credits is below $5,710, so
   the Ontario tax with surtax (line 69) is that same $1,654.03. With no dividends, Worksheet
   ON428's lines A and B (lines 12000 and 12010) are $0, so the Ontario dividend tax credit
@@ -128,8 +129,8 @@ description: >-
   from its chart on taxable income: $45,500.00 is more than $38,500 but not more than
   $48,000, so the premium is $450, and the Ontario tax (ON428 line 90) is the Ontario tax
   after the food credit plus the premium, $1,654.03 + $450 = $2,104.03. On the T1, the net
-  federal tax (line 42000) is the federal tax after credits, $4,258.79, and the total
-  payable (line 43500) is it plus the Ontario tax (line 42800), $6,362.82. The Canada
+  federal tax (line 42000) is the federal tax after credits, $3,968.79, and the total
+  payable (line 43500) is it plus the Ontario tax (line 42800), $6,072.82. The Canada
   workers benefit (line 45300, Schedule 6) is $0: the working income, the employment income,
   is $0, so 27% of it over $3,000 is $0 and so is the benefit before the reduction, whether
   the lesser of that and $1,633 (no eligible dependant) or $2,813 applies; less 15% of the
@@ -137,7 +138,7 @@ description: >-
   $30,639 (an eligible dependant), $2,796.75 or $2,229.15, not below zero: $0. The income
   tax deducted (line 43700) is a chosen $6,000, so the total credits (line 48200) are it
   plus the benefit, $6,000, and the refund or balance owing (line 167) is the total payable
-  less the total credits, $6,362.82 - $6,000 = $362.82: positive, so a balance owing (line
+  less the total credits, $6,072.82 - $6,000 = $72.82: positive, so a balance owing (line
   48500). Every amount computed from a rate, fraction, amount or chart on the forms is
   rounded half-up to the cent, each line being a dollars-and-cents box; here that changes
   Form T1436 line 20, the federal tax on taxable income, the Ontario tax on taxable income
@@ -468,11 +469,14 @@ sources:
     30400) and the amount for infirm children (line 30500), each 0 on this return as the
     Schedule 5 entry derives, and no base CPP contributions or EI premiums, the credit
     amounts modelled, line 33500, which takes amounts already in cents, is 16,129 + 0 + 0 +
-    0 + 0 + 0 = 16,129.00, and line 33800 is 16,129.00 x 14.5% = 2,338.705, rounded half-up
-    to the cent: 2,338.71. Lines 116 (line 34900, Schedule 9) and 117 (line 34990, the
+    0 + 0 + 0 + 2,000.00 = 18,129.00, and line 33800 is 18,129.00 x 14.5% = 2,628.705, rounded
+    half-up to the cent: 2,628.71. The pension income amount (line 31400) is 2,000.00: Federal
+    Worksheet line 1 is the 60,000 of line 11500, lines 2 to 4 are 0, so line 5 is 0 and line 6
+    is 60,000; line 7 is 0 (no annuity payments); line 8 is 60,000, and the lesser of it and
+    $2,000 is 2,000.00. Lines 116 (line 34900, Schedule 9) and 117 (line 34990, the
     top-up tax credit) are computed, and are $0 here because this return's Schedule 9 inputs
-    are all $0 (a chosen figure, caller inputs), so line 35000 is 2,338.71 + 0 + 0 =
-    2,338.71.
+    are all $0 (a chosen figure, caller inputs), so line 35000 is 2,628.71 + 0 + 0 =
+    2,628.71.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt
   - https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/payroll-deductions-t4127-payroll-deductions-formulas/t4127-jan-120th-edition-effective-january-1-2025/t4127-jan-payroll-deductions-formulas-computer-programs.html
@@ -566,8 +570,8 @@ sources:
     "Line 70 minus line 71 (cannot be negative)", 45,500.00; line 73 "Rate 14.5%"; line 74
     "Line 72 multiplied by the percentage from line 73", 6,597.50; line 75 "0.00"; line 76
     "Line 74 plus line 75 Federal tax on taxable income", 6,597.50, which rounded half-up to
-    the cent is unchanged. Less the 2,338.71 of federal non-refundable tax credits (line
-    35000), not below zero, it is 4,258.79, the federal tax after credits, which takes
+    the cent is unchanged. Less the 2,628.71 of federal non-refundable tax credits (line
+    35000), not below zero, it is 3,968.79, the federal tax after credits, which takes
     amounts already in cents. The Ontario brackets are those of the 2025 ON428 (form
     5006-C), Part A "Ontario tax on taxable income", lines 1 to 8, as CRA and the Ontario
     Data Catalogue publish them: line 1 "Enter your taxable income from line 26000 of your
@@ -755,10 +759,10 @@ sources:
     income" (the same text in each of the form's five columns; this return's taxable income
     of 45,500.00 falls in column 1), here 6,597.50; line 121 (line 40400) "Line 119 plus
     line 120", line 120 (line 40424, tax on split income) not modelled; line 122 "Amount
-    from line 35000", the federal non-refundable tax credits, 2,338.71; line 125 "Add lines
+    from line 35000", the federal non-refundable tax credits, 2,628.71; line 125 "Add lines
     122 to 124.", lines 123 (the dividend tax credit) and 124 (the minimum tax carryover)
     not modelled; line 126 (line 42900) "Line 121 minus line 125 (if negative, enter "0")
-    Basic federal tax": 6,597.50 - 2,338.71 = 4,258.79, the federal tax after credits. Line
+    Basic federal tax": 6,597.50 - 2,628.71 = 3,968.79, the federal tax after credits. Line
     127 (the federal surtax on income earned outside Canada, Form T2203) is not triggered,
     as all the income is allocated to Ontario, and line 129 (line 40500, the foreign tax
     credit) is not yet wired, so lines 128 and 130 carry line 126; line 131 (the investment
@@ -772,11 +776,11 @@ sources:
     enter "0")" is line 134; line 140 (line 41500, the ACWB) is 0 and line 141 (line 41800,
     special taxes) is 0, with 0 on Form T1172 and 0 on the RL-10 slip, so line 142 (line
     42000, which the form prints as line "4200") "Add lines 139 to 141. Net federal tax" is
-    4,258.79. Step 6: line 143 "Amount from line 42000"; lines 144 (line 42100), 145 (line
+    3,968.79. Step 6: line 143 "Amount from line 42000"; lines 144 (line 42100), 145 (line
     42120) and 146 (line 42200) are not triggered by this return; line 147 (line 42800)
     "Provincial or territorial tax (complete and attach your provincial or territorial Form
     428, even if the result is "0")" is the Ontario tax of ON428 line 90, 2,104.03; line 148
-    (line 43500) "Add lines 143 to 147. Total payable": 4,258.79 + 2,104.03 = 6,362.82. Line
+    (line 43500) "Add lines 143 to 147. Total payable": 3,968.79 + 2,104.03 = 6,072.82. Line
     149 "Enter the amount from line 148 of the previous page."; line 150 (line 43700) "Total
     income tax deducted (amounts from all Canadian slips)": 6,000, a chosen figure: it is
     the tax withheld on the taxpayer's T4A slips, which nothing on this return determines.
@@ -787,7 +791,7 @@ sources:
     line 21, 0 (see the ON479 source below), so line 166 (line 48200) "Add lines 150 to 165.
     Total credits" is 6,000 + 0 + 0 = 6,000. Line 167 "Line 149 minus line 166 If the amount
     is negative, enter it on line 48400 below. If the amount is positive, enter it on line
-    48500 below. Refund or balance owing": 6,362.82 - 6,000 = 362.82, positive, so line
+    48500 below. Refund or balance owing": 6,072.82 - 6,000 = 72.82, positive, so line
     48500 "Balance owing", not line 48400 "Refund". These lines add and subtract amounts
     already in cents, so each is in cents too.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
@@ -1032,9 +1036,9 @@ expected:
       ca/eligible_dependant_amount: "0"
       ca/infirm_children_amount: "0.00"
       ca/canada_employment_amount: "0.00"
-      ca/non_refundable_credit_amounts: "16129.00"
-      ca/non_refundable_tax_credits: "2338.71"
-      ca/federal_tax_after_credits: "4258.79"
+      ca/non_refundable_credit_amounts: "18129.00"
+      ca/non_refundable_tax_credits: "2628.71"
+      ca/federal_tax_after_credits: "3968.79"
       ca-on/ontario_basic_tax: "2297.75"
       ca-on/basic_personal_amount: "12747.00"
       ca-on/age_maximum: "6223.00"
@@ -1084,13 +1088,13 @@ expected:
       ca/itc_recapture_at_15_percent: "0"
       ca/itc_recapture_at_20_percent: "0"
       ca/itc_recapture: "0"
-      ca/federal_tax_with_itc_recapture: "4258.79"
+      ca/federal_tax_with_itc_recapture: "3968.79"
       ca/political_credit_before_maximum: "0"
       ca/political_credit: "0"
       ca/labour_sponsored_funds_credit_before_maximum: "0"
       ca/labour_sponsored_funds_credit: "0"
       ca/credits_against_federal_tax: "0"
-      ca/federal_tax_less_credits: "4258.79"
+      ca/federal_tax_less_credits: "3968.79"
       ca/resp_aips_contributions_counted: "0"
       ca/resp_aips_lifetime_limit: "50000"
       ca/resp_aips_limit_remaining: "50000"
@@ -1100,8 +1104,8 @@ expected:
       ca/resp_aips_part_b_tax: "0"
       ca/resp_aips_additional_tax: "0"
       ca/special_taxes: "0"
-      ca/net_federal_tax: "4258.79"
-      ca/total_payable: "6362.82"
+      ca/net_federal_tax: "3968.79"
+      ca/total_payable: "6072.82"
       ca/working_income: "0"
       ca/adjusted_family_net_income: "45500.00"
       ca/cwb_before_reduction_without_dependant: "0.00"
@@ -1147,7 +1151,7 @@ expected:
       ca/medical_supplement_line_16: "0"
       ca/refundable_medical_expense_supplement: "0"
       ca/total_credits: "6000.00"
-      ca/refund_or_balance_owing: "362.82"
+      ca/refund_or_balance_owing: "72.82"
       ca/educator_supplies_expenses_at_most_maximum: "0"
       ca/educator_school_supply_credit: "0"
       ca/refund: "0"
@@ -1163,8 +1167,8 @@ expected:
       ca/net_capital_loss_balance_2000: "0.00"
       ca/amt_adjusted_income_with_gains: "45500.00"
       ca/amt_minimum_amount: "0"
-      ca/amt_basic_federal_tax: "4258.79"
-      ca/amt_regular_net_federal_tax_payable: "4258.79"
+      ca/amt_basic_federal_tax: "3968.79"
+      ca/amt_regular_net_federal_tax_payable: "3968.79"
       ca/amt_special_foreign_tax_credit: "0"
       ca/amt_alternative_minimum_tax_payable: "0"
       ca/amt_federal_tax_payable_under_minimum_tax: "0"

@@ -36,12 +36,30 @@ description: >-
   6,000.00 + 10,000.00 + 20,000.00 + 8,000.00 + 2,000.00 + 600.00 = 46,600.00, so 68,633.58.
   At 14.5% that is 9,951.87 (the credit amounts at the credit rate), an increase of 6,757.00
   on the base of 3,194.87. Basic federal tax after credits is
-  therefore 17,972.14 - 6,757.00 = 11,215.14 before the top-up tax credit (line 34990), which
-  rises with line 33800 by (9,951.87 - 8,319.38) x 3.45% = 56.32 (rounded half-up), so it is
-  11,158.82, which is positive, so the net federal tax is positive.
+  therefore 17,972.14 - 6,757.00 = 11,215.14 before the top-up tax credit (Federal Worksheet
+  "Line 34990 - Top-up tax credit"), which rises with line 33800 by (9,951.87 - 8,319.38) x 3.45%
+  = 56.32 (rounded half-up), so it is 11,158.82, which is positive, so the net federal tax is
+  positive. The top-up tax credit is one of the parts of the total of non-refundable tax credits
+  (line 33800 with the donations credit and the top-up tax credit): 9,951.87 + 56.32 = 10,008.19.
   Not triggered: the surtax on income earned outside Canada, the foreign tax credit, the
   alternative minimum tax and the Canada workers benefit, none of which this return claims.
-  The Ontario side is not hand-traced here and its lines are not asserted.
+  Ontario (the Ontario half is #179, which this ticket does not change): the new federal lines do
+  not enter the Ontario credits, which stay the basic personal amount 12,747 plus the CPP base
+  contributions 3,356.10 and EI premiums 1,077.48, 17,180.58 at 5.05% = 867.62. The Ontario tax on
+  taxable income 118,926.00 by the 2025 brackets (5.05% to 52,886; 9.15% to 105,775; 11.16% above)
+  is 2,670.743 + 4,839.3435 + 1,467.6516 = 8,977.7381, less 867.6193 (867.62 rounded),
+  which is 8,110.1188, so 8,110.12 on
+  ontario_tax_less_dividend_credit (no dividend credit here). The Ontario tax on the return
+  (ca-on/ontario_tax) adds the Ontario surtax, 20% x (8,110.12 - 5,710) + 36% x (8,110.12 - 7,307)
+  = 480.02 + 289.12 = 769.14, and the Ontario health premium, 300 + 150 + 150 + 150 = 750.00 (the
+  tiers at 20,000, 36,000, 48,000 and 72,000; the tier at 200,000 is above this income), so
+  ontario_tax is 9,629.26.
+  Net income before adjustments (T1 line 23400) is total income 120,000.00 less the CPP enhanced
+  contributions deduction of 1,074.00 (678.00 + 396.00), 118,926.00, which is also the income for
+  the other payments deduction limit (Federal Worksheet line 9, no UCCB or RDSP repayments). The CPP second additional earnings maximum
+  for 12 months is 9,900.00 (the Schedule 8 table row). Total payable is the net federal tax
+  11,158.82 plus the Ontario tax 9,629.26, 20,788.08 (no self-employment CPP or EI, no social
+  benefits repayment), and with no tax deducted or instalments paid the balance owing is 20,788.08.
 sources:
   - >-
     CRA, Form T1 Guide 5006-R 2025, Part 1 lines 90 to 102 ("Line 90 and line 31220: Volunteer
@@ -84,6 +102,14 @@ inputs:
   ca/pension_annuity_payments: "0"
   ca/pension_annuity_conditions_met: "0"
   ca/student_loan_interest: "600"
+  ca/t2204_insurable_earnings: "65700"
+  ca/t2204_premiums_deducted: "1077.48"
+  ca/cpp_months: "12"
+  ca/qpp_months: "12"
+  ca/cpp_t4_base_and_first_additional_contributions: "4034.10"
+  ca/cpp_t4_second_additional_contributions: "396.00"
+  ca/schedule_8_instances:
+    - {}
 expected:
   ca-on/return:
     - ca/volunteer_firefighters_credit: "6000.00"
@@ -102,5 +128,11 @@ expected:
       ca/pension_income_credit: "2000.00"
       ca/non_refundable_credit_amounts: "68633.58"
       ca/credit_amounts_at_credit_rate: "9951.87"
-      ca/non_refundable_tax_credits: "9951.87"
+      ca/top_up_tax_credit: "56.32"
+      ca/non_refundable_tax_credits: "10008.19"
       ca/federal_tax_after_credits: "11158.82"
+      ca-on/ontario_tax_less_dividend_credit: "8110.12"
+      ca/cpp_second_additional_earnings_maximum: "9900.00"
+      ca/net_income_before_adjustments: "118926.00"
+      ca/other_payments_limit_income: "118926.00"
+      ca/refund_or_balance_owing: "20788.08"
