@@ -183,9 +183,9 @@ description: >-
   on line 21500 and line 33200. Every amount computed from a rate, fraction, amount or chart
   on the forms is rounded half-up to the cent, each line being a dollars-and-cents box; the
   lines that only add, subtract, compare or choose take amounts already in cents. Not
-  triggered: the minimum tax variant of Form T2036 line 2 (note (1), alternative minimum tax
-  is not wired), the Quebec multiplication of line 4 by 55% (note (5), an Ontario resident),
-  the federal surtax on income allocated outside Canada (T1 line 127, and line 6 of Form
+  triggered: the minimum tax variant of Form T2036 line 2 (note (1); no minimum tax is
+  payable here, see Return BV), the Quebec multiplication of line 4 by 55% (note (5), an
+  Ontario resident), the federal surtax on income allocated outside Canada (T1 line 127, and line 6 of Form
   T2209, 0 on both sheets) and every other credit and deduction not named here.
 sources:
   - >-

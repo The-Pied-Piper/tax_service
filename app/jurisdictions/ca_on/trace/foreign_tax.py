@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from fractions import Fraction as ExactFraction
 
 from app.domain.artifact import Money
 from app.domain.parameters.rounding import RoundingRule
@@ -20,6 +21,11 @@ class ProvincialForeignTaxCreditLine(TraceLine):
     Line 3 is the sheet's `tax_paid` (line 1) less the `federal_credit` (line 2, the sheet's line 3
     of Form T2209). Line 4 is the sheet's `income` times `provincial_tax` divided by `net_income`,
     rounded once with `rounding`; the result is the lesser of `line_3` and `line_4`.
+
+    When minimum tax is payable, `federal_credit` holds the line 2 used: `tax_paid` times
+    `special_credit` (Form T691 Part 4 line 11) over `divisor`, rounded once with `rounding`;
+    `separate_sheet` is whether the divisor is the one for a form for each country. Otherwise the
+    three fields keep their defaults.
     """
 
     output: Money
@@ -33,6 +39,9 @@ class ProvincialForeignTaxCreditLine(TraceLine):
     rounding: RoundingRule
     line_4: Decimal
     result: Decimal
+    special_credit: Decimal | None = None
+    divisor: ExactFraction | None = None
+    separate_sheet: bool = False
 
     @property
     def amount(self) -> Decimal:

@@ -4393,6 +4393,71 @@ def test_renders_a_sheet_without_rounding() -> None:
     )
 
 
+def provincial_minimum_tax_sheet(
+    position: int,
+    tax_paid: str,
+    line_2: str,
+    line_3: str,
+    income: str,
+    line_4: str,
+    result: str,
+    line_11: str,
+    divisor: ExactFraction,
+    separate_sheet: bool,
+) -> ProvincialForeignTaxCreditLine:
+    return ProvincialForeignTaxCreditLine(
+        NON_COMPLIANT_EXPENSES,
+        position,
+        D(tax_paid),
+        D(line_2),
+        D(line_3),
+        D(income),
+        D("100000"),
+        D("5000"),
+        CENT,
+        D(line_4),
+        D(result),
+        D(line_11),
+        divisor,
+        separate_sheet,
+    )
+
+
+def test_renders_a_sheet_whose_line_2_is_the_one_forms_share_of_the_special_credit() -> None:
+    line = provincial_minimum_tax_sheet(
+        1, "150", "60.00", "90.00", "10000", "500.00", "90.00", "80", ExactFraction(200), False
+    )
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 1: tax paid 150 less minimum tax line 2 60 "
+        "(150 tax paid x 80 special foreign tax credit / 200 total tax paid plus business tax, "
+        "half-up to 0.01) = 90; "
+        "10000 net foreign income x 5000 provincial tax / 100000 net income = 500 "
+        "(half-up to 0.01); credit 90"
+    )
+
+
+def test_renders_a_sheet_whose_line_2_is_the_separate_sheet_share_of_the_special_credit() -> None:
+    line = provincial_minimum_tax_sheet(
+        2, "300", "75.00", "225.00", "10000", "500.00", "225.00", "250", ExactFraction(1000), True
+    )
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 2: tax paid 300 less minimum tax line 2 75 "
+        "(300 tax paid x 250 special foreign tax credit / 1000 total foreign taxes paid, "
+        "separate sheet, half-up to 0.01) = 225; "
+        "10000 net foreign income x 5000 provincial tax / 100000 net income = 500 "
+        "(half-up to 0.01); credit 225"
+    )
+
+
+def test_a_sheet_without_minimum_tax_keeps_the_federal_credit_wording() -> None:
+    line = provincial_sheet(1, "1500", "1400.00", "100.00", "10000", "500.00", "100.00")
+
+    assert "federal credit 1400" in render(line)
+    assert "minimum tax" not in render(line)
+
+
 # T776 Area A "Column 9: Immediate expensing amount for DIEPs (Note 5)": `CcaClaimLine` and
 # `ClosingUccLine` name column 9 only when it is above 0; `ImmediateExpensingLine` is line i's line.
 CCA_CLAIM = ArtifactKind("ex/cca_claim", Decimal)
