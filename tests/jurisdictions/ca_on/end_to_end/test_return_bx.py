@@ -307,9 +307,11 @@ def test_return_bxs_trace_shows_the_limit_chain() -> None:
         "farm_immediate_expensing_limit_before_minister: "
         "farm_immediate_expensing_associated_limit 750000, chosen as "
         "farm_epop_associated_checked is 1",
-        "farm_immediate_expensing_limit: "
-        "farm_immediate_expensing_limit_before_minister 750000, chosen as "
-        "farm_minister_allocation_given_checked is 0",
+        "farm_immediate_expensing_limit_prorated: "
+        "farm_immediate_expensing_limit_before_minister 750000 × "
+        "farm_fiscal_period_days 365 / 365 = 750000",
+        "farm_immediate_expensing_limit: farm_immediate_expensing_limit_prorated "
+        "750000, chosen as farm_minister_allocation_given_checked is 0",
     ):
         assert line in rendered, line
 
@@ -398,7 +400,8 @@ def test_an_associated_farm_with_no_agreement_filed_has_a_limit_of_zero() -> Non
         run_bx({"farm_epop_agreement_filed": 0})
 
     assert str(raised.value) == (
-        "ca/t2042, instance 1: total of column 9 (3000) is above the immediate expensing limit (0)"
+        "ca/t2042, instance 1: total of column 9 (3000) is above the immediate expensing limit "
+        "(0.00)"
     )
 
 
@@ -409,7 +412,8 @@ def test_a_total_of_column_3_above_100_gives_a_limit_of_zero() -> None:
         run_bx({"farm_epop_percentage_total": "100.01"})
 
     assert str(raised.value) == (
-        "ca/t2042, instance 1: total of column 9 (3000) is above the immediate expensing limit (0)"
+        "ca/t2042, instance 1: total of column 9 (3000) is above the immediate expensing limit "
+        "(0.00)"
     )
 
 

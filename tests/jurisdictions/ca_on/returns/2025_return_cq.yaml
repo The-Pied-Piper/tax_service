@@ -17,8 +17,9 @@
 # $300,000.00 - $3,024.66 = $296,975.34. There is no immediate expensing (no designated immediate
 # expensing property), no short-term rental, no co-owner, no partner and no associated EPOP (Area G:
 # the associated count is 0, the percentage 0 and the total 0, so the immediate expensing limit is
-# the printed $1,500,000), no recapture and no terminal loss. Line ii, and so line 9936, is
-# $3,024.66, within amount 5 ($11,024.66), so line 9946, and so T1 line 12600, is $11,024.66 -
+# the printed $1,500,000 prorated for the 184 days: $1,500,000 x 184 / 365 = $276,000,000 / 365 =
+# $756,164.3835..., rounded half-up to the cent, $756,164.38), no recapture and no terminal loss.
+# Line ii, and so line 9936, is $3,024.66, within amount 5 ($11,024.66), so line 9946, and so T1 line 12600, is $11,024.66 -
 # $3,024.66 = $8,000.00. That is Return BS's line 9946 exactly, so every figure that depends on
 # income is Return BS's, recomputed from the form arithmetic: $8,000.00 is the whole of total income
 # (line 15000), the federal tax is $1,160.00 and the Ontario tax $404.00, both less than the
@@ -378,7 +379,8 @@ expected:
       ca/rental_immediate_expensing_allocated: "0.00"
       ca/rental_immediate_expensing_associated_limit: "0"
       ca/rental_immediate_expensing_limit_before_minister: "1500000"
-      ca/rental_immediate_expensing_limit: "1500000"
+      ca/rental_immediate_expensing_limit_prorated: "756164.38"
+      ca/rental_immediate_expensing_limit: "756164.38"
       ca/rental_immediate_expensing_claim: "0"
       ca/rental_cca_table_claim: "3024.66"
       ca/rental_cca_claim_share: "3024.66"

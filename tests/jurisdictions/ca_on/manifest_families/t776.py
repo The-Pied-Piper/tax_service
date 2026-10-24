@@ -30,6 +30,9 @@ from app.jurisdictions.ca.capabilities.closing_ucc_after_column_22_prorated impo
 )
 from app.jurisdictions.ca.capabilities.fiscal_period_days import FiscalPeriodDays
 from app.jurisdictions.ca.capabilities.immediate_expensing_claim import ImmediateExpensingClaim
+from app.jurisdictions.ca.capabilities.prorated_by_fiscal_period_days import (
+    ProratedByFiscalPeriodDays,
+)
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
 from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
@@ -90,6 +93,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_IMMEDIATE_EXPENSING_CLAIM,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
     RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
@@ -691,6 +695,25 @@ FORM_STEPS = {
         },
         produces={"output": "ca/rental_immediate_expensing_limit_before_minister"},
     ),
+    # T776 Note 5 "the immediate expensing limit, which is equal to one of the following, whichever
+    # is applicable", and Guide T4036, "Immediate expensing incentive": "The deduction is limited
+    # to $1.5 million per tax year: ... The limit is also prorated for tax years shorter than 365
+    # days": the limit above times the days of the fiscal period over the 365 of a full year,
+    # rounded to the cent. The amount allocated by the minister under subsection 1104(3.4) of the
+    # Regulations, below, is not prorated: the guide prorates the limit, and the minister's amount
+    # is the amount allocated for the year.
+    CapabilitySelection(
+        name="ca/prorated_by_fiscal_period_days",
+        params={
+            "rounding": "ca/rental_immediate_expensing_rounding",
+            "class_rates": "ca/cca_class_rates",
+        },
+        consumes={
+            "amount": "ca/rental_immediate_expensing_limit_before_minister",
+            "fiscal_period_days": "ca/rental_fiscal_period_days",
+        },
+        produces={"output": "ca/rental_immediate_expensing_limit_prorated"},
+    ),
     # T776 Note 5 "any amount allocated by the minister under subsection 1104(3.4) of the
     # Regulations": a count of 1 (a caller's 0 or 1) chooses the amount allocated by the minister,
     # as entered, in place of the limit above; with a count of 0 the limit above stands.
@@ -699,7 +722,7 @@ FORM_STEPS = {
         params={},
         consumes={
             "count": "ca/rental_minister_allocation_given_checked",
-            "when_none": "ca/rental_immediate_expensing_limit_before_minister",
+            "when_none": "ca/rental_immediate_expensing_limit_prorated",
             "when_any": "ca/rental_minister_allocation",
         },
         produces={"output": "ca/rental_immediate_expensing_limit"},
@@ -1030,11 +1053,16 @@ FORM_WIRING = {
         frozenset({RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER}),
     ),
     (
+        ProratedByFiscalPeriodDays,
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER, RENTAL_FISCAL_PERIOD_DAYS}),
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED}),
+    ),
+    (
         ChooseByCount,
         frozenset(
             {
                 RENTAL_MINISTER_ALLOCATION_GIVEN_CHECKED,
-                RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+                RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
                 RENTAL_MINISTER_ALLOCATION,
             }
         ),

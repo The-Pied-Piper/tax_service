@@ -239,9 +239,11 @@ def test_return_bts_trace_shows_the_limit_chain() -> None:
         "business_immediate_expensing_limit_before_minister: "
         "business_immediate_expensing_associated_limit 600000, chosen as "
         "business_epop_associated_checked is 1",
-        "business_immediate_expensing_limit: "
-        "business_immediate_expensing_limit_before_minister 600000, chosen as "
-        "business_minister_allocation_given_checked is 0",
+        "business_immediate_expensing_limit_prorated: "
+        "business_immediate_expensing_limit_before_minister 600000 × "
+        "business_fiscal_period_days 365 / 365 = 600000",
+        "business_immediate_expensing_limit: business_immediate_expensing_limit_prorated "
+        "600000, chosen as business_minister_allocation_given_checked is 0",
     ):
         assert line in rendered, line
 
@@ -327,7 +329,8 @@ def test_an_associated_business_with_no_agreement_filed_has_a_limit_of_zero() ->
         run_bt({"business_epop_agreement_filed": 0})
 
     assert str(raised.value) == (
-        "ca/t2125, instance 1: total of column 9 (3000) is above the immediate expensing limit (0)"
+        "ca/t2125, instance 1: total of column 9 (3000) is above the immediate expensing limit "
+        "(0.00)"
     )
 
 
@@ -338,7 +341,8 @@ def test_a_total_of_column_3_above_100_gives_a_limit_of_zero() -> None:
         run_bt({"business_epop_percentage_total": "100.01"})
 
     assert str(raised.value) == (
-        "ca/t2125, instance 1: total of column 9 (3000) is above the immediate expensing limit (0)"
+        "ca/t2125, instance 1: total of column 9 (3000) is above the immediate expensing limit "
+        "(0.00)"
     )
 
 

@@ -30,6 +30,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_IMMEDIATE_EXPENSING_CLAIM,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
     BUSINESS_IMMEDIATE_EXPENSING_SHARE,
     BUSINESS_INCOME,
     BUSINESS_INCOME_BEFORE_CCA,
@@ -84,6 +85,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_IMMEDIATE_EXPENSING_CLAIM,
     FARM_IMMEDIATE_EXPENSING_LIMIT,
     FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
     FARM_IMMEDIATE_EXPENSING_SHARE,
     FARM_INCOME_BEFORE_CCA,
     FARM_MINISTER_ALLOCATION,
@@ -110,6 +112,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_IMMEDIATE_EXPENSING_CLAIM,
     FISH_IMMEDIATE_EXPENSING_LIMIT,
     FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
     FISH_IMMEDIATE_EXPENSING_SHARE,
     FISH_INCOME_BEFORE_CCA,
     FISH_MINISTER_ALLOCATION,
@@ -207,6 +210,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_IMMEDIATE_EXPENSING_CLAIM,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
     RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
@@ -454,6 +458,10 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
         is BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER
     )
     assert (
+        registry.get("ca/business_immediate_expensing_limit_prorated")
+        is BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED
+    )
+    assert (
         registry.get("ca/business_immediate_expensing_limit") is BUSINESS_IMMEDIATE_EXPENSING_LIMIT
     )
     assert (
@@ -493,6 +501,10 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
         registry.get("ca/farm_immediate_expensing_limit_before_minister")
         is FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER
     )
+    assert (
+        registry.get("ca/farm_immediate_expensing_limit_prorated")
+        is FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED
+    )
     assert registry.get("ca/farm_immediate_expensing_limit") is FARM_IMMEDIATE_EXPENSING_LIMIT
     assert registry.get("ca/farm_immediate_expensing_claim") is FARM_IMMEDIATE_EXPENSING_CLAIM
     assert registry.get("ca/farm_income_before_cca") is FARM_INCOME_BEFORE_CCA
@@ -516,6 +528,10 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert (
         registry.get("ca/fish_immediate_expensing_limit_before_minister")
         is FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER
+    )
+    assert (
+        registry.get("ca/fish_immediate_expensing_limit_prorated")
+        is FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED
     )
     assert registry.get("ca/fish_immediate_expensing_limit") is FISH_IMMEDIATE_EXPENSING_LIMIT
     assert registry.get("ca/fish_immediate_expensing_claim") is FISH_IMMEDIATE_EXPENSING_CLAIM
@@ -729,6 +745,10 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert (
         registry.get("ca/rental_immediate_expensing_limit_before_minister")
         is RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER
+    )
+    assert (
+        registry.get("ca/rental_immediate_expensing_limit_prorated")
+        is RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED
     )
     assert registry.get("ca/rental_immediate_expensing_limit") is RENTAL_IMMEDIATE_EXPENSING_LIMIT
     assert registry.get("ca/rental_immediate_expensing_claim") is RENTAL_IMMEDIATE_EXPENSING_CLAIM
