@@ -193,7 +193,9 @@ def test_return_cys_class_closes_at_zero_and_the_other_classes_close_as_in_retur
         (D("10.1"), D("0")),
     ]
     rendered = EnglishTraceRenderer().render_all(statement.trace)
-    assert "rental_closing_ucc: item 3 class 10.1: column 7 12540 less claim 12540 = 0" in rendered
+    assert (
+        "rental_closing_ucc: item 3 class 10.1: column 7 12540 with no property left: 0" in rendered
+    )
 
 
 def test_return_cys_line_ii_is_16540_and_net_rental_income_is_8000_as_in_return_bs() -> None:
