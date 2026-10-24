@@ -116,7 +116,7 @@ class TerminalLossLine(TraceLine):
     which Note 3 excepts. `column_7_positive` records whether column 7 is above 0, so a row with
     property left reads apart from one with nothing to lose. `column_9` is the amount the class
     expensed, which is not deducted as CCA and so is not a terminal loss. A row that used the
-    `half_year_rule_on_sale` has property left for the claim and no terminal loss.
+    `half_year_rule_on_sale` has no terminal loss.
     """
 
     output: Money

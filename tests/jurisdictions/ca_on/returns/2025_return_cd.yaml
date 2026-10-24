@@ -33,9 +33,9 @@ description: >-
   $20,000.00, the proceeds of dispositions (column 5) are $12,000.00, so column 7 is
   $8,000.00. The half-year rule on sale makes column 19 50% of column 2, $10,000.00, so the
   maximum, and column 21, is $10,000.00 x 30% = $3,000.00, claimed in full, and the UCC at the
-  end of the year (column 22) is $0, the $5,000.00 left being not deductible later. There is no immediate
-  expensing (line i is $0), no recapture and no terminal loss. The business is not associated
-  with any other EPOP, so the immediate expensing limit is $1.5 million (Area G is not
+  end of the year (column 22) is $0, the $5,000.00 left being not deductible later. There is
+  no immediate expensing (line i is $0), no recapture and no terminal loss. The business is not
+  associated with any other EPOP, so the immediate expensing limit is $1.5 million (Area G is not
   answered). The income before CCA (endnote 5) is $33,000.00, line 9369 plus line 9936. The net
   self-employment income (T1 line 27, "Add lines 22 to 26") is 30,000 + 0 + 0 + 0 + 0 =
   $30,000; line 28 is line 21 (0) plus line 27 and total income (line 15000) adds line 27 to
@@ -114,11 +114,11 @@ sources:
     claim, the most; column 22 is 0, as Regulation 1100(2.5) (Income Tax Regulations,
     https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._945/section-1100.html) determines
     the deduction "as if the property had not been disposed of" and allows none in a later year,
-    and Folio S3-F4-C1 paragraph 1.106 reduces the rest to nil (read through a Remote Control
-    session on 2026-10-24; the guides are silent on column 22 for this case). A claim above
-    3,000.00 is refused. The columns the form computes (19 and the maximum) are dollars-and-cents boxes,
-    rounded half-up to the cent, which changes neither here. Not modelled: Part 2 (the
-    Internet business activities), Part 8 (the other partners), Part 9 (the equity) and Areas
+    and Folio S3-F4-C1 paragraph 1.106 reduces the rest to nil (the Column 19 text of Guides T4002 and T4036 and the T2125
+    form, docs/cra-forms-2025/t4002-25e.pdf, t4036-25e.pdf and t2125-25e.pdf, say nothing on
+    column 22 for the half-year rule on sale). A claim above 3,000.00 is refused. The columns the form computes (19 and
+    the maximum) are dollars-and-cents boxes, rounded half-up to the cent, which changes neither
+    here. Not modelled: Part 2 (the Internet business activities), Part 8 (the other partners), Part 9 (the equity) and Areas
     B to G (Area G is not answered: the business is not associated with another EPOP).
     Endnote 5 "$1.5 million, if you are not associated with any other eligible person or
     partnership (EPOP) in the tax year" gives the immediate expensing limit 1,500,000; the

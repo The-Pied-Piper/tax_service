@@ -127,8 +127,8 @@ def test_return_cds_class_10_1_works_column_19_as_half_of_column_2() -> None:
 
 def test_return_cds_closing_ucc_is_zero_as_the_rest_is_not_deductible_later() -> None:
     # Column 7 less column 21 is 8000.00 - 3000.00 = 5000.00, but Regulation 1100(2.5) allows no
-    # deduction in a later year and Folio S3-F4-C1 paragraph 1.106 reduces it to nil: column 22 is
-    # 0.
+    # deduction in a later year and Folio S3-F4-C1 paragraph 1.106 reduces it to nil: column 22
+    # is 0.
     statement = statement_cd()
 
     records = statement.get(BUSINESS_CLOSING_UCC).value.records

@@ -42,10 +42,9 @@ owned the Class 10.1 vehicle you disposed of in 2025. If this applies to you, en
 amount from column 2 (for Class 10.1 vehicles) in column 19." A row uses it when its class has
 the rule (`half_year_rule_on_sale` of the class rates), column 2 is above 0, no property is left
 in the class and recapture and a terminal loss are excluded for the row (Note 3, so not with DIEP
-additions), and column 7 is above 0: column 19 is then one half of column 2, the exact half
-rounded once with the dataset's rule, and the zero for no property left or a column 7 at or below
-0 does not apply, so the maximum is column 19 times the rate. Regulation 1100(2.5) (Income Tax
-Regulations, https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._945/section-1100.html)
+additions): column 19 is then one half of column 2, the exact half rounded once with the
+dataset's rule, and the zero for no property left or a column 7 at or below 0 does not apply, so
+the maximum is column 19 times the rate. Regulation 1100(2.5) (Income Tax Regulations, https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._945/section-1100.html)
 determines the deduction "as if the property had not been disposed of" and the days in the year
 one-half, and does not limit it to what is left after the sale (column 7); and allows no deduction
 in a later year. The unclaimed balance is reduced to nil (Folio S3-F4-C1 paragraph 1.106), so
@@ -54,8 +53,8 @@ its own class.
 Guide T4036 "Column 7": "You cannot claim CCA when the amount in column 7 is:
 negative ... positive and you do not have any property left in that class ... In either case,
 enter "0" in column 24", so the maximum and column 24 are 0 for those rows, for the recorded
-`CcaZeroReason`. The claim (column 23) is the caller's election, which includes column 9: it is
-refused above the maximum plus column 9 (`InputAboveBoundError`) and below column 9
+`CcaZeroReason`, except a row that uses the half-year rule on sale (above). The claim (column 23)
+is the caller's election, which includes column 9: it is refused above the maximum plus column 9 (`InputAboveBoundError`) and below column 9
 (`InputBelowBoundError`). Note 3: a negative column 7 is a recapture, and a positive one with no
 property left a terminal loss of column 7 less column 9 (not below 0), neither for a class the
 dataset excludes from them unless the row has DIEP additions (column 4), as Note 3 excepts. A

@@ -13,8 +13,9 @@ column 2 is above 0 and the caller says no property is left in the class. Then c
 half of column 2, the exact half rounded once with the dataset's rule, in place of column 13 plus
 columns 15 and 17 minus column 18; the zero of "no property left" and of a column 7 at or below 0
 does not apply, so the maximum is column 19 times the class's rate, not limited to column 7:
-Regulation 1100(2.5) (https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._945/section-1100.html)
-determines the deduction "as if the property had not been disposed of" with one-half of the days.
+Regulation 1100(2.5)
+(https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._945/section-1100.html) determines
+the deduction "as if the property had not been disposed of" with one-half of the days.
 Column 24 is 0, as the rest of the UCC is not deductible later (Folio S3-F4-C1 paragraph 1.106).
 Recapture and a terminal loss stay 0 for Class 10.1 (Note 3). A column 2 of 0, a class without the
 flag and a class with property left are worked as before.
@@ -240,7 +241,7 @@ def test_a_claim_above_the_maximum_is_refused_whatever_column_7_is() -> None:
         closing(nearly_all)
 
 
-def test_a_column_7_of_zero_takes_the_rule_too() -> None:
+def test_a_column_7_of_zero_still_allows_the_claim_as_if_not_sold() -> None:
     all_sold = sold("1500.00", column_2="10000.00", proceeds="10000.00")
 
     assert claim_total(all_sold) == D("1500.00")
@@ -280,7 +281,7 @@ def test_the_closing_ucc_refuses_a_claim_above_the_maximum() -> None:
 
 
 def test_the_closing_ucc_of_a_row_with_additions_is_zero() -> None:
-    # Row A.
+    # Row A: the 13,000.00 of column 7 less the 3,000.00 claim leaves 10,000.00, which closes at 0.
     assert closing(sold("3000.00", additions="5000")) == [(D("10.1"), D("0"))]
 
 
