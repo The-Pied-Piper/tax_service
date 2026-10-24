@@ -544,6 +544,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_MINISTER_ALLOCATION_GIVEN,
     FARM_NET_INCOME_AFTER_ADJUSTMENTS,
     FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
+    FARM_NET_INCOME_BEFORE_ADJUSTMENTS,
     FARM_PARTNER,
     FARM_SHARE_OF_NET_INCOME,
     FARMING_INCOME,
@@ -4076,12 +4077,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             total=D("0"),
         ),
         # Form T2042 Area A endnote 5 "the amount of income, if any, earned from the source of
-        # income that is a business (before any CCA deductions)": amount 4C plus line 9936,
+        # income that is a business (before any CCA deductions)": line 9899 plus line 9936,
         # floored, 0 for Return A.
         FARM_INCOME_BEFORE_CCA: SumNotBelowZeroLine(
             output=FARM_INCOME_BEFORE_CCA,
             parts=(
-                (FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS, D("0")),
+                (FARM_NET_INCOME_BEFORE_ADJUSTMENTS, D("0")),
                 (FARM_CCA_CLAIM, D("0")),
             ),
             total=D("0"),

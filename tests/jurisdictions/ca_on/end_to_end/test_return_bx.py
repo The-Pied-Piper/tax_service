@@ -59,6 +59,16 @@ FARM = {
     # kilometres 0 (amount 1), so line 9819 (amount 16 of Chart A) is 0, as in Return BC.
     "vehicle_sales_tax_rate": "13",
 }
+
+# The farm of Return BX with lines 9941 (optional) 1000 and 9942 (mandatory) 500, which make
+# amount 4C 31500 against line 9899, 30000.00.
+INVENTORY_ADJUSTMENTS = {
+    "farm": {
+        **FARM,
+        "optional_inventory_adjustment_current_year": "1000",
+        "mandatory_inventory_adjustment_current_year": "500",
+    }
+}
 # Area A row as (column 1, column 2, column 3, column 5, column 11, column 12, the claim, no
 # property left, column 4, column 6, column 9): class 8 with a UCC of 10000 and additions of 5000,
 # all DIEPs (column 4 5000), of which 3000 is expensed at once (column 9): column 21 is 11000.00 x
@@ -175,23 +185,89 @@ def test_return_bxs_line_i_is_3000_the_total_of_column_9() -> None:
     ) in rendered
 
 
-def test_return_bxs_income_before_cca_is_amount_4c_plus_line_9936_not_below_zero() -> None:
+def test_return_bxs_income_before_cca_is_line_9899_plus_line_9936_not_below_zero() -> None:
     # Endnote 5 "the amount of income, if any, earned from the source of income that is a business
     # (before any CCA deductions) in which the relevant DIEP is used for the tax year": the form
-    # names no line for it (to be confirmed). Amount 4C is 85200 - 55200.00 = 30000.00, which is
-    # after the 5200.00 of line 9936; adding it back, 30000.00 + 5200.00 = 35200.00, which is the
-    # gross income 85200 less the other expenses 50000 (the recapture on line 9600 is in gross
-    # income, the terminal loss on line 9790 an expense, both 0 here).
+    # names no line for it. Guide T4002 2025, "Line 9899 or 9369 - Net income (loss) before
+    # adjustments": "For business and professional income, use line 9369 on Form T2125. For
+    # farming income, use line 9899 on Form T2042. For fishing income, use line 9369 on Form
+    # T2121." - the pairing with the line 9369 that T2125 and T2121 use, so line 9899 is the
+    # figure. Line 9899 is 85200 - 55200.00 = 30000.00, after the 5200.00 of line 9936; adding it
+    # back, 30000.00 + 5200.00 = 35200.00, which is the gross income 85200 less the other expenses
+    # 50000 (the recapture on line 9600 is in gross income, the terminal loss on line 9790 an
+    # expense, both 0 here). With no inventory adjustment amount 4C is equal to line 9899.
     statement = statement_bx()
     rendered = EnglishTraceRenderer().render_all(statement.trace)
 
+    assert statement.get(FARM_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("30000.00")
     assert statement.get(FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS).value == D("30000.00")
     assert statement.get(FARM_CCA_CLAIM).value == D("5200.00")
     assert statement.get(FARM_INCOME_BEFORE_CCA).value == D("35200.00")
     assert (
-        "farm_income_before_cca: farm_net_income_after_inventory_adjustments 30000 "
+        "farm_income_before_cca: farm_net_income_before_adjustments 30000 "
         "+ farm_cca_claim 5200, not below 0 = 35200"
     ) in rendered
+
+
+def test_an_inventory_adjustment_moves_amount_4c_but_not_the_income_before_cca() -> None:
+    # Amount 4C is the total of lines 9899, 9941 and 9942: 30000.00 + 1000 + 500 = 31500.00. The
+    # income before CCA follows line 9899 (Guide T4002 2025, "Line 9899 or 9369 - Net income
+    # (loss) before adjustments": "For farming income, use line 9899 on Form T2042"), before the
+    # inventory adjustments: 30000.00 + 5200.00 = 35200.00, not 31500.00 + 5200.00 = 36700.00.
+    statement = statement_bx(INVENTORY_ADJUSTMENTS)
+    rendered = EnglishTraceRenderer().render_all(statement.trace)
+
+    assert statement.get(FARM_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("30000.00")
+    assert statement.get(FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS).value == D("31500.00")
+    assert statement.get(FARM_CCA_CLAIM).value == D("5200.00")
+    assert statement.get(FARM_INCOME_BEFORE_CCA).value == D("35200.00")
+    assert (
+        "farm_income_before_cca: farm_net_income_before_adjustments 30000 "
+        "+ farm_cca_claim 5200, not below 0 = 35200"
+    ) in rendered
+
+
+def test_with_an_inventory_adjustment_a_column_9_equal_to_line_9899_plus_line_9936_is_allowed() -> (
+    None
+):
+    # Class 8 with additions of 40000, all DIEPs, expensed at once 35200, claim 37680.00 (column
+    # 21, as in the test of a column 9 equal to the income before CCA without an adjustment): line
+    # 9898 is 50000 + 37680.00 = 87680.00, line 9899 is 85200 - 87680.00 = -2480.00 and amount 4C
+    # is -2480.00 + 1000 + 500 = -980.00. The income before CCA is line 9899 + line 9936 =
+    # -2480.00 + 37680.00 = 35200.00, which the total of column 9 equals (the limit 750000.00 and
+    # the UCC of DIEPs 40000 are not passed); amount 4C + line 9936 would be 36700.00.
+    statement = statement_bx(
+        {
+            **INVENTORY_ADJUSTMENTS,
+            "farm_cca_classes_rows": (large_class_8_row("37680.00", "35200"),),
+        }
+    )
+
+    assert statement.get(FARM_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("-2480.00")
+    assert statement.get(FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS).value == D("-980.00")
+    assert statement.get(FARM_INCOME_BEFORE_CCA).value == D("35200.00")
+    assert statement.get(FARM_IMMEDIATE_EXPENSING_CLAIM).value == D("35200")
+
+
+def test_with_an_inventory_adjustment_a_column_9_above_line_9899_plus_line_9936_is_refused() -> (
+    None
+):
+    # A column 9 of 35201 passes the limit 750000.00 and the UCC of DIEPs 40000 and is below
+    # amount 4C plus line 9936, -980.90 + 37680.90 = 36700.00 (amount 4C is -2480.90 + 1500), but
+    # is above line 9899 plus line 9936, -2480.90 + 37680.90 = 35200.00, the income before CCA that
+    # endnote 5 names (Guide T4002 2025, "For farming income, use line 9899 on Form T2042"). The
+    # claim is as in the refused column 9 of 35201 without an adjustment.
+    with pytest.raises(InputAboveBoundError) as raised:
+        run_bx(
+            {
+                **INVENTORY_ADJUSTMENTS,
+                "farm_cca_classes_rows": (large_class_8_row("37680.90", "35201"),),
+            }
+        )
+
+    assert str(raised.value) == (
+        "ca/t2042, instance 1: total of column 9 (35201) is above the income before CCA (35200.00)"
+    )
 
 
 def test_return_bxs_amount_iv_is_750000_from_50_percent_of_1_5_million() -> None:

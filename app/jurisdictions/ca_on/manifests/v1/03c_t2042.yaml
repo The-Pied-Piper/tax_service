@@ -451,14 +451,16 @@ capabilities:
       output: ca/farm_immediate_expensing_limit
   # T2042 Area A endnote 5 "the amount of income, if any, earned from the source of income that
   # is a business (before any CCA deductions) in which the relevant DIEP is used for the tax
-  # year": amount 4C "Net income (loss) after inventory adjustments" (the farm's final net
-  # income; the form names no line for this) plus line 9936, the CCA it deducted (the recapture
-  # on line 9600 is already in gross income and the terminal loss on line 9790 an expense), not
-  # below zero.
+  # year": line 9899 "Net income (loss) before inventory adjustments" plus line 9936, the CCA it
+  # deducted (the recapture on line 9600 is already in gross income and the terminal loss on
+  # line 9790 an expense), not below zero. Guide T4002 2025, "Line 9899 or 9369 - Net income
+  # (loss) before adjustments": "For business and professional income, use line 9369 on Form
+  # T2125. For farming income, use line 9899 on Form T2042. For fishing income, use line 9369 on
+  # Form T2121." - the pairing of the figure T2125 and T2121 use for their income before CCA.
   - name: core/sum_not_below_zero
     consumes:
       parts:
-        - ca/farm_net_income_after_inventory_adjustments
+        - ca/farm_net_income_before_adjustments
         - ca/farm_cca_claim
     produces:
       output: ca/farm_income_before_cca
