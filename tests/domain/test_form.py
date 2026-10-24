@@ -33,6 +33,7 @@ import pytest
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.record_total import RecordTotal
 from app.domain.capabilities.subtract import Subtract
+from app.domain.capabilities.sum import Sum
 from app.domain.capability import Capability, CapabilityResult
 from app.domain.composition import Composition
 from app.domain.errors import (
@@ -323,20 +324,6 @@ def test_a_cycle_of_imports_is_refused_naming_the_forms_on_it() -> None:
         form_set(shop_needs_audit, audit_exporting_total)
 
     assert "ex/shop" in str(caught.value) and "ex/audit" in str(caught.value)
-
-
-def test_a_form_importing_its_own_export_is_a_cycle_naming_it() -> None:
-    greedy = FormComposition(
-        "ex/shop",
-        [Subtract(SALES, COSTS, PROFIT), RecordTotal(SHOP_PROFIT, PROFIT_TOTAL)],
-        instances=SHOPS,
-        exports=[PROFIT, PROFIT_TOTAL],
-    )
-
-    with pytest.raises(InvalidCompositionError, match=r"cycle.*ex/shop") as caught:
-        form_set(greedy, audit())
-
-    assert "ex/audit" not in str(caught.value)
 
 
 def test_a_form_outside_the_cycle_is_not_named() -> None:
@@ -1499,3 +1486,256 @@ def test_the_limits_are_checked_after_the_instances_are_all_given() -> None:
 
     with pytest.raises(InvalidCompositionError, match="missing input"):
         side_set(only).compute()
+
+
+# --- a form reading its own export: the records of its earlier runs ------------------------------
+
+AMOUNT = ArtifactKind("ex/amount", Decimal)
+CARRIED = ArtifactKind("ex/carried", Decimal)
+STEP_TOTAL = ArtifactKind("ex/total", Decimal)
+CHECKED = ArtifactKind("ex/checked", Decimal)
+STEPS = RecordListKind("ex/steps", fields=(AMOUNT,))
+STEP_TOTALS = RecordListKind("ex/step.total", fields=(STEP_TOTAL,))
+EARLY_TOTALS = RecordListKind("ex/early.total", fields=(STEP_TOTAL,))
+STEP_RETURN = RecordTotal(STEP_TOTALS, GRAND)
+
+
+def step(name: str = "ex/step") -> FormComposition:
+    """Each step: the amount plus the total carried from the earlier steps' own totals."""
+    own = FormComposition.derive(name, [STEP_TOTAL])[0]
+    return FormComposition(
+        name,
+        [RecordTotal(own, CARRIED), Sum((AMOUNT, CARRIED), STEP_TOTAL)],
+        instances=STEPS,
+        exports=[STEP_TOTAL],
+    )
+
+
+def step_set(*forms: FormComposition) -> FormSet:
+    return flat(
+        [STEP_RETURN],
+        inputs=frozenset({STEPS} | {form.instances for form in forms if form.instances}),
+        outputs=frozenset({GRAND}),
+        forms=forms,
+    )
+
+
+def steps(*amounts: str) -> Artifact[Any]:
+    return Artifact(STEPS, RecordList(STEPS.fields, [{AMOUNT: D(a)} for a in amounts]))
+
+
+def test_a_form_reading_its_own_export_is_not_a_cycle() -> None:
+    assert [form.name for form in step_set(step()).forms] == ["ex/step", RETURN]
+
+
+def test_a_capability_over_the_form_s_own_export_gives_the_running_total_of_earlier_runs() -> None:
+    result = step_set(step()).compute(steps("10", "15", "20"))
+
+    assert [w.get(CARRIED).value for w in result["ex/step"]] == [D(0), D(10), D(35)]
+    assert [w.get(STEP_TOTAL).value for w in result["ex/step"]] == [D(10), D(25), D(55)]
+
+
+def test_run_k_receives_the_own_export_of_the_k_minus_1_earlier_runs_in_order() -> None:
+    result = step_set(step()).compute(steps("10", "15", "20"))
+
+    seen = [values(worksheet, STEP_TOTALS) for worksheet in result["ex/step"]]
+    assert seen == [[], [D(10)], [D(10), D(25)]]
+
+
+def test_the_own_export_reaches_the_run_as_a_starting_artifact() -> None:
+    result = step_set(step()).compute(steps("10", "15"))
+
+    assert result["ex/step"][1].producer_of(STEP_TOTALS) is None
+
+
+def test_the_own_export_is_a_record_list_of_the_one_field() -> None:
+    result = step_set(step()).compute(steps("10", "15"))
+
+    assert result["ex/step"][1].get(STEP_TOTALS).value == RecordList(
+        (STEP_TOTAL,), [{STEP_TOTAL: D(10)}]
+    )
+
+
+def test_the_first_run_of_a_form_reading_its_own_export_sees_an_empty_list() -> None:
+    result = step_set(step()).compute(steps("10"))
+
+    assert values(result["ex/step"][0], STEP_TOTALS) == []
+    assert result["ex/step"][0].get(CARRIED).value == D(0)
+
+
+def test_a_form_without_an_instances_list_reading_its_own_export_sees_an_empty_list() -> None:
+    once = FormComposition(
+        "ex/step",
+        [RecordTotal(STEP_TOTALS, CARRIED), Sum((AMOUNT, CARRIED), STEP_TOTAL)],
+        exports=[STEP_TOTAL],
+        starting=frozenset({AMOUNT}),
+    )
+    forms = flat(
+        [STEP_RETURN],
+        inputs=frozenset({AMOUNT}),
+        outputs=frozenset({GRAND}),
+        forms=[once],
+    )
+
+    result = forms.compute(Artifact(AMOUNT, D(7)))
+
+    (only,) = result["ex/step"]
+    assert values(only, STEP_TOTALS) == []
+    assert only.get(STEP_TOTAL).value == D(7)
+
+
+def test_each_form_sees_only_its_own_earlier_runs() -> None:
+    result = step_set(step(), step("ex/zzz")).compute(steps("10", "15", "20"))
+
+    assert [w.get(STEP_TOTAL).value for w in result["ex/zzz"]] == [D(10), D(25), D(55)]
+    assert values(result["ex/zzz"][2], FormComposition.derive("ex/zzz", [STEP_TOTAL])[0]) == [
+        D(10),
+        D(25),
+    ]
+
+
+def test_later_consumers_see_the_values_the_runs_were_given_as_earlier_runs() -> None:
+    forms = step_set(step())
+    result = forms.compute(steps("10", "15", "20"))
+
+    final = values(result[RETURN][0], STEP_TOTALS)
+    assert final == [D(10), D(25), D(55)]
+    for position, worksheet in enumerate(result["ex/step"]):
+        assert values(worksheet, STEP_TOTALS) == final[:position]
+    assert result[RETURN][0].get(GRAND).value == D(90)
+
+
+def test_a_form_reading_its_own_export_still_runs_after_the_form_it_imports_from() -> None:
+    early = FormComposition(
+        "ex/early",
+        [
+            RecordTotal(EARLY_TOTALS, CARRIED),
+            RecordTotal(SHOP_PROFIT, PROFIT_TOTAL),
+            Sum((AMOUNT, CARRIED, PROFIT_TOTAL), STEP_TOTAL),
+        ],
+        instances=STEPS,
+        exports=[STEP_TOTAL],
+    )
+
+    forms = flat(
+        [RecordTotal(EARLY_TOTALS, GRAND)],
+        inputs=frozenset({STEPS, SHOPS}),
+        outputs=frozenset({GRAND}),
+        forms=[early, shop()],
+    )
+
+    assert [form.name for form in forms.forms] == ["ex/shop", "ex/early", RETURN]
+
+
+def test_a_form_reading_its_own_export_still_runs_before_the_forms_that_import_it() -> None:
+    late = FormComposition(
+        "ex/aaa",
+        [RecordTotal(STEP_TOTALS, PROFIT_TOTAL), Sum((FEE, PROFIT_TOTAL), FEE_TOTAL)],
+        instances=AUDITS,
+        exports=[FEE_TOTAL],
+    )
+    forms = flat(
+        [RecordTotal(FormComposition.derive("ex/aaa", [FEE_TOTAL])[0], GRAND)],
+        inputs=frozenset({STEPS, AUDITS}),
+        outputs=frozenset({GRAND}),
+        forms=[late, step()],
+    )
+
+    assert [form.name for form in forms.forms] == ["ex/step", "ex/aaa", RETURN]
+
+
+def test_a_cycle_between_two_forms_is_still_refused_when_one_reads_its_own_export() -> None:
+    reading_shop = FormComposition(
+        "ex/shop",
+        [
+            Subtract(SALES, COSTS, PROFIT),
+            RecordTotal(AUDIT_AUDITED, FEE_TOTAL),
+            RecordTotal(SHOP_PROFIT, PROFIT_TOTAL),
+            Sum((PROFIT_TOTAL, FEE_TOTAL), GRAND),
+        ],
+        instances=SHOPS,
+        exports=[PROFIT, GRAND],
+    )
+
+    with pytest.raises(InvalidCompositionError, match="cycle") as caught:
+        form_set(reading_shop, audit(), shop("ex/bystander"))
+
+    assert "ex/shop" in str(caught.value) and "ex/audit" in str(caught.value)
+    assert "ex/bystander" not in str(caught.value)
+
+
+def test_a_cycle_through_a_form_that_reads_its_own_export_names_the_forms_on_it() -> None:
+    # step reads its own total and ex/back.fee_total; back reads step.total.
+    reading = FormComposition(
+        "ex/step",
+        [
+            RecordTotal(STEP_TOTALS, CARRIED),
+            RecordTotal(FormComposition.derive("ex/back", [FEE_TOTAL])[0], GRAND),
+            Sum((AMOUNT, CARRIED, GRAND), STEP_TOTAL),
+        ],
+        instances=STEPS,
+        exports=[STEP_TOTAL],
+    )
+    back = FormComposition(
+        "ex/back",
+        [RecordTotal(STEP_TOTALS, PROFIT_TOTAL), Sum((FEE, PROFIT_TOTAL), FEE_TOTAL)],
+        instances=AUDITS,
+        exports=[FEE_TOTAL],
+    )
+
+    with pytest.raises(InvalidCompositionError, match="cycle") as caught:
+        flat(
+            [STEP_RETURN],
+            inputs=frozenset({STEPS, AUDITS}),
+            outputs=frozenset({GRAND}),
+            forms=[reading, back],
+        )
+
+    assert "ex/step" in str(caught.value) and "ex/back" in str(caught.value)
+
+
+def test_reading_an_export_the_form_does_not_have_is_still_refused_as_exported_by_no_form() -> None:
+    missing = FormComposition(
+        "ex/step",
+        [
+            RecordTotal(RecordListKind("ex/step.nothing", fields=(AMOUNT,)), CARRIED),
+            Sum((AMOUNT, CARRIED), STEP_TOTAL),
+        ],
+        instances=STEPS,
+        exports=[STEP_TOTAL],
+    )
+
+    with pytest.raises(InvalidCompositionError, match=r"'ex/step': no form exports"):
+        step_set(missing)
+
+
+def test_a_failing_run_of_a_form_reading_its_own_export_names_the_form_and_instance() -> None:
+    checked = FormComposition(
+        "ex/step",
+        [
+            Reject(AMOUNT, CHECKED),
+            RecordTotal(STEP_TOTALS, CARRIED),
+            Sum((CHECKED, CARRIED), STEP_TOTAL),
+        ],
+        instances=STEPS,
+        exports=[STEP_TOTAL],
+    )
+
+    with pytest.raises(DomainError, match=r"^ex/step, instance 2: 666 is not accepted$"):
+        step_set(checked).compute(steps("10", "666", "20"))
+
+
+def test_the_trace_names_are_those_of_any_form() -> None:
+    forms = step_set(step())
+    result = forms.compute(steps("10", "15", "20"))
+
+    lines = instance_lines(forms.trace(result))
+
+    assert [(line.form, line.position) for line in lines] == [
+        ("ex/step", 1),
+        ("ex/step", 2),
+        ("ex/step", 3),
+        (RETURN, 1),
+    ]
+    assert lines[2].lines == result["ex/step"][2].trace
+    assert [type(line) for line in lines[2].lines] == [RecordTotalLine, type(lines[2].lines[1])]
