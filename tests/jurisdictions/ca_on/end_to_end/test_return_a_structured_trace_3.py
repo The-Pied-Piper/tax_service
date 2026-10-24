@@ -224,6 +224,14 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CLERGY_ACCOMMODATION_COST,
+    CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT,
+    CLERGY_OTHER_ACCOMMODATION_CLAIMS,
+    CLERGY_QUALIFYING_EMPLOYMENT_INCOME,
+    CLERGY_RESIDENCE_LINE_2,
+    CLERGY_RESIDENCE_LINE_4,
+    CLERGY_RESIDENCE_LINE_8,
+    CLERGY_RESIDENCE_MONTHS_AMOUNT,
     CPP_ACTUAL_BASE_CONTRIBUTIONS,
     CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_BASE_CONTRIBUTIONS,
@@ -683,6 +691,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=AMT_PART_7_CREDITS_TOTAL,
             subtrahend_amount=D("0.00"),
             result=D("16951.38"),
+        ),
+        # Form T1223 Part C line 8 "Line 6 minus line 7": both 0 on Return A.
+        CLERGY_RESIDENCE_LINE_8: SubtractedLine(
+            output=CLERGY_RESIDENCE_LINE_8,
+            minuend=CLERGY_ACCOMMODATION_COST,
+            minuend_amount=D("0"),
+            subtrahend=CLERGY_OTHER_ACCOMMODATION_CLAIMS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
         ),
         # Worksheet ON428 line 8 "Line 6 minus line 7": line 6, the surtax on line 3 (523.79), less
         # line 7, the surtax on line 65 of the form (523.79): 0.
@@ -2355,6 +2372,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert per_unit == {
         # Form T2222 lines 1, 2, 6 and 7 "multiplied by $11.00" and "multiplied by $5.50": Return A
         # has no days.
+        # Form T1223 Part C line 4 before its maximum: 0 months at $1,000 a month.
+        CLERGY_RESIDENCE_MONTHS_AMOUNT: PerUnitAmountLine(
+            output=CLERGY_RESIDENCE_MONTHS_AMOUNT,
+            count_kind=CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT,
+            count=0,
+            per_unit=Amount(D("1000")),
+            rounding=CENT,
+            result=D("0"),
+        ),
         ZONE_A_BASIC_RESIDENCY_AMOUNT: PerUnitAmountLine(
             output=ZONE_A_BASIC_RESIDENCY_AMOUNT,
             count_kind=ZONE_A_DAYS_LIVED,
@@ -2452,6 +2478,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert fractions == {
         # Schedule 8 Part 5 line 48 "multiplied by 2": 0 x 2 for Return A.
+        # Form T1223 Part C line 2 "Amount from line 1 multiplied by 1/3": line 1 is 0 on Return A.
+        CLERGY_RESIDENCE_LINE_2: FractionAppliedLine(
+            output=CLERGY_RESIDENCE_LINE_2,
+            base=CLERGY_QUALIFYING_EMPLOYMENT_INCOME,
+            base_amount=D("0"),
+            fraction=Fraction(1, 3),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
         CPP_PART_5_LINE_48: FractionAppliedLine(
             output=CPP_PART_5_LINE_48,
             base=CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
@@ -3253,6 +3288,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert capped == {
         # The guide's line 41400 "to a maximum of $750", after the 15%: 0 is below it.
+        # Form T1223 Part C line 4 "(maximum $10,000)": the months amount, 0, within the maximum.
+        CLERGY_RESIDENCE_LINE_4: CappedAmountLine(
+            CLERGY_RESIDENCE_LINE_4,
+            CLERGY_RESIDENCE_MONTHS_AMOUNT,
+            D("0"),
+            Amount(D("10000")),
+            CENT,
+            D("0"),
+        ),
         LABOUR_SPONSORED_FUNDS_CREDIT: CappedAmountLine(
             LABOUR_SPONSORED_FUNDS_CREDIT,
             LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,

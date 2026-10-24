@@ -44,14 +44,6 @@ expense supplement" takes it off the employment income ("minus the amounts from 
 22900, and 23100 of your return"). Only line 45200 reads it until the deductions from total income
 compute it; it does not yet enter net income."""
 
-CLERGY_RESIDENCE_DEDUCTION = CATALOG.declare(
-    "clergy_residence_deduction", Decimal, non_negative=True
-)
-"""Clergy residence deduction, T1 line 51 and line 23100 "Clergy residence deduction (complete Form
-T1223)": a starting amount, taken as entered. The Federal Worksheet "Line 45200 - Refundable medical
-expense supplement" takes it off the employment income, as line 22900. Only line 45200 reads it
-until the deductions from total income compute it; it does not yet enter net income."""
-
 NET_BUSINESS_INCOME = CATALOG.declare("net_business_income", Decimal, non_negative=True)
 """Net business income, T1 line 22 and line 13500 "Business income" "Net": a starting amount. The
 Federal Worksheet "Line 45200 - Refundable medical expense supplement" counts "your net

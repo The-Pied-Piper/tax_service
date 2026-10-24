@@ -345,7 +345,18 @@ inputs:
   - ca/political_contributions
   - ca/disability_supports_deduction
   - ca/other_employment_expenses
-  - ca/clergy_residence_deduction
+  # Form T1223 Part C, the clergy residence deduction (line 23100): the figures the form takes from
+  # the filer, entered as the form takes them. Part C (A), the employer's residence benefit (box 30
+  # of the T4 slip); line 1, the income from qualifying employment from all eligible employers;
+  # line 3, the number of months in qualifying employment; line 6, the actual rent and eligible
+  # utilities paid or the fair rental value of a residence owned; line 7, all amounts claimed for
+  # the accommodation, including a spouse's; and whether Part C (B) is completed (1) or not (0).
+  - ca/clergy_employer_residence_benefit
+  - ca/clergy_qualifying_employment_income
+  - ca/clergy_months_in_qualifying_employment
+  - ca/clergy_accommodation_cost
+  - ca/clergy_other_accommodation_claims
+  - ca/clergy_residence_part_b_completed
   - ca/net_business_income
   - ca/net_professional_income
   - ca/net_commission_income

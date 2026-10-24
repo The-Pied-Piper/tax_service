@@ -10,7 +10,6 @@ INPUTS = frozenset(
         "ca/political_contributions",
         "ca/disability_supports_deduction",
         "ca/other_employment_expenses",
-        "ca/clergy_residence_deduction",
         "ca/net_business_income",
         "ca/net_professional_income",
         "ca/net_commission_income",

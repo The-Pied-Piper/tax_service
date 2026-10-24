@@ -5,9 +5,11 @@ from __future__ import annotations
 from app.domain.capabilities.amount_by_count import AmountForCount
 from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
+from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.credit_amount import CreditAmount
+from app.domain.capabilities.greater_of import GreaterOf
 from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.capabilities.subtract import Subtract
@@ -48,6 +50,22 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CLERGY_ACCOMMODATION_COST,
+    CLERGY_EMPLOYER_RESIDENCE_BENEFIT,
+    CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT,
+    CLERGY_OTHER_ACCOMMODATION_CLAIMS,
+    CLERGY_QUALIFYING_EMPLOYMENT_INCOME,
+    CLERGY_RESIDENCE_DEDUCTION,
+    CLERGY_RESIDENCE_LINE_2,
+    CLERGY_RESIDENCE_LINE_4,
+    CLERGY_RESIDENCE_LINE_5,
+    CLERGY_RESIDENCE_LINE_8,
+    CLERGY_RESIDENCE_LINE_9,
+    CLERGY_RESIDENCE_LINE_10,
+    CLERGY_RESIDENCE_MONTHS_AMOUNT,
+    CLERGY_RESIDENCE_PART_B_COMPLETED,
+    CLERGY_RESIDENCE_TOTAL,
+    CLERGY_RESIDENCE_TOTAL_LIMITED,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASIC_EXEMPTION,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
@@ -240,6 +258,12 @@ INPUTS = frozenset(
         "ca/travel_individuals",
         "ca/cpp_t4_base_and_first_additional_contributions",
         "ca/cpp_t4_second_additional_contributions",
+        "ca/clergy_employer_residence_benefit",
+        "ca/clergy_qualifying_employment_income",
+        "ca/clergy_months_in_qualifying_employment",
+        "ca/clergy_accommodation_cost",
+        "ca/clergy_other_accommodation_claims",
+        "ca/clergy_residence_part_b_completed",
     }
 )
 
@@ -703,12 +727,109 @@ STEPS = {
         consumes={"base": "ca/business_investment_loss_after_reduction"},
         produces={"output": "ca/allowable_business_investment_loss"},
     ),
+    # T1223 Part C line 2 "Amount from line 1 multiplied by 1/3": the income from qualifying
+    # employment (line 1) times the one-third fraction of the dataset.
+    CapabilitySelection(
+        name="core/apply_fraction",
+        params={"fraction": "ca/clergy_residence_fraction"},
+        consumes={"base": "ca/clergy_qualifying_employment_income"},
+        produces={"output": "ca/clergy_residence_line_2"},
+    ),
+    # T1223 Part C line 4 "Line 3 multiplied by $1,000 (maximum $10,000)": the months in
+    # qualifying employment (line 3) times the per-month amount of the dataset, before the maximum.
+    CapabilitySelection(
+        name="core/per_unit_amount",
+        params={"amount": "ca/clergy_residence_per_month"},
+        consumes={"count": "ca/clergy_months_in_qualifying_employment"},
+        produces={"output": "ca/clergy_residence_months_amount"},
+    ),
+    # T1223 Part C line 4 "(maximum $10,000)": the amount capped at the dataset's maximum.
+    CapabilitySelection(
+        name="core/capped_amount",
+        params={"cap": "ca/clergy_residence_months_maximum"},
+        consumes={"base": "ca/clergy_residence_months_amount"},
+        produces={"output": "ca/clergy_residence_line_4"},
+    ),
+    # T1223 Part C line 5 "Enter whichever is more: line 2 or line 4."
+    CapabilitySelection(
+        name="core/greater_of",
+        params={},
+        consumes={
+            "amounts": ("ca/clergy_residence_line_2", "ca/clergy_residence_line_4"),
+        },
+        produces={"output": "ca/clergy_residence_line_5"},
+    ),
+    # T1223 Part C line 8 "Line 6 minus line 7 =": the accommodation cost less the other claims,
+    # not floored (the form prints no floor).
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/clergy_accommodation_cost",
+            "less": "ca/clergy_other_accommodation_claims",
+        },
+        produces={"output": "ca/clergy_residence_line_8"},
+    ),
+    # T1223 Part C line 9 "Enter whichever is less: Line 5 or line 8."
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": ("ca/clergy_residence_line_5", "ca/clergy_residence_line_8"),
+        },
+        produces={"output": "ca/clergy_residence_line_9"},
+    ),
+    # T1223 Part C line 10 "Enter whichever is less: Line 1 or line 9.", the (B) amount.
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": ("ca/clergy_qualifying_employment_income", "ca/clergy_residence_line_9"),
+        },
+        produces={"output": "ca/clergy_residence_line_10"},
+    ),
+    # T1223 Part C (C) "add amounts (A) and (B)": the employer's residence benefit (A), the T4
+    # box 30 value, and the (B) amount of line 10.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/clergy_employer_residence_benefit",
+                "ca/clergy_residence_line_10",
+            )
+        },
+        produces={"output": "ca/clergy_residence_total"},
+    ),
+    # T1223 Part C (C) "The amount claimed for the clergy residence deduction cannot be more than
+    # the income from qualifying employment on line 1.": the total, not more than line 1.
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": ("ca/clergy_residence_total", "ca/clergy_qualifying_employment_income"),
+        },
+        produces={"output": "ca/clergy_residence_total_limited"},
+    ),
+    # T1223 Part C "Enter this amount on line 23100 of your return." The cap applies only when
+    # Part C (B) is completed (1), so the total limited to line 1 is chosen by that count; with (A)
+    # alone (0) the total is the deduction.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/clergy_residence_part_b_completed",
+            "when_none": "ca/clergy_residence_total",
+            "when_any": "ca/clergy_residence_total_limited",
+        },
+        produces={"output": "ca/clergy_residence_deduction"},
+    ),
     # T1 line 53 and line 23300 "Add lines 35 to 52.": the deductions wired so far in the form's
     # line order (20700, 20800, 20805, 21000, 21200, 21300, 21400, 21700, 22000, 22100, 22200,
-    # 22215, 22400, 23200), line 23200 being the caller's other deductions and then the total split
-    # income of Form T1206 Part 1 line 4 ("Enter this amount on line 23200 of your return."). Not
-    # wired yet: 21500, 21900, 22900 and 23100; lines 20810 and 21999 have no line among lines 35
-    # to 52 and nothing on this return reads them.
+    # 22215, 22400, 23100, 23200), line 23200 being the caller's other deductions and then the
+    # total split income of Form T1206 Part 1 line 4 ("Enter this amount on line 23200 of your
+    # return."). Not wired yet: 21500, 21900 and 22900; lines 20810 and 21999 have no line among
+    # lines 35 to 52 and nothing on this return reads them.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -727,6 +848,7 @@ STEPS = {
                 "ca/cpp_deduction_on_self_employment_and_other_earnings",
                 "ca/cpp_enhanced_contributions_on_return",
                 "ca/exploration_and_development_expenses",
+                "ca/clergy_residence_deduction",
                 "ca/other_deductions",
                 "ca/total_split_income",
             )
@@ -1487,6 +1609,7 @@ WIRING = {
                 CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
                 EXPLORATION_AND_DEVELOPMENT_EXPENSES,
+                CLERGY_RESIDENCE_DEDUCTION,
                 OTHER_DEDUCTIONS,
                 TOTAL_SPLIT_INCOME,
             }
@@ -1703,5 +1826,61 @@ WIRING = {
         Sum,
         frozenset({RESIDENCY_DEDUCTION, TRAVEL_DEDUCTION}),
         frozenset({NORTHERN_RESIDENTS_DEDUCTIONS}),
+    ),
+    (
+        ApplyFraction,
+        frozenset({CLERGY_QUALIFYING_EMPLOYMENT_INCOME}),
+        frozenset({CLERGY_RESIDENCE_LINE_2}),
+    ),
+    (
+        PerUnitAmount,
+        frozenset({CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT}),
+        frozenset({CLERGY_RESIDENCE_MONTHS_AMOUNT}),
+    ),
+    (
+        CappedAmount,
+        frozenset({CLERGY_RESIDENCE_MONTHS_AMOUNT}),
+        frozenset({CLERGY_RESIDENCE_LINE_4}),
+    ),
+    (
+        GreaterOf,
+        frozenset({CLERGY_RESIDENCE_LINE_2, CLERGY_RESIDENCE_LINE_4}),
+        frozenset({CLERGY_RESIDENCE_LINE_5}),
+    ),
+    (
+        Subtract,
+        frozenset({CLERGY_ACCOMMODATION_COST, CLERGY_OTHER_ACCOMMODATION_CLAIMS}),
+        frozenset({CLERGY_RESIDENCE_LINE_8}),
+    ),
+    (
+        LesserOf,
+        frozenset({CLERGY_RESIDENCE_LINE_5, CLERGY_RESIDENCE_LINE_8}),
+        frozenset({CLERGY_RESIDENCE_LINE_9}),
+    ),
+    (
+        LesserOf,
+        frozenset({CLERGY_QUALIFYING_EMPLOYMENT_INCOME, CLERGY_RESIDENCE_LINE_9}),
+        frozenset({CLERGY_RESIDENCE_LINE_10}),
+    ),
+    (
+        Sum,
+        frozenset({CLERGY_EMPLOYER_RESIDENCE_BENEFIT, CLERGY_RESIDENCE_LINE_10}),
+        frozenset({CLERGY_RESIDENCE_TOTAL}),
+    ),
+    (
+        LesserOf,
+        frozenset({CLERGY_RESIDENCE_TOTAL, CLERGY_QUALIFYING_EMPLOYMENT_INCOME}),
+        frozenset({CLERGY_RESIDENCE_TOTAL_LIMITED}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                CLERGY_RESIDENCE_PART_B_COMPLETED,
+                CLERGY_RESIDENCE_TOTAL,
+                CLERGY_RESIDENCE_TOTAL_LIMITED,
+            }
+        ),
+        frozenset({CLERGY_RESIDENCE_DEDUCTION}),
     ),
 }
