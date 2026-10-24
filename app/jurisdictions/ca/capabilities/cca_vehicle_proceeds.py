@@ -27,11 +27,27 @@ of them (column 6) each become the exact product of the column and the prescribe
 tax over the actual cost, rounded once with the dataset's rule; otherwise they are unchanged. The
 output is a record list of the row's other fields, one record per row in the caller's order. It
 records one `CcaVehicleProceedsLine` for each row, by position from 1, and no total.
+
+Guide T4036 2025, "Class 54 (30%)": "If a zero-emission passenger vehicle is disposed of to a
+person or partnership with whom you deal at arm's length, and its cost exceeds the prescribed
+amount ($55,000 for vehicles acquired after March 18, 2019, and before January 1, 2022; $59,000
+for vehicles acquired after December 31, 2021, and before January 1, 2023; or $61,000 for vehicles
+acquired after December 31, 2022), the proceeds of disposition will be adjusted based on a factor
+equal to the prescribed amount as a proportion of the actual cost of the vehicle." A Class 54 row
+also holds the list of its sold zero-emission passenger vehicles (`ca/cca_sold_zepvs`), which may
+be non-empty only on a Class 54 row, else the row is refused (`InvalidRecordError`, naming the item
+and the vehicle). Each vehicle of a year is scaled on its own, with the `zepv_prescribed_amounts`
+dataset (a year before its oldest row is refused) and the same rule as a Class 10.1 vehicle; a
+vehicle of year 0 is copied as entered. Columns 5 and 6 of a Class 54 row are the proceeds entered
+on the row (other sales of the class, not listed) plus those of its vehicles, scaled. Each vehicle
+records one `CcaZepvProceedsLine` after the row's own line, by position of the row and of the
+vehicle from 1. A Class 54 row does not use the year, cost and assistance of Class 10.1.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from decimal import Decimal
 from fractions import Fraction as ExactFraction
 from typing import Any, ClassVar
@@ -48,37 +64,59 @@ from app.jurisdictions.ca.catalog import (
     CCA_CLASS_NUMBER,
     CCA_DIEP_PROCEEDS,
     CCA_PROCEEDS,
+    CCA_SOLD_ZEPVS,
     CCA_VEHICLE_ACQUIRED_YEAR,
     CCA_VEHICLE_COST,
     CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+    CCA_ZEPV_DIEP_PROCEEDS,
+    CCA_ZEPV_PROCEEDS,
 )
-from app.jurisdictions.ca.trace import CcaVehicleProceedsLine
+from app.jurisdictions.ca.trace import CcaVehicleProceedsLine, CcaZepvProceedsLine
 
 CLASS_10_1 = Decimal("10.1")
+CLASS_54 = Decimal(54)
 FIRST_YEAR = 2021  # "a passenger vehicle bought after April 18, 2021"
+
+
+@dataclass(frozen=True)
+class _Scaled:
+    """The proceeds of one vehicle after the adjustment, with the figures that worked it out."""
+
+    applied: bool
+    prescribed: Decimal
+    actual_cost: Decimal
+    proceeds: Decimal
+    diep_proceeds: Decimal
 
 
 @capability(identifier="cca_vehicle_proceeds")
 class CcaVehicleProceeds(Capability):
-    """Produces `output`: the consumed `classes` with the proceeds of each Class 10.1 vehicle
-    scaled to its prescribed amount, at the consumed `sales_tax_rate`."""
+    """Produces `output`: the consumed `classes` with the proceeds of each Class 10.1 vehicle and
+    of each zero-emission passenger vehicle sold from a Class 54 row scaled to its prescribed
+    amount, at the consumed `sales_tax_rate`."""
 
-    PARAMETERS: ClassVar[Mapping[str, ParameterKind[Any]]] = {"prescribed_amounts": YEAR_AMOUNTS}
+    PARAMETERS: ClassVar[Mapping[str, ParameterKind[Any]]] = {
+        "prescribed_amounts": YEAR_AMOUNTS,
+        "zepv_prescribed_amounts": YEAR_AMOUNTS,
+    }
     CONSUMES: ClassVar[Mapping[str, type]] = {"classes": RecordList, "sales_tax_rate": Decimal}
     PRODUCES: ClassVar[Mapping[str, type]] = {"output": RecordList}
 
     def __init__(
         self,
         prescribed_amounts: ParameterDataset[YearAmounts],
+        zepv_prescribed_amounts: ParameterDataset[YearAmounts],
         classes: ArtifactKind[RecordList],
         sales_tax_rate: Money,
         output: RecordListKind,
     ) -> None:
-        """Wire the capability: its prescribed amounts dataset, the record list and the sales tax
-        rate it reads, the record list kind produced."""
+        """Wire the capability: its prescribed amounts datasets (Class 10.1 and Class 54), the
+        record list and the sales tax rate it reads, the record list kind produced."""
         super().__init__(classes=classes, sales_tax_rate=sales_tax_rate, output=output)
         self._prescribed_amounts = prescribed_amounts.values
         self._rounding: RoundingRule = prescribed_amounts.rounding
+        self._zepv_prescribed_amounts = zepv_prescribed_amounts.values
+        self._zepv_rounding: RoundingRule = zepv_prescribed_amounts.rounding
         self._classes = classes
         self._sales_tax_rate = sales_tax_rate
         self._output = output
@@ -86,29 +124,59 @@ class CcaVehicleProceeds(Capability):
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         rows = self._input(inputs, self._classes).value.records
         rate = self._input(inputs, self._sales_tax_rate).value
-        lines: list[CcaVehicleProceedsLine] = []
+        lines: list[CcaVehicleProceedsLine | CcaZepvProceedsLine] = []
         records: list[dict[ArtifactKind[Any], Decimal | int]] = []
         for position, row in enumerate(rows, 1):
-            line, record = self._row(position, row, rate)
-            lines.append(line)
+            row_line, record = self._row(position, row, rate)
+            lines.append(row_line)
+            lines.extend(self._sold(position, row, rate, record))
             records.append(record)
         return CapabilityResult(
             outputs=(Artifact(self._output, RecordList(self._output.fields, records)),),
             trace=tuple(lines),
         )
 
+    @staticmethod
+    def _scale(
+        where: str,
+        year: int,
+        cost: Decimal,
+        assistance: Decimal,
+        proceeds: Decimal,
+        diep_proceeds: Decimal,
+        rate: Decimal,
+        amounts: YearAmounts,
+        rounding: RoundingRule,
+    ) -> _Scaled:
+        """The proceeds of a vehicle acquired in `year` scaled to the prescribed amount of `amounts`
+        (plus the tax at `rate`) when its actual cost is more; unchanged for year 0."""
+        if year <= 0:
+            return _Scaled(False, Decimal(0), Decimal(0), proceeds, diep_proceeds)
+        found = amounts.row_for(year)
+        if found is None:
+            raise InvalidRecordError(f"{where}: no prescribed amount for {year}")
+        printed = found.amount("prescribed_amount")
+        tax = rounding.apply(ExactFraction(printed) * ExactFraction(rate) / 100)
+        prescribed = printed + tax
+        actual_cost = cost - assistance
+        if actual_cost <= prescribed:
+            return _Scaled(False, prescribed, actual_cost, proceeds, diep_proceeds)
+        factor = ExactFraction(prescribed) / ExactFraction(actual_cost)
+        return _Scaled(
+            True,
+            prescribed,
+            actual_cost,
+            rounding.apply(ExactFraction(proceeds) * factor),
+            rounding.apply(ExactFraction(diep_proceeds) * factor),
+        )
+
     def _row(
         self, position: int, row: Record, rate: Decimal
     ) -> tuple[CcaVehicleProceedsLine, dict[ArtifactKind[Any], Decimal | int]]:
-        """The line and the output record of one row."""
+        """The line and the output record of one row, before the sold vehicles are added."""
         proceeds = row[CCA_PROCEEDS]
         diep_proceeds = row[CCA_DIEP_PROCEEDS]
         year = row[CCA_VEHICLE_ACQUIRED_YEAR]
-        prescribed = Decimal(0)
-        actual_cost = Decimal(0)
-        applied = False
-        adjusted_proceeds = proceeds
-        adjusted_diep_proceeds = diep_proceeds
         if year > 0:
             if row[CCA_CLASS_NUMBER] != CLASS_10_1:
                 raise InvalidRecordError(
@@ -120,32 +188,86 @@ class CcaVehicleProceeds(Capability):
                     f"item {position}: a vehicle acquired in {year} is not a passenger vehicle "
                     f"bought after April 18, 2021"
                 )
-            amounts = self._prescribed_amounts.row_for(year)
-            if amounts is None:
-                raise InvalidRecordError(f"item {position}: no prescribed amount for {year}")
-            printed = amounts.amount("prescribed_amount")
-            tax = self._rounding.apply(ExactFraction(printed) * ExactFraction(rate) / 100)
-            prescribed = printed + tax
-            actual_cost = row[CCA_VEHICLE_COST] - row[CCA_VEHICLE_GOVERNMENT_ASSISTANCE]
-            if actual_cost > prescribed:
-                applied = True
-                factor = ExactFraction(prescribed) / ExactFraction(actual_cost)
-                adjusted_proceeds = self._rounding.apply(ExactFraction(proceeds) * factor)
-                adjusted_diep_proceeds = self._rounding.apply(ExactFraction(diep_proceeds) * factor)
+        scaled = self._scale(
+            f"item {position}",
+            year,
+            row[CCA_VEHICLE_COST],
+            row[CCA_VEHICLE_GOVERNMENT_ASSISTANCE],
+            proceeds,
+            diep_proceeds,
+            rate,
+            self._prescribed_amounts,
+            self._rounding,
+        )
         record: dict[ArtifactKind[Any], Decimal | int] = {
             field: row[field] for field in self._output.fields
         }
-        record[CCA_PROCEEDS] = adjusted_proceeds
-        record[CCA_DIEP_PROCEEDS] = adjusted_diep_proceeds
+        record[CCA_PROCEEDS] = scaled.proceeds
+        record[CCA_DIEP_PROCEEDS] = scaled.diep_proceeds
         line = CcaVehicleProceedsLine(
             self._output,
             position,
-            applied,
-            prescribed,
-            actual_cost,
+            scaled.applied,
+            scaled.prescribed,
+            scaled.actual_cost,
             proceeds,
-            adjusted_proceeds,
+            scaled.proceeds,
             diep_proceeds,
-            adjusted_diep_proceeds,
+            scaled.diep_proceeds,
         )
         return line, record
+
+    def _sold(
+        self,
+        position: int,
+        row: Record,
+        rate: Decimal,
+        record: dict[ArtifactKind[Any], Decimal | int],
+    ) -> list[CcaZepvProceedsLine]:
+        """The lines of the vehicles sold from the row `position`, and their scaled proceeds added
+        to columns 5 and 6 of its output `record`; the vehicles of a row of another class than 54
+        are refused."""
+        vehicles = row[CCA_SOLD_ZEPVS].records
+        if not vehicles:
+            return []
+        if row[CCA_CLASS_NUMBER] != CLASS_54:
+            raise InvalidRecordError(
+                f"item {position} vehicle 1: sold vehicles are given but the class is "
+                f"{row[CCA_CLASS_NUMBER]}, not 54"
+            )
+        lines: list[CcaZepvProceedsLine] = []
+        proceeds = row[CCA_PROCEEDS]
+        diep_proceeds = row[CCA_DIEP_PROCEEDS]
+        for number, vehicle in enumerate(vehicles, 1):
+            entered = vehicle[CCA_ZEPV_PROCEEDS]
+            entered_diep = vehicle[CCA_ZEPV_DIEP_PROCEEDS]
+            scaled = self._scale(
+                f"item {position} vehicle {number}",
+                vehicle[CCA_VEHICLE_ACQUIRED_YEAR],
+                vehicle[CCA_VEHICLE_COST],
+                vehicle[CCA_VEHICLE_GOVERNMENT_ASSISTANCE],
+                entered,
+                entered_diep,
+                rate,
+                self._zepv_prescribed_amounts,
+                self._zepv_rounding,
+            )
+            proceeds += scaled.proceeds
+            diep_proceeds += scaled.diep_proceeds
+            lines.append(
+                CcaZepvProceedsLine(
+                    self._output,
+                    position,
+                    number,
+                    scaled.applied,
+                    scaled.prescribed,
+                    scaled.actual_cost,
+                    entered,
+                    scaled.proceeds,
+                    entered_diep,
+                    scaled.diep_proceeds,
+                )
+            )
+        record[CCA_PROCEEDS] = proceeds
+        record[CCA_DIEP_PROCEEDS] = diep_proceeds
+        return lines

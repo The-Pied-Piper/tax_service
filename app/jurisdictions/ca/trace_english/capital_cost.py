@@ -12,6 +12,7 @@ from app.domain.parameters.class_rates import RecaptureAndTerminalLoss
 from app.jurisdictions.ca.trace.capital_cost import (
     CcaClaimLine,
     CcaVehicleProceedsLine,
+    CcaZepvProceedsLine,
     CcaZeroReason,
     ClosingUccLine,
     FiscalPeriodDaysLine,
@@ -172,6 +173,30 @@ class CcaVehicleProceedsRenderer:
     def render(self, line: CcaVehicleProceedsLine) -> str:
         """The English sentence for `line`."""
         start = f"{line.output.label}: item {line.position}: "
+        proceeds = (
+            f"proceeds {EnglishFigures.money(line.proceeds)} and DIEP proceeds "
+            f"{EnglishFigures.money(line.diep_proceeds)}"
+        )
+        if not line.applied:
+            return f"{start}{proceeds} not adjusted"
+        return (
+            f"{start}{proceeds} adjusted by prescribed amount "
+            f"{EnglishFigures.money(line.prescribed_amount)} / actual cost "
+            f"{EnglishFigures.money(line.actual_cost)} = proceeds "
+            f"{EnglishFigures.money(line.adjusted_proceeds)} and DIEP proceeds "
+            f"{EnglishFigures.money(line.adjusted_diep_proceeds)}"
+        )
+
+
+@english_renderer
+class CcaZepvProceedsRenderer:
+    """English text for CcaZepvProceedsLine."""
+
+    line_class = CcaZepvProceedsLine
+
+    def render(self, line: CcaZepvProceedsLine) -> str:
+        """The English sentence for `line`."""
+        start = f"{line.output.label}: item {line.position} vehicle {line.vehicle}: "
         proceeds = (
             f"proceeds {EnglishFigures.money(line.proceeds)} and DIEP proceeds "
             f"{EnglishFigures.money(line.diep_proceeds)}"

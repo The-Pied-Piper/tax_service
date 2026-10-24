@@ -975,6 +975,20 @@ government assistance that you may have received or repaid for the vehicle". The
 received less the assistance repaid, signed: a repayment is negative. A field of each record of a
 list of capital cost allowance classes."""
 
+CCA_ZEPV_PROCEEDS = CATALOG.declare("cca_zepv_proceeds", Decimal, non_negative=True)
+"""Proceeds of one sold zero-emission passenger vehicle, Guide T4036 2025 "Class 54 (30%)": "If a
+zero-emission passenger vehicle is disposed of to a person or partnership with whom you deal at
+arm's length, and its cost exceeds the prescribed amount [...], the proceeds of disposition will be
+adjusted based on a factor equal to the prescribed amount as a proportion of the actual cost of the
+vehicle." The proceeds of the vehicle as entered, before the adjustment. A field of each record of
+a Class 54 row's list of sold vehicles."""
+
+CCA_ZEPV_DIEP_PROCEEDS = CATALOG.declare("cca_zepv_diep_proceeds", Decimal, non_negative=True)
+"""DIEP part of the proceeds of one sold zero-emission passenger vehicle, Area A column 6 "Proceeds
+of dispositions of DIEP (enter amount from col. 5 that relates to DIEP from col. 4)": the part of
+the vehicle's proceeds that relates to a DIEP, as entered, before the adjustment. A field of each
+record of a Class 54 row's list of sold vehicles."""
+
 CCA_UCC_AT_END = CATALOG.declare("cca_ucc_at_end", Decimal, non_negative=True)
 """UCC at the end of the year, T776 Area A "Column 24: UCC at the end of the year (column 7 minus
 column 23)" (T2125 column 22): a field of each record of the closing list of capital cost
