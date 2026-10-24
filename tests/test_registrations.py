@@ -75,6 +75,14 @@ def test_importing_the_federal_package_registers_its_capabilities() -> None:
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.caregiver_amount"
 
 
+def test_importing_the_federal_package_registers_the_home_renovation_capabilities() -> None:
+    registry = CapabilityRegistry.shared()
+
+    for name in ("home_renovation_line_3", "home_renovation_line_6", "home_renovation_line_7"):
+        registered = registry.get(f"ca/{name}")
+        assert registered.__module__ == f"app.jurisdictions.ca.capabilities.{name}"
+
+
 def test_importing_the_federal_package_registers_the_other_dependants_medical_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/other_dependants_medical")
 

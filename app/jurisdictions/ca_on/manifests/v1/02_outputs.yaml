@@ -144,3 +144,8 @@ outputs:
   # the carryover for 2026, which nothing on the return reads (Part 8 line 14 reads Part 7 line 14,
   # not this line).
   - ca/amt_carryover_available_for_2026
+  # Schedule 12 Step 1, line 3 "Line 1 minus line 2 (maximum $50,000 per qualifying renovation)" and
+  # line 6 "Line 4 minus line 5", each the total over the renovations: line 7 (line 8, which the
+  # credit reads) is worked from the renovations on its own, so no step reads these lines.
+  - ca/home_renovation_line_3
+  - ca/home_renovation_line_6

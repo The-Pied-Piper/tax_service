@@ -25,6 +25,7 @@ from app.jurisdictions.ca.catalog import (
     INCOME_TAX_DEDUCTED,
     INVESTMENT_TAX_CREDIT_REFUND,
     JOURNALISM_LABOUR_TAX_CREDIT,
+    MULTIGENERATIONAL_HOME_RENOVATION_CREDIT,
     PART_XII_2_TAX_CREDIT,
     PROVINCIAL_CREDITS,
     REFUND,
@@ -219,13 +220,13 @@ STEPS = {
     # 153 (45000) "Employment insurance (EI) overpayment" (T2204 line 15 when it is more than $1),
     # line 154 (45200) "Refundable medical expense supplement (use Federal Worksheet)", line 155
     # (45300) "Canada workers benefit (CWB) (complete Schedule 6)", line 156 (45350) "Canada
-    # training credit (CTC) (complete Schedule 11)", line 158 (45400) "Refund of investment tax
-    # credit (complete Form T2038(IND))", line 159 (45600) "Part XII.2 tax credit (box 38 of all
-    # T3 slips and box 209 of all T5013 slips)", line 160 (45700) "Employee and partner
-    # GST/HST rebate (complete Form GST370)", line 161 (46900), line 162 (47555) "Canadian
-    # journalism labour tax credit (box 236 of all T5013 slips)", line 164 (47600) "Tax paid by
-    # instalments" and line 165 (47900), in line order, as the other lines are not triggered or
-    # not yet wired.
+    # training credit (CTC) (complete Schedule 11)", line 157 (45355) "Multigenerational home
+    # renovation tax credit (MHRTC) (complete Schedule 12)", line 158 (45400) "Refund of investment
+    # tax credit (complete Form T2038(IND))", line 159 (45600) "Part XII.2 tax credit (box 38 of all
+    # T3 slips and box 209 of all T5013 slips)", line 160 (45700) "Employee and partner GST/HST
+    # rebate (complete Form GST370)", line 161 (46900), line 162 (47555) "Canadian journalism labour
+    # tax credit (box 236 of all T5013 slips)", line 164 (47600) "Tax paid by instalments" and line
+    # 165 (47900), in line order, as the other lines are not triggered or not yet wired.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -237,6 +238,7 @@ STEPS = {
                 "ca/refundable_medical_expense_supplement",
                 "ca/canada_workers_benefit",
                 "ca/canada_training_credit",
+                "ca/multigenerational_home_renovation_credit",
                 "ca/investment_tax_credit_refund",
                 "ca/part_xii_2_tax_credit",
                 "ca/employee_and_partner_gst_hst_rebate",
@@ -279,6 +281,7 @@ WIRING = {
                 REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
                 CANADA_WORKERS_BENEFIT,
                 CANADA_TRAINING_CREDIT,
+                MULTIGENERATIONAL_HOME_RENOVATION_CREDIT,
                 INVESTMENT_TAX_CREDIT_REFUND,
                 PART_XII_2_TAX_CREDIT,
                 EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
