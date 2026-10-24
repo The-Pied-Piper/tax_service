@@ -217,7 +217,7 @@ def test_the_trace_names_each_country_and_the_federal_foreign_tax_credit() -> No
     ) in rendered
     assert (
         "federal_foreign_tax_credit: lesser of federal_foreign_tax_credit_before_limit 1187.6 "
-        "and federal_tax_after_credits 6966.62 = 1187.6"
+        "and federal_tax_with_surtax 6966.62 = 1187.6"
     ) in rendered
 
 
@@ -232,7 +232,7 @@ def test_line_13_and_t1_line_129_are_1187_60_and_line_130_is_5779_02() -> None:
     assert worksheet.get(FEDERAL_TAX_WITH_ITC_RECAPTURE).value == D("5779.02")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "federal_tax_less_foreign_tax_credit: federal_tax_after_credits 6966.62 "
+        "federal_tax_less_foreign_tax_credit: federal_tax_with_surtax 6966.62 "
         "less federal_foreign_tax_credit 1187.6, not below 0 = 5779.02"
     ) in rendered
     assert (
@@ -370,7 +370,7 @@ def test_the_trace_names_each_sheet_of_the_business_lines_line_13_and_the_limit(
     ) in rendered
     assert (
         "federal_foreign_tax_credit: lesser of federal_foreign_tax_credit_before_limit 1697.6 "
-        "and federal_tax_after_credits 6966.62 = 1697.6"
+        "and federal_tax_with_surtax 6966.62 = 1697.6"
     ) in rendered
 
 

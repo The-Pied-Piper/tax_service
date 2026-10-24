@@ -152,6 +152,8 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_18,
     SPLIT_INCOME_LINE_19,
     SPLIT_INCOME_LINE_20,
+    T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
+    T2203_LINE_8,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
@@ -289,6 +291,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert rated == {
+        # Form T2203 Part 2 line 10 "Line 8 multiplied by the percentage from line 9": line 8,
+        # 0.00 for Return A (the percentage is "0"), at the 48% of line 9, 0.00 times 0.48, 0.00.
+        T2203_FEDERAL_SURTAX_OUTSIDE_CANADA: RateAppliedLine(
+            output=T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
+            base=T2203_LINE_8,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.48")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
         # Form T691 Part 4 line 6 "Foreign income limit for special foreign tax credit: line 4
         # multiplied by the percentage on line 5 (if negative, enter "0")", with line 5 "Applicable
         # rate" "× 20.5%": line 4, 0.00 for Return A, at 20.5%, 0 times 0.205, 0.00.

@@ -122,6 +122,7 @@ from app.jurisdictions.ca.catalog import (
     ANNUAL_GAINS_LINE_3,
     ANNUAL_GAINS_SCHEDULE_3_TOTAL,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
     BASIC_PERSONAL_AMOUNT,
     BOND_GAIN_OR_LOSS,
     BUSINESS_ADJUSTED_GROSS_SALES,
@@ -527,12 +528,14 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_SURTAX_OUTSIDE_CANADA,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
+    FEDERAL_TAX_WITH_SURTAX,
     FEDERAL_TUITION_AMOUNT,
     FHSA_ANNUAL_AMOUNT,
     FHSA_ANNUAL_AMOUNT_FOR_2024,
@@ -2647,11 +2650,33 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("115000"),
         ),
+        # T1 line 128 "Line 126 plus line 127 =": line 126, 16951.38, plus line 127, the surtax
+        # outside Canada, 0.00 for Return A (the percentage on T2203 line 7 is "0"). The total is
+        # 16951.38.
+        FEDERAL_TAX_WITH_SURTAX: SumLine(
+            FEDERAL_TAX_WITH_SURTAX,
+            (
+                (FEDERAL_TAX_AFTER_CREDITS, D("16951.38")),
+                (FEDERAL_SURTAX_OUTSIDE_CANADA, D("0.00")),
+            ),
+            D("16951.38"),
+        ),
         # Form T2209 note (4), basic federal tax: "Line 42900 of your return plus any federal
         # dividend tax credit (line 40425 of your return)": Return A has no dividends.
         BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT: SumLine(
             BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
             ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")), (DIVIDEND_TAX_CREDIT, D("0"))),
+            D("16951.38"),
+        ),
+        # Form T2209 note (4), basic federal tax "plus any: federal surtax on income allocated to
+        # "Other (Outside Canada)"": line 42900 plus the dividend tax credit, 16951.38, plus the
+        # surtax of T1 line 127, 0.00 for Return A (the percentage is "0"): 16951.38.
+        BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX: SumLine(
+            BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
+            (
+                (BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT, D("16951.38")),
+                (FEDERAL_SURTAX_OUTSIDE_CANADA, D("0.00")),
+            ),
             D("16951.38"),
         ),
         # T1 line 138 (line 41600) "Add lines 135 to 137.": lines 135, 136 (the investment tax

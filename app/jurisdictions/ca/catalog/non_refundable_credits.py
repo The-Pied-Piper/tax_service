@@ -580,6 +580,53 @@ dividend tax credit" and line 124 (40427), the minimum tax carryover applied on 
 line 12.
 """
 
+T2203_HAS_TAX_ON_SPLIT_INCOME = CATALOG.declare(
+    "t2203_has_tax_on_split_income", int, non_negative=True
+)
+"""You have to pay tax on split income, Form T2203 Part 2 line 5 "If you have to pay tax on split
+income, enter the amount from line 22 of your Form T1206. If not, enter "0".": a yes or no count, 1
+when the federal tax on split income (Form T1206 line 8) is more than 0, and 0 otherwise."""
+
+T2203_LINE_5 = CATALOG.declare("t2203_line_5", Decimal)
+"""Tax on split income, Form T2203 Part 2 line 5 "If you have to pay tax on split income, enter the
+amount from line 22 of your Form T1206. If not, enter "0".": line 22 of Form T1206
+(`split_income_line_22`) when the count of the condition is 1, and "0" otherwise. Line 22 is
+"Line 15 minus line 21" with no "(if negative, enter "0")", so the kind is signed."""
+
+T2203_LINE_6 = CATALOG.declare("t2203_line_6", Decimal, non_negative=True)
+"""Amount the surtax is taken on, Form T2203 Part 2 line 6 "Enter whichever is more: amount from
+line 4 or line 5.": the greater of line 4 (`federal_tax_after_credits`, the basic federal tax from
+line 42900) and line 5 (`t2203_line_5`). Line 4 is not below zero, so neither is line 6."""
+
+T2203_LINE_8 = CATALOG.declare("t2203_line_8", Decimal, non_negative=True)
+"""Line 8, Form T2203 Part 2 line 8 "Line 6 multiplied by the percentage from line 7": line 6 times
+the percentage of income allocated to "Other (Outside Canada)" from line 52220 of column 5 in Part
+1, the caller's figure as printed (25 for 25%), rounded once to the cent. Line 6 and the percentage
+are not below zero, so neither is line 8."""
+
+T2203_FEDERAL_SURTAX_OUTSIDE_CANADA = CATALOG.declare(
+    "t2203_federal_surtax_outside_canada", Decimal, non_negative=True
+)
+"""Federal surtax on income allocated to "Other (Outside Canada)", Form T2203 Part 2 line 10 "Line 8
+multiplied by the percentage from line 9 (1)": line 8 times the federal surtax rate of line 9, 48%,
+rounded once to the cent. Note (1): "For every province and territory, other than Quebec, enter this
+amount on line 127 of your return." It is the surtax when you are not subject to minimum tax."""
+
+FEDERAL_SURTAX_OUTSIDE_CANADA = CATALOG.declare("federal_surtax_outside_canada", Decimal)
+"""Federal surtax on income earned outside Canada, T1 line 127 "Federal surtax on income earned
+outside Canada (complete Form T2203)": line 10 of Form T2203 Part 2
+(`t2203_federal_surtax_outside_canada`) when you are not subject to minimum tax
+(`amt_subject_to_minimum_tax` is 0), and otherwise Form T691 Part 3 line 4 (`amt_federal_surtax`),
+which Form T2203 Part 2 says to calculate instead of lines 4 to 10. Form T691 Part 3 line 4 prints
+no floor, so the kind is signed."""
+
+FEDERAL_TAX_WITH_SURTAX = CATALOG.declare("federal_tax_with_surtax", Decimal)
+"""Line 128, T1 line 128 "Line 126 plus line 127 =": line 126 (`federal_tax_after_credits`) plus
+line 127 (`federal_surtax_outside_canada`). It is the limit of Form T2209 line 13, "The amount on
+line 13 should not be more than the total of the amount on line 42900 of your return, plus any
+federal surtax on income earned outside of Canada", and the amount that T1 line 130 "Line 128 minus
+line 129 =" takes. The form prints no floor on line 127, so the kind is signed."""
+
 ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT = CATALOG.declare(
     "itc_recapture_expenditure_at_15_percent", Decimal, non_negative=True
 )
@@ -654,16 +701,26 @@ any:" "federal dividend tax credit (line 40425 of your return)" (note (8) is thi
 the business lines): line 42900 (`federal_tax_after_credits`) and line 40425
 (`dividend_tax_credit`)."""
 
+BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX = CATALOG.declare(
+    "basic_federal_tax_with_dividend_credit_and_surtax", Decimal
+)
+"""Basic federal tax with the dividend credit and the surtax, Form T2209 note (4) "Basic federal
+tax": "Line 42900 of your return plus any:" "federal dividend tax credit (line 40425 of your
+return)" and "federal surtax on income allocated to "Other (Outside Canada)" (line 10 of Part 2 of
+Form T2203 or 48% of the amount from line 42900 of your return)": the basic federal tax with the
+dividend credit (`basic_federal_tax_with_dividend_credit`) plus the surtax on income earned outside
+Canada (T1 line 127, `federal_surtax_outside_canada`). The surtax prints no floor, so the sum may be
+negative under minimum tax (Form T691 Part 3 line 4); the abatement subtraction of note (4) then
+holds the result at 0 (`foreign_tax_credit_basic_federal_tax`)."""
+
 FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX = CATALOG.declare(
     "foreign_tax_credit_basic_federal_tax", Decimal, non_negative=True
 )
 """Basic federal tax for the foreign tax credit, Form T2209 note (4) "Basic federal tax": the
-basic federal tax with the dividend credit "minus any:" "federal refundable First Nations
-abatement (line 44100 of your return)".
-
-Not part of it: the federal surtax on income allocated to "Other (Outside Canada)" (T1 line 127,
-not wired and not triggered on an Ontario return) and the refundable Quebec abatement (line 44000),
-which does not apply to an Ontario return."""
+basic federal tax with the dividend credit and the surtax, the amount of
+`basic_federal_tax_with_dividend_credit_and_surtax`, "minus any:" the refundable Quebec abatement
+(line 44000 of your return or line 15 of Part 2 of Form T2203), which does not apply to an Ontario
+return, and "federal refundable First Nations abatement (line 44100 of your return)"."""
 
 FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT = CATALOG.declare(
     "federal_non_business_foreign_tax_credit", Decimal, non_negative=True
@@ -680,15 +737,18 @@ FEDERAL_FOREIGN_TAX_CREDIT = CATALOG.declare(
 (`federal_business_foreign_tax_credit`) and line 12 (`federal_non_business_foreign_tax_credit`),
 limited as the form says, "The amount on line 13 should not be more than the total of the amount
 on line 42900 of your return, plus any federal surtax on income earned outside of Canada", to line
-42900, as the surtax is not wired."""
+128 (`federal_tax_with_surtax`), line 42900 plus line 127. Line 128 is not above zero only when line
+126 is 0 or line 127 is negative (minimum tax, Form T691 Part 3 line 4 prints no floor); then the
+credit is 0 (`lesser_of_when_positive`)."""
 
 FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT = CATALOG.declare(
     "federal_tax_less_foreign_tax_credit", Decimal, non_negative=True
 )
-"""Federal tax less the foreign tax credit, T1 line 130 "Line 128 minus line 129 =": line 128 "Line
-126 plus line 127 =", which is line 126 (`federal_tax_after_credits`) as line 127 "Federal surtax on
-income earned outside Canada (complete Form T2203)" is not wired and not triggered on an Ontario
-return, less line 129 (40500). Line 129 is at most line 126, so it is not below zero."""
+"""Federal tax less the foreign tax credit, T1 line 130 "Line 128 minus line 129 =": line 128
+(`federal_tax_with_surtax`, "Line 126 plus line 127 =") less line 129 (40500), not below zero. Line
+128 is not above zero only when line 126 is 0 or line 127 is negative; then the credit is 0
+(`federal_foreign_tax_credit`) and the result is held at 0 by the subtraction, so the kind is not
+below zero."""
 
 FEDERAL_TAX_WITH_ITC_RECAPTURE = CATALOG.declare(
     "federal_tax_with_itc_recapture", Decimal, non_negative=True

@@ -17,6 +17,7 @@ from app.domain.trace import (
     ItemsTotalLine,
     ItemSumLine,
     LesserOfLine,
+    LesserOfWhenPositiveLine,
     LesserOfWithMaximumLine,
     QuotientLine,
     RecordCountLine,
@@ -120,6 +121,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
     AMT_SPECIAL_FOREIGN_TAX_CREDIT,
+    AMT_SUBJECT_TO_MINIMUM_TAX,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TOTAL_FOREIGN_INCOME,
     ANNUAL_GAINS_LIMIT_2025,
@@ -127,6 +129,7 @@ from app.jurisdictions.ca.catalog import (
     ANNUAL_GAINS_LINE_5,
     ANNUAL_GAINS_LINE_7,
     ANNUAL_GAINS_LINE_12,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
     BASIC_PERSONAL_AMOUNT,
     BUSINESS_CCA_CLAIM,
     BUSINESS_EPOP_ASSOCIATED_CHECKED,
@@ -560,12 +563,14 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_SURTAX_OUTSIDE_CANADA,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
+    FEDERAL_TAX_WITH_SURTAX,
     FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
     FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD,
     FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD,
@@ -589,6 +594,7 @@ from app.jurisdictions.ca.catalog import (
     FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT,
     FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT,
     FHSA_VARIABLE_H_AMOUNT,
+    FIRST_NATIONS_ABATEMENT,
     FISH_CCA_CLAIM,
     FISH_EPOP_ASSOCIATED_CHECKED,
     FISH_EPOP_PERCENTAGE,
@@ -614,6 +620,7 @@ from app.jurisdictions.ca.catalog import (
     FOREIGN_BUSINESS_TAX_CREDIT_LINE_7,
     FOREIGN_BUSINESS_TAX_CREDIT_LINE_8,
     FOREIGN_BUSINESS_TAX_CREDIT_LINE_10,
+    FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
@@ -825,6 +832,9 @@ from app.jurisdictions.ca.catalog import (
     T657_PART_2_AMOUNT_J,
     T657_PART_2_AMOUNT_L,
     T657_T2048_LINE_17217_FOR_2024,
+    T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
+    T2203_LINE_5,
+    T2203_LINE_6,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
@@ -984,6 +994,22 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CHART_1_COLUMN_G_TOTAL,
         )
     }
+    assert {line.output: line for line in trace if isinstance(line, LesserOfWhenPositiveLine)} == {
+        # T2209 line 13 "should not be more than the total of the amount on line 42900 of your
+        # return, plus any federal surtax on income earned outside of Canada": the limit is line
+        # 128, 16951.38 (line 126 plus line 127, 0.00), and line 13, 0, is the lesser of the two.
+        # The line is 0 unless every amount is above zero; line 13 is 0 here, so the result is 0.
+        FEDERAL_FOREIGN_TAX_CREDIT: LesserOfWhenPositiveLine(
+            output=FEDERAL_FOREIGN_TAX_CREDIT,
+            parts=(
+                (FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT, D("0")),
+                (FEDERAL_TAX_WITH_SURTAX, D("16951.38")),
+            ),
+            all_positive=False,
+            bracket=False,
+            result=D("0"),
+        ),
+    }
     assert lesser == {
         # Form T2038(IND) Part D amount I "Enter the lesser of amount G or H": amount G (0.00) and
         # amount H (16951.38): 0.00. Amount K "Enter the lesser of amount G or J": amount G (0.00)
@@ -1033,14 +1059,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             (
                 (ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT, D("0")),
                 (ontario.TAX_OTHERWISE_PAYABLE, D("8195.77")),
-            ),
-            D("0"),
-        ),
-        FEDERAL_FOREIGN_TAX_CREDIT: LesserOfLine(
-            FEDERAL_FOREIGN_TAX_CREDIT,
-            (
-                (FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT, D("0")),
-                (FEDERAL_TAX_AFTER_CREDITS, D("16951.38")),
             ),
             D("0"),
         ),
@@ -2278,6 +2296,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T2209 note (4), basic federal tax less the First Nations abatement, not below zero:
+        # 16951.38 less 0.00 (line 44100, none on Return A) is 16951.38.
+        FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX: SubtractedNotBelowZeroLine(
+            output=FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+            minuend=BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
+            minuend_amount=D("16951.38"),
+            subtrahend=FIRST_NATIONS_ABATEMENT,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Form T2038(IND) Part D amount 9 "Subtotal (amount 7 minus amount 8, if negative, enter
         # "0")": the federal tax of line 40600 (16951.38) less the political contribution tax credit
         # of line 41000 (0.00): 16951.38. Amount H "Subtotal (amount 9 minus amount 10, if negative,
@@ -3066,11 +3094,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("5914.00"),
         ),
-        # T1 line 130 "Line 128 minus line 129": line 126 (line 127 is not wired) less line 129
-        # (40500), which is 0 with no country.
+        # T1 line 130 "Line 128 minus line 129 =": line 128, 16951.38 (line 126 plus line 127,
+        # 0.00), less line 129 (40500), which is 0 with no country.
         FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT: SubtractedNotBelowZeroLine(
             output=FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
-            minuend=FEDERAL_TAX_AFTER_CREDITS,
+            minuend=FEDERAL_TAX_WITH_SURTAX,
             minuend_amount=D("16951.38"),
             subtrahend=FEDERAL_FOREIGN_TAX_CREDIT,
             subtrahend_amount=D("0"),
@@ -4401,6 +4429,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert {line.output: line for line in trace if isinstance(line, GreaterOfLine)} == {
+        # Form T2203 Part 2 line 6 "Enter whichever is more: amount from line 4 or line 5.": line 4,
+        # 16951.38 (the basic federal tax, Form T1 line 126), and line 5, "0" (no tax on split
+        # income): 16951.38.
+        T2203_LINE_6: GreaterOfLine(
+            output=T2203_LINE_6,
+            parts=(
+                (FEDERAL_TAX_AFTER_CREDITS, D("16951.38")),
+                (T2203_LINE_5, D("0")),
+            ),
+            result=D("16951.38"),
+        ),
         # Form T691 Part 6 line 5 "Enter whichever is more: amount from line 3 or line 4.": line 3,
         # 16951.38 (line 1 less line 2, 0), and line 4, the minimum amount of 0: 16951.38.
         AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT: GreaterOfLine(
@@ -5027,6 +5066,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert chosen == {
+        # T1 line 127 "Federal surtax on income earned outside Canada (complete Form T2203)", chosen
+        # by the count of "you are subject to minimum tax" (the input, 0 for Return A): the count is
+        # 0, so line 10 of Form T2203 Part 2, 0.00, is taken.
+        FEDERAL_SURTAX_OUTSIDE_CANADA: ChosenByCountLine(
+            output=FEDERAL_SURTAX_OUTSIDE_CANADA,
+            count_kind=AMT_SUBJECT_TO_MINIMUM_TAX,
+            count=0,
+            chosen_kind=T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
+            chosen_value=D("0.00"),
+        ),
         # Form T2038(IND) Part D amount 15 "You can claim an ITC up to, but not more than I or K,
         # whichever applies", chosen by the count of "T691 Part 5 line 7 is greater than 0": the
         # count is 0, so amount I, 0.00.

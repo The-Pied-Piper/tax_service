@@ -150,6 +150,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_NET,
     AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+    AMT_SUBJECT_TO_MINIMUM_TAX,
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
@@ -164,7 +165,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_TREATY_EXEMPT_CAPITAL_GAINS,
     AMT_UNAPPLIED_2018_CARRYOVER,
 )
-from tests.jurisdictions.ca.catalog_snapshot import SIGNED
+from tests.jurisdictions.ca.catalog_snapshot import COUNTS, SIGNED
 
 PART_1_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
@@ -288,9 +289,13 @@ PART_3_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
 )
+# Part 3 counts, and the caller's choice of minimum tax, a count of 1 for yes and 0 for no, which
+# chooses between Form T2203 Part 2 line 10 and Part 3 line 4 for T1 line 127 (Form T2203 Part 2:
+# "If you are subject to minimum tax, do not complete lines 4 to 10").
 PART_3_COUNTS: tuple[ArtifactKind[int], ...] = (
     AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
     AMT_LINE_3_HAS_AMOUNT,
+    AMT_SUBJECT_TO_MINIMUM_TAX,
 )
 
 # Part 4 lines 1 to 11: the special foreign tax credit, with the caller's foreign figures and the
@@ -699,6 +704,9 @@ def test_the_part_3_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
 def test_the_part_3_counts_are_the_registered_ones(registry: ArtifactRegistry) -> None:
     for kind in PART_3_COUNTS:
         assert registry.get(kind.identifier) is kind
+        assert kind.value_type is int, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+        assert kind.identifier in COUNTS
 
 
 def test_the_part_4_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:

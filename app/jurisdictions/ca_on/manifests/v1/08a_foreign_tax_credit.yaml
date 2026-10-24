@@ -60,13 +60,25 @@ capabilities:
         - ca/dividend_tax_credit
     produces:
       output: ca/basic_federal_tax_with_dividend_credit
-  # Note (4), "minus any:" "federal refundable First Nations abatement (line 44100 of your
-  # return)". The federal surtax on income allocated to "Other (Outside Canada)" (line 127 of
-  # the return, not wired and not triggered on an Ontario return) and the refundable Quebec
-  # abatement (line 44000, which does not apply to an Ontario return) are not part of it.
-  - name: core/subtract
+  # Note (4), "plus any:" "federal surtax on income allocated to "Other (Outside Canada)" (line 10
+  # of Part 2 of Form T2203 or 48% of the amount from line 42900 of your return)": the surtax on
+  # income earned outside Canada, T1 line 127 (`ca/federal_surtax_outside_canada`). Note (8) has
+  # no surtax, so the business lines do not take it. The surtax prints no floor, so the sum may be
+  # negative under minimum tax (Form T691 Part 3 line 4).
+  - name: core/sum
     consumes:
-      amount: ca/basic_federal_tax_with_dividend_credit
+      parts:
+        - ca/basic_federal_tax_with_dividend_credit
+        - ca/federal_surtax_outside_canada
+    produces:
+      output: ca/basic_federal_tax_with_dividend_credit_and_surtax
+  # Note (4), "minus any:" the refundable Quebec abatement (line 44000 of your return or line 15 of
+  # Part 2 of Form T2203), which does not apply to an Ontario return, and "federal refundable First
+  # Nations abatement (line 44100 of your return)". The abatement is not allowed to take the basic
+  # federal tax below zero, so the result is held at 0.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/basic_federal_tax_with_dividend_credit_and_surtax
       less: ca/first_nations_abatement
     produces:
       output: ca/foreign_tax_credit_basic_federal_tax
@@ -172,23 +184,23 @@ capabilities:
       output: ca/federal_foreign_tax_credit_before_limit
   # T1 line 129 (line 40500) "Federal foreign tax credit (complete Form T2209)" and T2209 line
   # 13: "The amount on line 13 should not be more than the total of the amount on line 42900 of
-  # your return, plus any federal surtax on income earned outside of Canada." Line 127 (the
-  # surtax) is not wired, so the limit is line 42900.
-  - name: core/lesser_of
+  # your return, plus any federal surtax on income earned outside of Canada." The limit is line
+  # 42900 plus line 127, that is line 128 (`ca/federal_tax_with_surtax`). Line 128 is not above
+  # zero only when line 126 is 0 or line 127 is negative (minimum tax, Form T691 Part 3 line 4 has
+  # no floor); then the credit is 0.
+  - name: ca/lesser_of_when_positive
     consumes:
       amounts:
         - ca/federal_foreign_tax_credit_before_limit
-        - ca/federal_tax_after_credits
+        - ca/federal_tax_with_surtax
     produces:
       output: ca/federal_foreign_tax_credit
-  # T1 line 130 "Line 128 minus line 129 =": line 128 "Line 126 plus line 127 =" is line 126
-  # (42900) "Basic federal tax", as line 127 "Federal surtax on income earned outside Canada
-  # (complete Form T2203)" is not wired and not triggered on an Ontario return, and line 129
-  # (40500) comes off it. The line prints no "(if negative, enter "0")" but line 129 is at
-  # most line 126, so the result is not below zero.
+  # T1 line 130 "Line 128 minus line 129 =": line 128 (`ca/federal_tax_with_surtax`, "Line 126
+  # plus line 127 =") less line 129 (40500), not below zero. Line 128 is negative only when line
+  # 127 is, and then the credit is 0 and the result is held at 0.
   - name: core/subtract_not_below_zero
     consumes:
-      amount: ca/federal_tax_after_credits
+      amount: ca/federal_tax_with_surtax
       less: ca/federal_foreign_tax_credit
     produces:
       output: ca/federal_tax_less_foreign_tax_credit
