@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog.base import CATALOG
 
 CPP_BASE_CONTRIBUTIONS = CATALOG.declare("cpp_base_contributions", Decimal, non_negative=True)
@@ -768,3 +769,149 @@ CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
 """T1 line 31000: the Part 4 amount (cpp_base_contributions_on_self_employment) plus the Part 5
 amount, read by 08_non_refundable_credits (twice), 15_ontario_personal_amounts and
 16_ontario_credits."""
+
+VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET = CATALOG.declare(
+    "volunteer_firefighters_conditions_met", int, non_negative=True
+)
+"""Volunteer firefighters' conditions met, T1 line 90 (line 31220) "Volunteer firefighters' amount
+(VFA)" and the guide's "You can claim $6,000 for the volunteer firefighters' amount (VFA) or search
+and rescue volunteers' amount (SRVA), but not both, if you meet all of the following conditions:": a
+caller's count, 1 when the conditions are met, else 0."""
+
+SEARCH_AND_RESCUE_CONDITIONS_MET = CATALOG.declare(
+    "search_and_rescue_conditions_met", int, non_negative=True
+)
+"""Search and rescue conditions met, T1 line 91 (line 31240) "Search and rescue volunteers' amount
+(SRVA)" and the guide's "but not both" condition for the same $6,000: a caller's count, 1 when the
+conditions are met, else 0. At most one of the VFA and the SRVA is claimed."""
+
+VOLUNTEER_FIREFIGHTERS_CREDIT = CATALOG.declare(
+    "volunteer_firefighters_credit", Decimal, non_negative=True
+)
+"""Volunteer firefighters' amount, T1 line 90 (line 31220) "Volunteer firefighters' amount (VFA)":
+$6,000 once the conditions are met, else 0; a part of the total of the credit amounts on line
+33500."""
+
+SEARCH_AND_RESCUE_CREDIT = CATALOG.declare("search_and_rescue_credit", Decimal, non_negative=True)
+"""Search and rescue volunteers' amount, T1 line 91 (line 31240) "Search and rescue volunteers'
+amount (SRVA)": $6,000 once the conditions are met, else 0; a part of the total of the credit
+amounts on line 33500."""
+
+VOLUNTEER_CREDITS_CLAIMED = CATALOG.declare("volunteer_credits_claimed", Decimal, non_negative=True)
+"""The volunteer firefighters' and search and rescue amounts together, T1 lines 31220 and 31240
+before the "but not both" maximum: the sum of the VFA and the SRVA, checked against the maximum."""
+
+VOLUNTEER_AMOUNT_MAXIMUM = CATALOG.declare("volunteer_amount_maximum", Decimal, non_negative=True)
+"""Volunteer amount maximum, T1 guide 5000-G "You can claim $6,000 for the volunteer firefighters'
+amount (VFA) or search and rescue volunteers' amount (SRVA), but not both": the $6,000, the most
+the VFA and the SRVA together can be."""
+
+VOLUNTEER_CREDITS_CHECKED = CATALOG.declare("volunteer_credits_checked", Decimal, non_negative=True)
+"""Volunteer credits checked, T1 lines 31220 and 31240 "but not both": the VFA and the SRVA together
+at most $6,000. Above the maximum the claim is an input error, not capped; a checked side artifact
+that is not summed on line 33500."""
+
+HOME_BUYERS_CLAIM = CATALOG.declare("home_buyers_claim", Decimal, non_negative=True)
+"""Home buyers' claim, T1 line 93 (line 31270) "Home buyers' amount (maximum $10,000)": the filer's
+share of the claim, the amount the filer enters (the split with a spouse is an election), at most
+$10,000."""
+
+HOME_BUYERS_MAXIMUM = CATALOG.declare("home_buyers_maximum", Decimal, non_negative=True)
+"""Home buyers' maximum, T1 line 93 (line 31270) "Enter $10,000 on line 31270 of your return if you
+are not splitting the amount with your spouse or common-law partner": the $10,000, the most the
+claim can be."""
+
+HOME_BUYERS_CREDIT = CATALOG.declare("home_buyers_credit", Decimal, non_negative=True)
+"""Home buyers' amount, T1 line 93 (line 31270) "Home buyers' amount (maximum $10,000)": the
+claim, at most $10,000, a part of the total of the credit amounts on line 33500."""
+
+HOME_ACCESSIBILITY_EXPENSES = CATALOG.declare(
+    "home_accessibility_expenses", Decimal, non_negative=True
+)
+"""Home accessibility expenses, Federal Worksheet for line 31285, line 1 "Total eligible expenses":
+the caller's total of the eligible expenses for the home, a starting amount."""
+
+HOME_ACCESSIBILITY_CLAIMED_BY_OTHERS = CATALOG.declare(
+    "home_accessibility_claimed_by_others", Decimal, non_negative=True
+)
+"""Home accessibility claimed by others, Federal Worksheet for line 31285, line 3 "Enter the amount
+claimed by other qualifying individuals and eligible individuals living in the same eligible
+dwelling from line 31285 of their return": a caller's amount."""
+
+HOME_ACCESSIBILITY_LINE_2 = CATALOG.declare("home_accessibility_line_2", Decimal, non_negative=True)
+"""Home accessibility line 2, Federal Worksheet for line 31285, line 2 "Enter whichever is less:
+amount from line 1 or $20,000.": the lesser of the expenses and the $20,000 maximum."""
+
+HOME_ACCESSIBILITY_CREDIT = CATALOG.declare("home_accessibility_credit", Decimal, non_negative=True)
+"""Home accessibility expenses, T1 line 94 (line 31285) "Home accessibility expenses (use Federal
+Worksheet) (maximum $20,000)", Federal Worksheet line 4 "Line 2 minus line 3 Enter this amount on
+line 31285 of your return": line 2 less the amount claimed by others, not below zero; a part of the
+total of the credit amounts on line 33500."""
+
+ADOPTION_CHILD_EXPENSES = CATALOG.declare("adoption_child_expenses", Decimal, non_negative=True)
+"""Adoption expenses for a child, T1 line 95 (line 31300) "Adoption expenses": a field of each
+record of the eligible children, the filer's eligible adoption expenses for that child."""
+
+ADOPTION_EXPENSE_CHILDREN = RecordListKind.declare(
+    CATALOG, "adoption_expense_children", fields=(ADOPTION_CHILD_EXPENSES,)
+)
+"""Adoption expense children, T1 line 95 (line 31300) "Enter on line 31300 of your return the amount
+of eligible adoption expenses that you can claim for all eligible children": a starting list with
+one record for each eligible child, holding the filer's eligible expenses for that child."""
+
+ADOPTION_CREDIT = CATALOG.declare("adoption_credit", Decimal, non_negative=True)
+"""Adoption expenses, T1 line 95 (line 31300) "Adoption expenses": the total of the records of the
+eligible children, a part of the total of the credit amounts on line 33500."""
+
+PENSION_FOREIGN_INCOME = CATALOG.declare("pension_foreign_income", Decimal, non_negative=True)
+"""Foreign pension income, Federal Worksheet for line 31400, line 2 "Foreign pension income included
+in the amount on line 11500 of your return and deducted on line 25600 of your return": a caller's
+amount."""
+
+PENSION_US_IRA_INCOME = CATALOG.declare("pension_us_ira_income", Decimal, non_negative=True)
+"""U.S. IRA income, Federal Worksheet for line 31400, line 3 "Income from a U.S. individual
+retirement account (IRA) included in the amount on line 11500 of your return": a caller's amount."""
+
+PENSION_RRIF_TRANSFERRED = CATALOG.declare("pension_rrif_transferred", Decimal, non_negative=True)
+"""RRIF or PRPP amounts transferred, Federal Worksheet for line 31400, line 4 "Amounts from a
+registered retirement income fund (RRIF) or a pooled registered pension plan (PRPP) included in the
+amount on line 11500 of your return and transferred to a registered retirement savings plan (RRSP),
+a RRIF, a PRPP, or an annuity": a caller's amount."""
+
+PENSION_ANNUITY_PAYMENTS = CATALOG.declare("pension_annuity_payments", Decimal, non_negative=True)
+"""Annuity payments from line 12900, Federal Worksheet for line 31400, line 7 "Annuity payments from
+line 12900 of your return (box 16 of all your T4RSP slips)": a caller's amount, counted only when
+the conditions are met."""
+
+PENSION_ANNUITY_CONDITIONS_MET = CATALOG.declare(
+    "pension_annuity_conditions_met", int, non_negative=True
+)
+"""Pension annuity conditions met, Federal Worksheet for line 31400, line 7 "only if you were 65
+years of age or older on December 31, 2025, or you received the payments because of the death of
+your spouse or common-law partner": a caller's 0 or 1 gate on the annuity payments."""
+
+PENSION_CHART_LINE_5 = CATALOG.declare("pension_chart_line_5", Decimal, non_negative=True)
+"""Pension chart line 5, Federal Worksheet for line 31400, line 5 "Add lines 2 to 4.": the foreign
+pension income, the U.S. IRA income and the RRIF or PRPP amounts transferred."""
+
+PENSION_CHART_LINE_6 = CATALOG.declare("pension_chart_line_6", Decimal, non_negative=True)
+"""Pension chart line 6, Federal Worksheet for line 31400, line 6 "Line 1 minus line 5": the amount
+from line 11500 less line 5, not below zero."""
+
+PENSION_CHART_LINE_7 = CATALOG.declare("pension_chart_line_7", Decimal, non_negative=True)
+"""Pension chart line 7, Federal Worksheet for line 31400, line 7 "Annuity payments from line 12900
+of your return": the annuity payments once when the conditions are met, else 0."""
+
+PENSION_CHART_LINE_8 = CATALOG.declare("pension_chart_line_8", Decimal, non_negative=True)
+"""Pension chart line 8, Federal Worksheet for line 31400, line 8 "Line 6 plus line 7": the sum of
+line 6 and line 7."""
+
+PENSION_INCOME_CREDIT = CATALOG.declare("pension_income_credit", Decimal, non_negative=True)
+"""Pension income amount, T1 line 97 (line 31400) "Pension income amount (use Federal Worksheet)
+(maximum $2,000)": the lesser of line 8 of the Federal Worksheet and $2,000, a part of the total of
+the credit amounts on line 33500."""
+
+STUDENT_LOAN_INTEREST = CATALOG.declare("student_loan_interest", Decimal, non_negative=True)
+"""Interest paid on student loans, T1 line 102 (line 31900) "Interest paid on your student loans (go
+to canada.ca/taxes-students)": the eligible amount of interest the filer paid, a part of the total
+of the credit amounts on line 33500."""

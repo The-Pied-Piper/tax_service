@@ -245,9 +245,11 @@ def test_the_trace_explains_the_computation() -> None:
         "+ cpp_base_contributions_on_return 3356.1 + "
         "cpp_base_contributions_on_self_employment_and_other_earnings 0 "
         "+ ei_premiums 1077.48 + ei_premiums_on_self_employment 0 "
-        "+ canada_employment_amount 1471 + disability_amount_for_self 0 "
+        "+ volunteer_firefighters_credit 0 + search_and_rescue_credit 0 + "
+        "canada_employment_amount 1471 + home_buyers_credit 0 + home_accessibility_credit 0 + "
+        "adoption_credit 0 + pension_income_credit 0 + disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 "
-        "+ federal_tuition_amount 0 + tuition_transferred_from_child 0 + "
+        "+ student_loan_interest 0 + federal_tuition_amount 0 + tuition_transferred_from_child 0 + "
         "amounts_transferred_from_spouse 0 + medical_claim 0 = 22033.58",
         "22033.58",
     )

@@ -237,6 +237,18 @@ inputs:
   - ca/spouse_return_line_96
   - ca/spouse_return_federal_tuition_amount
   - ca/spouse_not_separated_90_days
+  - ca/volunteer_firefighters_conditions_met
+  - ca/search_and_rescue_conditions_met
+  - ca/home_buyers_claim
+  - ca/home_accessibility_expenses
+  - ca/home_accessibility_claimed_by_others
+  - ca/adoption_expense_children
+  - ca/pension_foreign_income
+  - ca/pension_us_ira_income
+  - ca/pension_rrif_transferred
+  - ca/pension_annuity_payments
+  - ca/pension_annuity_conditions_met
+  - ca/student_loan_interest
   - ca-on/dependent_children
   - ca-on/dependants
   - ca-on/not_resident_of_canada_at_start_of_year

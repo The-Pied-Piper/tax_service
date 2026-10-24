@@ -49,6 +49,8 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
     ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     ADJUSTED_NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+    ADOPTION_CHILD_EXPENSES,
+    ADOPTION_CREDIT,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
     AGE_INCOME_THRESHOLD,
@@ -642,6 +644,12 @@ from app.jurisdictions.ca.catalog import (
     FOREIGN_BUSINESS_TAX_CREDIT_LINE_10,
     FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
     HIGH_INCOME_DONATIONS,
+    HOME_ACCESSIBILITY_CLAIMED_BY_OTHERS,
+    HOME_ACCESSIBILITY_CREDIT,
+    HOME_ACCESSIBILITY_LINE_2,
+    HOME_BUYERS_CLAIM,
+    HOME_BUYERS_CREDIT,
+    HOME_BUYERS_MAXIMUM,
     IMMEDIATE_EXPENSING_AGREED_LIMIT,
     IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     IMMEDIATE_EXPENSING_TOTAL_CLAIM,
@@ -705,7 +713,10 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
+    OTHER_PENSIONS_AND_SUPERANNUATION,
     PARTNERSHIP_GAINS_AT_FULL_INCLUSION,
+    PENSION_CHART_LINE_5,
+    PENSION_CHART_LINE_6,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT,
@@ -917,6 +928,9 @@ from app.jurisdictions.ca.catalog import (
     UNDER_18_ON_DECEMBER_31,
     UNUSED_TUITION_CLAIMED,
     UNUSED_TUITION_FROM_2024,
+    VOLUNTEER_AMOUNT_MAXIMUM,
+    VOLUNTEER_CREDITS_CHECKED,
+    VOLUNTEER_CREDITS_CLAIMED,
     WORKING_INCOME,
     ZONE_A_RESIDENCY_AFTER_WORK_SITE,
     ZONE_A_RESIDENCY_AMOUNT,
@@ -2006,6 +2020,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # Form T2038(IND) Part D amount 15, the claim (0, the caller's election) at most the claim
         # limit (0.00): 0, entered on line 41200 of the return.
         # Form T2038(IND) Part E, the carryback and refund of the ITC (Return A: every figure is 0).
+        # Guide 5000-G "Enter $10,000 on line 31270 of your return": the home buyers' claim, 0, at
+        # most the maximum of 10,000.00.
+        HOME_BUYERS_CREDIT: AtMostLine(
+            output=HOME_BUYERS_CREDIT,
+            amount_kind=HOME_BUYERS_CLAIM,
+            amount_value=D("0"),
+            bound=HOME_BUYERS_MAXIMUM,
+            bound_value=D("10000.00"),
+        ),
+        # Not a form line: the volunteer firefighters' and search and rescue amounts together, 0.00,
+        # at most the "but not both" maximum of 6,000.00.
+        VOLUNTEER_CREDITS_CHECKED: AtMostLine(
+            output=VOLUNTEER_CREDITS_CHECKED,
+            amount_kind=VOLUNTEER_CREDITS_CLAIMED,
+            amount_value=D("0.00"),
+            bound=VOLUNTEER_AMOUNT_MAXIMUM,
+            bound_value=D("6000.00"),
+        ),
         ITC_AMOUNT_M: AtMostLine(
             output=ITC_AMOUNT_M,
             amount_kind=ITC_CARRYBACK_REQUESTED,
@@ -2414,6 +2446,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert floored == {
         # Form T2209 note (4), basic federal tax less the First Nations abatement, not below zero:
         # 16951.38 less 0.00 (line 44100, none on Return A) is 16951.38.
+        # Federal Worksheet 31285 line 4 "Line 2 minus line 3": the home accessibility credit, 0.00
+        # less 0 claimed by others, not below zero: 0.
+        HOME_ACCESSIBILITY_CREDIT: SubtractedNotBelowZeroLine(
+            output=HOME_ACCESSIBILITY_CREDIT,
+            minuend=HOME_ACCESSIBILITY_LINE_2,
+            minuend_amount=D("0.00"),
+            subtrahend=HOME_ACCESSIBILITY_CLAIMED_BY_OTHERS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Federal Worksheet 31400 line 6 "Line 1 minus line 5": line 11500 less the foreign, U.S.
+        # IRA and RRIF amounts, 0, not below zero.
+        PENSION_CHART_LINE_6: SubtractedNotBelowZeroLine(
+            output=PENSION_CHART_LINE_6,
+            minuend=OTHER_PENSIONS_AND_SUPERANNUATION,
+            minuend_amount=D("0"),
+            subtrahend=PENSION_CHART_LINE_5,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX: SubtractedNotBelowZeroLine(
             output=FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
             minuend=BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
@@ -4448,6 +4500,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         FISH_IMMEDIATE_EXPENSING_CLAIMS_TOTAL: RecordTotalLine(
             FISH_IMMEDIATE_EXPENSING_CLAIMS_TOTAL, FISH_IMMEDIATE_EXPENSING_CLAIM, (D("0"),), D("0")
         ),
+        # T1 line 31300 "Enter on line 31300 of your return the amount of eligible adoption expenses
+        # that you can claim for all eligible children": no children in Return A, so 0.
+        ADOPTION_CREDIT: RecordTotalLine(ADOPTION_CREDIT, ADOPTION_CHILD_EXPENSES, (), D("0")),
         RC359_TAX_TOTAL: RecordTotalLine(RC359_TAX_TOTAL, RC359_TAX_ON_EXCESS_EPSP, (), D("0")),
         FLOW_THROUGH_SHARE_EXPENSES: RecordTotalLine(
             FLOW_THROUGH_SHARE_EXPENSES, FLOW_THROUGH_SHARE_SLIP_EXPENSES, (), D("0")

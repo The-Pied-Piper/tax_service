@@ -33,9 +33,10 @@
 # it and T1 line 47900 takes it. The income tax deducted (line 43700) is a chosen $3,000, so
 # the total credits (line 48200) are it plus the $750.00, $3,750.00, and the refund or
 # balance owing (line 167) is the total payable, the Ontario tax of $300.00 alone, less
-# them, -$3,450.00: a refund (line 48400). Not yet computed, so not in this file: the
-# pension income amount, the amounts transferred and the credits that follow from the
-# pension lines, the social benefits repayment, and any deduction from net income. Line 82
+# them, -$3,450.00: a refund (line 48400). The pension income amount (line 31400) is computed from the
+# $30,000 of line 11500, see the Federal Worksheet below. Not yet computed, so not in this file:
+# the amounts transferred and the credits that follow from the pension lines, the social benefits
+# repayment, and any deduction from net income. Line 82
 # of ON428 is not triggered by this return, and the qualifying donations for line 87 (the
 # community food program donation tax credit for farmers) are a chosen $0, so line 87 is $0
 # and line 88 is line 86. Schedule 9's inputs are all a chosen $0, so lines 116 (34900) and
@@ -117,11 +118,12 @@ description: >-
   less the $6,129.00 claimed, $2,472.00, but claimed for 0 spouses eligible for it: $0.
   There is no eligible dependant (lines 30400 and 58160: 0), no infirm children (line 30500:
   0), no base CPP contributions or EI premiums and a Canada employment amount (line 31260)
-  of $0, the lesser of $1,471 and employment income. Line 33500 is $35,286.00 (16,129 +
-  9,028.00 + 6,129.00 + 4,000.00 and $0 for each of the others) and ON428 line 58800 is
+  of $0, the lesser of $1,471 and employment income. Line 33500 is $37,286.00 (16,129 +
+  9,028.00 + 6,129.00 + 4,000.00 + 2,000.00 (the pension income amount, line 31400, see below)
+  and $0 for each of the others) and ON428 line 58800 is
   $24,875.00 (12,747 + 6,223.00 + 1,905.00 + 4,000.00 and $0 for each of the others). At
   14.5% federally (line 33800) and 5.05% for Ontario (ON428 line 58840), each product
-  rounded half-up to the cent is its form's non-refundable tax credits: federal $5,116.47
+  rounded half-up to the cent is its form's non-refundable tax credits: federal $5,406.47
   (line 35000) and Ontario $1,256.19 (ON428 line 61500), each taken off its form's basic tax
   ($4,350.00 federally, $1,515.00 for Ontario), not below zero: $0 and $258.81. The Ontario
   surtax (ON428 line 68) is $0, as the Ontario tax after credits is below $5,710, so the
@@ -332,16 +334,20 @@ sources:
     amount 1,591.00"). No eligible dependant is claimed (line 30400 is 0) and there are no
     infirm children (line 30500: 0 x 2,687 = 0); the Canada employment amount is the lesser
     of 1,471 and 0 + 0, 0. With the amounts above, line 33500, which takes amounts already
-    in cents, is 16,129 + 9,028.00 + 6,129.00 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 4,000.00 =
-    35,286.00 (the basic personal amount, the age amount of line 30100, the spouse amount of
+    in cents, is 16,129 + 9,028.00 + 6,129.00 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 4,000.00 + 2,000.00 =
+    37,286.00 (the basic personal amount, the age amount of line 30100, the spouse amount of
     line 30300, no eligible dependant, no Canada caregiver amount for a spouse, none for
     other infirm dependants, no infirm children, no base CPP contributions or EI premiums,
     no Canada employment amount, no disability amount transferred and the allowable medical
-    expenses of line 33200), and line 33800 is 35,286.00 x 14.5% = 5,116.47. Lines 116 (line
+    expenses of line 33200 and the pension income amount of line 31400), and line 33800 is 37,286.00 x 14.5% = 5,406.47. Lines 116 (line
     34900, Schedule 9) and 117 (line 34990, the top-up tax credit) are computed, and are $0
     here because this return's Schedule 9 inputs are all $0 (a chosen figure, caller
-    inputs), so line 35000 is 5,116.47 + 0 + 0 = 5,116.47. The pension income amount (line
-    31400) is not computed in this return.
+    inputs), so line 35000 is 5,406.47 + 0 + 0 = 5,406.47. The pension income amount (line
+    31400) is 2,000.00: Federal Worksheet line 1 is the 30,000 of line 11500, lines 2 to 4 are 0,
+    so line 5 is 0 and line 6 is 30,000; line 7 is 0 (no annuity payments); line 8 is 30,000, and
+    the lesser of it and $2,000 is 2,000.00. The basic federal tax for the alternative minimum tax
+    is the same 4,350.00 less these credits, 4,350.00 - 5,406.47 = -1,056.47, and the amount carried
+    over to 2026 is 1,056.47 (766.47 before the pension income amount).
   - >-
     https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - >-
@@ -512,9 +518,9 @@ sources:
     $57,375 or less": line 70 "Amount from line 26000", 30,000.00; line 71 "0.00"; line 72
     "Line 70 minus line 71 (cannot be negative)", 30,000.00; line 73 "Rate 14.5%"; line 74
     "Line 72 multiplied by the percentage from line 73", 4,350.00; line 75 "0.00"; line 76
-    "Line 74 plus line 75 Federal tax on taxable income", 4,350.00. Less the 5,116.47 of
+    "Line 74 plus line 75 Federal tax on taxable income", 4,350.00. Less the 5,406.47 of
     federal non-refundable tax credits (line 35000), not below zero, it is 0 (4,350.00 -
-    5,116.47 is negative), the federal tax after credits. The Ontario brackets are those of
+    5,406.47 is negative), the federal tax after credits. The Ontario brackets are those of
     the 2025 ON428 (form 5006-C), Part A "Ontario tax on taxable income", lines 1 to 8: line
     1 "Enter your taxable income from line 26000 of your return.", 30,000.00, in column 1
     "Line 1 is $52,886 or less": line 2 "Amount from line 1"; line 3 "0.00"; line 4 "Line 2
@@ -650,7 +656,7 @@ sources:
     45300) "Canada workers benefit (CWB) (complete Schedule 6)"; line 166 (line 48200) "Add
     lines 150 to 165. Total credits"; line 167 "Line 149 minus line 166 If the amount is
     negative, enter it on line 48400 below. If the amount is positive, enter it on line
-    48500 below. Refund or balance owing". Line 126 is 4,350.00 - 5,116.47, negative, so 0,
+    48500 below. Refund or balance owing". Line 126 is 4,350.00 - 5,406.47, negative, so 0,
     the federal tax after credits, carried to line 142, the net federal tax (the other lines
     not modelled or not triggered). Line 148 is 0 + 300.00 = 300.00. Line 150 is 3,000, a
     chosen figure: the tax withheld on the taxpayer's slips (the pension slips among them),
@@ -871,8 +877,8 @@ expected:
       ca/medical_expenses_over_threshold: "4000.00"
       ca/other_dependants_medical: "0"
       ca/medical_claim: "4000.00"
-      ca/non_refundable_credit_amounts: "35286.00"
-      ca/non_refundable_tax_credits: "5116.47"
+      ca/non_refundable_credit_amounts: "37286.00"
+      ca/non_refundable_tax_credits: "5406.47"
       ca/federal_tax_after_credits: "0"
       ca-on/ontario_basic_tax: "1515.00"
       ca-on/basic_personal_amount: "12747.00"
@@ -1008,12 +1014,12 @@ expected:
       ca/net_capital_loss_balance_2000: "0.00"
       ca/amt_adjusted_income_with_gains: "30000.00"
       ca/amt_minimum_amount: "0"
-      ca/amt_basic_federal_tax: "-766.47"
+      ca/amt_basic_federal_tax: "-1056.47"
       ca/amt_regular_net_federal_tax_payable: "0"
       ca/amt_special_foreign_tax_credit: "0"
       ca/amt_alternative_minimum_tax_payable: "0"
       ca/amt_federal_tax_payable_under_minimum_tax: "0"
-      ca/amt_carryover_available_for_2026: "766.47"
+      ca/amt_carryover_available_for_2026: "1056.47"
   ca/schedule_8:
     - ca/cpp_base_contributions: "0.00"
       ca/cpp_first_additional_contributions: "0.00"

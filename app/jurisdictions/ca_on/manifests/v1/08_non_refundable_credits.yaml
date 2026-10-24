@@ -159,7 +159,13 @@ capabilities:
         - ca/cpp_base_contributions_on_self_employment_and_other_earnings
         - ca/ei_premiums
         - ca/ei_premiums_on_self_employment
+        - ca/volunteer_firefighters_credit
+        - ca/search_and_rescue_credit
         - ca/canada_employment_amount
+        - ca/home_buyers_credit
+        - ca/home_accessibility_credit
+        - ca/adoption_credit
+        - ca/pension_income_credit
         - ca/disability_amount_for_self
         - ca/disability_transferred_amount
     produces:
@@ -316,8 +322,12 @@ capabilities:
     produces:
       output: ca/amounts_transferred_from_spouse
   # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31000, 31200,
-  # 31217, 31260, 31800, 32300, 32400, 32600, 33200) and ON428 line 58800 (lines 58040, 58080,
-  # 58120, 58160, 58185, 58240, 58280, 58300, 58305, 58769), in the forms' line order. T1 line 113 and line 33500 is
+  # 31217, 31220, 31240, 31260, 31270, 31285, 31300, 31400, 31800, 31900, 32300, 32400, 32600,
+  # 33200) and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58185, 58240, 58280, 58300,
+  # 58305, 58769), in the forms' line order. The lines 31220 and 31240 (the volunteer amounts),
+  # 31270 (home buyers'), 31285 (home accessibility), 31300 (adoption), 31400 (pension income) and
+  # 31900 (student loan interest) are the parts in 08m_other_federal_non_refundable_credits.yaml,
+  # and line 33500 sums them where the form does. T1 line 113 and line 33500 is
   # "Line 106 plus line 112", and line 112 (line 33200) follows the lines that line 106 adds;
   # ON428 line 44 and line 58800 is "Line 35 plus line 43", and line 43 (line 58769) follows the
   # lines that line 35 adds. ON428 lines 58240, 58280, 58300 and 58305 are "Amount from line
@@ -339,9 +349,16 @@ capabilities:
         - ca/cpp_base_contributions_on_self_employment_and_other_earnings
         - ca/ei_premiums
         - ca/ei_premiums_on_self_employment
+        - ca/volunteer_firefighters_credit
+        - ca/search_and_rescue_credit
         - ca/canada_employment_amount
+        - ca/home_buyers_credit
+        - ca/home_accessibility_credit
+        - ca/adoption_credit
+        - ca/pension_income_credit
         - ca/disability_amount_for_self
         - ca/disability_transferred_amount
+        - ca/student_loan_interest
         - ca/federal_tuition_amount
         - ca/tuition_transferred_from_child
         - ca/amounts_transferred_from_spouse

@@ -19,6 +19,7 @@ from app.domain.trace import TraceLine
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
+    ADOPTION_EXPENSE_CHILDREN,
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     AMT_CLASS_43_1_INCOME,
@@ -411,6 +412,9 @@ from app.jurisdictions.ca.catalog import (
     FOREIGN_TAX_COUNTRIES,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
+    HOME_ACCESSIBILITY_CLAIMED_BY_OTHERS,
+    HOME_ACCESSIBILITY_EXPENSES,
+    HOME_BUYERS_CLAIM,
     HOME_RENOVATIONS,
     INCOME_TAX_DEDUCTED,
     INFIRM_CHILDREN,
@@ -480,6 +484,11 @@ from app.jurisdictions.ca.catalog import (
     OTHER_SPLIT_INCOME,
     PART_XII_2_TAX_CREDIT,
     PARTNERSHIP_GAINS_AT_FULL_INCLUSION,
+    PENSION_ANNUITY_CONDITIONS_MET,
+    PENSION_ANNUITY_PAYMENTS,
+    PENSION_FOREIGN_INCOME,
+    PENSION_RRIF_TRANSFERRED,
+    PENSION_US_IRA_INCOME,
     PERSONAL_USE_PROPERTY_DISPOSITIONS,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT_COLUMN_1_LINE_2,
@@ -626,6 +635,7 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_LIMIT,
     RRSP_INCOME,
     SCHEDULE_8_INSTANCES,
+    SEARCH_AND_RESCUE_CONDITIONS_MET,
     SECURITY_OPTIONS_DEDUCTIONS,
     SHARE_DISPOSITIONS,
     SHORT_TERM_RENTAL_CCA_UNITS,
@@ -663,6 +673,7 @@ from app.jurisdictions.ca.catalog import (
     STANDARD_AMOUNT_ALLOCATED_1,
     STANDARD_AMOUNT_ALLOCATED_2,
     STANDARD_AMOUNT_ALLOCATED_3,
+    STUDENT_LOAN_INTEREST,
     SUPPORT_PAYMENTS_DEDUCTION,
     T3_CAPITAL_GAINS_OR_LOSSES,
     T3_DIVIDEND_TAX_CREDIT,
@@ -827,6 +838,7 @@ from app.jurisdictions.ca.catalog import (
     UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_TUITION_FROM_2024,
+    VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET,
     WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
     WORKERS_COMPENSATION_BENEFITS,
     ZONE_A_ADDITIONAL_RESIDENCY_DAYS,
@@ -933,6 +945,31 @@ POLITICAL_COLUMN_LINES = {
 def service() -> TaxComputationService:
     """One service for the whole run, so each (jurisdiction, tax year) is composed once."""
     return build_tax_computation()
+
+
+def blank_other_federal_credit_inputs() -> list[Artifact[Any]]:
+    """The inputs of T1 lines 31220 to 31900 with no claim: counts 0, amounts 0, no
+    children."""
+    counts = (
+        VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET,
+        SEARCH_AND_RESCUE_CONDITIONS_MET,
+        PENSION_ANNUITY_CONDITIONS_MET,
+    )
+    amounts = (
+        HOME_BUYERS_CLAIM,
+        HOME_ACCESSIBILITY_EXPENSES,
+        HOME_ACCESSIBILITY_CLAIMED_BY_OTHERS,
+        PENSION_FOREIGN_INCOME,
+        PENSION_US_IRA_INCOME,
+        PENSION_RRIF_TRANSFERRED,
+        PENSION_ANNUITY_PAYMENTS,
+        STUDENT_LOAN_INTEREST,
+    )
+    return [
+        *(Artifact(kind, 0) for kind in counts),
+        *(Artifact(kind, D("0")) for kind in amounts),
+        Artifact(ADOPTION_EXPENSE_CHILDREN, RecordList(ADOPTION_EXPENSE_CHILDREN.fields, [])),
+    ]
 
 
 def slips(*expenses: str) -> Artifact[RecordList]:
@@ -3144,6 +3181,7 @@ def starting(
         Artifact(SPOUSE_RETURN_LINE_96, D(spouse_return_line_96)),
         Artifact(SPOUSE_RETURN_FEDERAL_TUITION_AMOUNT, D(spouse_return_federal_tuition_amount)),
         Artifact(SPOUSE_NOT_SEPARATED_90_DAYS, spouse_not_separated_90_days),
+        *blank_other_federal_credit_inputs(),
         Artifact(ontario.SPOUSE_RETURN_ONTARIO_AGE_AMOUNT, D(spouse_return_ontario_age_amount)),
         Artifact(
             ontario.SPOUSE_RETURN_ONTARIO_PENSION_INCOME_AMOUNT,

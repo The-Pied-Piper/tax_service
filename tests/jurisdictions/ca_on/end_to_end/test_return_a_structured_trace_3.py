@@ -411,6 +411,9 @@ from app.jurisdictions.ca.catalog import (
     FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
     GROSS_RENTAL_INCOME,
     HIGH_INCOME_DONATIONS,
+    HOME_ACCESSIBILITY_EXPENSES,
+    HOME_ACCESSIBILITY_LINE_2,
+    HOME_BUYERS_MAXIMUM,
     INFIRM_CHILDREN,
     INFIRM_CHILDREN_AMOUNT,
     INTEREST_AND_OTHER_INVESTMENT_INCOME,
@@ -461,6 +464,11 @@ from app.jurisdictions.ca.catalog import (
     OTHER_DIVIDENDS_GROSSED_UP,
     OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     OTHER_EMPLOYMENT_EXPENSES,
+    PENSION_ANNUITY_CONDITIONS_MET,
+    PENSION_ANNUITY_PAYMENTS,
+    PENSION_CHART_LINE_7,
+    PENSION_CHART_LINE_8,
+    PENSION_INCOME_CREDIT,
     POLITICAL_CREDIT,
     POLITICAL_CREDIT_BEFORE_MAXIMUM,
     POLITICAL_CREDIT_COLUMN_1_LINE_2,
@@ -532,6 +540,8 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION,
     SCHEDULE_3_LINE_17600_NOT_BELOW_ZERO,
     SCHEDULE_3_LINE_19900,
+    SEARCH_AND_RESCUE_CONDITIONS_MET,
+    SEARCH_AND_RESCUE_CREDIT,
     SELF_EMPLOYED_CPP_BASE_CREDIT,
     SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
     SELF_EMPLOYED_CPP_DEDUCTION,
@@ -616,6 +626,9 @@ from app.jurisdictions.ca.catalog import (
     UNUSED_FEDERAL_TUITION,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
     UNUSED_TUITION_CLAIMED,
+    VOLUNTEER_AMOUNT_MAXIMUM,
+    VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET,
+    VOLUNTEER_FIREFIGHTERS_CREDIT,
     WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
     ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
     ZONE_A_ADDITIONAL_RESIDENCY_DAYS,
@@ -2285,6 +2298,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         # Schedule 9 line 13 "$200" and line 18 "Income threshold 253,414.00"; Federal Worksheet
         # line 4 "8,319.38": each claimed whole.
+        # Guide 5000-G "Enter $10,000 on line 31270 of your return if you are not splitting the
+        # amount with your spouse or common-law partner": the home buyers' maximum.
+        HOME_BUYERS_MAXIMUM: CreditAmountLine(
+            HOME_BUYERS_MAXIMUM, Credit(amount=D("10000")), CENT, D("10000.00")
+        ),
+        # Guide 5000-G "You can claim $6,000 for the volunteer firefighters' amount (VFA) or search
+        # and rescue volunteers' amount (SRVA), but not both": the volunteer maximum.
+        VOLUNTEER_AMOUNT_MAXIMUM: CreditAmountLine(
+            VOLUNTEER_AMOUNT_MAXIMUM, Credit(amount=D("6000")), CENT, D("6000.00")
+        ),
         DONATION_FIRST_TIER_MAXIMUM: CreditAmountLine(
             DONATION_FIRST_TIER_MAXIMUM, Credit(amount=D("200")), CENT, D("200.00")
         ),
@@ -2440,6 +2463,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # Form T2222 lines 1, 2, 6 and 7 "multiplied by $11.00" and "multiplied by $5.50": Return A
         # has no days.
         # Form T1223 Part C line 4 before its maximum: 0 months at $1,000 a month.
+        # T1 line 31220 "Volunteer firefighters' amount (VFA)" and line 31240 "Search and rescue
+        # volunteers' amount (SRVA)": $6,000 when the conditions are met (1), here not met (0).
+        VOLUNTEER_FIREFIGHTERS_CREDIT: PerUnitAmountLine(
+            output=VOLUNTEER_FIREFIGHTERS_CREDIT,
+            count_kind=VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET,
+            count=0,
+            per_unit=Amount(D("6000")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        SEARCH_AND_RESCUE_CREDIT: PerUnitAmountLine(
+            output=SEARCH_AND_RESCUE_CREDIT,
+            count_kind=SEARCH_AND_RESCUE_CONDITIONS_MET,
+            count=0,
+            per_unit=Amount(D("6000")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
         CLERGY_RESIDENCE_MONTHS_AMOUNT: PerUnitAmountLine(
             output=CLERGY_RESIDENCE_MONTHS_AMOUNT,
             count_kind=CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT,
@@ -3003,6 +3044,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # Form T2125 Area A endnote 5 "zero, if you are associated with one or more EPOPs and an
         # agreement ... was not filed": amount iii, 0.00 for Return A (no percentage assigned),
         # times a count of 0 agreements filed, a plain 0.
+        # Federal Worksheet 31400 line 7 "Annuity payments ... only if you were 65 years of age or
+        # older on December 31, 2025": the T4RSP payments, 0, times the 0/1 condition.
+        PENSION_CHART_LINE_7: TimesCountLine(
+            output=PENSION_CHART_LINE_7,
+            amount_kind=PENSION_ANNUITY_PAYMENTS,
+            amount_value=D("0"),
+            count_kind=PENSION_ANNUITY_CONDITIONS_MET,
+            count=0,
+            result=D("0"),
+        ),
         BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT: TimesCountLine(
             output=BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
             amount_kind=BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
@@ -3392,6 +3443,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Amount(D("750")),
             CENT,
             D("0"),
+        ),
+        # Federal Worksheet 31285 line 2 "Enter whichever is less: amount from line 1 or $20,000.":
+        # line 1 is 0, so 0.
+        HOME_ACCESSIBILITY_LINE_2: CappedAmountLine(
+            HOME_ACCESSIBILITY_LINE_2,
+            HOME_ACCESSIBILITY_EXPENSES,
+            D("0"),
+            Amount(D("20000")),
+            CENT,
+            D("0.00"),
+        ),
+        # T1 line 31400 "Pension income amount (use Federal Worksheet) (maximum $2,000)": line 8 of
+        # the Federal Worksheet, 0, within the maximum.
+        PENSION_INCOME_CREDIT: CappedAmountLine(
+            PENSION_INCOME_CREDIT,
+            PENSION_CHART_LINE_8,
+            D("0"),
+            Amount(D("2000")),
+            CENT,
+            D("0.00"),
         ),
         CANADA_EMPLOYMENT_AMOUNT: CappedAmountLine(
             CANADA_EMPLOYMENT_AMOUNT,

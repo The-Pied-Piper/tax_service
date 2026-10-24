@@ -114,9 +114,11 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
         "+ cpp_base_contributions_on_return 2796.75 + "
         "cpp_base_contributions_on_self_employment_and_other_earnings 0 "
         "+ ei_premiums 984 + ei_premiums_on_self_employment 0 "
-        "+ canada_employment_amount 1471 + disability_amount_for_self 0 "
+        "+ volunteer_firefighters_credit 0 + search_and_rescue_credit 0 + "
+        "canada_employment_amount 1471 + home_buyers_credit 0 + home_accessibility_credit 0 + "
+        "adoption_credit 0 + pension_income_credit 0 + disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 "
-        "+ federal_tuition_amount 0 + tuition_transferred_from_child 0 + "
+        "+ student_loan_interest 0 + federal_tuition_amount 0 + tuition_transferred_from_child 0 + "
         "amounts_transferred_from_spouse 0 + medical_claim 0 = 37509.75"
     ) in rendered
     assert (
