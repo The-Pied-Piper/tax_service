@@ -47,6 +47,7 @@ from app.jurisdictions.ca.catalog import (
     QBT_ELECTION_DEDUCTION,
     QBT_ELECTION_IS_QBT_IN_ORDER,
     QBT_MAXIMUM_DEDUCTION,
+    QBT_NET_INVESTMENT_LOSS,
     QBT_NET_INVESTMENT_LOSS_REDUCTION,
     QBT_TAXABLE_CAPITAL_GAINS,
     QBT_TAXABLE_CAPITAL_GAINS_AFTER_EARLIER,
@@ -524,3 +525,65 @@ def test_a_qbt_listed_after_a_qcc_is_refused_even_with_no_figures() -> None:
             "0",
             t2048_dispositions_rows=({"qbt_election_is_qbt": 0}, {"qbt_election_is_qbt": 1}),
         )
+
+
+def test_chart_a_line_20_after_note_3_can_be_below_zero_when_line_24_is_not_asked_for() -> None:
+    # Taxable capital gains (line 12700) of 100,000.00 and carrying charges of 10,000.
+    # Disposition 1: line 7 is 20,000.00, line 8 is 100,000.00, line 17 is 100,000.00 and Chart
+    # A line 20 is 10,000.00 (line 10 less a line 19 of 0), with investment expenses, so line 24
+    # is 10,000.00; line 26 is 90,000.00 and nothing is claimed (0). Line 30 is 20,000.00 and
+    # line 32 is 20,000.00; line 35 is 10,000.00, line 36 is 10,000.00, line 41 is 0.00 and
+    # line 42 is 10,000.00. Disposition 2 (no investment expenses): line 8 is 100,000.00 -
+    # 20,000.00 = 80,000.00 and line 16 is 0, so line 17 is 0 and Chart A line 18 is 80,000.00;
+    # Chart A line 20 is 10,000.00 - 80,000.00, entered as 0 ("if negative enter 0"). Note (3)
+    # takes the earlier line 42 from it: 0 - 10,000.00 = -10,000.00, with no floor printed; line
+    # 24 is 0 (no investment expenses).
+    first = {
+        "qbt_election_eligible_amount": "40000",
+        "qbt_percentage_allocated": "100",
+        "qbt_capital_gains": "200000",
+        "qbt_election_is_qbt": 1,
+        "qbt_has_investment_expenses": 1,
+        "qbt_deduction_claimed": "0",
+    }
+    second = {
+        "qbt_election_eligible_amount": "1000000",
+        "qbt_percentage_allocated": "100",
+        "qbt_capital_gains": "0",
+        "qbt_election_is_qbt": 1,
+        "qbt_has_investment_expenses": 0,
+        "qbt_deduction_claimed": "0",
+    }
+    runs = run(
+        "0",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        slip_capital_gains_or_losses="200000",
+        total_carrying_charges="10000",
+        t2048_dispositions_rows=(first, second),
+    )
+    one, two = runs["ca/t2048"]
+
+    assert one.get(QBT_NET_INVESTMENT_LOSS).value == D("10000.00")
+    assert one.get(QBT_NET_INVESTMENT_LOSS_REDUCTION).value == D("10000.00")
+    assert two.get(QBT_EARLIER_NET_INVESTMENT_LOSS_REDUCTION_TOTAL).value == D("10000.00")
+    assert two.get(QBT_CHART_A_NET_INVESTMENT_LOSS).value == D("0")
+    assert two.get(QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER).value == D("-10000.00")
+    assert two.get(QBT_NET_INVESTMENT_LOSS).value == D("0")
+    assert two.get(QBT_MAXIMUM_DEDUCTION).value == D("0")
+    assert two.get(QBT_ALLOCATION_TOTAL).value == D("0")
+    assert two.get(QBT_NET_INVESTMENT_LOSS_REDUCTION).value == D("0")
+    # Part 5: line 32 20,000.00 + 0.00; line 42 10,000.00 + 0.00; B (17212) is line 7 of each,
+    # 20,000.00 + 500,000.00; C (17213) is line 16, 100,000.00 + 0.00; D (17215) is lines 31 and
+    # 36, (0 + 10,000.00) + (0 + 0.00).
+    worksheet = runs["ca-on/return"][0]
+    assert worksheet.get(QBT_ALLOCATION_TOTAL).value == D("20000.00")
+    assert worksheet.get(QBT_NET_INVESTMENT_LOSS_REDUCTION).value == D("10000.00")
+    assert worksheet.get(QBT_ELECTION_DEDUCTION).value == D("520000.00")
+    assert worksheet.get(QBT_TAXABLE_CAPITAL_GAINS).value == D("100000.00")
+    assert worksheet.get(QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION).value == D("10000.00")
+    assert worksheet.get(QBT_CAPITAL_GAINS_DEDUCTION).value == D("0")

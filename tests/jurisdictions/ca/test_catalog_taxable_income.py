@@ -651,10 +651,15 @@ def test_the_form_t2048_kinds_are_money_and_counts() -> None:
         QBT_EARLIER_ABIL_REDUCTION_TOTAL,
         QBT_ALLOWABLE_BUSINESS_INVESTMENT_LOSS_AFTER_EARLIER,
         QBT_EARLIER_NET_INVESTMENT_LOSS_REDUCTION_TOTAL,
-        QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER,
     ):
         assert kind.value_type is Decimal, kind.identifier
         assert kind.non_negative is True, kind.identifier
+    # Chart A line 20 after note (3) is "line 20 minus the sum of all previous amounts" and the form
+    # prints no floor: a later disposition's own line 20 can be below the earlier lines 42, so it is
+    # signed.
+    assert QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER.value_type is Decimal
+    assert QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER.non_negative is False
+    assert "ca/qbt_chart_a_net_investment_loss_after_earlier" in SIGNED
     # "election is for a QBT", "gains are QSBCS/QFFP" and "you have investment expenses in 2025"
     # are 0 or 1, the pattern of the other yes/no inputs.
     for count in (

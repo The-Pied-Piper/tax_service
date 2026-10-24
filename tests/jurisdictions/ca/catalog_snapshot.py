@@ -2173,6 +2173,7 @@ REGISTERED = frozenset(
 
 SIGNED = frozenset(
     {
+        "ca/qbt_chart_a_net_investment_loss_after_earlier",
         "ca/principal_residence_line_27",
         "ca/principal_residence_line_30",
         "ca/principal_residence_worksheet_line_18",
