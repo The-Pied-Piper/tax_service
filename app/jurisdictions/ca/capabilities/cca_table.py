@@ -44,12 +44,12 @@ the rule (`half_year_rule_on_sale` of the class rates), column 2 is above 0, no 
 in the class and recapture and a terminal loss are excluded for the row (Note 3, so not with DIEP
 additions): column 19 is then one half of column 2, the exact half rounded once with the
 dataset's rule, and the zero for no property left or a column 7 at or below 0 does not apply, so
-the maximum is column 19 times the rate. Regulation 1100(2.5) (Income Tax Regulations, https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._945/section-1100.html)
-determines the deduction "as if the property had not been disposed of" and the days in the year
-one-half, and does not limit it to what is left after the sale (column 7); and allows no deduction
-in a later year. The unclaimed balance is reduced to nil (Folio S3-F4-C1 paragraph 1.106), so
-column 24 is 0 for such a row. The rule needs no additions in the year: a Class 10.1 vehicle is
-its own class.
+the maximum is column 19 times the rate. Regulation 1100(2.5) (Income Tax Regulations,
+https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._945/section-1100.html) determines the
+deduction "as if the property had not been disposed of" and the days in the year one-half, and does
+not limit it to what is left after the sale (column 7); and allows no deduction in a later year. The
+unclaimed balance is reduced to nil (Folio S3-F4-C1 paragraph 1.106), so column 24 is 0 for such a
+row. The rule needs no additions in the year: a Class 10.1 vehicle is its own class.
 Guide T4036 "Column 7": "You cannot claim CCA when the amount in column 7 is:
 negative ... positive and you do not have any property left in that class ... In either case,
 enter "0" in column 24", so the maximum and column 24 are 0 for those rows, for the recorded

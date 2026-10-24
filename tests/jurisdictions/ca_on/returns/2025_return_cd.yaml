@@ -114,12 +114,16 @@ sources:
     claim, the most; column 22 is 0, as Regulation 1100(2.5) (Income Tax Regulations,
     https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._945/section-1100.html) determines
     the deduction "as if the property had not been disposed of" and allows none in a later year,
-    and Folio S3-F4-C1 paragraph 1.106 reduces the rest to nil (the Column 19 text of Guides T4002 and T4036 and the T2125
-    form, docs/cra-forms-2025/t4002-25e.pdf, t4036-25e.pdf and t2125-25e.pdf, say nothing on
-    column 22 for the half-year rule on sale). A claim above 3,000.00 is refused. The columns the form computes (19 and
-    the maximum) are dollars-and-cents boxes, rounded half-up to the cent, which changes neither
-    here. Not modelled: Part 2 (the Internet business activities), Part 8 (the other partners), Part 9 (the equity) and Areas
-    B to G (Area G is not answered: the business is not associated with another EPOP).
+    and Folio S3-F4-C1 paragraph 1.106 reduces the rest to nil (this displaces the general rule
+    of Guide T4002, "Column 22 - UCC at the end of the year", that column 22 is column 7 minus
+    column 21 and is next year's column 2, which excepts only recapture and a terminal loss: the
+    Column 19 text of Guides T4002 and T4036 and the T2125 form,
+    docs/cra-forms-2025/t4002-25e.pdf, t4036-25e.pdf and t2125-25e.pdf, says nothing on column
+    22 for the half-year rule on sale). A claim above 3,000.00 is refused. The columns the form
+    computes (19 and the maximum) are dollars-and-cents boxes, rounded half-up to the cent,
+    which changes neither here. Not modelled: Part 2 (the Internet business activities), Part 8
+    (the other partners), Part 9 (the equity) and Areas B to G (Area G is not answered: the
+    business is not associated with another EPOP).
     Endnote 5 "$1.5 million, if you are not associated with any other eligible person or
     partnership (EPOP) in the tax year" gives the immediate expensing limit 1,500,000; the
     income before CCA is a chosen reading, to be confirmed: line 9369 plus line 9936, 30,000.00
