@@ -194,6 +194,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_TRAVEL_EXPENSES,
     BUSINESS_UTILITIES,
     CANADA_EMPLOYMENT_AMOUNT,
+    CANADA_EMPLOYMENT_AMOUNT_INCOME,
     CANADA_TRAINING_CREDIT,
     CANADA_WORKERS_BENEFIT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
@@ -2284,6 +2285,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((UCCB_REPAYMENT, D("0")), (RDSP_INCOME_REPAYMENT, D("0"))),
             D("0"),
         ),
+        # Schedule ON428-A line 3 "Line 1 plus line 2": line 1 (110000) and line 2 (0), in line
+        # order.
+        ontario.LIFT_EMPLOYMENT_INCOME: SumLine(
+            ontario.LIFT_EMPLOYMENT_INCOME,
+            ((EMPLOYMENT_INCOME, D("110000")), (OTHER_EMPLOYMENT_INCOME, D("0"))),
+            D("110000"),
+        ),
         # Schedule ON428-A lines 9 "Add lines 6 to 8.", 12 "Line 10 plus line 11", 24 "Add lines
         # 21 to 23.", 27 "Line 25 plus line 26" and 35 "Line 33 plus line 34 Adjusted family net
         # income", each in line order; the spouse's lines are 0 for a filer with no spouse.
@@ -2845,6 +2853,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ONTARIO_TAX, D("8945.77")),
             ),
             D("25897.15"),
+        ),
+        # T1 line 92 (line 31260) "Enter whichever is less: $1,471 or line 1 plus line 2.": line 1
+        # (110000) and line 2 (0), in line order.
+        CANADA_EMPLOYMENT_AMOUNT_INCOME: SumLine(
+            CANADA_EMPLOYMENT_AMOUNT_INCOME,
+            ((EMPLOYMENT_INCOME, D("110000")), (OTHER_EMPLOYMENT_INCOME, D("0"))),
+            D("110000"),
         ),
         # Schedule 6 line 5 "Add lines 1 to 4. Enter the result, even if it is "0". Working
         # income": line 1 "Employment income and other employment income from line 10100 and line

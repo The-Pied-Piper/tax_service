@@ -107,6 +107,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_SHARE_OF_NET_INCOME,
     BUSINESS_TOTAL_EXPENSES,
     CANADA_EMPLOYMENT_AMOUNT,
+    CANADA_EMPLOYMENT_AMOUNT_INCOME,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
@@ -670,7 +671,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1137
+    assert len(order) == 1139
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     # Part 8 line 12: the check is ordered after the cap it is made against. The claim is an input,
@@ -1077,6 +1078,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO] < position[BASIC_PERSONAL_AMOUNT]
     assert position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO] < position[AGE_INCOME_OVER_THRESHOLD]
     assert position[BASIC_PERSONAL_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    assert position[CANADA_EMPLOYMENT_AMOUNT_INCOME] < position[CANADA_EMPLOYMENT_AMOUNT]
     assert position[CANADA_EMPLOYMENT_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert (
         position[BASIC_PERSONAL_AMOUNT]
@@ -1365,6 +1367,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ONTARIO_TAX]
     )
     assert position[TOTAL_SPLIT_INCOME] < position[ontario.HEALTH_PREMIUM_INCOME]
+    assert position[ontario.LIFT_EMPLOYMENT_INCOME] < position[LIFT_CREDIT_BEFORE_MAXIMUM]
     assert position[LIFT_CREDIT_BEFORE_MAXIMUM] < position[LIFT_MAXIMUM_CREDIT]
     assert position[TOSI_ADJUSTED_NET_INCOME] < position[ontario.LIFT_NET_INCOME_AND_REPAYMENTS]
     assert (

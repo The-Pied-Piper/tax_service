@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1137
+        == 1139
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1137
+        == 1139
     )
 
 
@@ -1711,6 +1711,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/self_employed_ei_premiums",
         "ca/ei_premiums_on_self_employment",
         "ca/ei_payable_on_self_employment",
+        "ca/canada_employment_amount_income",
         "ca/canada_employment_amount",
         "ca/volunteer_firefighters_conditions_met",
         "ca/search_and_rescue_conditions_met",
@@ -2544,6 +2545,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/provincial_foreign_tax_credit_before_limit",
         "ca-on/provincial_foreign_tax_credit",
         "ca-on/ontario_tax_after_foreign_tax_credit",
+        "ca-on/lift_employment_income",
         "ca-on/lift_credit_before_maximum",
         "ca-on/lift_maximum_credit",
         "ca-on/lift_reduction",
@@ -2693,7 +2695,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1137
+        == 1139
     )
     assert (
         len(
@@ -2701,7 +2703,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1137
+        == 1139
     )
 
 
@@ -2714,7 +2716,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1137
+        == 1139
     )
     assert (
         len(
@@ -2722,7 +2724,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1137
+        == 1139
     )
 
 

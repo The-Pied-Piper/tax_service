@@ -820,13 +820,18 @@ ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT = CATALOG.declare(
 negative, enter "0")": the Ontario tax after the Ontario tax reduction less the provincial foreign
 tax credit."""
 
+LIFT_EMPLOYMENT_INCOME = CATALOG.declare("lift_employment_income", Decimal, non_negative=True)
+"""LIFT employment income, Schedule ON428-A line 3 "Line 1 plus line 2": line 1 "Amount from line
+10100 of your return" (employment income) plus line 2 "Amount from line 10400 of your return"
+(other employment income), in line order, the base of the LIFT rate on line 5."""
+
 LIFT_CREDIT_BEFORE_MAXIMUM = CATALOG.declare(
     "lift_credit_before_maximum", Decimal, non_negative=True
 )
 """LIFT credit before its maximum, Schedule ON428-A line 5 "Line 3 multiplied by the percentage
 from line 4 (maximum $875)" before the maximum: line 4 "Applicable rate 5.05%" on line 3 "Line 1
-plus line 2", which is employment income (line 1 "Amount from line 10100 of your return") while
-line 2 "Amount from line 10400 of your return" is not triggered."""
+plus line 2", the sum of employment income (line 1 "Amount from line 10100 of your return") and
+other employment income (line 2 "Amount from line 10400 of your return")."""
 
 LIFT_MAXIMUM_CREDIT = CATALOG.declare("lift_maximum_credit", Decimal, non_negative=True)
 """LIFT credit at most its maximum, Schedule ON428-A line 5's "(maximum $875)", Part A line 14

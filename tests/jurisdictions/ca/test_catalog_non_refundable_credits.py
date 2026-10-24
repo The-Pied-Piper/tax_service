@@ -15,6 +15,7 @@ from app.jurisdictions.ca.catalog import (
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
     CANADA_EMPLOYMENT_AMOUNT,
+    CANADA_EMPLOYMENT_AMOUNT_INCOME,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADA_TRAINING_CREDIT_CLAIMED,
     CANADA_TRAINING_CREDIT_LIMIT,
@@ -170,6 +171,7 @@ def test_the_non_refundable_credits_kinds_are_the_registered_ones(
     assert registry.get("ca/ei_premiums") is EI_PREMIUMS
     assert registry.get("ca/ei_premiums_on_self_employment") is EI_PREMIUMS_ON_SELF_EMPLOYMENT
     assert registry.get("ca/canada_employment_amount") is CANADA_EMPLOYMENT_AMOUNT
+    assert registry.get("ca/canada_employment_amount_income") is CANADA_EMPLOYMENT_AMOUNT_INCOME
     assert registry.get("ca/non_refundable_tax_credits") is NON_REFUNDABLE_TAX_CREDITS
     assert (
         registry.get("ca/itc_recapture_expenditure_at_15_percent")
@@ -301,6 +303,7 @@ def test_the_non_refundable_credits_kinds_are_money() -> None:
         EI_PREMIUMS,
         EI_PREMIUMS_ON_SELF_EMPLOYMENT,
         CANADA_EMPLOYMENT_AMOUNT,
+        CANADA_EMPLOYMENT_AMOUNT_INCOME,
         NON_REFUNDABLE_TAX_CREDITS,
         ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
         ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,

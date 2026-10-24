@@ -61,14 +61,21 @@ line 31217 and line 42120 of your return."), entered once for each agreement wit
 (1 or 0), a part of the total of the credit amounts on the T1 (ON428 line 22, line 58305, copies
 it)."""
 
+CANADA_EMPLOYMENT_AMOUNT_INCOME = CATALOG.declare(
+    "canada_employment_amount_income", Decimal, non_negative=True
+)
+"""Canada employment amount income, T1 line 31260 "Enter whichever is less: $1,471 or line 1 plus
+line 2.": line 1 (line 10100, "Employment income (box 14 of all T4 slips)") plus line 2 (line
+10400, "Other employment income"), in line order, the base the cap is applied to.
+"""
+
 CANADA_EMPLOYMENT_AMOUNT = CATALOG.declare("canada_employment_amount", Decimal, non_negative=True)
 """Canada employment amount, T1 line 31260 "Enter whichever is less: $1,471 or line 1 plus line
-2.": the lesser of the cap and employment income, the fourth part of the total of the credit
+2.": the lesser of the cap and line 1 plus line 2, the fourth part of the total of the credit
 amounts on the T1 alone (ON428 has no such line).
 
 Line 1 (10100) is "Employment income (box 14 of all T4 slips)" and line 2 (10400) is "Other
-employment income". The returns have no other employment income, so the cap applies to
-employment income alone.
+employment income", which is wired from the caller's input, so the cap is applied to both.
 """
 
 CANADIAN_TUITION_FEES = CATALOG.declare("canadian_tuition_fees", Decimal, non_negative=True)

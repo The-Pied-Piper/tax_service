@@ -114,6 +114,7 @@ from app.jurisdictions.ca_on.catalog import (
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_CREDIT_SINGLE,
     LIFT_CREDIT_WITH_SPOUSE,
+    LIFT_EMPLOYMENT_INCOME,
     LIFT_EXCESS_OVER_FAMILY_THRESHOLD,
     LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD,
     LIFT_FAMILY_INCOME_THRESHOLD,
@@ -371,6 +372,7 @@ REGISTERED = frozenset(
         "ca-on/provincial_foreign_tax_credit_before_limit",
         "ca-on/provincial_foreign_tax_credit",
         "ca-on/ontario_tax_after_foreign_tax_credit",
+        "ca-on/lift_employment_income",
         "ca-on/lift_credit_before_maximum",
         "ca-on/lift_maximum_credit",
         "ca-on/lift_reduction",
@@ -771,6 +773,7 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         registry.get("ca-on/ontario_tax_after_foreign_tax_credit")
         is ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT
     )
+    assert registry.get("ca-on/lift_employment_income") is LIFT_EMPLOYMENT_INCOME
     assert registry.get("ca-on/lift_credit_before_maximum") is LIFT_CREDIT_BEFORE_MAXIMUM
     assert registry.get("ca-on/lift_maximum_credit") is LIFT_MAXIMUM_CREDIT
     assert registry.get("ca-on/lift_reduction") is LIFT_REDUCTION
@@ -1270,6 +1273,16 @@ def test_the_disability_transferred_amount_is_a_non_negative_decimal(
     assert DISABILITY_TRANSFERRED_AMOUNT.value_type is Decimal
     assert DISABILITY_TRANSFERRED_AMOUNT.non_negative is True
     assert registry.kind("ca-on/disability_transferred_amount") is DISABILITY_TRANSFERRED_AMOUNT
+
+
+def test_the_lift_employment_income_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:
+    # Schedule ON428-A line 3 "Line 1 plus line 2": the sum of employment income (line 10100) and
+    # other employment income (line 10400), the base of the LIFT rate on line 5.
+    assert LIFT_EMPLOYMENT_INCOME.identifier == "ca-on/lift_employment_income"
+    assert LIFT_EMPLOYMENT_INCOME.value_type is Decimal
+    assert LIFT_EMPLOYMENT_INCOME.non_negative is True
+    assert registry.kind("ca-on/lift_employment_income") is LIFT_EMPLOYMENT_INCOME
+    assert LIFT_EMPLOYMENT_INCOME in CATALOG.kinds
 
 
 def test_the_lift_lines_that_print_no_floor_are_signed(registry: ArtifactRegistry) -> None:
