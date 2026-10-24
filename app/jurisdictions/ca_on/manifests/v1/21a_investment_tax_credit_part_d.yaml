@@ -34,7 +34,7 @@ capabilities:
   # tax and benefit return)", and never below zero.
   - name: core/subtract_not_below_zero
     consumes:
-      amount: ca/federal_tax_with_itc_recapture
+      amount: ca/federal_tax
       less: ca/political_credit
     produces:
       output: ca/itc_part_d_amount_9

@@ -41,7 +41,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
     AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_EXCESS_EPSP_AMOUNTS,
-    AMT_FEDERAL_LOGGING_TAX_CREDIT,
     AMT_FEDERAL_SURTAX,
     AMT_FEDERAL_SURTAX_AT_48_PERCENT,
     AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
@@ -208,7 +207,6 @@ PART_1_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
     AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
-    AMT_FEDERAL_LOGGING_TAX_CREDIT,
     AMT_SECTION_119_FORMER_RESIDENT_CREDIT,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
     AMT_MINIMUM_AMOUNT,
@@ -531,7 +529,8 @@ def test_the_part_1_lines_91_to_103_kinds_are_the_registered_ones(
     assert (
         registry.get("ca/amt_donations_and_gifts_adjustment") is AMT_DONATIONS_AND_GIFTS_ADJUSTMENT
     )
-    assert registry.get("ca/amt_federal_logging_tax_credit") is AMT_FEDERAL_LOGGING_TAX_CREDIT
+    # The caller's stand-in is gone: Form T691 line 100 reads the computed line 133.
+    assert "ca/amt_federal_logging_tax_credit" not in registry.identifiers()
     assert (
         registry.get("ca/amt_section_119_former_resident_credit")
         is AMT_SECTION_119_FORMER_RESIDENT_CREDIT

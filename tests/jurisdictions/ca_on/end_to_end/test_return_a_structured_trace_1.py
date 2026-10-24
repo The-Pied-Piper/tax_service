@@ -124,6 +124,8 @@ from app.jurisdictions.ca.catalog import (
     ITC_SRED_REPAYMENT_CREDIT_2015_AND_AFTER,
     LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
     LABOUR_SPONSORED_FUNDS_NET_COST,
+    LOGGING_CREDIT_BASE,
+    LOGGING_CREDIT_CAP,
     MEDICAL_NET_INCOME_SHARE,
     MEDICAL_SUPPLEMENT_LINE_8,
     MEDICAL_SUPPLEMENT_LINE_11,
@@ -1078,5 +1080,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.8")),
             CENT,
             D("0"),
+        ),
+        # T1 line 133 "Federal logging tax credit" (5000-G): the cap is 6.6667% of the base, taxable
+        # income plus the seven add-backs, 116926.00 for Return A, 116926.00 times 0.066667,
+        # 7795.11.
+        LOGGING_CREDIT_CAP: RateAppliedLine(
+            output=LOGGING_CREDIT_CAP,
+            base=LOGGING_CREDIT_BASE,
+            base_amount=D("116926.00"),
+            rate=Rate(D("0.066667")),
+            rounding=CENT,
+            result=D("7795.11"),
         ),
     }

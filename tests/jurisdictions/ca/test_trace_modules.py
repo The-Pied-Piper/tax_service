@@ -41,6 +41,7 @@ HOMES: dict[str, tuple[str, ...]] = {
         "OtherDependantMedicalLine",
         "DisabilityTransferLine",
     ),
+    "logging_tax_credit": ("LoggingTaxCreditLine",),
     "foreign_tax": (
         "ForeignTaxCreditLine",
         "PooledForeignTaxCreditLine",

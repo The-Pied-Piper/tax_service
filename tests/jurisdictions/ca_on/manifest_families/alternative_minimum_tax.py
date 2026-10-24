@@ -52,7 +52,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
     AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_EXCESS_EPSP_AMOUNTS,
-    AMT_FEDERAL_LOGGING_TAX_CREDIT,
     AMT_FEDERAL_SURTAX,
     AMT_FEDERAL_SURTAX_AT_48_PERCENT,
     AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
@@ -185,6 +184,7 @@ from app.jurisdictions.ca.catalog import (
     DIVIDEND_TAX_CREDIT,
     DONATIONS_AND_GIFTS_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_LOGGING_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
     INVESTMENT_TAX_CREDIT,
@@ -248,7 +248,6 @@ INPUTS = frozenset(
         "ca/amt_excess_epsp_amounts",
         "ca/amt_forfeited_salary_deferral_amounts",
         "ca/amt_repayment_of_wage_loss_replacement",
-        "ca/amt_federal_logging_tax_credit",
         "ca/amt_section_119_former_resident_credit",
         "ca/amt_minimum_tax_carryover_from_previous_years",
         "ca/amt_minimum_tax_carryover_applied",
@@ -816,7 +815,8 @@ STEPS = {
         consumes={"base": "ca/donations_and_gifts_credit"},
         produces={"output": "ca/amt_donations_and_gifts_adjustment"},
     ),
-    # Part 1 line 102 "Add lines 98 to 101.", lines 100 and 101 the caller's amounts.
+    # Part 1 line 102 "Add lines 98 to 101.", line 100 the federal logging tax credit of line 133
+    # and line 101 the caller's amount.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -824,7 +824,7 @@ STEPS = {
             "parts": (
                 "ca/amt_non_refundable_credits_adjustment",
                 "ca/amt_donations_and_gifts_adjustment",
-                "ca/amt_federal_logging_tax_credit",
+                "ca/federal_logging_tax_credit",
                 "ca/amt_section_119_former_resident_credit",
             )
         },
@@ -886,15 +886,15 @@ STEPS = {
         produces={"output": "ca/amt_tax_payable_with_itc_recapture"},
     ),
     # Part 8 line 8 "Add lines 5 to 7": line 5 "Federal tax on split income from line 8 of Form
-    # T1206", line 6 "Federal logging tax credit" (the caller's amount, as on Part 1 line 100) and
-    # line 7 "Amount from line 41600 of your return", in line order.
+    # T1206", line 6 "Federal logging tax credit" (line 133 of your return, as on Part 1 line 100)
+    # and line 7 "Amount from line 41600 of your return", in line order.
     CapabilitySelection(
         name="core/sum",
         params={},
         consumes={
             "parts": (
                 "ca/federal_tax_on_split_income",
-                "ca/amt_federal_logging_tax_credit",
+                "ca/federal_logging_tax_credit",
                 "ca/credits_against_federal_tax",
             )
         },
@@ -1028,7 +1028,7 @@ STEPS = {
         consumes={
             "parts": (
                 "ca/federal_foreign_tax_credit",
-                "ca/amt_federal_logging_tax_credit",
+                "ca/federal_logging_tax_credit",
             )
         },
         produces={"output": "ca/amt_foreign_and_logging_credits_total"},
@@ -1361,15 +1361,15 @@ STEPS = {
         consumes={"parts": ("ca/amt_basic_federal_tax", "ca/itc_recapture")},
         produces={"output": "ca/amt_part_7_basic_tax_with_recapture"},
     ),
-    # Part 7 line 7 "Line 5 plus line 6": line 5, the federal logging tax credit (the caller's
-    # amount, as on Part 1 line 100), and line 6, "Amount from line 41600 of your return", in line
+    # Part 7 line 7 "Line 5 plus line 6": line 5, the federal logging tax credit (line 133 of your
+    # return, as on Part 1 line 100), and line 6, "Amount from line 41600 of your return", in line
     # order.
     CapabilitySelection(
         name="core/sum",
         params={},
         consumes={
             "parts": (
-                "ca/amt_federal_logging_tax_credit",
+                "ca/federal_logging_tax_credit",
                 "ca/credits_against_federal_tax",
             )
         },
@@ -1847,7 +1847,7 @@ WIRING = {
             {
                 AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
                 AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
-                AMT_FEDERAL_LOGGING_TAX_CREDIT,
+                FEDERAL_LOGGING_TAX_CREDIT,
                 AMT_SECTION_119_FORMER_RESIDENT_CREDIT,
             }
         ),
@@ -1885,7 +1885,7 @@ WIRING = {
         frozenset(
             {
                 FEDERAL_TAX_ON_SPLIT_INCOME,
-                AMT_FEDERAL_LOGGING_TAX_CREDIT,
+                FEDERAL_LOGGING_TAX_CREDIT,
                 CREDITS_AGAINST_FEDERAL_TAX,
             }
         ),
@@ -1949,7 +1949,7 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({FEDERAL_FOREIGN_TAX_CREDIT, AMT_FEDERAL_LOGGING_TAX_CREDIT}),
+        frozenset({FEDERAL_FOREIGN_TAX_CREDIT, FEDERAL_LOGGING_TAX_CREDIT}),
         frozenset({AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL}),
     ),
     (
@@ -2110,7 +2110,7 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({AMT_FEDERAL_LOGGING_TAX_CREDIT, CREDITS_AGAINST_FEDERAL_TAX}),
+        frozenset({FEDERAL_LOGGING_TAX_CREDIT, CREDITS_AGAINST_FEDERAL_TAX}),
         frozenset({AMT_PART_7_CREDITS_TOTAL}),
     ),
     (

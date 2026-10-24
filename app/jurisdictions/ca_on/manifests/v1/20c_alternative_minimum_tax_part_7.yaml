@@ -8,12 +8,13 @@ capabilities:
         - ca/itc_recapture
     produces:
       output: ca/amt_part_7_basic_tax_with_recapture
-  # Part 7 line 7 "Line 5 plus line 6": line 5, the federal logging tax credit (the caller's amount,
-  # as on Part 1 line 100), and line 6, "Amount from line 41600 of your return", in line order.
+  # Part 7 line 7 "Line 5 plus line 6": line 5, the federal logging tax credit (line 133 of your
+  # return, as on Part 1 line 100), and line 6, "Amount from line 41600 of your return", in line
+  # order.
   - name: core/sum
     consumes:
       parts:
-        - ca/amt_federal_logging_tax_credit
+        - ca/federal_logging_tax_credit
         - ca/credits_against_federal_tax
     produces:
       output: ca/amt_part_7_credits_total

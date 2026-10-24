@@ -527,13 +527,6 @@ AMT_DONATIONS_AND_GIFTS_ADJUSTMENT = CATALOG.declare(
 """Donations and gifts adjustment, Form T691 Part 1 line 99 "Donations and gifts (line 34900 of your
 return)" "× 80% =": line 34900 at the 80% of its dataset, rounded to the cent."""
 
-AMT_FEDERAL_LOGGING_TAX_CREDIT = CATALOG.declare(
-    "amt_federal_logging_tax_credit", Decimal, non_negative=True
-)
-"""Federal logging tax credit, Form T691 Part 1 line 100 "Federal logging tax credit (line 133 of
-your return for residents of a province or territory other than Quebec, or line 137 for residents
-of Quebec)": a starting amount, the caller's figure."""
-
 AMT_SECTION_119_FORMER_RESIDENT_CREDIT = CATALOG.declare(
     "amt_section_119_former_resident_credit", Decimal, non_negative=True
 )
@@ -583,8 +576,9 @@ AMT_SPLIT_INCOME_AND_CREDITS_TOTAL = CATALOG.declare(
     "amt_split_income_and_credits_total", Decimal, non_negative=True
 )
 """Split income tax and credits, Form T691 Part 8 line 8 "Add lines 5 to 7": line 5 "Federal tax on
-split income from line 8 of Form T1206", line 6 "Federal logging tax credit" (the caller's amount,
-as on Part 1 line 100) and line 7 "Amount from line 41600 of your return", in line order."""
+split income from line 8 of Form T1206", line 6 "Federal logging tax credit" (line 133 of
+the return, as on Part 1 line 100) and line 7 "Amount from line 41600 of your return", in line
+order."""
 
 AMT_TAX_PAYABLE_AFTER_CREDITS = CATALOG.declare("amt_tax_payable_after_credits", Decimal)
 """Tax payable after credits, Form T691 Part 8 line 9 "Line 4 minus line 8": line 4 less line 8.

@@ -13,6 +13,7 @@ from app.jurisdictions.ca.trace_english import (
     foreign_tax,
     gains,
     home_renovation,
+    logging_tax_credit,
     rentals,
     vehicles,
 )
@@ -24,6 +25,7 @@ __all__ = [
     "foreign_tax",
     "gains",
     "home_renovation",
+    "logging_tax_credit",
     "rentals",
     "vehicles",
 ]

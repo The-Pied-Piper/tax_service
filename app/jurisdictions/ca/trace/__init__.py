@@ -1,7 +1,7 @@
 """The federal Canada trace lines: facts in the vocabulary of Canada's own forms.
 
-Capital cost allowance, foreign tax, gains, dependants and rentals; each line's English text is in
-`app.jurisdictions.ca.trace_english`. The generic lines are in `app.domain.trace`.
+Capital cost allowance, foreign tax, gains, dependants, logging and rentals; each line's English
+text is in `app.jurisdictions.ca.trace_english`. The generic lines are in `app.domain.trace`.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from app.jurisdictions.ca.trace import (
     foreign_tax,
     gains,
     home_renovation,
+    logging_tax_credit,
     rentals,
     vehicles,
 )
@@ -24,6 +25,7 @@ from app.jurisdictions.ca.trace.dependants import *  # noqa: F403
 from app.jurisdictions.ca.trace.foreign_tax import *  # noqa: F403
 from app.jurisdictions.ca.trace.gains import *  # noqa: F403
 from app.jurisdictions.ca.trace.home_renovation import *  # noqa: F403
+from app.jurisdictions.ca.trace.logging_tax_credit import *  # noqa: F403
 from app.jurisdictions.ca.trace.rentals import *  # noqa: F403
 from app.jurisdictions.ca.trace.vehicles import *  # noqa: F403
 
@@ -34,6 +36,7 @@ __all__ = (
     + foreign_tax.__all__
     + gains.__all__
     + home_renovation.__all__
+    + logging_tax_credit.__all__
     + rentals.__all__
     + vehicles.__all__
 )

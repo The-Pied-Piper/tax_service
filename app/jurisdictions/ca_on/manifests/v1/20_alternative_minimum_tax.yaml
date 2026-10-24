@@ -423,13 +423,14 @@ capabilities:
       base: ca/donations_and_gifts_credit
     produces:
       output: ca/amt_donations_and_gifts_adjustment
-  # Part 1 line 102 "Add lines 98 to 101.", lines 100 and 101 the caller's amounts.
+  # Part 1 line 102 "Add lines 98 to 101.", line 100 the federal logging tax credit of line 133 and
+  # line 101 the caller's amount.
   - name: core/sum
     consumes:
       parts:
         - ca/amt_non_refundable_credits_adjustment
         - ca/amt_donations_and_gifts_adjustment
-        - ca/amt_federal_logging_tax_credit
+        - ca/federal_logging_tax_credit
         - ca/amt_section_119_former_resident_credit
     produces:
       output: ca/amt_credits_adjustments_total
@@ -477,13 +478,13 @@ capabilities:
     produces:
       output: ca/amt_tax_payable_with_itc_recapture
   # Part 8 line 8 "Add lines 5 to 7": line 5 "Federal tax on split income from line 8 of Form
-  # T1206", line 6 "Federal logging tax credit" (the caller's amount, as on Part 1 line 100) and
-  # line 7 "Amount from line 41600 of your return", in line order.
+  # T1206", line 6 "Federal logging tax credit" (line 133 of your return, as on Part 1 line 100)
+  # and line 7 "Amount from line 41600 of your return", in line order.
   - name: core/sum
     consumes:
       parts:
         - ca/federal_tax_on_split_income
-        - ca/amt_federal_logging_tax_credit
+        - ca/federal_logging_tax_credit
         - ca/credits_against_federal_tax
     produces:
       output: ca/amt_split_income_and_credits_total
@@ -590,7 +591,7 @@ capabilities:
     consumes:
       parts:
         - ca/federal_foreign_tax_credit
-        - ca/amt_federal_logging_tax_credit
+        - ca/federal_logging_tax_credit
     produces:
       output: ca/amt_foreign_and_logging_credits_total
   # Part 3 line 10 "Line 6 minus line 9 (if negative, enter "0")" "Federal tax payable".

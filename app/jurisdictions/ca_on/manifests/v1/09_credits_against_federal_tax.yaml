@@ -201,11 +201,10 @@ capabilities:
     produces:
       output: ca/credits_against_federal_tax
   # T1 line 139 (line 41700) "Line 134 minus line 138 (if negative, enter "0")": line 134
-  # (40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax" carries line 132,
-  # as line 133 (the federal logging tax credit) is not yet wired.
+  # (40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax", computed in part 09a.
   - name: core/subtract_not_below_zero
     consumes:
-      amount: ca/federal_tax_with_itc_recapture
+      amount: ca/federal_tax
       less: ca/credits_against_federal_tax
     produces:
       output: ca/federal_tax_less_credits

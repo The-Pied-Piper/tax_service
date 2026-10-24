@@ -48,7 +48,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
     AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_EXCESS_EPSP_AMOUNTS,
-    AMT_FEDERAL_LOGGING_TAX_CREDIT,
     AMT_FEDERAL_SURTAX,
     AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
@@ -533,6 +532,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
+    FEDERAL_LOGGING_TAX_CREDIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_SURTAX_OUTSIDE_CANADA,
     FEDERAL_TAX_AFTER_CREDITS,
@@ -690,6 +690,7 @@ from app.jurisdictions.ca.catalog import (
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     LISTED_PERSONAL_PROPERTY_NET_GAIN,
+    LOGGING_CREDIT_BASE,
     MEDICAL_CLAIM,
     MEDICAL_EXPENSES_OVER_THRESHOLD,
     MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
@@ -1142,7 +1143,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # and line 6, the amount from line 41600 of your return (0.00): 0.00.
         AMT_PART_7_CREDITS_TOTAL: SumLine(
             AMT_PART_7_CREDITS_TOTAL,
-            ((AMT_FEDERAL_LOGGING_TAX_CREDIT, D("0")), (CREDITS_AGAINST_FEDERAL_TAX, D("0.00"))),
+            ((FEDERAL_LOGGING_TAX_CREDIT, D("0")), (CREDITS_AGAINST_FEDERAL_TAX, D("0.00"))),
             D("0.00"),
         ),
         # Form T691 Part 7 line 12, the denominator of the fraction: the non-business income tax
@@ -1204,7 +1205,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # and line 8, the federal logging tax credit (0): 0.
         AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL: SumLine(
             AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
-            ((FEDERAL_FOREIGN_TAX_CREDIT, D("0")), (AMT_FEDERAL_LOGGING_TAX_CREDIT, D("0"))),
+            ((FEDERAL_FOREIGN_TAX_CREDIT, D("0")), (FEDERAL_LOGGING_TAX_CREDIT, D("0"))),
             D("0"),
         ),
         # Form T691 Part 3 line 14 "Add lines 11 to 13.": line 11, the political contribution tax
@@ -1243,7 +1244,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
             (
                 (FEDERAL_TAX_ON_SPLIT_INCOME, D("0")),
-                (AMT_FEDERAL_LOGGING_TAX_CREDIT, D("0")),
+                (FEDERAL_LOGGING_TAX_CREDIT, D("0")),
                 (CREDITS_AGAINST_FEDERAL_TAX, D("0")),
             ),
             D("0"),
@@ -4030,7 +4031,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             (
                 (AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT, D("1597.44")),
                 (AMT_DONATIONS_AND_GIFTS_ADJUSTMENT, D("0")),
-                (AMT_FEDERAL_LOGGING_TAX_CREDIT, D("0")),
+                (FEDERAL_LOGGING_TAX_CREDIT, D("0")),
                 (AMT_SECTION_119_FORMER_RESIDENT_CREDIT, D("0")),
             ),
             D("1597.44"),
@@ -4072,6 +4073,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (FISH_IMMEDIATE_EXPENSING_CLAIMS_TOTAL, D("0")),
             ),
             D("0"),
+        ),
+        # T1 line 133 (5000-G): the base of the cap, taxable income (line 26000, 115000.00) plus the
+        # add-backs for lines 20800 (1926), 20805, 21000, 21400, 21500, 21900 and 22000 (all 0):
+        # 116926.00.
+        LOGGING_CREDIT_BASE: SumLine(
+            LOGGING_CREDIT_BASE,
+            (
+                (TAXABLE_INCOME, D("115000.00")),
+                (RRSP_DEDUCTION, D("1926")),
+                (FHSA_DEDUCTION, D("0")),
+                (ELECTED_SPLIT_PENSION_DEDUCTION, D("0")),
+                (CHILD_CARE_EXPENSES, D("0.00")),
+                (DISABILITY_SUPPORTS_DEDUCTION, D("0")),
+                (MOVING_EXPENSES_DEDUCTION, D("0")),
+                (SUPPORT_PAYMENTS_DEDUCTION, D("0")),
+            ),
+            D("116926.00"),
         ),
     }
     # Form T1206 Part 1 "(If the TOSI-adjusted net income at line 6 is negative, use the negative

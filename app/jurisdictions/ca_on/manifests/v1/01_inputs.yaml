@@ -82,6 +82,11 @@ inputs:
   # fields, the 19 inputs of the form's lines 1, 2, 4, 5, 6, 7, 9, 10, 12, 13, 14, 16, 17, 18, 19,
   # 21, 22, 25 and 28.
   - ca/t1_m_moves
+  # Schedule 5 and line 133: the provinces with a logging operation, one record for each province
+  # (any number, none included) holding the logging tax paid to it and the net logging income in
+  # it, as 5000-G "Federal logging tax credit" takes them; the step ca/logging_tax_credit reads
+  # their fields.
+  - ca/logging_operations
   - ca/taxable_support_payments
   - ca/rrsp_income
   - ca/fhsa_income
@@ -370,9 +375,8 @@ inputs:
   - ca/amt_excess_epsp_amounts
   - ca/amt_forfeited_salary_deferral_amounts
   - ca/amt_repayment_of_wage_loss_replacement
-  # Form T691 Part 1 lines 100 and 101: the caller's figures, the federal logging tax credit and the
-  # section 119 credit for a former resident, entered as the form takes them.
-  - ca/amt_federal_logging_tax_credit
+  # Form T691 Part 1 line 101: the caller's figure, the section 119 credit for a former resident,
+  # entered as the form takes it. Line 100 is the federal logging tax credit of line 133, computed.
   - ca/amt_section_119_former_resident_credit
   # Form T691 Part 8 line 1 "Minimum tax carryover from previous years (2018 to 2024)" and line 12
   # "Claim an amount that is not more than line 1 or 11, whichever is less.": the carryover from

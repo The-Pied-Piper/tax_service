@@ -228,6 +228,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.jurisdictions.ca.trace.dependants.CaregiverClaimLine",
         "app.jurisdictions.ca.trace.dependants.DisabilityTransferLine",
         "app.jurisdictions.ca.trace.dependants.OtherDependantMedicalLine",
+        "app.jurisdictions.ca.trace.logging_tax_credit.LoggingTaxCreditLine",
         "app.jurisdictions.ca.trace.foreign_tax.ForeignBusinessLine10",
         "app.jurisdictions.ca.trace.foreign_tax.ForeignBusinessLine11",
         "app.jurisdictions.ca.trace.foreign_tax.ForeignBusinessLine4",

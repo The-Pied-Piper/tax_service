@@ -109,6 +109,7 @@ from app.jurisdictions.ca.trace import (
     ForeignTaxCreditLine,
     ImmediateExpensingAgreedLimitLine,
     ImmediateExpensingLine,
+    LoggingTaxCreditLine,
     NetCapitalLossesRowLine,
     OtherDependantMedicalLine,
     PooledForeignTaxCreditLine,
@@ -6121,3 +6122,60 @@ def test_renders_the_items_total_of_no_renovations() -> None:
     assert render(ItemsTotalLine(HOME_LINE_8, (), D("0"))) == (
         "home_renovation_line_8: no items = 0"
     )
+
+
+# --- the federal logging tax credit, one province at a time (T1 line 133) ---------------------
+
+# One sentence: the output's label, then the province by its position from 1, the two sides of the
+# lesser amount (the tax side at the tax rate's percentage, the income side at the income rate's),
+# each with its rounding rule in brackets, and the lesser of them. Figures print without trailing
+# zeros, as the other per-item lines do.
+
+PROVINCES_LOGGING_TAX_CREDIT = ArtifactKind("ex/provinces_logging_tax_credit", Decimal)
+
+
+def logging_province(
+    position: int,
+    tax_paid: str,
+    net_income: str,
+    tax_share: str,
+    income_share: str,
+    result: str,
+) -> LoggingTaxCreditLine:
+    return LoggingTaxCreditLine(
+        PROVINCES_LOGGING_TAX_CREDIT,
+        position,
+        D(tax_paid),
+        Rate(D("0.666667")),
+        D(tax_share),
+        D(net_income),
+        Rate(D("0.066667")),
+        D(income_share),
+        CENT,
+        CENT,
+        D(result),
+    )
+
+
+def test_renders_one_province_by_position_with_both_sides_and_the_lesser() -> None:
+    assert render(logging_province(1, "300", "6000", "200.00", "400.00", "200.00")) == (
+        "provinces_logging_tax_credit: province 1: 66.6667% of logging tax paid 300 = 200 "
+        "(half-up to 0.01); 6.6667% of net logging income 6000 = 400 (half-up to 0.01); "
+        "lesser 200"
+    )
+
+
+def test_renders_the_second_province_when_its_income_side_is_the_lesser() -> None:
+    assert render(logging_province(2, "900", "3000", "600.00", "200.00", "200.00")) == (
+        "provinces_logging_tax_credit: province 2: 66.6667% of logging tax paid 900 = 600 "
+        "(half-up to 0.01); 6.6667% of net logging income 3000 = 200 (half-up to 0.01); "
+        "lesser 200"
+    )
+
+
+def test_renders_the_logging_items_total_of_two_provinces() -> None:
+    line = ItemsTotalLine(
+        PROVINCES_LOGGING_TAX_CREDIT, ((1, D("200.00")), (2, D("200.00"))), D("400.00")
+    )
+
+    assert render(line) == "provinces_logging_tax_credit: item 1 200 + item 2 200 = 400"
