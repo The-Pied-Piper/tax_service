@@ -18,18 +18,26 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     INVESTMENT_TAX_CREDIT,
+    INVESTMENT_TAX_CREDIT_REFUND,
     ITC_AGRICULTURAL_SRED_CONTRIBUTIONS,
     ITC_AGRICULTURAL_SRED_CREDIT,
     ITC_AMOUNT_H,
     ITC_AMOUNT_I,
     ITC_AMOUNT_J,
     ITC_AMOUNT_K,
+    ITC_AMOUNT_L,
+    ITC_AMOUNT_M,
+    ITC_AMOUNT_N,
     ITC_APPRENTICES,
     ITC_APPRENTICESHIP_CREDIT,
     ITC_APPRENTICESHIP_T3_BOX_40,
     ITC_APPRENTICESHIP_WAGES_TOTAL,
     ITC_APPRENTICESHIP_WAGES_WITH_T3,
     ITC_AVAILABLE,
+    ITC_CARRYBACK_FIRST_PREVIOUS_YEAR,
+    ITC_CARRYBACK_REQUESTED,
+    ITC_CARRYBACK_SECOND_PREVIOUS_YEAR,
+    ITC_CARRYBACK_THIRD_PREVIOUS_YEAR,
     ITC_CLAIM,
     ITC_CLAIM_LIMIT,
     ITC_CRITICAL_MINERAL_CREDIT,
@@ -44,8 +52,16 @@ from app.jurisdictions.ca.catalog import (
     ITC_PART_D_AMOUNT_11_APPLIES,
     ITC_PART_D_AMOUNT_13,
     ITC_PART_D_SUBTOTAL,
+    ITC_PART_E_AMOUNT_3,
+    ITC_PART_E_AMOUNT_6,
+    ITC_PART_E_AMOUNT_9,
+    ITC_PART_E_AMOUNT_12,
+    ITC_PART_E_AMOUNT_14,
+    ITC_PART_E_AMOUNT_16,
+    ITC_PART_E_AMOUNT_17,
     ITC_QUALIFIED_PROPERTY,
     ITC_QUALIFIED_PROPERTY_CREDIT,
+    ITC_REFUND_DESIGNATION,
     ITC_REFUNDABLE_CREDITS,
     ITC_SRED_CREDIT,
     ITC_SRED_EXPENDITURES,
@@ -59,11 +75,12 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT,
 )
 
-# The caller's lines of Form T2038(IND) Parts A, B and D, as the form takes them (manifest parts
+# The caller's lines of Form T2038(IND) Parts A, B, D and E, as the form takes them (manifest parts
 # 01b_investment_tax_credit.yaml): Part A lines 67120, 67130, 67135 and 67140, Part B lines 67170
 # and 67175, the apprentices of Table 1, the T3 box 40 amount on line 67180, lines 67184 and 67185,
 # and the Part D amount 1 (the opening balance), amount 6 (the graduated rate estate allocation) and
-# the claim on amount 15.
+# the claim on amount 15; and the Part E carryback designations on lines 67200, 67210 and 67220 and
+# the refund designated as amount 17.
 INPUTS = frozenset(
     {
         "ca/itc_sred_expenditures",
@@ -79,6 +96,10 @@ INPUTS = frozenset(
         "ca/itc_opening_balance",
         "ca/itc_graduated_rate_estate_allocation",
         "ca/itc_claim",
+        "ca/itc_carryback_third_previous_year",
+        "ca/itc_carryback_second_previous_year",
+        "ca/itc_carryback_first_previous_year",
+        "ca/itc_refund_designation",
     }
 )
 
@@ -371,6 +392,151 @@ STEPS = {
         },
         produces={"output": "ca/investment_tax_credit"},
     ),
+    # Form T2038(IND) Part E amount 3, "Subtotal (amount 1 minus amount 2)": amount 1, "Total
+    # available ITC (amount G in Part D)", less amount 2, "ITC opening balance and carry-forward
+    # from prior years (amount 1 in Part D)". No floor is printed, so amount 3 is not floored at 0.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/itc_available",
+            "less": "ca/itc_opening_balance",
+        },
+        produces={"output": "ca/itc_part_e_amount_3"},
+    ),
+    # Form T2038(IND) Part E amount 6, "Subtotal (amount 4 minus amount 5, if negative enter "0")":
+    # amount 4, "Maximum ITC you could have claimed in Part D (amount I or K, whichever applies)",
+    # less amount 5, "ITC opening balance and carry-forward from prior years (amount 1 in Part D)",
+    # and never below zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/itc_claim_limit",
+            "less": "ca/itc_opening_balance",
+        },
+        produces={"output": "ca/itc_part_e_amount_6"},
+    ),
+    # Form T2038(IND) Part E "Total credit available for carryback (amount 3 minus amount 6)", L:
+    # amount 3 less amount 6. No floor is printed.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/itc_part_e_amount_3",
+            "less": "ca/itc_part_e_amount_6",
+        },
+        produces={"output": "ca/itc_amount_l"},
+    ),
+    # Form T2038(IND) Part E, "Total credit designated for carryback (Add lines 67200, 67210, and
+    # 67220. The total cannot be more than amount L)": the three lines added in line order, the
+    # third previous year (67200), the second (67210) and the first (67220).
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/itc_carryback_third_previous_year",
+                "ca/itc_carryback_second_previous_year",
+                "ca/itc_carryback_first_previous_year",
+            )
+        },
+        produces={"output": "ca/itc_carryback_requested"},
+    ),
+    # Form T2038(IND) Part E amount M, "Total credit designated for carryback (Add lines 67200,
+    # 67210, and 67220. The total cannot be more than amount L)": the requested total, refused
+    # above L (as Part D amount 15 is refused above its limit), not capped.
+    CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={
+            "amount": "ca/itc_carryback_requested",
+            "bound": "ca/itc_amount_l",
+        },
+        produces={"output": "ca/itc_amount_m"},
+    ),
+    # Form T2038(IND) Part E amount 9, "Total current-year refundable credit available (amount 7
+    # minus amount 8)": amount 7, "Current year refundable credit (amount A in Part A)", less amount
+    # 8, "Adjustment (amount 6 in Part D)". No floor is printed.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/itc_refundable_credits",
+            "less": "ca/itc_graduated_rate_estate_allocation",
+        },
+        produces={"output": "ca/itc_part_e_amount_9"},
+    ),
+    # Form T2038(IND) Part E amount 12, "Subtotal (amount 10 minus amount 11)": amount 10, "Amount
+    # 15 from Part D" (the claim on line 41200), less amount 11, "ITC opening balance and
+    # carry-forward from prior years (amount 1 in Part D)". No floor is printed.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/investment_tax_credit",
+            "less": "ca/itc_opening_balance",
+        },
+        produces={"output": "ca/itc_part_e_amount_12"},
+    ),
+    # Form T2038(IND) Part E amount 14, "Subtotal (amount 12 plus amount 13)": amount 12, and amount
+    # 13, "Total credit designated for carryback (amount M in Part E)".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/itc_part_e_amount_12",
+                "ca/itc_amount_m",
+            )
+        },
+        produces={"output": "ca/itc_part_e_amount_14"},
+    ),
+    # Form T2038(IND) Part E amount 16, "Total (amount 14 minus amount 15, if negative, enter "0")":
+    # amount 14 less amount 15, "Current-year non-refundable tax credit (amount F in Part B)", and
+    # never below zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/itc_part_e_amount_14",
+            "less": "ca/itc_nonrefundable_credits",
+        },
+        produces={"output": "ca/itc_part_e_amount_16"},
+    ),
+    # Form T2038(IND) Part E amount N, "Total credit available for refund (amount 9 minus amount
+    # 16)": amount 9 less amount 16. No floor is printed.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/itc_part_e_amount_9",
+            "less": "ca/itc_part_e_amount_16",
+        },
+        produces={"output": "ca/itc_amount_n"},
+    ),
+    # Form T2038(IND) Part E, "Amount you designate as a refund of ITC (cannot be more than amount
+    # N)": the refund the filer designates, refused above N (as Part D amount 15 is refused above
+    # its limit), not capped.
+    CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={
+            "amount": "ca/itc_refund_designation",
+            "bound": "ca/itc_amount_n",
+        },
+        produces={"output": "ca/itc_part_e_amount_17"},
+    ),
+    # Form T2038(IND) Part E "Refund of ITC (multiply amount 17 by amount 18)", O: amount 17 times
+    # amount 18, "The refundable rate" 0.40, of the rate dataset, rounded half-up to the cent. Line
+    # 45400 of the return is amount O, "Enter amount O on line 45400 of your income tax and benefit
+    # return".
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/itc_part_e_refundable_rate"},
+        consumes={"base": "ca/itc_part_e_amount_17"},
+        produces={"output": "ca/investment_tax_credit_refund"},
+    ),
 }
 
 WIRING = {
@@ -514,5 +680,71 @@ WIRING = {
         AtMost,
         frozenset({ITC_CLAIM, ITC_CLAIM_LIMIT}),
         frozenset({INVESTMENT_TAX_CREDIT}),
+    ),
+    (
+        Subtract,
+        frozenset({ITC_AVAILABLE, ITC_OPENING_BALANCE}),
+        frozenset({ITC_PART_E_AMOUNT_3}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({ITC_CLAIM_LIMIT, ITC_OPENING_BALANCE}),
+        frozenset({ITC_PART_E_AMOUNT_6}),
+    ),
+    (
+        Subtract,
+        frozenset({ITC_PART_E_AMOUNT_3, ITC_PART_E_AMOUNT_6}),
+        frozenset({ITC_AMOUNT_L}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                ITC_CARRYBACK_THIRD_PREVIOUS_YEAR,
+                ITC_CARRYBACK_SECOND_PREVIOUS_YEAR,
+                ITC_CARRYBACK_FIRST_PREVIOUS_YEAR,
+            }
+        ),
+        frozenset({ITC_CARRYBACK_REQUESTED}),
+    ),
+    (
+        AtMost,
+        frozenset({ITC_CARRYBACK_REQUESTED, ITC_AMOUNT_L}),
+        frozenset({ITC_AMOUNT_M}),
+    ),
+    (
+        Subtract,
+        frozenset({ITC_REFUNDABLE_CREDITS, ITC_GRADUATED_RATE_ESTATE_ALLOCATION}),
+        frozenset({ITC_PART_E_AMOUNT_9}),
+    ),
+    (
+        Subtract,
+        frozenset({INVESTMENT_TAX_CREDIT, ITC_OPENING_BALANCE}),
+        frozenset({ITC_PART_E_AMOUNT_12}),
+    ),
+    (
+        Sum,
+        frozenset({ITC_PART_E_AMOUNT_12, ITC_AMOUNT_M}),
+        frozenset({ITC_PART_E_AMOUNT_14}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({ITC_PART_E_AMOUNT_14, ITC_NONREFUNDABLE_CREDITS}),
+        frozenset({ITC_PART_E_AMOUNT_16}),
+    ),
+    (
+        Subtract,
+        frozenset({ITC_PART_E_AMOUNT_9, ITC_PART_E_AMOUNT_16}),
+        frozenset({ITC_AMOUNT_N}),
+    ),
+    (
+        AtMost,
+        frozenset({ITC_REFUND_DESIGNATION, ITC_AMOUNT_N}),
+        frozenset({ITC_PART_E_AMOUNT_17}),
+    ),
+    (
+        ApplyRate,
+        frozenset({ITC_PART_E_AMOUNT_17}),
+        frozenset({INVESTMENT_TAX_CREDIT_REFUND}),
     ),
 }

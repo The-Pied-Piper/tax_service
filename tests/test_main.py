@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1088
+        == 1100
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1088
+        == 1100
     )
 
 
@@ -1378,6 +1378,22 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/itc_part_d_amount_11_applies",
         "ca/itc_claim_limit",
         "ca/investment_tax_credit",
+        "ca/itc_carryback_third_previous_year",
+        "ca/itc_carryback_second_previous_year",
+        "ca/itc_carryback_first_previous_year",
+        "ca/itc_refund_designation",
+        "ca/itc_part_e_amount_3",
+        "ca/itc_part_e_amount_6",
+        "ca/itc_amount_l",
+        "ca/itc_carryback_requested",
+        "ca/itc_amount_m",
+        "ca/itc_part_e_amount_9",
+        "ca/itc_part_e_amount_12",
+        "ca/itc_part_e_amount_14",
+        "ca/itc_part_e_amount_16",
+        "ca/itc_amount_n",
+        "ca/itc_part_e_amount_17",
+        "ca/investment_tax_credit_refund",
         "ca/spouses_claimed",
         "ca/spouse_caregiver_eligible",
         "ca/spouse_net_income",
@@ -2544,7 +2560,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1088
+        == 1100
     )
     assert (
         len(
@@ -2552,7 +2568,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1088
+        == 1100
     )
 
 
@@ -2565,7 +2581,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1088
+        == 1100
     )
     assert (
         len(
@@ -2573,7 +2589,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1088
+        == 1100
     )
 
 

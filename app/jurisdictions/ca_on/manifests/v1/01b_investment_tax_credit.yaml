@@ -54,3 +54,16 @@ inputs:
   # Form T2038(IND) Part D amount 15 "Enter your claim on this line:": the claim the filer chooses,
   # an election, as the form takes it; it is claimed up to amount I or K and refused above it.
   - ca/itc_claim
+  # Form T2038(IND) Part E line 67200 "Third previous year" (the part of amount L to carry back for
+  # the third previous year): the caller's election, as the form takes it.
+  - ca/itc_carryback_third_previous_year
+  # Form T2038(IND) Part E line 67210 "Second previous year" (the part of amount L to carry back for
+  # the second previous year): the caller's election, as the form takes it.
+  - ca/itc_carryback_second_previous_year
+  # Form T2038(IND) Part E line 67220 "First previous year" (the part of amount L to carry back for
+  # the first previous year): the caller's election, as the form takes it.
+  - ca/itc_carryback_first_previous_year
+  # Form T2038(IND) Part E amount 17 "Amount you designate as a refund of ITC (cannot be more than
+  # amount N)": the refund the filer designates, an election, as the form takes it; it is refused
+  # above amount N.
+  - ca/itc_refund_designation
