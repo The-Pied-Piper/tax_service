@@ -374,6 +374,17 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_EARNED_INCOME_LIMIT,
     CHILD_CARE_EXPENSES,
     CHILD_CARE_EXPENSES_PAID,
+    CLERGY_QUALIFYING_EMPLOYMENT_INCOME,
+    CLERGY_RESIDENCE_DEDUCTION,
+    CLERGY_RESIDENCE_LINE_2,
+    CLERGY_RESIDENCE_LINE_4,
+    CLERGY_RESIDENCE_LINE_5,
+    CLERGY_RESIDENCE_LINE_8,
+    CLERGY_RESIDENCE_LINE_9,
+    CLERGY_RESIDENCE_LINE_10,
+    CLERGY_RESIDENCE_PART_B_COMPLETED,
+    CLERGY_RESIDENCE_TOTAL,
+    CLERGY_RESIDENCE_TOTAL_LIMITED,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
@@ -1014,6 +1025,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # Form T2038(IND) Part D amount I "Enter the lesser of amount G or H": amount G (0.00) and
         # amount H (16951.38): 0.00. Amount K "Enter the lesser of amount G or J": amount G (0.00)
         # and amount J (16951.38): 0.00.
+        # Form T1223 Part C lines 9 and 10 and the cap of (A) plus (B) at line 1: all 0 on Return A.
+        CLERGY_RESIDENCE_LINE_9: LesserOfLine(
+            output=CLERGY_RESIDENCE_LINE_9,
+            parts=((CLERGY_RESIDENCE_LINE_5, D("0")), (CLERGY_RESIDENCE_LINE_8, D("0"))),
+            result=D("0"),
+        ),
+        CLERGY_RESIDENCE_LINE_10: LesserOfLine(
+            output=CLERGY_RESIDENCE_LINE_10,
+            parts=(
+                (CLERGY_QUALIFYING_EMPLOYMENT_INCOME, D("0")),
+                (CLERGY_RESIDENCE_LINE_9, D("0")),
+            ),
+            result=D("0"),
+        ),
+        CLERGY_RESIDENCE_TOTAL_LIMITED: LesserOfLine(
+            output=CLERGY_RESIDENCE_TOTAL_LIMITED,
+            parts=((CLERGY_RESIDENCE_TOTAL, D("0")), (CLERGY_QUALIFYING_EMPLOYMENT_INCOME, D("0"))),
+            result=D("0"),
+        ),
         ITC_AMOUNT_I: LesserOfLine(
             output=ITC_AMOUNT_I,
             parts=((ITC_AVAILABLE, D("0.00")), (ITC_AMOUNT_H, D("16951.38"))),
@@ -4432,6 +4462,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # Form T2203 Part 2 line 6 "Enter whichever is more: amount from line 4 or line 5.": line 4,
         # 16951.38 (the basic federal tax, Form T1 line 126), and line 5, "0" (no tax on split
         # income): 16951.38.
+        # Form T1223 Part C line 5 "Enter whichever is more: line 2 or line 4.": both 0.
+        CLERGY_RESIDENCE_LINE_5: GreaterOfLine(
+            output=CLERGY_RESIDENCE_LINE_5,
+            parts=((CLERGY_RESIDENCE_LINE_2, D("0")), (CLERGY_RESIDENCE_LINE_4, D("0"))),
+            result=D("0"),
+        ),
         T2203_LINE_6: GreaterOfLine(
             output=T2203_LINE_6,
             parts=(
@@ -5079,6 +5115,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # Form T2038(IND) Part D amount 15 "You can claim an ITC up to, but not more than I or K,
         # whichever applies", chosen by the count of "T691 Part 5 line 7 is greater than 0": the
         # count is 0, so amount I, 0.00.
+        # Form T1223 Part C (C): line 23100 is (A) plus line 10, capped at line 1 only when (B) is
+        # completed; the count is 0, so the total, 0.
+        CLERGY_RESIDENCE_DEDUCTION: ChosenByCountLine(
+            output=CLERGY_RESIDENCE_DEDUCTION,
+            count_kind=CLERGY_RESIDENCE_PART_B_COMPLETED,
+            count=0,
+            chosen_kind=CLERGY_RESIDENCE_TOTAL,
+            chosen_value=D("0"),
+        ),
         ITC_CLAIM_LIMIT: ChosenByCountLine(
             output=ITC_CLAIM_LIMIT,
             count_kind=ITC_PART_D_AMOUNT_11_APPLIES,

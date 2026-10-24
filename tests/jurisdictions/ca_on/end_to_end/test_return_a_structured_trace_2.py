@@ -298,7 +298,10 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN,
     CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
     CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
+    CLERGY_EMPLOYER_RESIDENCE_BENEFIT,
     CLERGY_RESIDENCE_DEDUCTION,
+    CLERGY_RESIDENCE_LINE_10,
+    CLERGY_RESIDENCE_TOTAL,
     COMMISSION_INCOME,
     CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
@@ -2138,9 +2141,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         CHILD_CARE_EARNED_INCOME: SumLine(
             CHILD_CARE_EARNED_INCOME, ((EMPLOYMENT_INCOME, D("110000")),), D("110000")
         ),
+        # Form T1223 Part C (A) plus line 10: the box 30 benefit and line 10, both 0 on Return A.
+        CLERGY_RESIDENCE_TOTAL: SumLine(
+            CLERGY_RESIDENCE_TOTAL,
+            ((CLERGY_EMPLOYER_RESIDENCE_BENEFIT, D("0")), (CLERGY_RESIDENCE_LINE_10, D("0"))),
+            D("0"),
+        ),
         # T1 line 23300, in line order: 20700, 20800, 20805, 21000, 21200, 21300, 21400, 21700,
-        # 22000, 22100, 22200, 22215, 22400, 23200 (the caller's other deductions), then the total
-        # split income of Form T1206 Part 1 line 4, here 0.
+        # 22000, 22100, 22200, 22215, 22400, 23100, 23200 (the caller's other deductions), then the
+        # total split income of Form T1206 Part 1 line 4, here 0.
         DEDUCTIONS_FROM_TOTAL_INCOME: SumLine(
             DEDUCTIONS_FROM_TOTAL_INCOME,
             (
@@ -2157,6 +2166,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
                 (CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, D("1074.00")),
                 (EXPLORATION_AND_DEVELOPMENT_EXPENSES, D("0")),
+                (CLERGY_RESIDENCE_DEDUCTION, D("0")),
                 (OTHER_DEDUCTIONS, D("0")),
                 (TOTAL_SPLIT_INCOME, D("0")),
             ),

@@ -1191,7 +1191,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME) is None
     assert worksheet.producer_of(DISABILITY_SUPPORTS_DEDUCTION) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_EXPENSES) is None
-    assert worksheet.producer_of(CLERGY_RESIDENCE_DEDUCTION) is None
+    assert isinstance(worksheet.producer_of(CLERGY_RESIDENCE_DEDUCTION), ChooseByCount)
     assert worksheet.producer_of(NET_BUSINESS_INCOME) is None
     assert worksheet.producer_of(NET_PROFESSIONAL_INCOME) is None
     assert worksheet.producer_of(NET_COMMISSION_INCOME) is None

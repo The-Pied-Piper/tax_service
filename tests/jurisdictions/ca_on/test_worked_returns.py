@@ -472,7 +472,6 @@ inputs:
   ca/political_contributions: "0"
   ca/disability_supports_deduction: "0"
   ca/other_employment_expenses: "0"
-  ca/clergy_residence_deduction: "0"
   ca/net_business_income: "0"
   ca/net_professional_income: "0"
   ca/net_commission_income: "0"
