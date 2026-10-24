@@ -1,5 +1,5 @@
-"""Trace lines for record lists: a field's total and the records' count over a list, the
-items' total, and one item's sum or lesser of.
+"""Trace lines for record lists: a field's total, the total of its positive amounts and the
+records' count over a list, the items' total, and one item's sum or lesser of.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from app.domain.trace.base import TraceLine
 
 __all__ = [
     "RecordTotalLine",
+    "RecordPositiveTotalLine",
     "RecordCountLine",
     "ItemsTotalLine",
     "ItemSumLine",
@@ -24,6 +25,27 @@ __all__ = [
 class RecordTotalLine(TraceLine):
     """The `total` produced as `output`: `field` added over the items of a record list, in the
     list's order, each item's `amounts` entry its value of `field`, exactly.
+
+    Its own class, not a `SumLine`: the parts are the items of one list, named by position, not
+    artifacts of their own.
+    """
+
+    output: Money
+    field: Money
+    amounts: tuple[Decimal, ...]
+    total: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The exact total."""
+        return self.total
+
+
+@dataclass(frozen=True)
+class RecordPositiveTotalLine(TraceLine):
+    """The `total` produced as `output`: the positive `amounts` of `field` added over the items of
+    a record list, in the list's order, each amount exactly as read; a zero or negative amount
+    counts 0.
 
     Its own class, not a `SumLine`: the parts are the items of one list, named by position, not
     artifacts of their own.

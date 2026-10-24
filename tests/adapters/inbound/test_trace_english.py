@@ -71,6 +71,7 @@ from app.domain.trace import (
     RatioAppliedLine,
     RatioTruncatedLine,
     RecordCountLine,
+    RecordPositiveTotalLine,
     RecordTotalLine,
     RoundedTotalLine,
     SignChosenDifferenceLine,
@@ -1485,6 +1486,55 @@ def test_renders_the_output_and_field_labels_without_their_namespace() -> None:
     line = RecordTotalLine(GROSS_AMOUNT, PART_ONE, (D("2"),), D("2"))
 
     assert render(line) == "gross_amount: item 1 part_one 2 = 2"
+
+
+# --- the total of the positive amounts over a list of records ---------------
+#
+# Each item is named by its position from 1, with the field's label and the amount as read; an
+# item whose amount is zero or negative is followed by "counts 0". The total follows "=", then the
+# rule: only positive amounts are added. An empty list prints "no items".
+
+POSITIVE_RULE = "Only positive amounts are added; a zero or negative amount counts 0."
+
+
+def test_renders_the_positive_total_of_positive_items() -> None:
+    line = RecordPositiveTotalLine(TOTAL, ITEM_AMOUNT, (D("6000"), D("4000")), D("10000"))
+
+    assert render(line) == (
+        f"total: item 1 item_amount 6000 + item 2 item_amount 4000 = 10000. {POSITIVE_RULE}"
+    )
+
+
+def test_renders_a_negative_item_as_counting_zero() -> None:
+    line = RecordPositiveTotalLine(
+        TOTAL, ITEM_AMOUNT, (D("6000"), D("-4000"), D("250.25")), D("6250.25")
+    )
+
+    assert render(line) == (
+        "total: item 1 item_amount 6000 + item 2 item_amount -4000 counts 0"
+        f" + item 3 item_amount 250.25 = 6250.25. {POSITIVE_RULE}"
+    )
+
+
+def test_renders_a_zero_item_as_counting_zero() -> None:
+    line = RecordPositiveTotalLine(TOTAL, ITEM_AMOUNT, (D("0"),), D("0"))
+
+    assert render(line) == (f"total: item 1 item_amount 0 counts 0 = 0. {POSITIVE_RULE}")
+
+
+def test_renders_the_positive_total_of_no_items() -> None:
+    assert render(RecordPositiveTotalLine(TOTAL, ITEM_AMOUNT, (), D(0))) == (
+        f"total: no items = 0. {POSITIVE_RULE}"
+    )
+
+
+def test_renders_the_positive_items_in_the_order_of_the_line() -> None:
+    line = RecordPositiveTotalLine(TOTAL, ITEM_AMOUNT, (D("4000"), D("-6000")), D("4000"))
+
+    assert render(line) == (
+        "total: item 1 item_amount 4000 + item 2 item_amount -6000 counts 0"
+        f" = 4000. {POSITIVE_RULE}"
+    )
 
 
 # --- an amount chosen by a range ----------------------------
@@ -3091,6 +3141,11 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
         (
             RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("6000.00"), D("4E+3")), D("10000.00")),
             "total: item 1 item_amount 6000 + item 2 item_amount 4000 = 10000",
+        ),
+        (
+            RecordPositiveTotalLine(TOTAL, ITEM_AMOUNT, (D("6000.00"), D("-4E+3")), D("6000.00")),
+            "total: item 1 item_amount 6000 + item 2 item_amount -4000 counts 0 = 6000."
+            " Only positive amounts are added; a zero or negative amount counts 0.",
         ),
         (
             ChosenByRangeLine(
