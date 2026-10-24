@@ -146,28 +146,30 @@ def supplement_only_if(worksheet: Worksheet, met: bool) -> None:
 
 
 @pytest.mark.parametrize(
-    ("net_business_income", "met"),
+    ("business_profit", "met"),
     [("389.99", False), ("390", True), ("390.01", True)],
 )
 def test_the_working_income_of_4390_or_more_includes_the_net_self_employment_income(
-    net_business_income: str, met: bool
+    business_profit: str, met: bool
 ) -> None:
-    # Employment income of 4000 plus net business income (line 13500): 4,389.99 does not meet
-    # "must be $4,390 or more", 4,390 and 4,390.01 do.
-    worksheet = return_ah("4000", net_business_income=net_business_income)
+    # Employment income of 4000 plus the net business income of one T2125 statement (line 13500):
+    # 4,389.99 does not meet "must be $4,390 or more", 4,390 and 4,390.01 do.
+    worksheet = return_ah(
+        "4000", business_statements=({"business": {"gross_sales": business_profit}},)
+    )
 
-    assert worksheet.get(MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME).value == D(net_business_income)
+    assert worksheet.get(MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME).value == D(business_profit)
     supplement_only_if(worksheet, met)
 
 
 def test_each_of_the_five_self_employment_lines_counts_toward_the_working_income() -> None:
     worksheet = return_ah(
         "4000",
-        net_business_income="100",
-        net_professional_income="90",
-        net_commission_income="80",
-        net_farming_income="70",
-        net_fishing_income="50",
+        business_statements=({"business": {"gross_sales": "100"}},),
+        professional_income="90",
+        commission_income="80",
+        farm_statements=({"farm": {"wheat": "70"}},),
+        fish_statements=({"fish": {"fish_products": "50"}},),
     )
 
     assert worksheet.get(MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME).value == D("390")
@@ -217,7 +219,11 @@ def test_the_deductions_of_lines_20700_and_21200_come_off_the_employment_income(
 def test_a_negative_employment_part_is_zero_and_does_not_reduce_the_self_employment_part() -> None:
     # "(if the result is negative, consider it as "0")": 4000 less 5000 is 0, not -1000, so the
     # 4390 of net business income alone meets the condition.
-    worksheet = return_ah("4000", other_employment_expenses="5000", net_business_income="4390")
+    worksheet = return_ah(
+        "4000",
+        other_employment_expenses="5000",
+        business_statements=({"business": {"gross_sales": "4390"}},),
+    )
 
     assert worksheet.get(MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME).value == D("0")
     assert worksheet.get(MEDICAL_SUPPLEMENT_WORKING_INCOME).value == D("4390")

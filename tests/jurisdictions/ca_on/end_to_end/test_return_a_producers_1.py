@@ -20,6 +20,7 @@ from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.multiple_over import MultipleOver
 from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.capabilities.progressive_tax import ProgressiveTax
+from app.domain.capabilities.record_positive_total import RecordPositiveTotal
 from app.domain.capabilities.record_total import RecordTotal
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
@@ -1194,11 +1195,11 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(DISABILITY_SUPPORTS_DEDUCTION), RecordTotal)
     assert worksheet.producer_of(OTHER_EMPLOYMENT_EXPENSES) is None
     assert isinstance(worksheet.producer_of(CLERGY_RESIDENCE_DEDUCTION), ChooseByCount)
-    assert worksheet.producer_of(NET_BUSINESS_INCOME) is None
-    assert worksheet.producer_of(NET_PROFESSIONAL_INCOME) is None
-    assert worksheet.producer_of(NET_COMMISSION_INCOME) is None
-    assert worksheet.producer_of(NET_FARMING_INCOME) is None
-    assert worksheet.producer_of(NET_FISHING_INCOME) is None
+    assert isinstance(worksheet.producer_of(NET_BUSINESS_INCOME), RecordPositiveTotal)
+    assert isinstance(worksheet.producer_of(NET_PROFESSIONAL_INCOME), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(NET_COMMISSION_INCOME), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(NET_FARMING_INCOME), RecordPositiveTotal)
+    assert isinstance(worksheet.producer_of(NET_FISHING_INCOME), RecordPositiveTotal)
     assert worksheet.producer_of(WAGE_LOSS_REPLACEMENT_PLAN_INCOME) is None
     assert worksheet.producer_of(RESIDENT_IN_CANADA_THROUGHOUT_2025) is None
     assert worksheet.producer_of(AGED_18_OR_OLDER_AT_END_OF_2025) is None

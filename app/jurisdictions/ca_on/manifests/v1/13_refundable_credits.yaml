@@ -28,10 +28,12 @@ capabilities:
   # T1 line 154 and line 45200 "Refundable medical expense supplement (use Federal
   # Worksheet)"; Federal Worksheet "Line 45200 - Refundable medical expense supplement", one
   # step per printed line, then the conditions it states. The T1 lines it reads that are not
-  # yet computed are caller inputs under their line names: 22900, 23100, and the
-  # self-employment lines 13500, 13700, 13900, 14100 and 14300, each the profits only as the
-  # worksheet's note asks. "In addition, the total of the following two amounts must be $4,390
-  # or more:" "your employment income from lines 10100 and 10400 of your return (other than
+  # yet computed are caller inputs under their line names: 22900, 23100, and the professional
+  # and commission income of lines 13700 and 13900. The self-employment lines 13500, 13700,
+  # 13900, 14100 and 14300 are the profits only, as the worksheet's note asks, computed from the
+  # T2125, T2042 and T2121 statements and those two inputs. "In addition, the total of the
+  # following two amounts must be $4,390 or more:" "your employment income from lines 10100 and
+  # 10400 of your return (other than
   # amounts received from a wage-loss replacement plan) minus the amounts from lines 20700,
   # 21200, 22900, and 23100 of your return (if the result is negative, consider it as "0")":
   # lines 10100 and 10400.
@@ -68,6 +70,42 @@ capabilities:
       less: ca/medical_supplement_employment_deductions
     produces:
       output: ca/medical_supplement_employment_working_income
+  # "your net self-employment income (not including losses) from lines 13500, 13700, 13900,
+  # 14100, and 14300 of your return": the positive net income of each Form T2125 statement,
+  # added, so a loss counts 0 (line 13500). The note's "use only the profit amounts" and "If you
+  # are reporting a loss from only one business on one of these lines, do not include that loss"
+  # is that rule.
+  - name: core/record_positive_total
+    consumes:
+      records: ca/t2125.business_income
+    produces:
+      output: ca/net_business_income
+  # The same rule for professional income (line 13700), not below zero, so a loss counts 0.
+  - name: core/sum_not_below_zero
+    consumes:
+      parts:
+        - ca/professional_income
+    produces:
+      output: ca/net_professional_income
+  # The same rule for commission income (line 13900), not below zero, so a loss counts 0.
+  - name: core/sum_not_below_zero
+    consumes:
+      parts:
+        - ca/commission_income
+    produces:
+      output: ca/net_commission_income
+  # The same rule for the statements of Form T2042 (farming, line 14100): a loss counts 0.
+  - name: core/record_positive_total
+    consumes:
+      records: ca/t2042.farming_income
+    produces:
+      output: ca/net_farming_income
+  # The same rule for the statements of Form T2121 (fishing, line 14300): a loss counts 0.
+  - name: core/record_positive_total
+    consumes:
+      records: ca/t2121.fishing_income
+    produces:
+      output: ca/net_fishing_income
   # "your net self-employment income (not including losses) from lines 13500, 13700, 13900,
   # 14100, and 14300 of your return", in line order.
   - name: core/sum

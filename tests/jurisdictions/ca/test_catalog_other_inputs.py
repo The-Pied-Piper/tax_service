@@ -7,11 +7,6 @@ from decimal import Decimal
 from app.domain.artifact import ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
     AGED_18_OR_OLDER_AT_END_OF_2025,
-    NET_BUSINESS_INCOME,
-    NET_COMMISSION_INCOME,
-    NET_FARMING_INCOME,
-    NET_FISHING_INCOME,
-    NET_PROFESSIONAL_INCOME,
     OTHER_EMPLOYMENT_EXPENSES,
     POLITICAL_CONTRIBUTIONS,
     RESIDENT_IN_CANADA_THROUGHOUT_2025,
@@ -41,11 +36,6 @@ def test_the_other_inputs_kinds_are_the_registered_ones(registry: ArtifactRegist
     )
     assert registry.get("ca/political_contributions") is POLITICAL_CONTRIBUTIONS
     assert registry.get("ca/other_employment_expenses") is OTHER_EMPLOYMENT_EXPENSES
-    assert registry.get("ca/net_business_income") is NET_BUSINESS_INCOME
-    assert registry.get("ca/net_professional_income") is NET_PROFESSIONAL_INCOME
-    assert registry.get("ca/net_commission_income") is NET_COMMISSION_INCOME
-    assert registry.get("ca/net_farming_income") is NET_FARMING_INCOME
-    assert registry.get("ca/net_fishing_income") is NET_FISHING_INCOME
     assert registry.get("ca/wage_loss_replacement_plan_income") is WAGE_LOSS_REPLACEMENT_PLAN_INCOME
     assert (
         registry.get("ca/resident_in_canada_throughout_2025") is RESIDENT_IN_CANADA_THROUGHOUT_2025
@@ -73,11 +63,6 @@ def test_the_other_inputs_kinds_are_money() -> None:
         RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
         POLITICAL_CONTRIBUTIONS,
         OTHER_EMPLOYMENT_EXPENSES,
-        NET_BUSINESS_INCOME,
-        NET_PROFESSIONAL_INCOME,
-        NET_COMMISSION_INCOME,
-        NET_FARMING_INCOME,
-        NET_FISHING_INCOME,
         WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
         SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
         SPOUSE_UCCB_REPAYMENT,

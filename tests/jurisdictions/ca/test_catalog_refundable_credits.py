@@ -43,6 +43,11 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
     MEDICAL_SUPPLEMENT_WORKING_INCOME,
     MULTIGENERATIONAL_HOME_RENOVATION_CREDIT,
+    NET_BUSINESS_INCOME,
+    NET_COMMISSION_INCOME,
+    NET_FARMING_INCOME,
+    NET_FISHING_INCOME,
+    NET_PROFESSIONAL_INCOME,
     PART_XII_2_TAX_CREDIT,
     PROVINCIAL_CREDITS,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
@@ -66,6 +71,11 @@ def test_the_refundable_credits_kinds_are_the_registered_ones(registry: Artifact
     assert registry.get("ca/educator_school_supply_credit") is EDUCATOR_SCHOOL_SUPPLY_CREDIT
     assert registry.get("ca/journalism_labour_tax_credit") is JOURNALISM_LABOUR_TAX_CREDIT
     assert registry.get("ca/tax_paid_by_instalments") is TAX_PAID_BY_INSTALMENTS
+    assert registry.get("ca/net_business_income") is NET_BUSINESS_INCOME
+    assert registry.get("ca/net_professional_income") is NET_PROFESSIONAL_INCOME
+    assert registry.get("ca/net_commission_income") is NET_COMMISSION_INCOME
+    assert registry.get("ca/net_farming_income") is NET_FARMING_INCOME
+    assert registry.get("ca/net_fishing_income") is NET_FISHING_INCOME
     assert (
         registry.get("ca/medical_supplement_employment_income")
         is MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME
@@ -138,6 +148,11 @@ def test_the_refundable_credits_kinds_are_money() -> None:
         EDUCATOR_SCHOOL_SUPPLY_CREDIT,
         JOURNALISM_LABOUR_TAX_CREDIT,
         TAX_PAID_BY_INSTALMENTS,
+        NET_BUSINESS_INCOME,
+        NET_PROFESSIONAL_INCOME,
+        NET_COMMISSION_INCOME,
+        NET_FARMING_INCOME,
+        NET_FISHING_INCOME,
         MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME,
         MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS,
         MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS,
