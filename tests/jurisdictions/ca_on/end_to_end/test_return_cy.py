@@ -130,7 +130,7 @@ def adjusted_proceeds(statement: Worksheet) -> list[tuple[Any, Any, Any]]:
 
 
 def test_return_cys_proceeds_are_adjusted_by_the_prescribed_amount_over_the_actual_cost() -> None:
-    # Area A endnote 2: the vehicle was bought in 2025, so the prescribed amount is 38000 plus the
+    # Area A Note 2: the vehicle was bought in 2025, so the prescribed amount is 38000 plus the
     # HST of 13% (4940), 42940.00; the actual cost is 56500.00 - 0 = 56500.00, more than that, so
     # the proceeds of 40000 (column 5, all of it column 6) are adjusted by the factor 42940.00 /
     # 56500.00 = 0.76: 40000 x 0.76 = 30400.00 each. Classes 1 and 8 have no proceeds.

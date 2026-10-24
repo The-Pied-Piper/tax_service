@@ -4,7 +4,7 @@
 # Class 10.1 passenger vehicle bought and sold in 2025 whose cost is above the prescribed amount, so
 # that its proceeds of disposition (Area A column 5) and the proceeds of dispositions of DIEP
 # (column 6) are adjusted by the prescribed amount as a proportion of the actual cost of the vehicle
-# (Area A endnote 2). The vehicle cost $50,000 before the HST of 13%, $56,500.00 in all (the actual
+# (Area A Note 2). The vehicle cost $50,000 before the HST of 13%, $56,500.00 in all (the actual
 # cost, no government assistance); its capital cost is limited to the prescribed amount for 2025,
 # $38,000 + 13% = $42,940.00 (columns 3 and 4), and it was sold at arm's length for $40,000 (column
 # 5, all of it a DIEP's, column 6), so the factor is $42,940.00 / $56,500.00 = 0.76 and the proceeds
@@ -49,7 +49,7 @@ sources:
     "Amount 6: Amount 5 less line ii" (8000.00), the net rental income on T1 line 12600. The lines
     not listed are not entered and are 0.
   - >-
-    CRA, Form T776 (2025), Area A endnote 2 (docs/cra-forms-2025/t776-25e.pdf, confirmed from the
+    CRA, Form T776 (2025), Area A Note 2 (docs/cra-forms-2025/t776-25e.pdf, confirmed from the
     PDF with pdftotext): "The proceeds of disposition of a zero-emission passenger vehicle (ZEPV)
     that has been included in Class 54, or a passenger vehicle bought after April 18, 2021, that has
     been included in Class 10.1, and whose cost is more than the prescribed amount will be adjusted
@@ -57,7 +57,7 @@ sources:
     vehicle. For dispositions after July 29, 2019, you will have to adjust the actual cost of the
     vehicle for any payments or repayments of government assistance that you may have received or
     repaid for the vehicle. If the passenger vehicle in Class 10.1 is not designated for immediate
-    expensing treatment, this special rule does not apply." Guide T4002 (docs/cra-forms-2025/t4002-
+    expensing treatment, this special rule does not apply." Guide T4036 (docs/cra-forms-2025/t4036-
     25e.pdf, confirmed from the PDF), "Class 10.1 (30%)": "$38,000 for vehicles acquired in 2025,
     plus the GST/HST or PST".
   - >-
