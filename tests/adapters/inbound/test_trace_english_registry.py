@@ -219,6 +219,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.jurisdictions.ca.trace.capital_cost.ClosingUccLine",
         "app.jurisdictions.ca.trace.capital_cost.FiscalPeriodDaysLine",
         "app.jurisdictions.ca.trace.capital_cost.ImmediateExpensingLine",
+        "app.jurisdictions.ca.trace.capital_cost.ProratedByDaysLine",
         "app.jurisdictions.ca.trace.capital_cost.RecapturedCcaLine",
         "app.jurisdictions.ca.trace.capital_cost.TerminalLossLine",
         "app.jurisdictions.ca.trace.vehicles.BusinessVehicleLine",

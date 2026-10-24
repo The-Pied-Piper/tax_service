@@ -1271,6 +1271,16 @@ RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER = CATALOG.declare(
 "the immediate expensing limit, which is equal to one of the following, whichever is applicable":
 $1.5 million when not associated with an EPOP, else the limit when associated."""
 
+RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED = CATALOG.declare(
+    "rental_immediate_expensing_limit_prorated", Decimal, non_negative=True
+)
+"""Immediate expensing limit prorated for the days of the fiscal period, Form T776 Area A Note 5
+"the immediate expensing limit, which is equal to one of the following, whichever is applicable",
+and Guide T4036, "Immediate expensing incentive": "The deduction is limited to $1.5 million per tax
+year: ... The limit is also prorated for tax years shorter than 365 days": the limit before any
+amount allocated by the minister, times the days of the fiscal period over 365, rounded to the cent.
+The minister's allocation is not prorated."""
+
 RENTAL_IMMEDIATE_EXPENSING_LIMIT = CATALOG.declare(
     "rental_immediate_expensing_limit", Decimal, non_negative=True
 )
@@ -2395,6 +2405,16 @@ BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER = CATALOG.declare(
 endnote 5 "the immediate expensing limit, which is equal to one of the following, whichever is
 applicable": $1.5 million when not associated with an EPOP, else the limit when associated."""
 
+BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED = CATALOG.declare(
+    "business_immediate_expensing_limit_prorated", Decimal, non_negative=True
+)
+"""Immediate expensing limit prorated for the days of the fiscal period, Form T2125 Area A endnote 5
+"the immediate expensing limit, which is equal to one of the following, whichever is applicable",
+and Guide T4002, "Immediate expensing incentive": "The deduction is limited to $1.5 million per tax
+year: ... The limit is also prorated for tax years shorter than 365 days": the limit before any
+amount allocated by the minister, times the days of the fiscal period over 365, rounded to the cent.
+The minister's allocation is not prorated."""
+
 BUSINESS_IMMEDIATE_EXPENSING_LIMIT = CATALOG.declare(
     "business_immediate_expensing_limit", Decimal, non_negative=True
 )
@@ -3214,6 +3234,16 @@ FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER = CATALOG.declare(
 endnote 5 "the immediate expensing limit, which is equal to one of the following, whichever is
 applicable": $1.5 million when not associated with an EPOP, else the limit when associated."""
 
+FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED = CATALOG.declare(
+    "farm_immediate_expensing_limit_prorated", Decimal, non_negative=True
+)
+"""Immediate expensing limit prorated for the days of the fiscal period, Form T2042 Area A endnote 5
+"the immediate expensing limit, which is equal to one of the following, whichever is applicable",
+and Guide T4002, "Immediate expensing incentive": "The deduction is limited to $1.5 million per tax
+year: ... The limit is also prorated for tax years shorter than 365 days": the limit before any
+amount allocated by the minister, times the days of the fiscal period over 365, rounded to the cent.
+The minister's allocation is not prorated."""
+
 FARM_IMMEDIATE_EXPENSING_LIMIT = CATALOG.declare(
     "farm_immediate_expensing_limit", Decimal, non_negative=True
 )
@@ -3850,6 +3880,16 @@ FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER = CATALOG.declare(
 """Immediate expensing limit before any amount allocated by the minister, Form T2121 Area A
 endnote 5 "the immediate expensing limit, which is equal to one of the following, whichever is
 applicable": $1.5 million when not associated with an EPOP, else the limit when associated."""
+
+FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED = CATALOG.declare(
+    "fish_immediate_expensing_limit_prorated", Decimal, non_negative=True
+)
+"""Immediate expensing limit prorated for the days of the fiscal period, Form T2121 Area A endnote 5
+"the immediate expensing limit, which is equal to one of the following, whichever is applicable",
+and Guide T4002, "Immediate expensing incentive": "The deduction is limited to $1.5 million per tax
+year: ... The limit is also prorated for tax years shorter than 365 days": the limit before any
+amount allocated by the minister, times the days of the fiscal period over 365, rounded to the cent.
+The minister's allocation is not prorated."""
 
 FISH_IMMEDIATE_EXPENSING_LIMIT = CATALOG.declare(
     "fish_immediate_expensing_limit", Decimal, non_negative=True

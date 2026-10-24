@@ -450,13 +450,29 @@ capabilities:
       when_any: ca/fish_immediate_expensing_associated_limit
     produces:
       output: ca/fish_immediate_expensing_limit_before_minister
+  # T2121 Area A endnote 5 "the immediate expensing limit, which is equal to one of the following,
+  # whichever is applicable", and Guide T4002, "Immediate expensing incentive": "The deduction is
+  # limited to $1.5 million per tax year: ... The limit is also prorated for tax years shorter than
+  # 365 days": the limit above times the days of the fiscal period over the 365 of a full year,
+  # rounded to the cent. The amount allocated by the minister under subsection 1104(3.4) of the
+  # Regulations, below, is not prorated: the guide prorates the limit, and the minister's amount is
+  # the amount allocated for the year.
+  - name: ca/prorated_by_fiscal_period_days
+    params:
+      rounding: ca/fish_immediate_expensing_rounding
+      class_rates: ca/cca_class_rates
+    consumes:
+      amount: ca/fish_immediate_expensing_limit_before_minister
+      fiscal_period_days: ca/fish_fiscal_period_days
+    produces:
+      output: ca/fish_immediate_expensing_limit_prorated
   # T2121 Area A endnote 5 (page 7) "any amount allocated by the minister under subsection
   # 1104(3.4) of the Regulations": a count of 1 (a caller's 0 or 1) chooses the amount allocated by
   # the minister, as entered, in place of the limit above; with a count of 0 the limit above stands.
   - name: core/choose_by_count
     consumes:
       count: ca/fish_minister_allocation_given_checked
-      when_none: ca/fish_immediate_expensing_limit_before_minister
+      when_none: ca/fish_immediate_expensing_limit_prorated
       when_any: ca/fish_minister_allocation
     produces:
       output: ca/fish_immediate_expensing_limit

@@ -152,6 +152,7 @@ from app.jurisdictions.ca.trace import (
     PrincipalResidenceWorksheetLine63,
     PrincipalResidenceWorksheetLine64,
     PrincipalResidenceWorksheetLine66,
+    ProratedByDaysLine,
     RecapturedCcaLine,
     ShortTermRentalNonCompliantCcaByClassLine,
     ShortTermRentalNonCompliantCcaLine,
@@ -5208,6 +5209,77 @@ def test_fiscal_period_days_lines_differ_by_each_field(change: dict[str, Any]) -
     values.update(change)
 
     assert line != FiscalPeriodDaysLine(**values)
+
+
+LIMIT_PRORATED = ArtifactKind("ex/limit_prorated", Decimal)
+UNPRORATED_LIMIT = ArtifactKind("ex/unprorated_limit", Decimal)
+
+
+def prorated_by_days_line() -> ProratedByDaysLine:
+    return ProratedByDaysLine(
+        LIMIT_PRORATED, UNPRORATED_LIMIT, D("1500000"), FISCAL_PERIOD_DAYS, 153, 365, D("628767.12")
+    )
+
+
+def test_prorated_by_days_line_fields_in_order() -> None:
+    # Guide T4002 and Guide T4036, "Immediate expensing incentive": "The limit is also prorated for
+    # tax years shorter than 365 days". 1500000 x 153 / 365 = 628767.12 to the cent.
+    line = prorated_by_days_line()
+
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "amount_kind",
+        "amount_value",
+        "days_kind",
+        "fiscal_period_days",
+        "full_year_days",
+        "result",
+    ]
+    assert line == ProratedByDaysLine(
+        output=LIMIT_PRORATED,
+        amount_kind=UNPRORATED_LIMIT,
+        amount_value=D("1500000"),
+        days_kind=FISCAL_PERIOD_DAYS,
+        fiscal_period_days=153,
+        full_year_days=365,
+        result=D("628767.12"),
+    )
+    assert line.output is LIMIT_PRORATED
+    assert line.amount_kind is UNPRORATED_LIMIT
+    assert line.amount_value == D("1500000")
+    assert line.days_kind is FISCAL_PERIOD_DAYS
+    assert line.fiscal_period_days == 153
+    assert line.full_year_days == 365
+    assert line.result == D("628767.12")
+
+
+def test_a_prorated_by_days_lines_amount_is_its_result_not_one_of_its_fields() -> None:
+    line = prorated_by_days_line()
+
+    assert line.amount == D("628767.12")
+    assert isinstance(line.amount, Decimal)
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_prorated_by_days_lines_are_hashable() -> None:
+    assert hash(prorated_by_days_line()) == hash(prorated_by_days_line())
+
+
+def test_prorated_by_days_lines_differ_by_each_field() -> None:
+    line = prorated_by_days_line()
+
+    assert line != replace(line, output=ArtifactKind("ex/other_limit_prorated", Decimal))
+    assert line != replace(line, amount_kind=ArtifactKind("ex/other_unprorated_limit", Decimal))
+    assert line != replace(line, amount_value=D("600000"))
+    assert line != replace(line, days_kind=ArtifactKind("ex/other_fiscal_period_days", int))
+    assert line != replace(line, fiscal_period_days=154)
+    assert line != replace(line, full_year_days=366)
+    assert line != replace(line, result=D("628767.13"))
+
+
+def test_a_prorated_by_days_line_is_not_a_fiscal_period_days_line() -> None:
+    assert not isinstance(prorated_by_days_line(), FiscalPeriodDaysLine)
+    assert not isinstance(fiscal_period_days_line(), ProratedByDaysLine)
 
 
 @pytest.mark.parametrize("make", [recaptured_cca_line, terminal_loss_line])

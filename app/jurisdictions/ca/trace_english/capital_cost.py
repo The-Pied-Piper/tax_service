@@ -16,6 +16,7 @@ from app.jurisdictions.ca.trace.capital_cost import (
     ClosingUccLine,
     FiscalPeriodDaysLine,
     ImmediateExpensingLine,
+    ProratedByDaysLine,
     RecapturedCcaLine,
     TerminalLossLine,
 )
@@ -267,3 +268,19 @@ class FiscalPeriodDaysRenderer:
             else f"fiscal period {line.fiscal_period_days} days"
         )
         return f"{line.output.label}: entered {line.entered}, {found}"
+
+
+@english_renderer
+class ProratedByDaysRenderer:
+    """English text for ProratedByDaysLine."""
+
+    line_class = ProratedByDaysLine
+
+    def render(self, line: ProratedByDaysLine) -> str:
+        """The English sentence for `line`."""
+        return (
+            f"{line.output.label}: {line.amount_kind.label} "
+            f"{EnglishFigures.money(line.amount_value)} × {line.days_kind.label} "
+            f"{line.fiscal_period_days} / {line.full_year_days} = "
+            f"{EnglishFigures.money(line.result)}"
+        )

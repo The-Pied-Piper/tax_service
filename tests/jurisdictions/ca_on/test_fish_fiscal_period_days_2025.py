@@ -19,6 +19,12 @@ Worked values, by hand: Class 8 (20%), column 3 35,000.00 and nothing else: colu
 35,000.00, column 18 17,500.00 (the half-year rule), column 19 17,500.00, maximum 3,500.00. 214
 days: 3,500.00 x 214 / 365 = 749,000 / 365 = 2,052.0547..., 2,052.05; column 22 is 35,000.00 -
 2,052.05 = 32,947.95. 100 days: 350,000 / 365 = 958.9041..., 958.90. 365 days or none: 3,500.00.
+
+The same days prorate the immediate expensing limit (Guide T4002, "Immediate expensing incentive":
+"The limit is also prorated for tax years shorter than 365 days"): with no EPOP the limit is the
+$1.5 million, which for 100 days is 1,500,000 x 100 / 365 = 150,000,000 / 365 = 410,958.9041...,
+410,958.90, and for 214 days 1,500,000 x 214 / 365 = 321,000,000 / 365 = 879,452.0547...,
+879,452.05.
 """
 
 from __future__ import annotations
@@ -46,6 +52,8 @@ from app.jurisdictions.ca.catalog import (
     FISH_CLOSING_UCC,
     FISH_FISCAL_PERIOD_DAYS,
     FISH_FISCAL_PERIOD_DAYS_ENTERED,
+    FISH_IMMEDIATE_EXPENSING_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
 )
 from app.jurisdictions.ca.trace import FiscalPeriodDaysLine
 from tests.jurisdictions.ca.capabilities.cca_table import CLASSES, CLOSING_UCC, classes, row
@@ -153,7 +161,8 @@ def test_a_t2121_with_no_days_entered_is_a_full_year() -> None:
     assert statement.get(FISH_FISCAL_PERIOD_DAYS).value == 365
     assert statement.get(FISH_CCA_TABLE_CLAIM).value == D("3500.00")
     assert "fish_fiscal_period_days: entered 0, a full year of 365 days" in rendered
-    assert "prorated" not in rendered
+    assert ", prorated " not in rendered
+    assert "(prorated " not in rendered
 
 
 def test_a_t2121_claim_above_the_prorated_maximum_is_refused() -> None:
@@ -177,3 +186,14 @@ def test_a_t2121_with_more_than_365_days_is_refused() -> None:
 def test_the_t2121_days_entered_is_the_forms_own_kind() -> None:
     assert FISH_FISCAL_PERIOD_DAYS_ENTERED.identifier == "ca/fish_fiscal_period_days_entered"
     assert FISH_FISCAL_PERIOD_DAYS.identifier == "ca/fish_fiscal_period_days"
+
+
+@pytest.mark.parametrize(
+    ("days", "limit"),
+    [(100, "410958.90"), (214, "879452.05"), (365, "1500000.00"), (0, "1500000.00")],
+)
+def test_a_t2121_prorates_its_immediate_expensing_limit_by_the_days(days: int, limit: str) -> None:
+    statement = statement_fish("0", days)
+
+    assert statement.get(FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED).value == D(limit)
+    assert statement.get(FISH_IMMEDIATE_EXPENSING_LIMIT).value == D(limit)

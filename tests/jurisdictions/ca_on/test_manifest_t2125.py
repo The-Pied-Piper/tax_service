@@ -78,12 +78,12 @@ def test_the_manifest_has_the_form_t2125_beside_the_other_forms() -> None:
     assert found.exports == t2125.FORM_EXPORTS
 
 
-def test_the_form_holds_the_46_t2125_selections() -> None:
+def test_the_form_holds_the_51_t2125_selections() -> None:
     # The 55 selections of one vehicle's Charts A to C (22 of them) are now one step over the
     # statement's vehicles.
     found = form()
 
-    assert len(found.capabilities) == 50
+    assert len(found.capabilities) == 51
     assert set(found.capabilities) == t2125.FORM_STEPS
 
 

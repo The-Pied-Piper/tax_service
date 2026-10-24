@@ -36,9 +36,10 @@ description: >-
   period is 214 days, less than 365, so the maximum is prorated: $3,500.00 x 214 / 365 =
   $2,052.05 (the Guide's $2,052), claimed in full; the UCC at the end of the year (column 22) is
   $35,000.00 - $2,052.05 = $32,947.95. There is no immediate expensing (line i is $0), no
-  recapture and no terminal loss. The business is not associated with any other EPOP, so the
-  immediate expensing limit is $1.5 million (Area G is not answered). The income before CCA
-  (endnote 5) is $32,052.05, line 9369 plus line 9936. The net self-employment income (T1 line
+  recapture and no terminal loss. The business is not associated with any other EPOP (Area G is
+  not answered), so the immediate expensing limit is the $1.5 million prorated for the 214 days
+  of the fiscal period: $1,500,000 x 214 / 365 = $879,452.05. The income before
+  CCA (endnote 5) is $32,052.05, line 9369 plus line 9936. The net self-employment income (T1 line
   27, "Add lines 22 to 26") is 30,000 + 0 + 0 + 0 + 0 = $30,000; line 28 is line 21 (0) plus
   line 27 and total income (line 15000) adds line 27 to the other income lines, which are all 0,
   so total income is $30,000.00. The CPP months (Schedule 8 box A) are the 12 of a full year,
@@ -125,8 +126,12 @@ sources:
     Internet business activities), Part 8 (the other partners), Part 9 (the equity) and Areas
     B to G (Area G is not answered: the business is not associated with another EPOP). Endnote 5
     "$1.5 million, if you are not associated with any other eligible person or partnership
-    (EPOP) in the tax year" gives the immediate expensing limit 1,500,000; the income before CCA
-    is a chosen reading, to be confirmed: line 9369 plus line 9936, 30,000.00 + 2,052.05 =
+    (EPOP) in the tax year" gives 1,500,000, which Guide T4002 (docs/cra-forms-2025/t4002-25e.pdf,
+    confirmed from the PDF; no .txt published), "Immediate expensing incentive", prorates: "The
+    limit is also prorated for tax years shorter than 365 days". For 214 days the limit is
+    1,500,000 x 214 / 365 = 321,000,000 / 365 = 879,452.0547..., rounded half-up to the cent,
+    879,452.05 (the cent being the rounding of the dollars-and-cents boxes, to be confirmed);
+    the income before CCA is a chosen reading, to be confirmed: line 9369 plus line 9936, 30,000.00 + 2,052.05 =
     32,052.05.
   - >-
     CRA, "T1-2025 Ontario edition" return (form 5006-R,
@@ -292,7 +297,8 @@ expected:
       ca/business_immediate_expensing_allocated: "0.00"
       ca/business_immediate_expensing_associated_limit: "0"
       ca/business_immediate_expensing_limit_before_minister: "1500000"
-      ca/business_immediate_expensing_limit: "1500000"
+      ca/business_immediate_expensing_limit_prorated: "879452.05"
+      ca/business_immediate_expensing_limit: "879452.05"
       ca/business_fiscal_period_days: "214"
       ca/business_income_before_cca: "32052.05"
       ca/business_immediate_expensing_claim: "0"

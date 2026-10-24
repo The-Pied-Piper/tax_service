@@ -274,6 +274,14 @@ def test_importing_the_federal_package_registers_the_fiscal_period_days_capabili
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.fiscal_period_days"
 
 
+def test_importing_the_federal_package_registers_the_prorated_by_fiscal_days_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/prorated_by_fiscal_period_days")
+
+    assert (
+        registered.__module__ == "app.jurisdictions.ca.capabilities.prorated_by_fiscal_period_days"
+    )
+
+
 def test_importing_the_federal_package_registers_the_short_term_rental_expenses_capability() -> (
     None
 ):

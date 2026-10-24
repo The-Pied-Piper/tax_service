@@ -28,6 +28,11 @@ description: >-
   $20,000, and seeds and plants, line 9664, $30,000) and capital cost allowance of $2,200.68 on
   Class 10 (Area A, line 9936), so line 9898 is $52,200.68 and line 9899 is $30,000.00; and,
   with no inventory adjustments and no partner, line 9946 and T1 line 14100 are $30,000.00.
+  The farm is not associated with any other EPOP (Area G is not answered) and has no property
+  expensed at once, but its immediate expensing limit is the $1.5 million prorated for the 153
+  days: $1,500,000 x 153 / 365 = $229,500,000 / 365 = $628,767.1232..., rounded half-up to the
+  cent, $628,767.12 (Guide T4002, "Immediate expensing incentive": "The limit is also prorated
+  for tax years shorter than 365 days").
   Area A has one class, Class 10, bought in the year: additions (column 3) $35,000.00, so column 7
   is $35,000.00; by the half-year rule column 18 is $17,500.00 and column 19 is $17,500.00, so the
   maximum of a full year is $17,500.00 x 30% = $5,250.00. The fiscal period is 153 days, less than
@@ -338,6 +343,10 @@ expected:
       ca/farm_cca_claim: "2200.68"
       ca/farm_total_expenses: "52200.68"
       ca/farm_net_income_before_adjustments: "30000"
+      ca/farm_immediate_expensing_cap: "1500000"
+      ca/farm_immediate_expensing_limit_before_minister: "1500000"
+      ca/farm_immediate_expensing_limit_prorated: "628767.12"
+      ca/farm_immediate_expensing_limit: "628767.12"
       ca/farm_net_income_after_inventory_adjustments: "30000"
       ca/farm_share_of_net_income: "30000"
       ca/farm_partnership_total: "30000"
