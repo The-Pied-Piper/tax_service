@@ -141,9 +141,12 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_HOME_EXPENSES_AVAILABLE,
     BUSINESS_HOME_INCOME_LIMIT,
     BUSINESS_IMMEDIATE_EXPENSING_CAP,
+    BUSINESS_IMMEDIATE_EXPENSING_CLAIM,
+    BUSINESS_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     BUSINESS_INCOME,
     BUSINESS_INCOME_BEFORE_CCA,
     BUSINESS_INVESTMENT_LOSS,
@@ -558,9 +561,12 @@ from app.jurisdictions.ca.catalog import (
     FARM_HOME_EXPENSES_AVAILABLE,
     FARM_HOME_INCOME_LIMIT,
     FARM_IMMEDIATE_EXPENSING_CAP,
+    FARM_IMMEDIATE_EXPENSING_CLAIM,
+    FARM_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     FARM_IMMEDIATE_EXPENSING_LIMIT,
     FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     FARM_INCOME_BEFORE_CCA,
     FARM_MINISTER_ALLOCATION_GIVEN_CHECKED,
     FARM_NET_INCOME_AFTER_ADJUSTMENTS,
@@ -615,9 +621,12 @@ from app.jurisdictions.ca.catalog import (
     FISH_HOME_EXPENSES_AVAILABLE,
     FISH_HOME_INCOME_LIMIT,
     FISH_IMMEDIATE_EXPENSING_CAP,
+    FISH_IMMEDIATE_EXPENSING_CLAIM,
+    FISH_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     FISH_IMMEDIATE_EXPENSING_LIMIT,
     FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    FISH_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     FISH_INCOME_BEFORE_CCA,
     FISH_MINISTER_ALLOCATION_GIVEN_CHECKED,
     FISH_NET_INCOME_AFTER_ADJUSTMENTS,
@@ -632,6 +641,9 @@ from app.jurisdictions.ca.catalog import (
     FOREIGN_BUSINESS_TAX_CREDIT_LINE_10,
     FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
     HIGH_INCOME_DONATIONS,
+    IMMEDIATE_EXPENSING_AGREED_LIMIT,
+    IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
+    IMMEDIATE_EXPENSING_TOTAL_CLAIM,
     INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
     INVESTMENT_TAX_CREDIT,
@@ -733,9 +745,12 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_EPOP_PERCENTAGE_TOTAL,
     RENTAL_GROSS_RENTS,
     RENTAL_IMMEDIATE_EXPENSING_CAP,
+    RENTAL_IMMEDIATE_EXPENSING_CLAIM,
+    RENTAL_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     RENTAL_MINISTER_ALLOCATION_GIVEN_CHECKED,
     RENTAL_NET_INCOME_AFTER_CCA,
     RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS,
@@ -2120,6 +2135,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             amount_kind=CAPITAL_GAINS_DEDUCTION_CLAIMED,
             amount_value=D("0"),
             bound=CHART_2025_PART_2_AMOUNT_Q,
+            bound_value=D("0"),
+        ),
+        # The immediate expensing claims of all statements, 0 for Return A, at most the agreed
+        # limit of the statements that claim, 0 when none claims.
+        IMMEDIATE_EXPENSING_TOTAL_CLAIM: AtMostLine(
+            output=IMMEDIATE_EXPENSING_TOTAL_CLAIM,
+            amount_kind=IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
+            amount_value=D("0"),
+            bound=IMMEDIATE_EXPENSING_AGREED_LIMIT,
             bound_value=D("0"),
         ),
     }
@@ -4402,6 +4426,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         RENTAL_GROSS_RENTS: RecordTotalLine(
             RENTAL_GROSS_RENTS, RENTAL_PROPERTY_GROSS_RENTS, (), D("0")
         ),
+        # The immediate expensing claim of each form's one statement in Return A, 0 each.
+        RENTAL_IMMEDIATE_EXPENSING_CLAIMS_TOTAL: RecordTotalLine(
+            RENTAL_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
+            RENTAL_IMMEDIATE_EXPENSING_CLAIM,
+            (D("0"),),
+            D("0"),
+        ),
+        BUSINESS_IMMEDIATE_EXPENSING_CLAIMS_TOTAL: RecordTotalLine(
+            BUSINESS_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
+            BUSINESS_IMMEDIATE_EXPENSING_CLAIM,
+            (D("0"),),
+            D("0"),
+        ),
+        FARM_IMMEDIATE_EXPENSING_CLAIMS_TOTAL: RecordTotalLine(
+            FARM_IMMEDIATE_EXPENSING_CLAIMS_TOTAL, FARM_IMMEDIATE_EXPENSING_CLAIM, (D("0"),), D("0")
+        ),
+        FISH_IMMEDIATE_EXPENSING_CLAIMS_TOTAL: RecordTotalLine(
+            FISH_IMMEDIATE_EXPENSING_CLAIMS_TOTAL, FISH_IMMEDIATE_EXPENSING_CLAIM, (D("0"),), D("0")
+        ),
         FLOW_THROUGH_SHARE_EXPENSES: RecordTotalLine(
             FLOW_THROUGH_SHARE_EXPENSES, FLOW_THROUGH_SHARE_SLIP_EXPENSES, (), D("0")
         ),
@@ -5682,6 +5725,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             chosen_kind=BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
             chosen_value=D("1500000.00"),
         ),
+        BUSINESS_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED: ChosenByCountLine(
+            output=BUSINESS_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
+            count_kind=BUSINESS_MINISTER_ALLOCATION_GIVEN_CHECKED,
+            count=0,
+            chosen_kind=BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+            chosen_value=D("1500000.00"),
+        ),
         # Form T2042 endnote 5: a count of 0 for associated with an EPOP chooses the $1.5 million,
         # and a count of 0 for an amount allocated by the minister keeps that limit.
         FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER: ChosenByCountLine(
@@ -5696,6 +5746,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=FARM_MINISTER_ALLOCATION_GIVEN_CHECKED,
             count=0,
             chosen_kind=FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+            chosen_value=D("1500000.00"),
+        ),
+        FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED: ChosenByCountLine(
+            output=FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
+            count_kind=FARM_MINISTER_ALLOCATION_GIVEN_CHECKED,
+            count=0,
+            chosen_kind=FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
             chosen_value=D("1500000.00"),
         ),
         # Form T2121 endnote 5: a count of 0 for associated with an EPOP chooses the $1.5 million,
@@ -5714,6 +5771,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             chosen_kind=FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
             chosen_value=D("1500000.00"),
         ),
+        FISH_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED: ChosenByCountLine(
+            output=FISH_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
+            count_kind=FISH_MINISTER_ALLOCATION_GIVEN_CHECKED,
+            count=0,
+            chosen_kind=FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+            chosen_value=D("1500000.00"),
+        ),
         # Form T776 Note 5: a count of 0 for associated with an EPOP chooses the $1.5 million, and a
         # count of 0 for an amount allocated by the minister keeps that limit.
         RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER: ChosenByCountLine(
@@ -5728,6 +5792,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=RENTAL_MINISTER_ALLOCATION_GIVEN_CHECKED,
             count=0,
             chosen_kind=RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+            chosen_value=D("1500000.00"),
+        ),
+        RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED: ChosenByCountLine(
+            output=RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
+            count_kind=RENTAL_MINISTER_ALLOCATION_GIVEN_CHECKED,
+            count=0,
+            chosen_kind=RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
             chosen_value=D("1500000.00"),
         ),
         NET_RENTAL_INCOME: ChosenByCountLine(

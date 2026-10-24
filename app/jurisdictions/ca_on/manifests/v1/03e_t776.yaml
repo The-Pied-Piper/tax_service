@@ -14,6 +14,7 @@ form:
     - ca/rental_non_compliant_cca
     - ca/short_term_rental_non_compliant_cca_by_class
     - ca/rental_immediate_expensing_claim
+    - ca/rental_immediate_expensing_limit_unprorated
 capabilities:
   # T776 Part 3, "Line 8140: Total of your gross rents for short-term rentals in the year you
   # receive them (add amounts under "Gross rents for short-term rentals")": the total of that
@@ -467,6 +468,21 @@ capabilities:
       when_any: ca/rental_minister_allocation
     produces:
       output: ca/rental_immediate_expensing_limit
+  # T776 Note 5 "the immediate expensing limit, which is equal to one of the following, whichever is
+  # applicable", "any amount allocated by the minister under subsection 1104(3.4) of the
+  # Regulations", and Guide T4036: "The limit is also prorated for tax years shorter than 365
+  # days". The person's limit before the days scaling, the one limit the statements of the four
+  # forms share: the limit before the minister's amount, unscaled, or the amount allocated by the
+  # minister when there is one, which is already unscaled. The statements are compared on it
+  # because each statement's own fiscal period scales the limit above, and a person's statements
+  # may cover periods of different lengths.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/rental_minister_allocation_given_checked
+      when_none: ca/rental_immediate_expensing_limit_before_minister
+      when_any: ca/rental_minister_allocation
+    produces:
+      output: ca/rental_immediate_expensing_limit_unprorated
   # T776 "Line i: Total immediate expensing claim for the year: Total of column 9" and Note 5
   # "The total immediate expensing amount for the tax year (total of column 9) is limited to
   # the lesser of: the immediate expensing limit"; "the UCC of DIEPs in column 8"; "the amount

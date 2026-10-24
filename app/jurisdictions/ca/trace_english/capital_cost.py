@@ -15,6 +15,7 @@ from app.jurisdictions.ca.trace.capital_cost import (
     CcaZeroReason,
     ClosingUccLine,
     FiscalPeriodDaysLine,
+    ImmediateExpensingAgreedLimitLine,
     ImmediateExpensingLine,
     ProratedByDaysLine,
     RecapturedCcaLine,
@@ -252,6 +253,28 @@ class ImmediateExpensingRenderer:
             f"column 8 {EnglishFigures.money(line.column_8)}, column 9 "
             f"{EnglishFigures.money(line.column_9)}"
         )
+
+
+@english_renderer
+class ImmediateExpensingAgreedLimitRenderer:
+    """English text for ImmediateExpensingAgreedLimitLine."""
+
+    line_class = ImmediateExpensingAgreedLimitLine
+
+    def render(self, line: ImmediateExpensingAgreedLimitLine) -> str:
+        """The English sentence for `line`."""
+        limit = EnglishFigures.money(line.limit)
+        if not line.statements:
+            return (
+                f"{line.output.label}: no statement claims immediate expensing: "
+                f"agreed limit {limit}"
+            )
+        compared = ", ".join(
+            f"{kind.identifier} statement {position} claims {EnglishFigures.money(claim)} under "
+            f"{EnglishFigures.money(statement_limit)}"
+            for kind, position, claim, statement_limit in line.statements
+        )
+        return f"{line.output.label}: {compared}: agreed limit {limit}"
 
 
 @english_renderer

@@ -149,3 +149,8 @@ outputs:
   # credit reads) is worked from the renovations on its own, so no step reads these lines.
   - ca/home_renovation_line_3
   - ca/home_renovation_line_6
+  # Area A endnote 5 of Forms T776, T2125, T2042 and T2121 and Guides T4002 and T4036 "The deduction
+  # is limited to $1.5 million per tax year": the total of column 9 over every statement of the four
+  # forms, at most the person's one limit. Nothing on the return reads it; the step refuses a total
+  # above the limit.
+  - ca/immediate_expensing_total_claim

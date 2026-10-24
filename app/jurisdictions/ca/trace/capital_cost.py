@@ -11,7 +11,7 @@ from enum import Enum
 from app.domain.artifact import ArtifactKind, Money
 from app.domain.parameters.class_rates import ClassRate
 from app.domain.parameters.rounding import RoundingRule
-from app.domain.record_list import RecordList
+from app.domain.record_list import RecordList, RecordListKind
 from app.domain.trace.base import TraceLine
 
 __all__ = [
@@ -22,6 +22,7 @@ __all__ = [
     "CcaVehicleProceedsLine",
     "ClosingUccLine",
     "ImmediateExpensingLine",
+    "ImmediateExpensingAgreedLimitLine",
     "FiscalPeriodDaysLine",
     "ProratedByDaysLine",
 ]
@@ -228,6 +229,27 @@ class ImmediateExpensingLine(TraceLine):
     def amount(self) -> Decimal:
         """The class's immediate expensing amount."""
         return self.column_9
+
+
+@dataclass(frozen=True)
+class ImmediateExpensingAgreedLimitLine(TraceLine):
+    """The person's one immediate expensing limit `limit` for `output`, across the statements of
+    Forms T776, T2125, T2042 and T2121. `statements` are the statements compared, those claiming
+    above 0: each is the kind of the statement's limit list, its position from 1 in that list, its
+    claim (the total of column 9) and its limit. Area A endnote 5: "The total immediate expensing
+    amount for the tax year (total of column 9) is limited to the lesser of: the immediate
+    expensing limit"; Guides T4002 and T4036: "The deduction is limited to $1.5 million per tax
+    year". The limit is 0 when no statement claims.
+    """
+
+    output: Money
+    statements: tuple[tuple[RecordListKind, int, Decimal, Decimal], ...]
+    limit: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The agreed limit."""
+        return self.limit
 
 
 @dataclass(frozen=True)

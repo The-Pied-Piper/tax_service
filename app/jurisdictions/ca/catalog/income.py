@@ -1289,6 +1289,14 @@ equal to one of the following, whichever is applicable", including "any amount a
 minister under subsection 1104(3.4) of the Regulations": the limit above, or the amount allocated
 by the minister when there is one."""
 
+RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED = CATALOG.declare(
+    "rental_immediate_expensing_limit_unprorated", Decimal, non_negative=True
+)
+"""Immediate expensing limit before the days scaling, Form T776 Area A Note 5 "the immediate
+expensing limit, which is equal to one of the following, whichever is applicable", and Guide T4036:
+"The limit is also prorated for tax years shorter than 365 days": the per-person limit before the
+limit is scaled to the days of the fiscal period, the minister's amount unscaled as already."""
+
 RENTAL_IMMEDIATE_EXPENSING_CLAIM = CATALOG.declare(
     "rental_immediate_expensing_claim", Decimal, non_negative=True
 )
@@ -2423,6 +2431,14 @@ equal to one of the following, whichever is applicable", including "any amount a
 minister under subsection 1104(3.4) of the Regulations": the limit above, or the amount allocated
 by the minister when there is one."""
 
+BUSINESS_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED = CATALOG.declare(
+    "business_immediate_expensing_limit_unprorated", Decimal, non_negative=True
+)
+"""Immediate expensing limit before the days scaling, Form T2125 Area A endnote 5 "the immediate
+expensing limit, which is equal to one of the following, whichever is applicable", and Guide T4002:
+"The limit is also prorated for tax years shorter than 365 days": the per-person limit before the
+limit is scaled to the days of the fiscal period, the minister's amount unscaled as already."""
+
 BUSINESS_IMMEDIATE_EXPENSING_CLAIM = CATALOG.declare(
     "business_immediate_expensing_claim", Decimal, non_negative=True
 )
@@ -3252,6 +3268,14 @@ equal to one of the following, whichever is applicable", including "any amount a
 minister under subsection 1104(3.4) of the Regulations": the limit above, or the amount allocated
 by the minister when there is one."""
 
+FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED = CATALOG.declare(
+    "farm_immediate_expensing_limit_unprorated", Decimal, non_negative=True
+)
+"""Immediate expensing limit before the days scaling, Form T2042 Area A endnote 5 "the immediate
+expensing limit, which is equal to one of the following, whichever is applicable", and Guide T4002:
+"The limit is also prorated for tax years shorter than 365 days": the per-person limit before the
+limit is scaled to the days of the fiscal period, the minister's amount unscaled as already."""
+
 FARM_IMMEDIATE_EXPENSING_CLAIM = CATALOG.declare(
     "farm_immediate_expensing_claim", Decimal, non_negative=True
 )
@@ -3899,6 +3923,14 @@ equal to one of the following, whichever is applicable", including "any amount a
 minister under subsection 1104(3.4) of the Regulations": the limit above, or the amount allocated
 by the minister when there is one."""
 
+FISH_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED = CATALOG.declare(
+    "fish_immediate_expensing_limit_unprorated", Decimal, non_negative=True
+)
+"""Immediate expensing limit before the days scaling, Form T2121 Area A endnote 5 "the immediate
+expensing limit, which is equal to one of the following, whichever is applicable", and Guide T4002:
+"The limit is also prorated for tax years shorter than 365 days": the per-person limit before the
+limit is scaled to the days of the fiscal period, the minister's amount unscaled as already."""
+
 FISH_IMMEDIATE_EXPENSING_CLAIM = CATALOG.declare(
     "fish_immediate_expensing_claim", Decimal, non_negative=True
 )
@@ -3907,6 +3939,61 @@ for the year: Total of column 9" (line i), limited by endnote 5 to "the lesser o
 expensing limit, "the UCC of DIEPs in column 8" and "the amount of income, if any, earned from the
 source of income that is a business (before any CCA deductions)": the total of column 9 over the
 classes."""
+
+RENTAL_IMMEDIATE_EXPENSING_CLAIMS_TOTAL = CATALOG.declare(
+    "rental_immediate_expensing_claims_total", Decimal, non_negative=True
+)
+"""Total of the immediate expensing claims of the statements of Form T776, Area A "Total of
+column 9" (line i) of each statement added: the form's share of the person's total
+for the year."""
+
+BUSINESS_IMMEDIATE_EXPENSING_CLAIMS_TOTAL = CATALOG.declare(
+    "business_immediate_expensing_claims_total", Decimal, non_negative=True
+)
+"""Total of the immediate expensing claims of the statements of Form T2125, Area A "Total of
+column 9" (line i) of each statement added: the form's share of the person's total
+for the year."""
+
+FARM_IMMEDIATE_EXPENSING_CLAIMS_TOTAL = CATALOG.declare(
+    "farm_immediate_expensing_claims_total", Decimal, non_negative=True
+)
+"""Total of the immediate expensing claims of the statements of Form T2042, Area A "Total of
+column 9" (line i) of each statement added: the form's share of the person's total
+for the year."""
+
+FISH_IMMEDIATE_EXPENSING_CLAIMS_TOTAL = CATALOG.declare(
+    "fish_immediate_expensing_claims_total", Decimal, non_negative=True
+)
+"""Total of the immediate expensing claims of the statements of Form T2121, Area A "Total of
+column 9" (line i) of each statement added: the form's share of the person's total
+for the year."""
+
+IMMEDIATE_EXPENSING_CLAIMS_TOTAL = CATALOG.declare(
+    "immediate_expensing_claims_total", Decimal, non_negative=True
+)
+"""Total immediate expensing claims of every statement of Forms T776, T2125, T2042 and T2121,
+Area A endnote 5 "The total immediate expensing amount for the tax year (total of column 9) is
+limited to the lesser of: the immediate expensing limit"; Guides T4002 and T4036: "The deduction is
+limited to $1.5 million per tax year". The forms print the limit for each statement and are silent
+on a person who files several statements; the Guides' "per tax year" is the only statement of the
+rule across them: the four totals above added."""
+
+IMMEDIATE_EXPENSING_AGREED_LIMIT = CATALOG.declare(
+    "immediate_expensing_agreed_limit", Decimal, non_negative=True
+)
+"""The person's one immediate expensing limit for the year, Area A endnote 5 "the immediate
+expensing limit, which is equal to one of the following, whichever is applicable: $1.5 million, if
+you are not associated with any other eligible person or partnership (EPOP) in the tax year; amount
+iii of Area G, if you are associated with one or more EPOPs in the tax year; ...": the limit the
+statements that claim immediate expensing share, 0 when none does. The forms are silent on
+statements whose limits differ."""
+
+IMMEDIATE_EXPENSING_TOTAL_CLAIM = CATALOG.declare(
+    "immediate_expensing_total_claim", Decimal, non_negative=True
+)
+"""Total immediate expensing claim of the person across all statements of Forms T776, T2125, T2042
+and T2121, Guides T4002 and T4036 "The deduction is limited to $1.5 million per tax year": the
+total of every statement's column 9, at most the person's one limit."""
 
 FISH_INCOME_BEFORE_CCA = CATALOG.declare("fish_income_before_cca", Decimal, non_negative=True)
 """Fishing income before CCA, Form T2121 Area A endnote 5 "the amount of income, if any, earned

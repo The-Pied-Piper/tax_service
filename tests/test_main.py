@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1104
+        == 1111
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1104
+        == 1111
     )
 
 
@@ -298,6 +298,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/business_immediate_expensing_limit_before_minister",
         "ca/business_immediate_expensing_limit_prorated",
         "ca/business_immediate_expensing_limit",
+        "ca/business_immediate_expensing_limit_unprorated",
         "ca/business_immediate_expensing_claim",
         "ca/business_income_before_cca",
         "ca/business_fiscal_period_days_entered",
@@ -436,6 +437,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/farm_immediate_expensing_limit_before_minister",
         "ca/farm_immediate_expensing_limit_prorated",
         "ca/farm_immediate_expensing_limit",
+        "ca/farm_immediate_expensing_limit_unprorated",
         "ca/farm_immediate_expensing_claim",
         "ca/farm_income_before_cca",
         "ca/farm_fiscal_period_days_entered",
@@ -535,7 +537,15 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/fish_immediate_expensing_limit_before_minister",
         "ca/fish_immediate_expensing_limit_prorated",
         "ca/fish_immediate_expensing_limit",
+        "ca/fish_immediate_expensing_limit_unprorated",
         "ca/fish_immediate_expensing_claim",
+        "ca/rental_immediate_expensing_claims_total",
+        "ca/business_immediate_expensing_claims_total",
+        "ca/farm_immediate_expensing_claims_total",
+        "ca/fish_immediate_expensing_claims_total",
+        "ca/immediate_expensing_claims_total",
+        "ca/immediate_expensing_agreed_limit",
+        "ca/immediate_expensing_total_claim",
         "ca/fish_income_before_cca",
         "ca/fish_fiscal_period_days_entered",
         "ca/fish_fiscal_period_days",
@@ -1538,6 +1548,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rental_immediate_expensing_limit_before_minister",
         "ca/rental_immediate_expensing_limit_prorated",
         "ca/rental_immediate_expensing_limit",
+        "ca/rental_immediate_expensing_limit_unprorated",
         "ca/rental_immediate_expensing_claim",
         "ca/rental_fiscal_period_days_entered",
         "ca/rental_fiscal_period_days",
@@ -2576,7 +2587,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1104
+        == 1111
     )
     assert (
         len(
@@ -2584,7 +2595,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1104
+        == 1111
     )
 
 
@@ -2597,7 +2608,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1104
+        == 1111
     )
     assert (
         len(
@@ -2605,7 +2616,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1104
+        == 1111
     )
 
 

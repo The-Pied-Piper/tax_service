@@ -176,13 +176,14 @@ def test_the_return_declares_no_output_for_the_exports_nothing_reads() -> None:
             "ca/business_closing_ucc",
             "ca/business_home_carry_forward",
             "ca/business_immediate_expensing_claim",
+            "ca/business_immediate_expensing_limit_unprorated",
         }
         & exports
     )
     assert not {export for export in exports if "." in export}
 
 
-def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_four_kinds() -> None:
+def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_five_kinds() -> None:
     found = composed()
 
     assert found.instances == T2125_STATEMENTS
@@ -192,6 +193,7 @@ def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_four_kinds
         t2125.BUSINESS_CLOSING_UCC_PER_STATEMENT,
         t2125.BUSINESS_HOME_CARRY_FORWARD_PER_STATEMENT,
         t2125.BUSINESS_IMMEDIATE_EXPENSING_CLAIM_PER_STATEMENT,
+        t2125.BUSINESS_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED_PER_STATEMENT,
     )
 
 

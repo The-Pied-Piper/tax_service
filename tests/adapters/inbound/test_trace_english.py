@@ -106,6 +106,7 @@ from app.jurisdictions.ca.trace import (
     ForeignBusinessLine10,
     ForeignBusinessLine11,
     ForeignTaxCreditLine,
+    ImmediateExpensingAgreedLimitLine,
     ImmediateExpensingLine,
     NetCapitalLossesRowLine,
     OtherDependantMedicalLine,
@@ -4742,6 +4743,67 @@ def test_renders_a_column_8_of_0_when_column_6_is_above_column_4() -> None:
     assert render(line) == (
         "immediate_expensing_claim: item 1 class 8: column 4 1000 less column 6 1500, "
         "column 7 1500: column 8 0, column 9 0"
+    )
+
+
+# Area A endnote 5 of Forms T776, T2125, T2042 and T2121 limits the total of column 9 to the
+# immediate expensing limit; Guides T4002 and T4036: "The deduction is limited to $1.5 million per
+# tax year". `ImmediateExpensingAgreedLimitLine` says the statements compared (those claiming
+# above 0: the limit list's kind, the position from 1, the claim and the limit) and the agreed
+# limit, which is its amount.
+AGREED_LIMIT = ArtifactKind("ex/immediate_expensing_agreed_limit", Decimal)
+RENTAL_LIMITS = RecordListKind("ex/rental_limits", fields=(CCA_UCC_AT_END,))
+BUSINESS_LIMITS = RecordListKind("ex/business_limits", fields=(CCA_UCC_AT_END,))
+
+
+def test_the_immediate_expensing_agreed_limit_line_fields_in_order() -> None:
+    assert [f.name for f in fields(ImmediateExpensingAgreedLimitLine)] == [
+        "output",
+        "statements",
+        "limit",
+    ]
+
+
+def test_the_immediate_expensing_agreed_limit_line_amount_is_the_limit() -> None:
+    line = ImmediateExpensingAgreedLimitLine(AGREED_LIMIT, (), D("1500000"))
+
+    assert line.amount == D("1500000")
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_renders_the_statements_compared_and_the_agreed_limit() -> None:
+    line = ImmediateExpensingAgreedLimitLine(
+        AGREED_LIMIT,
+        (
+            (RENTAL_LIMITS, 1, D("600000.00"), D("1500000.00")),
+            (BUSINESS_LIMITS, 2, D("500000"), D("1500000")),
+        ),
+        D("1500000.00"),
+    )
+
+    assert render(line) == (
+        "immediate_expensing_agreed_limit: ex/rental_limits statement 1 claims 600000 under "
+        "1500000, ex/business_limits statement 2 claims 500000 under 1500000: "
+        "agreed limit 1500000"
+    )
+
+
+def test_renders_one_statement_compared() -> None:
+    line = ImmediateExpensingAgreedLimitLine(
+        AGREED_LIMIT, ((BUSINESS_LIMITS, 1, D("500000"), D("900000")),), D("900000")
+    )
+
+    assert render(line) == (
+        "immediate_expensing_agreed_limit: ex/business_limits statement 1 claims 500000 under "
+        "900000: agreed limit 900000"
+    )
+
+
+def test_renders_no_statement_claiming_as_a_limit_of_zero() -> None:
+    line = ImmediateExpensingAgreedLimitLine(AGREED_LIMIT, (), D("0"))
+
+    assert render(line) == (
+        "immediate_expensing_agreed_limit: no statement claims immediate expensing: agreed limit 0"
     )
 
 
