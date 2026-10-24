@@ -1,4 +1,4 @@
-"""CA-ON 2025 end to end: return cw."""
+"""CA-ON 2025 end to end: return da."""
 
 from __future__ import annotations
 

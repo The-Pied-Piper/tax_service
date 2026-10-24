@@ -1,6 +1,6 @@
 """The 2025 dataset `ca/cca_vehicle_prescribed_amounts`, the prescribed amounts of a Class 10.1
 passenger vehicle, checked against CRA's guide. The capability `ca/cca_vehicle_proceeds` that
-reads it has its own tests; Return CV (`returns/2025_return_cv.yaml`) works it end to end.
+reads it has its own tests; Return CZ (`returns/2025_return_cz.yaml`) works it end to end.
 
 Guide T4002 (Self-employed Business, Professional, Commission, Farming, and Fishing Income, 2025
 edition, docs/cra-forms-2025/t4002-25e.pdf, confirmed from the PDF), "Class 10.1 (30%)": "The

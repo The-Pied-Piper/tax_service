@@ -182,7 +182,7 @@ def trace_line(
     )
 
 
-# Return CV's vehicle (see returns/2025_return_cv.yaml): a Class 10.1 passenger vehicle bought in
+# Return CZ's vehicle (see returns/2025_return_cz.yaml): a Class 10.1 passenger vehicle bought in
 # 2025 for 50,000 plus the 13% HST (56,500.00) and sold for 40,000, all of it a DIEP's: the
 # prescribed amount with tax is 38,000 + 4,940 = 42,940 and the factor 42,940 / 56,500 = 0.76, so
 # the proceeds become 40,000 x 0.76 = 30,400.00.

@@ -242,7 +242,7 @@ def test_a_cost_a_cent_over_the_prescribed_amount_with_tax_is_adjusted() -> None
 
 
 def test_a_cost_over_the_prescribed_amount_scales_the_proceeds_by_the_proportion() -> None:
-    # Return CV's vehicle: 42,940 / 56,500 = 0.76, so 40,000 becomes 30,400.00.
+    # Return CZ's vehicle: 42,940 / 56,500 = 0.76, so 40,000 becomes 30,400.00.
     assert proceeds(only(2025, "56500.00", "40000", "40000")) == [(D("30400.00"), D("30400.00"))]
 
 
