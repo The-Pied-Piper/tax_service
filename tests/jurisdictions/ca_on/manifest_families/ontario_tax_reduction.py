@@ -12,6 +12,10 @@ from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.catalog import (
+    AMT_FOREIGN_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+    AMT_PART_5_LINE_11_IS_POSITIVE,
+    AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     FOREIGN_TAX_CREDIT_NET_INCOME,
     FOREIGN_TAX_CREDIT_SHEETS,
     NET_INCOME,
@@ -295,14 +299,31 @@ STEPS = {
     # credit", for each sheet of Form T2209 (a separate form for each country when "the total of
     # the non-business income taxes that you paid to all foreign countries was more than $200"):
     # "Enter the total from line 5 (for each country if applicable)" on ON428 line 82, before the
-    # limit below.
+    # limit below. Line 2 note (1), when "you have to pay minimum tax" (Form T691 Part 5 line 11
+    # positive) and "you were a resident of Ontario at the end of the year": "If the total
+    # non-business income taxes you paid to all foreign countries is $200 or less", line 1 of
+    # this form divided by "the sum of line 1 of this form and the amount on line 8 of Part 4 of
+    # Form T691", times "the special foreign tax credit on line 11 of Part 4 of Form T691"; "If
+    # the total non-business income taxes you paid to all foreign countries is more than $200",
+    # for each country line 1 of that country divided by "the total foreign taxes paid for 2025
+    # (to get this total, add the amount on line 7 of Part 4 of Form T691, Alternative Minimum
+    # Tax, divided by 66.6666% and the amount on line 8 of Part 4 of Form T691)", times the same
+    # line 11.
     CapabilitySelection(
         name="ca-on/provincial_foreign_tax_credit",
-        params={"rounding": "ca-on/provincial_foreign_tax_credit_rounding"},
+        params={
+            "rounding": "ca-on/provincial_foreign_tax_credit_rounding",
+            "threshold": "ca-on/provincial_foreign_tax_credit_separate_sheet_threshold",
+            "rate": "ca/amt_special_foreign_tax_credit_rate",
+        },
         consumes={
+            "minimum_tax_applies": "ca/amt_part_5_line_11_is_positive",
             "sheets": "ca/foreign_tax_credit_sheets",
             "net_income": "ca/foreign_tax_credit_net_income",
             "provincial_tax": "ca-on/tax_otherwise_payable",
+            "non_business_tax_paid": "ca/amt_foreign_non_business_tax_two_thirds",
+            "business_tax_paid": "ca/amt_foreign_business_tax_paid",
+            "special_foreign_tax_credit": "ca/amt_special_foreign_tax_credit",
         },
         produces={"total": "ca-on/provincial_foreign_tax_credit_before_limit"},
     ),
@@ -453,7 +474,15 @@ WIRING = {
     (
         ProvincialForeignTaxCredit,
         frozenset(
-            {FOREIGN_TAX_CREDIT_SHEETS, FOREIGN_TAX_CREDIT_NET_INCOME, TAX_OTHERWISE_PAYABLE}
+            {
+                AMT_PART_5_LINE_11_IS_POSITIVE,
+                FOREIGN_TAX_CREDIT_SHEETS,
+                FOREIGN_TAX_CREDIT_NET_INCOME,
+                TAX_OTHERWISE_PAYABLE,
+                AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
+                AMT_FOREIGN_BUSINESS_TAX_PAID,
+                AMT_SPECIAL_FOREIGN_TAX_CREDIT,
+            }
         ),
         frozenset({PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT}),
     ),

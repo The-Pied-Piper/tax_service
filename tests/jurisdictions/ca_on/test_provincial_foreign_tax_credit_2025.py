@@ -32,6 +32,7 @@ import pytest
 import app.registrations
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact, ArtifactKind
+from app.domain.parameters.amount import AMOUNT
 from app.domain.parameters.conditions import (
     CONDITIONS,
     Condition,
@@ -39,6 +40,7 @@ from app.domain.parameters.conditions import (
     ConditionPart,
     ConditionTest,
 )
+from app.domain.parameters.rate import RATE
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.record_list import RecordList
@@ -62,6 +64,8 @@ D = Decimal
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 ROUNDING = "ca-on/provincial_foreign_tax_credit_rounding"
+THRESHOLD = "ca-on/provincial_foreign_tax_credit_separate_sheet_threshold"
+RATE_FAMILY = "ca/amt_special_foreign_tax_credit_rate"
 CONDITIONS_WITHOUT_LINE_72 = "ca-on/tax_reduction_conditions_without_line_72"
 LINE_80_CONDITIONS = "ca-on/tax_reduction_conditions"
 T2036_PDF = "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2036/t2036-25e.pdf"
@@ -71,6 +75,10 @@ ON428_TEXT = "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/500
 NET_INCOME = ArtifactKind("ex/net_income", Decimal)
 PROVINCIAL_TAX = ArtifactKind("ex/provincial_tax", Decimal, non_negative=True)
 CREDIT = ArtifactKind("ex/provincial_credit", Decimal, non_negative=True)
+MINIMUM_TAX = ArtifactKind("ex/minimum_tax_applies", int, non_negative=True)
+LINE_7 = ArtifactKind("ex/non_business_tax_two_thirds", Decimal, non_negative=True)
+LINE_8 = ArtifactKind("ex/business_tax_paid", Decimal, non_negative=True)
+LINE_11 = ArtifactKind("ex/special_foreign_tax_credit", Decimal, non_negative=True)
 NOT_RESIDENT_CANADA = ArtifactKind("ex/not_resident_of_canada", int)
 NOT_RESIDENT_ONTARIO = ArtifactKind("ex/not_resident_of_ontario", int)
 BANKRUPT = ArtifactKind("ex/bankrupt", int)
@@ -132,11 +140,17 @@ def test_the_rounding_header_states_the_half_up_cent_rule() -> None:
 
 def test_the_rounding_dataset_runs_through_the_capability() -> None:
     capability = ProvincialForeignTaxCredit(
-        SOURCE.get(ROUNDING, 2025, ROUNDING_ONLY),
-        FOREIGN_TAX_CREDIT_SHEETS,
-        NET_INCOME,
-        PROVINCIAL_TAX,
-        CREDIT,
+        rounding=SOURCE.get(ROUNDING, 2025, ROUNDING_ONLY),
+        threshold=SOURCE.get(THRESHOLD, 2025, AMOUNT),
+        rate=SOURCE.get(RATE_FAMILY, 2025, RATE),
+        minimum_tax_applies=MINIMUM_TAX,
+        sheets=FOREIGN_TAX_CREDIT_SHEETS,
+        net_income=NET_INCOME,
+        provincial_tax=PROVINCIAL_TAX,
+        non_business_tax_paid=LINE_7,
+        business_tax_paid=LINE_8,
+        special_foreign_tax_credit=LINE_11,
+        total=CREDIT,
     )
     records: list[dict[ArtifactKind[Any], object]] = [
         {
@@ -166,6 +180,10 @@ def test_the_rounding_dataset_runs_through_the_capability() -> None:
             ),
             Artifact(NET_INCOME, D("300")),
             Artifact(PROVINCIAL_TAX, D("100")),
+            Artifact(MINIMUM_TAX, 0),
+            Artifact(LINE_7, D("0")),
+            Artifact(LINE_8, D("0")),
+            Artifact(LINE_11, D("0")),
         )
     ).outputs
 

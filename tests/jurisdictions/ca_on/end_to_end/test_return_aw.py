@@ -1075,7 +1075,11 @@ def test_line_72_and_the_tax_reduction_conditions_do_not_enter_the_tax_otherwise
     # 48.62) = 48.62, which is less than 385.60, so line 82 is 48.62 and line 83 = 2299.81 - 48.62
     # = 2251.19. The LIFT credit is 875 (5.05% x 24000 = 1212.00, at most 875, no reduction), so
     # line 86 is 2251.19 - 875 = 1376.19 and the Ontario tax is that plus the health premium,
-    # 6% x (23795.00 - 20000) = 227.70: 1603.89.
+    # 6% x (23795.00 - 20000) = 227.70: 1603.89. As Part 5 line 11 is positive, T2036 line 2 is the
+    # special foreign tax credit share: with the 500 on T691 Part 4 line 7 (and no foreign income
+    # on its line 2, so line 10 is 0) line 11 is the greater of 87.51 and 0, 87.51; the total
+    # foreign tax, 500, is more than $200, so line 2 = 500 / (333.33 / 66.6666% + 0) x 87.51 =
+    # 87.5107..., half-up 87.51, the same as the T2209 line 2 above.
     worksheet = compute(
         "24000",
         (),
@@ -1086,6 +1090,7 @@ def test_line_72_and_the_tax_reduction_conditions_do_not_enter_the_tax_otherwise
         "0",
         foreign_tax_countries_rows=(("500", "3000"),),
         amt_t4_security_options_boxes_39_and_91="200000",
+        amt_foreign_non_business_tax_paid="500",
     )
 
     assert worksheet.get(NET_INCOME).value == D("23795.00")

@@ -3070,11 +3070,58 @@ def test_provincial_foreign_tax_credit_line_fields_in_order() -> None:
         "rounding",
         "line_4",
         "result",
+        "special_credit",
+        "divisor",
+        "separate_sheet",
     ]
     assert line.output is NON_COMPLIANT
     assert line.position == 2
     assert type(line.position) is int
     assert line.rounding == CENT
+    # Line 2 is the sheet's T2209 line 3 unless minimum tax is payable: the three fields default.
+    assert line.special_credit is None
+    assert line.divisor is None
+    assert line.separate_sheet is False
+
+
+def provincial_foreign_tax_credit_minimum_tax_line() -> ProvincialForeignTaxCreditLine:
+    return ProvincialForeignTaxCreditLine(
+        NON_COMPLIANT,
+        2,
+        D("300"),
+        D("187.50"),
+        D("112.50"),
+        D("10000"),
+        D("100000"),
+        D("5000"),
+        CENT,
+        D("500.00"),
+        D("112.50"),
+        D("250"),
+        ExactFraction(1000),
+        True,
+    )
+
+
+def test_provincial_foreign_tax_credit_line_minimum_tax_fields() -> None:
+    line = provincial_foreign_tax_credit_minimum_tax_line()
+
+    assert line.special_credit == D("250")
+    assert line.divisor == ExactFraction(1000)
+    assert line.separate_sheet is True
+    assert line.federal_credit == D("187.50")
+    assert line.amount == D("112.50")
+
+
+def test_provincial_foreign_tax_credit_minimum_tax_lines_differ_by_each_new_field() -> None:
+    line = provincial_foreign_tax_credit_minimum_tax_line()
+
+    assert line != replace(line, special_credit=D("251"))
+    assert line != replace(line, special_credit=None)
+    assert line != replace(line, divisor=ExactFraction(1001))
+    assert line != replace(line, divisor=None)
+    assert line != replace(line, separate_sheet=False)
+    assert hash(line) == hash(provincial_foreign_tax_credit_minimum_tax_line())
 
 
 def test_provincial_foreign_tax_credit_line_amount_is_the_result() -> None:
