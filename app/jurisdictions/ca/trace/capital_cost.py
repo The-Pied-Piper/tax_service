@@ -22,6 +22,7 @@ __all__ = [
     "ClosingUccLine",
     "ImmediateExpensingLine",
     "FiscalPeriodDaysLine",
+    "ProratedByDaysLine",
 ]
 
 
@@ -213,3 +214,25 @@ class FiscalPeriodDaysLine(TraceLine):
     def amount(self) -> Decimal:
         """The days of the fiscal period."""
         return Decimal(self.fiscal_period_days)
+
+
+@dataclass(frozen=True)
+class ProratedByDaysLine(TraceLine):
+    """The amount `result` produced as `output`: `amount_kind` (worth `amount_value`) times
+    `days_kind` (worth `fiscal_period_days`) over `full_year_days`, rounded once. Guide T4002 and
+    Guide T4036, "Immediate expensing incentive": "The limit is also prorated for tax years shorter
+    than 365 days". `fiscal_period_days` of `full_year_days` is no proration.
+    """
+
+    output: ArtifactKind[Decimal]
+    amount_kind: ArtifactKind[Decimal]
+    amount_value: Decimal
+    days_kind: ArtifactKind[int]
+    fiscal_period_days: int
+    full_year_days: int
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The prorated amount."""
+        return self.result
