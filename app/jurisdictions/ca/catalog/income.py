@@ -26,6 +26,9 @@ from app.jurisdictions.ca.catalog.personal_amounts import (
     CCA_RIIP_ADDITIONS,
     CCA_UCC_AT_END,
     CCA_UCC_AT_START,
+    CCA_VEHICLE_ACQUIRED_YEAR,
+    CCA_VEHICLE_COST,
+    CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
 )
 
 EMPLOYMENT_INCOME = CATALOG.declare("employment_income", Decimal, non_negative=True)
@@ -1855,6 +1858,9 @@ BUSINESS_CCA_CLASSES = RecordListKind.declare(
         CCA_PERSONAL_PART_REMAINING,
         CCA_HALF_YEAR_RULE_DIFFERS,
         CCA_RATE_ELECTION,
+        CCA_VEHICLE_ACQUIRED_YEAR,
+        CCA_VEHICLE_COST,
+        CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
     ),
 )
 """Business classes, Form T2125 Area A "Calculation of capital cost allowance (CCA) claim": a
@@ -1864,7 +1870,25 @@ proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of th
 CCA claimed), whether any property is left in the class, the remaining personal part of a
 property used for both personal and business use (endnote 9), whether the additions are treated the
 opposite way from their class for the half-year rule (column 18), and the CCA rate the
-caller elects for it (a purpose-built rental or a building in a separate class), last."""
+caller elects for it (a purpose-built rental or a building in a separate class), then the year the
+vehicle was acquired, its actual cost and the government assistance for it (endnote 2), last."""
+
+BUSINESS_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
+    CATALOG,
+    "business_cca_classes_adjusted",
+    fields=tuple(
+        field
+        for field in BUSINESS_CCA_CLASSES.fields
+        if field
+        not in (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE)
+    ),
+)
+"""Business classes with the proceeds adjusted, Form T2125 Area A endnote 2: "The proceeds of
+disposition of [...] a passenger vehicle bought after April 18, 2021, that has been included in
+Class 10.1, and whose cost is more than the prescribed amount will be adjusted based on a factor
+equal to its prescribed amount as a proportion of the actual cost of the vehicle". The list of
+business classes without the year the vehicle was acquired, its cost and the government
+assistance, with columns 5 and 6 (the proceeds and the proceeds of DIEPs) adjusted."""
 
 BUSINESS_EPOP_ASSOCIATED = CATALOG.declare("business_epop_associated", int, non_negative=True)
 """Whether the filer is associated with an EPOP, Form T2125 Area A endnote 5 "$1.5 million, if you

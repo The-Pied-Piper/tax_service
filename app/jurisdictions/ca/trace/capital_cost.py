@@ -19,6 +19,7 @@ __all__ = [
     "CcaClaimLine",
     "RecapturedCcaLine",
     "TerminalLossLine",
+    "CcaVehicleProceedsLine",
     "ClosingUccLine",
     "ImmediateExpensingLine",
     "FiscalPeriodDaysLine",
@@ -135,6 +136,37 @@ class TerminalLossLine(TraceLine):
     def amount(self) -> Decimal:
         """The class's terminal loss."""
         return self.result
+
+
+@dataclass(frozen=True)
+class CcaVehicleProceedsLine(TraceLine):
+    """The proceeds of one class's vehicle, by `position` (from 1), a record of the list `output`:
+    when `applied`, the `proceeds` (column 5) and the `diep_proceeds` (column 6) become the
+    `adjusted_proceeds` and the `adjusted_diep_proceeds`, scaled by the `prescribed_amount` (with
+    tax) as a proportion of the `actual_cost` of the vehicle (its cost less the government
+    assistance), because the cost is more than the prescribed amount (T2125 Area A endnote 2).
+    When not `applied`, the adjusted figures are the ones entered: the row has no vehicle year, or
+    its actual cost is not more than the prescribed amount. The `prescribed_amount` and the
+    `actual_cost` are 0 for a row with no vehicle year.
+
+    Its own class, not a `RecordTotalLine`: each class gives a record of a list, not a part of a
+    total.
+    """
+
+    output: ArtifactKind[RecordList]
+    position: int
+    applied: bool
+    prescribed_amount: Decimal
+    actual_cost: Decimal
+    proceeds: Decimal
+    adjusted_proceeds: Decimal
+    diep_proceeds: Decimal
+    adjusted_diep_proceeds: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The class's proceeds after the adjustment."""
+        return self.adjusted_proceeds
 
 
 @dataclass(frozen=True)

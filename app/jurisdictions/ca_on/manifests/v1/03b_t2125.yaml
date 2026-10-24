@@ -46,6 +46,20 @@ capabilities:
         - ca/business_quick_method_assistance
     produces:
       output: ca/business_adjusted_gross_sales
+  # T2125 Area A endnote 2 "The proceeds of disposition of a zero-emission passenger vehicle
+  # (ZEPV) that has been included in Class 54, or a passenger vehicle bought after April 18,
+  # 2021, that has been included in Class 10.1, and whose cost is more than the prescribed
+  # amount will be adjusted based on a factor equal to its prescribed amount as a proportion of
+  # the actual cost of the vehicle.": the Area A list with columns 5 and 6 of each such row
+  # scaled, which the steps below read in place of the caller's list.
+  - name: ca/cca_vehicle_proceeds
+    params:
+      prescribed_amounts: ca/cca_vehicle_prescribed_amounts
+    consumes:
+      classes: ca/business_cca_classes
+      sales_tax_rate: ca/business_vehicle_sales_tax_rate
+    produces:
+      output: ca/business_cca_classes_adjusted
   # T2125 Area A endnote 3 "If you have a negative amount in column 7, add it to income as
   # a recapture in Part 3C on line 8230. ... Recapture and terminal loss do not apply to a
   # Class 10.1 property unless it is a DIEP.": the recapture of each class of the Area A
@@ -54,7 +68,7 @@ capabilities:
     params:
       class_rates: ca/cca_class_rates
     consumes:
-      classes: ca/business_cca_classes
+      classes: ca/business_cca_classes_adjusted
     produces:
       output: ca/business_recaptured_cca
   # T2125 Part 3C line 8230 "Other income (specify):", which takes the recapture of Area A
@@ -154,7 +168,7 @@ capabilities:
     params:
       class_rates: ca/cca_class_rates
     consumes:
-      classes: ca/business_cca_classes
+      classes: ca/business_cca_classes_adjusted
       fiscal_period_days: ca/business_fiscal_period_days
     produces:
       output: ca/business_cca_table_claim
@@ -185,7 +199,7 @@ capabilities:
     params:
       class_rates: ca/cca_class_rates
     consumes:
-      classes: ca/business_cca_classes
+      classes: ca/business_cca_classes_adjusted
     produces:
       output: ca/business_terminal_loss
   # T2125 Part 4 "Other expenses (specify): 9270 4V", which takes the terminal loss of
@@ -205,7 +219,7 @@ capabilities:
     params:
       class_rates: ca/cca_class_rates
     consumes:
-      classes: ca/business_cca_classes
+      classes: ca/business_cca_classes_adjusted
       fiscal_period_days: ca/business_fiscal_period_days
     produces:
       output: ca/business_closing_ucc
@@ -319,7 +333,7 @@ capabilities:
     params:
       class_rates: ca/cca_class_rates
     consumes:
-      classes: ca/business_cca_classes
+      classes: ca/business_cca_classes_adjusted
       immediate_expensing_limit: ca/business_immediate_expensing_limit
       income_before_cca: ca/business_income_before_cca
     produces:
