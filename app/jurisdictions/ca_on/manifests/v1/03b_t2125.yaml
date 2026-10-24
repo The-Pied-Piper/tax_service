@@ -228,6 +228,16 @@ capabilities:
       amount: ca/business_epop_percentage_maximum
     produces:
       output: ca/business_epop_percentage_maximum
+  # T2125 Area G "Total of percentage assigned: Total of column 3": the form is silent on a
+  # percentage above the total of column 3, so the filer's own percentage is refused above it, not
+  # capped. That refusal is a choice, not a form rule. The checked percentage
+  # is the one the next step applies.
+  - name: core/at_most
+    consumes:
+      amount: ca/business_epop_percentage
+      bound: ca/business_epop_percentage_total
+    produces:
+      output: ca/business_epop_percentage_checked
   # T2125 Area G "Immediate expensing limit allocated to your business: Multiply $1.5 million by
   # the percentage assigned to your business in column 3**", first step: $1.5 million times the
   # percentage assigned to your business in column 3, a caller input as the form prints it (40
@@ -237,7 +247,7 @@ capabilities:
       rounding: ca/business_immediate_expensing_rounding
     consumes:
       amount: ca/business_immediate_expensing_cap
-      percentage: ca/business_epop_percentage
+      percentage: ca/business_epop_percentage_checked
     produces:
       output: ca/business_immediate_expensing_share
   # T2125 Area G "** If the total of column 3 is more than 100%, enter "0."", first step: 100%
@@ -264,6 +274,31 @@ capabilities:
         - ca/business_immediate_expensing_share
     produces:
       output: ca/business_immediate_expensing_allocated
+  # T2125 Area A endnote 5 "$1.5 million, if you are not associated with any other eligible person
+  # or partnership (EPOP) in the tax year": the answer to a yes or no question, a count of 1 or 0,
+  # checked before the step that reads it. A count of 2 or more is refused, not capped.
+  - name: ca/yes_or_no_count
+    consumes:
+      count: ca/business_epop_associated
+    produces:
+      output: ca/business_epop_associated_checked
+  # T2125 Area A endnote 5 "zero, if you are associated with one or more EPOPs and an agreement that
+  # assigns a percentage to one or more of the associated EPOPs was not filed with the minister in a
+  # prescribed form": the answer to a yes or no question, a count of 1 or 0, checked before the step
+  # that reads it. A count of 2 or more is refused, not capped.
+  - name: ca/yes_or_no_count
+    consumes:
+      count: ca/business_epop_agreement_filed
+    produces:
+      output: ca/business_epop_agreement_filed_checked
+  # T2125 Area A endnote 5 "any amount allocated by the minister under subsection 1104(3.4) of the
+  # Regulations": the answer to a yes or no question, a count of 1 or 0, checked before the step
+  # that reads it. A count of 2 or more is refused, not capped.
+  - name: ca/yes_or_no_count
+    consumes:
+      count: ca/business_minister_allocation_given
+    produces:
+      output: ca/business_minister_allocation_given_checked
   # T2125 Area A endnote 5 "amount iii of Area G, if you are associated with one or more EPOPs
   # in the tax year" and "zero, if you are associated with one or more EPOPs and an agreement
   # that assigns a percentage to one or more of the associated EPOPs was not filed with the
@@ -272,7 +307,7 @@ capabilities:
   - name: core/times_count
     consumes:
       amount: ca/business_immediate_expensing_allocated
-      count: ca/business_epop_agreement_filed
+      count: ca/business_epop_agreement_filed_checked
     produces:
       output: ca/business_immediate_expensing_associated_limit
   # T2125 Area A endnote 5 "the immediate expensing limit, which is equal to one of the
@@ -282,7 +317,7 @@ capabilities:
   # partnership (EPOP) in the tax year").
   - name: core/choose_by_count
     consumes:
-      count: ca/business_epop_associated
+      count: ca/business_epop_associated_checked
       when_none: ca/business_immediate_expensing_cap
       when_any: ca/business_immediate_expensing_associated_limit
     produces:
@@ -292,7 +327,7 @@ capabilities:
   # minister, as entered, in place of the limit above; with a count of 0 the limit above stands.
   - name: core/choose_by_count
     consumes:
-      count: ca/business_minister_allocation_given
+      count: ca/business_minister_allocation_given_checked
       when_none: ca/business_immediate_expensing_limit_before_minister
       when_any: ca/business_minister_allocation
     produces:

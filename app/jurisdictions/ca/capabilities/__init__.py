@@ -114,6 +114,7 @@ from app.jurisdictions.ca.capabilities import (  # noqa: E402
     sign_chosen_difference,
     terminal_loss,
     threshold_gate,
+    yes_or_no_count,
 )
 
 __all__ = [
@@ -224,4 +225,5 @@ __all__ = [
     "sign_chosen_difference",
     "terminal_loss",
     "threshold_gate",
+    "yes_or_no_count",
 ]

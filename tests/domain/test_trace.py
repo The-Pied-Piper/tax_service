@@ -82,6 +82,7 @@ from app.domain.trace import (
     ThresholdGateLine,
     TimesCountLine,
     TraceLine,
+    YesOrNoCountLine,
 )
 from app.jurisdictions.ca.trace import (
     ApprenticeWagesLine,
@@ -635,6 +636,10 @@ def count_at_least_line() -> CountAtLeastLine:
     return CountAtLeastLine(PERSONS, CHILDREN, 3, DEPENDANTS, 2)
 
 
+def yes_or_no_count_line() -> YesOrNoCountLine:
+    return YesOrNoCountLine(PERSONS, CHILDREN, 1)
+
+
 def ratio_truncated_line() -> RatioTruncatedLine:
     return RatioTruncatedLine(
         RATED_RATE,
@@ -725,6 +730,7 @@ ALL_LINES = [
     condition_line,
     conditions_count_line,
     count_at_least_line,
+    yes_or_no_count_line,
     ratio_truncated_line,
     positive_part_of_negation_line,
     lesser_of_when_positive_line,
@@ -5379,6 +5385,34 @@ def test_count_at_least_lines_are_hashable() -> None:
 
 def test_a_count_at_least_line_is_not_an_at_most_line() -> None:
     assert not isinstance(count_at_least_line(), AtMostLine)
+
+
+# --- yes or no count (`ca/yes_or_no_count`): one line, the count and the kind it was checked as ---
+
+
+def test_yes_or_no_count_line_fields_in_order() -> None:
+    line = yes_or_no_count_line()
+
+    assert line == YesOrNoCountLine(output=PERSONS, count_kind=CHILDREN, count=1)
+    assert [f.name for f in fields(line)] == ["output", "count_kind", "count"]
+    assert line.output is PERSONS
+    assert line.count_kind is CHILDREN
+    assert line.count == 1
+    assert line.amount == D(1)
+
+
+def test_yes_or_no_count_lines_differ_by_count() -> None:
+    assert yes_or_no_count_line() != YesOrNoCountLine(PERSONS, CHILDREN, 0)
+    assert yes_or_no_count_line() == YesOrNoCountLine(PERSONS, CHILDREN, 1)
+
+
+def test_yes_or_no_count_lines_are_hashable() -> None:
+    assert hash(yes_or_no_count_line()) == hash(yes_or_no_count_line())
+
+
+def test_a_yes_or_no_count_line_is_not_a_count_at_least_line() -> None:
+    assert not isinstance(yes_or_no_count_line(), CountAtLeastLine)
+    assert not isinstance(yes_or_no_count_line(), AtMostLine)
 
 
 def test_ratio_truncated_line_fields_in_order() -> None:

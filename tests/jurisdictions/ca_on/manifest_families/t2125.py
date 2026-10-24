@@ -1,6 +1,6 @@
 """The CA-ON manifest entries of Form T2125 (see `test_manifest.py` and `test_manifest_t2125.py`).
 
-T2125 is a form of the manifest: its 45 selections belong to the form `ca/t2125` (`FORM_STEPS`),
+T2125 is a form of the manifest: its 49 selections belong to the form `ca/t2125` (`FORM_STEPS`),
 run once for each statement of `ca/t2125_statements`, whose fields are the T2125 inputs
 (`FORM_INPUTS`). The form exports four artifacts, each readable by the other forms as
 `ca/t2125.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the three
@@ -12,6 +12,7 @@ vehicles, with the printed constants of Charts B and C as its datasets.
 
 from __future__ import annotations
 
+from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.lesser_of import LesserOf
@@ -32,6 +33,7 @@ from app.jurisdictions.ca.capabilities.fiscal_period_days import FiscalPeriodDay
 from app.jurisdictions.ca.capabilities.immediate_expensing_claim import ImmediateExpensingClaim
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
+from app.jurisdictions.ca.capabilities.yes_or_no_count import YesOrNoCount
 from app.jurisdictions.ca.catalog import (
     BUSINESS_ADJUSTED_GROSS_SALES,
     BUSINESS_ADVERTISING,
@@ -49,8 +51,11 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,
     BUSINESS_DIRECT_WAGE_COSTS,
     BUSINESS_EPOP_AGREEMENT_FILED,
+    BUSINESS_EPOP_AGREEMENT_FILED_CHECKED,
     BUSINESS_EPOP_ASSOCIATED,
+    BUSINESS_EPOP_ASSOCIATED_CHECKED,
     BUSINESS_EPOP_PERCENTAGE,
+    BUSINESS_EPOP_PERCENTAGE_CHECKED,
     BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
     BUSINESS_EPOP_PERCENTAGE_ROOM,
     BUSINESS_EPOP_PERCENTAGE_TOTAL,
@@ -95,6 +100,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_MEALS_AND_ENTERTAINMENT,
     BUSINESS_MINISTER_ALLOCATION,
     BUSINESS_MINISTER_ALLOCATION_GIVEN,
+    BUSINESS_MINISTER_ALLOCATION_GIVEN_CHECKED,
     BUSINESS_MOTOR_VEHICLE_EXPENSES,
     BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
     BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -494,7 +500,7 @@ FORM_STEPS = {
         params={"rounding": "ca/business_immediate_expensing_rounding"},
         consumes={
             "amount": "ca/business_immediate_expensing_cap",
-            "percentage": "ca/business_epop_percentage",
+            "percentage": "ca/business_epop_percentage_checked",
         },
         produces={"output": "ca/business_immediate_expensing_share"},
     ),
@@ -537,7 +543,7 @@ FORM_STEPS = {
         params={},
         consumes={
             "amount": "ca/business_immediate_expensing_allocated",
-            "count": "ca/business_epop_agreement_filed",
+            "count": "ca/business_epop_agreement_filed_checked",
         },
         produces={"output": "ca/business_immediate_expensing_associated_limit"},
     ),
@@ -550,7 +556,7 @@ FORM_STEPS = {
         name="core/choose_by_count",
         params={},
         consumes={
-            "count": "ca/business_epop_associated",
+            "count": "ca/business_epop_associated_checked",
             "when_none": "ca/business_immediate_expensing_cap",
             "when_any": "ca/business_immediate_expensing_associated_limit",
         },
@@ -563,7 +569,7 @@ FORM_STEPS = {
         name="core/choose_by_count",
         params={},
         consumes={
-            "count": "ca/business_minister_allocation_given",
+            "count": "ca/business_minister_allocation_given_checked",
             "when_none": "ca/business_immediate_expensing_limit_before_minister",
             "when_any": "ca/business_minister_allocation",
         },
@@ -838,6 +844,38 @@ FORM_STEPS = {
         },
         produces={"output": "ca/business_income"},
     ),
+    # Area A endnote 5 answers, taken as a count of 0 or 1: each is checked to be 0 or 1 before
+    # the step that reads it. A caller's 2 is refused, naming the kind.
+    CapabilitySelection(
+        name="ca/yes_or_no_count",
+        params={},
+        consumes={"count": "ca/business_epop_associated"},
+        produces={"output": "ca/business_epop_associated_checked"},
+    ),
+    CapabilitySelection(
+        name="ca/yes_or_no_count",
+        params={},
+        consumes={"count": "ca/business_epop_agreement_filed"},
+        produces={"output": "ca/business_epop_agreement_filed_checked"},
+    ),
+    CapabilitySelection(
+        name="ca/yes_or_no_count",
+        params={},
+        consumes={"count": "ca/business_minister_allocation_given"},
+        produces={"output": "ca/business_minister_allocation_given_checked"},
+    ),
+    # Area G "Total of percentage assigned: Total of column 3": the forms are silent on a
+    # percentage assigned to the business above that total. It is refused, not capped: a choice,
+    # not a form rule. The checked percentage is the one the next step applies.
+    CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={
+            "amount": "ca/business_epop_percentage",
+            "bound": "ca/business_epop_percentage_total",
+        },
+        produces={"output": "ca/business_epop_percentage_checked"},
+    ),
 }
 
 INPUTS = frozenset({"ca/t2125_statements"})
@@ -1044,7 +1082,7 @@ FORM_WIRING = {
     (CreditAmount, frozenset(), frozenset({BUSINESS_EPOP_PERCENTAGE_MAXIMUM})),
     (
         ApplyPercentage,
-        frozenset({BUSINESS_IMMEDIATE_EXPENSING_CAP, BUSINESS_EPOP_PERCENTAGE}),
+        frozenset({BUSINESS_IMMEDIATE_EXPENSING_CAP, BUSINESS_EPOP_PERCENTAGE_CHECKED}),
         frozenset({BUSINESS_IMMEDIATE_EXPENSING_SHARE}),
     ),
     (
@@ -1059,14 +1097,14 @@ FORM_WIRING = {
     ),
     (
         TimesCount,
-        frozenset({BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED, BUSINESS_EPOP_AGREEMENT_FILED}),
+        frozenset({BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED, BUSINESS_EPOP_AGREEMENT_FILED_CHECKED}),
         frozenset({BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT}),
     ),
     (
         ChooseByCount,
         frozenset(
             {
-                BUSINESS_EPOP_ASSOCIATED,
+                BUSINESS_EPOP_ASSOCIATED_CHECKED,
                 BUSINESS_IMMEDIATE_EXPENSING_CAP,
                 BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
             }
@@ -1077,7 +1115,7 @@ FORM_WIRING = {
         ChooseByCount,
         frozenset(
             {
-                BUSINESS_MINISTER_ALLOCATION_GIVEN,
+                BUSINESS_MINISTER_ALLOCATION_GIVEN_CHECKED,
                 BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
                 BUSINESS_MINISTER_ALLOCATION,
             }
@@ -1277,6 +1315,26 @@ FORM_WIRING = {
             }
         ),
         frozenset({BUSINESS_INCOME}),
+    ),
+    (
+        YesOrNoCount,
+        frozenset({BUSINESS_EPOP_ASSOCIATED}),
+        frozenset({BUSINESS_EPOP_ASSOCIATED_CHECKED}),
+    ),
+    (
+        YesOrNoCount,
+        frozenset({BUSINESS_EPOP_AGREEMENT_FILED}),
+        frozenset({BUSINESS_EPOP_AGREEMENT_FILED_CHECKED}),
+    ),
+    (
+        YesOrNoCount,
+        frozenset({BUSINESS_MINISTER_ALLOCATION_GIVEN}),
+        frozenset({BUSINESS_MINISTER_ALLOCATION_GIVEN_CHECKED}),
+    ),
+    (
+        AtMost,
+        frozenset({BUSINESS_EPOP_PERCENTAGE, BUSINESS_EPOP_PERCENTAGE_TOTAL}),
+        frozenset({BUSINESS_EPOP_PERCENTAGE_CHECKED}),
     ),
 }
 

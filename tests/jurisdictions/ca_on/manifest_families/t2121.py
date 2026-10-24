@@ -1,6 +1,6 @@
 """The CA-ON manifest entries of Form T2121 (see `test_manifest.py` and `test_manifest_t2121.py`).
 
-T2121 is a form of the manifest: its 40 selections belong to the form `ca/t2121` (`FORM_STEPS`),
+T2121 is a form of the manifest: its 44 selections belong to the form `ca/t2121` (`FORM_STEPS`),
 run once for each statement of `ca/t2121_statements`, whose fields are the T2121 inputs
 (`FORM_INPUTS`). The form exports four artifacts, each readable by the other forms as
 `ca/t2121.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the three
@@ -11,6 +11,7 @@ one step over the statement's vehicles, whose printed constants of Charts B and 
 
 from __future__ import annotations
 
+from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.lesser_of import LesserOf
@@ -31,6 +32,7 @@ from app.jurisdictions.ca.capabilities.fiscal_period_days import FiscalPeriodDay
 from app.jurisdictions.ca.capabilities.immediate_expensing_claim import ImmediateExpensingClaim
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
+from app.jurisdictions.ca.capabilities.yes_or_no_count import YesOrNoCount
 from app.jurisdictions.ca.catalog import (
     BUSINESS_VEHICLES,
     FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
@@ -43,8 +45,11 @@ from app.jurisdictions.ca.catalog import (
     FISH_COMPENSATION_FOR_LOSS,
     FISH_CREW_SHARES,
     FISH_EPOP_AGREEMENT_FILED,
+    FISH_EPOP_AGREEMENT_FILED_CHECKED,
     FISH_EPOP_ASSOCIATED,
+    FISH_EPOP_ASSOCIATED_CHECKED,
     FISH_EPOP_PERCENTAGE,
+    FISH_EPOP_PERCENTAGE_CHECKED,
     FISH_EPOP_PERCENTAGE_MAXIMUM,
     FISH_EPOP_PERCENTAGE_ROOM,
     FISH_EPOP_PERCENTAGE_TOTAL,
@@ -88,6 +93,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_MEALS_AND_ENTERTAINMENT,
     FISH_MINISTER_ALLOCATION,
     FISH_MINISTER_ALLOCATION_GIVEN,
+    FISH_MINISTER_ALLOCATION_GIVEN_CHECKED,
     FISH_MOTOR_VEHICLE_EXPENSES,
     FISH_NET_INCOME_AFTER_ADJUSTMENTS,
     FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -583,7 +589,7 @@ FORM_STEPS = {
         params={"rounding": "ca/fish_immediate_expensing_rounding"},
         consumes={
             "amount": "ca/fish_immediate_expensing_cap",
-            "percentage": "ca/fish_epop_percentage",
+            "percentage": "ca/fish_epop_percentage_checked",
         },
         produces={"output": "ca/fish_immediate_expensing_share"},
     ),
@@ -625,7 +631,7 @@ FORM_STEPS = {
         params={},
         consumes={
             "amount": "ca/fish_immediate_expensing_allocated",
-            "count": "ca/fish_epop_agreement_filed",
+            "count": "ca/fish_epop_agreement_filed_checked",
         },
         produces={"output": "ca/fish_immediate_expensing_associated_limit"},
     ),
@@ -638,7 +644,7 @@ FORM_STEPS = {
         name="core/choose_by_count",
         params={},
         consumes={
-            "count": "ca/fish_epop_associated",
+            "count": "ca/fish_epop_associated_checked",
             "when_none": "ca/fish_immediate_expensing_cap",
             "when_any": "ca/fish_immediate_expensing_associated_limit",
         },
@@ -652,7 +658,7 @@ FORM_STEPS = {
         name="core/choose_by_count",
         params={},
         consumes={
-            "count": "ca/fish_minister_allocation_given",
+            "count": "ca/fish_minister_allocation_given_checked",
             "when_none": "ca/fish_immediate_expensing_limit_before_minister",
             "when_any": "ca/fish_minister_allocation",
         },
@@ -690,6 +696,35 @@ FORM_STEPS = {
             "income_before_cca": "ca/fish_income_before_cca",
         },
         produces={"output": "ca/fish_immediate_expensing_claim"},
+    ),
+    # Area A endnote 5 answers, taken as a count of 0 or 1: each is checked to be 0 or 1 before
+    # the step that reads it. A caller's 2 is refused, naming the kind.
+    CapabilitySelection(
+        name="ca/yes_or_no_count",
+        params={},
+        consumes={"count": "ca/fish_epop_associated"},
+        produces={"output": "ca/fish_epop_associated_checked"},
+    ),
+    CapabilitySelection(
+        name="ca/yes_or_no_count",
+        params={},
+        consumes={"count": "ca/fish_epop_agreement_filed"},
+        produces={"output": "ca/fish_epop_agreement_filed_checked"},
+    ),
+    CapabilitySelection(
+        name="ca/yes_or_no_count",
+        params={},
+        consumes={"count": "ca/fish_minister_allocation_given"},
+        produces={"output": "ca/fish_minister_allocation_given_checked"},
+    ),
+    # Area G "Total of percentage assigned: Total of column 3": the forms are silent on a
+    # percentage assigned to the business above that total. It is refused, not capped: a choice,
+    # not a form rule. The checked percentage is the one the next step applies.
+    CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={"amount": "ca/fish_epop_percentage", "bound": "ca/fish_epop_percentage_total"},
+        produces={"output": "ca/fish_epop_percentage_checked"},
     ),
 }
 
@@ -896,7 +931,7 @@ FORM_WIRING = {
     (CreditAmount, frozenset(), frozenset({FISH_EPOP_PERCENTAGE_MAXIMUM})),
     (
         ApplyPercentage,
-        frozenset({FISH_IMMEDIATE_EXPENSING_CAP, FISH_EPOP_PERCENTAGE}),
+        frozenset({FISH_IMMEDIATE_EXPENSING_CAP, FISH_EPOP_PERCENTAGE_CHECKED}),
         frozenset({FISH_IMMEDIATE_EXPENSING_SHARE}),
     ),
     (
@@ -911,14 +946,14 @@ FORM_WIRING = {
     ),
     (
         TimesCount,
-        frozenset({FISH_IMMEDIATE_EXPENSING_ALLOCATED, FISH_EPOP_AGREEMENT_FILED}),
+        frozenset({FISH_IMMEDIATE_EXPENSING_ALLOCATED, FISH_EPOP_AGREEMENT_FILED_CHECKED}),
         frozenset({FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT}),
     ),
     (
         ChooseByCount,
         frozenset(
             {
-                FISH_EPOP_ASSOCIATED,
+                FISH_EPOP_ASSOCIATED_CHECKED,
                 FISH_IMMEDIATE_EXPENSING_CAP,
                 FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
             }
@@ -929,7 +964,7 @@ FORM_WIRING = {
         ChooseByCount,
         frozenset(
             {
-                FISH_MINISTER_ALLOCATION_GIVEN,
+                FISH_MINISTER_ALLOCATION_GIVEN_CHECKED,
                 FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
                 FISH_MINISTER_ALLOCATION,
             }
@@ -950,6 +985,26 @@ FORM_WIRING = {
         BusinessVehicleExpenses,
         frozenset({BUSINESS_VEHICLES, FISH_VEHICLE_SALES_TAX_RATE}),
         frozenset({FISH_MOTOR_VEHICLE_EXPENSES}),
+    ),
+    (
+        YesOrNoCount,
+        frozenset({FISH_EPOP_ASSOCIATED}),
+        frozenset({FISH_EPOP_ASSOCIATED_CHECKED}),
+    ),
+    (
+        YesOrNoCount,
+        frozenset({FISH_EPOP_AGREEMENT_FILED}),
+        frozenset({FISH_EPOP_AGREEMENT_FILED_CHECKED}),
+    ),
+    (
+        YesOrNoCount,
+        frozenset({FISH_MINISTER_ALLOCATION_GIVEN}),
+        frozenset({FISH_MINISTER_ALLOCATION_GIVEN_CHECKED}),
+    ),
+    (
+        AtMost,
+        frozenset({FISH_EPOP_PERCENTAGE, FISH_EPOP_PERCENTAGE_TOTAL}),
+        frozenset({FISH_EPOP_PERCENTAGE_CHECKED}),
     ),
 }
 
