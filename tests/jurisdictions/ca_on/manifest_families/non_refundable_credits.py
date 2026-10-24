@@ -5,8 +5,10 @@ from __future__ import annotations
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.capped_amount import CappedAmount
+from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.credit_amount import CreditAmount
+from app.domain.capabilities.greater_of import GreaterOf
 from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
@@ -14,6 +16,8 @@ from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.amount_or_divided_by_rate import AmountOrDividedByRate
+from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
+from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 from app.jurisdictions.ca.capabilities.foreign_business_tax_credit_line_4 import (
     ForeignBusinessTaxCreditLine4,
@@ -36,10 +40,15 @@ from app.jurisdictions.ca.capabilities.foreign_business_tax_credit_line_11 impor
 from app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit import (
     ForeignNonBusinessTaxCredit,
 )
+from app.jurisdictions.ca.capabilities.lesser_of_when_positive import LesserOfWhenPositive
 from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_FEDERAL_SURTAX,
+    AMT_SUBJECT_TO_MINIMUM_TAX,
+    AMT_T2203_COLUMN_5_PERCENTAGE,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
     BASIC_PERSONAL_AMOUNT,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_TRAINING_CREDIT,
@@ -102,11 +111,13 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_SURTAX_OUTSIDE_CANADA,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
+    FEDERAL_TAX_WITH_SURTAX,
     FEDERAL_TUITION_AMOUNT,
     FIRST_NATIONS_ABATEMENT,
     FIRST_TIER_DONATION_CREDIT,
@@ -148,6 +159,7 @@ from app.jurisdictions.ca.catalog import (
     SELF_EMPLOYED_CPP_BASE_CREDIT,
     SELF_EMPLOYED_EI_PREMIUMS,
     SOCIAL_BENEFITS_REPAYMENT,
+    SPLIT_INCOME_LINE_22,
     SPOUSE_ADJUSTED_TAXABLE_INCOME,
     SPOUSE_AMOUNT,
     SPOUSE_CAREGIVER_AMOUNT,
@@ -166,6 +178,11 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_RETURN_TAXABLE_INCOME,
     SPOUSE_TRANSFERABLE_AMOUNTS,
     SPOUSE_UNUSED_AMOUNTS,
+    T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
+    T2203_HAS_TAX_ON_SPLIT_INCOME,
+    T2203_LINE_5,
+    T2203_LINE_6,
+    T2203_LINE_8,
     TAXABLE_INCOME,
     TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
     TOP_UP_CREDITS_BASE,
@@ -1043,15 +1060,30 @@ STEPS = {
         consumes={"parts": ("ca/federal_tax_after_credits", "ca/dividend_tax_credit")},
         produces={"output": "ca/basic_federal_tax_with_dividend_credit"},
     ),
-    # Note (4), "minus any:" "federal refundable First Nations abatement (line 44100 of your
-    # return)". The federal surtax on income allocated to "Other (Outside Canada)" (line 127 of the
-    # return, not wired and not triggered on an Ontario return) and the refundable Quebec
-    # abatement (line 44000, which does not apply to an Ontario return) are not part of it.
+    # Note (4), "plus any: federal surtax on income allocated to "Other (Outside Canada)" (line 10
+    # of Part 2 of Form T2203, or 48% of the amount from line 42900)": the surtax on income earned
+    # outside Canada, T1 line 127 (`ca/federal_surtax_outside_canada`). The surtax prints no floor,
+    # so the sum is not floored.
     CapabilitySelection(
-        name="core/subtract",
+        name="core/sum",
         params={},
         consumes={
-            "amount": "ca/basic_federal_tax_with_dividend_credit",
+            "parts": (
+                "ca/basic_federal_tax_with_dividend_credit",
+                "ca/federal_surtax_outside_canada",
+            )
+        },
+        produces={"output": "ca/basic_federal_tax_with_dividend_credit_and_surtax"},
+    ),
+    # Note (4), "minus any:" "federal refundable First Nations abatement (line 44100 of your
+    # return)" (and the refundable Quebec abatement, line 44000, which does not apply to an
+    # Ontario return). The result is not below zero: the abatement is not allowed to take the basic
+    # federal tax below zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/basic_federal_tax_with_dividend_credit_and_surtax",
             "less": "ca/first_nations_abatement",
         },
         produces={"output": "ca/foreign_tax_credit_basic_federal_tax"},
@@ -1170,31 +1202,114 @@ STEPS = {
         },
         produces={"output": "ca/federal_foreign_tax_credit_before_limit"},
     ),
-    # T1 line 129 (line 40500) "Federal foreign tax credit (complete Form T2209)" and T2209 line
-    # 13: "The amount on line 13 should not be more than the total of the amount on line 42900 of
-    # your return, plus any federal surtax on income earned outside of Canada." Line 127 (the
-    # surtax) is not wired, so the limit is line 42900.
+    # T2203 Part 2 line 4 "Enter your basic federal tax from line 42900 of your return." is
+    # `ca/federal_tax_after_credits`, read directly. Line 5 "If you have to pay tax on split income,
+    # enter the amount from line 22 of your Form T1206. If not, enter "0"": the condition "you have
+    # to pay tax on split income" counts 1 when the federal tax on split income is more than 0.
     CapabilitySelection(
-        name="core/lesser_of",
+        name="ca/count_by_conditions",
+        params={"conditions": "ca/t2203_tax_on_split_income_conditions"},
+        consumes={
+            "counts": (),
+            "amounts": ("ca/federal_tax_on_split_income",),
+        },
+        produces={"output": "ca/t2203_has_tax_on_split_income"},
+    ),
+    # T2203 Part 2 line 5, the second branch: line 22 of Form T1206 when there is tax on split
+    # income (the count above), and "0" otherwise.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/split_income_line_22",
+            "count": "ca/t2203_has_tax_on_split_income",
+        },
+        produces={"output": "ca/t2203_line_5"},
+    ),
+    # T2203 Part 2 line 6 "Enter whichever is more: amount from line 4 or line 5.": the greater of
+    # line 4 (`ca/federal_tax_after_credits`) and line 5.
+    CapabilitySelection(
+        name="core/greater_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/federal_tax_after_credits",
+                "ca/t2203_line_5",
+            )
+        },
+        produces={"output": "ca/t2203_line_6"},
+    ),
+    # T2203 Part 2 line 8 "Line 6 multiplied by the percentage from line 7": line 7 is the caller's
+    # percentage of Part 1 line 52220 column 5, as printed (25 for 25%), rounded once by its
+    # dataset.
+    CapabilitySelection(
+        name="ca/apply_percentage",
+        params={"rounding": "ca/t2203_line_8_rounding"},
+        consumes={
+            "amount": "ca/t2203_line_6",
+            "percentage": "ca/amt_t2203_column_5_percentage",
+        },
+        produces={"output": "ca/t2203_line_8"},
+    ),
+    # T2203 Part 2 line 10 "Line 8 multiplied by the percentage from line 9": line 9 "Federal
+    # surtax rate", 48%, from its rate dataset.
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/t2203_federal_surtax_rate"},
+        consumes={"base": "ca/t2203_line_8"},
+        produces={"output": "ca/t2203_federal_surtax_outside_canada"},
+    ),
+    # T1 line 127 "Federal surtax on income earned outside Canada (complete Form T2203)": line 10 of
+    # Part 2 of Form T2203, or, when you are subject to minimum tax (the caller's count, 1 for yes),
+    # line 4 of Part 3 of Form T691 ("If you are subject to minimum tax, do not complete lines 4 to
+    # 10" on Form T2203). Part 3 line 4 has no floor, so the surtax may be negative.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/amt_subject_to_minimum_tax",
+            "when_none": "ca/t2203_federal_surtax_outside_canada",
+            "when_any": "ca/amt_federal_surtax",
+        },
+        produces={"output": "ca/federal_surtax_outside_canada"},
+    ),
+    # T1 line 128 "Line 126 plus line 127 =": line 126 (`ca/federal_tax_after_credits`) and line
+    # 127.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/federal_tax_after_credits",
+                "ca/federal_surtax_outside_canada",
+            )
+        },
+        produces={"output": "ca/federal_tax_with_surtax"},
+    ),
+    # T2209 line 13 "Add lines 11 and 12." "Federal foreign tax credit", limited by "The amount on
+    # line 13 should not be more than the total of the amount on line 42900 of your return, plus
+    # any federal surtax on income earned outside of Canada." The limit is line 42900 plus line
+    # 127, that is line 128 (`ca/federal_tax_with_surtax`), and it is 0 when line 128 is not
+    # positive. T1 line 129 (line 40500) "Federal foreign tax credit (complete Form T2209)".
+    CapabilitySelection(
+        name="ca/lesser_of_when_positive",
         params={},
         consumes={
             "amounts": (
                 "ca/federal_foreign_tax_credit_before_limit",
-                "ca/federal_tax_after_credits",
+                "ca/federal_tax_with_surtax",
             )
         },
         produces={"output": "ca/federal_foreign_tax_credit"},
     ),
-    # T1 line 130 "Line 128 minus line 129 =": line 128 "Line 126 plus line 127 =" is line 126
-    # (42900) "Basic federal tax", as line 127 "Federal surtax on income earned outside Canada
-    # (complete Form T2203)" is not wired and not triggered on an Ontario return, and line 129
-    # (40500) comes off it. The line prints no "(if negative, enter "0")" but line 129 is at most
-    # line 126, so the result is not below zero.
+    # T1 line 130 "Line 128 minus line 129 =": line 128 (`ca/federal_tax_with_surtax`) less line 129
+    # (40500). The line prints no "(if negative, enter "0")"; the credit is within the limit on
+    # line 128, so the result is not below zero.
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
         consumes={
-            "amount": "ca/federal_tax_after_credits",
+            "amount": "ca/federal_tax_with_surtax",
             "less": "ca/federal_foreign_tax_credit",
         },
         produces={"output": "ca/federal_tax_less_foreign_tax_credit"},
@@ -1616,8 +1731,13 @@ WIRING = {
         frozenset({BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT}),
     ),
     (
-        Subtract,
-        frozenset({BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT, FIRST_NATIONS_ABATEMENT}),
+        Sum,
+        frozenset({BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT, FEDERAL_SURTAX_OUTSIDE_CANADA}),
+        frozenset({BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX, FIRST_NATIONS_ABATEMENT}),
         frozenset({FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX}),
     ),
     (
@@ -1703,13 +1823,42 @@ WIRING = {
         frozenset({FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT}),
     ),
     (
-        LesserOf,
-        frozenset({FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT, FEDERAL_TAX_AFTER_CREDITS}),
+        CountByConditions,
+        frozenset({FEDERAL_TAX_ON_SPLIT_INCOME}),
+        frozenset({T2203_HAS_TAX_ON_SPLIT_INCOME}),
+    ),
+    (
+        TimesCount,
+        frozenset({SPLIT_INCOME_LINE_22, T2203_HAS_TAX_ON_SPLIT_INCOME}),
+        frozenset({T2203_LINE_5}),
+    ),
+    (GreaterOf, frozenset({FEDERAL_TAX_AFTER_CREDITS, T2203_LINE_5}), frozenset({T2203_LINE_6})),
+    (
+        ApplyPercentage,
+        frozenset({T2203_LINE_6, AMT_T2203_COLUMN_5_PERCENTAGE}),
+        frozenset({T2203_LINE_8}),
+    ),
+    (ApplyRate, frozenset({T2203_LINE_8}), frozenset({T2203_FEDERAL_SURTAX_OUTSIDE_CANADA})),
+    (
+        ChooseByCount,
+        frozenset(
+            {AMT_SUBJECT_TO_MINIMUM_TAX, T2203_FEDERAL_SURTAX_OUTSIDE_CANADA, AMT_FEDERAL_SURTAX}
+        ),
+        frozenset({FEDERAL_SURTAX_OUTSIDE_CANADA}),
+    ),
+    (
+        Sum,
+        frozenset({FEDERAL_TAX_AFTER_CREDITS, FEDERAL_SURTAX_OUTSIDE_CANADA}),
+        frozenset({FEDERAL_TAX_WITH_SURTAX}),
+    ),
+    (
+        LesserOfWhenPositive,
+        frozenset({FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT, FEDERAL_TAX_WITH_SURTAX}),
         frozenset({FEDERAL_FOREIGN_TAX_CREDIT}),
     ),
     (
         SubtractNotBelowZero,
-        frozenset({FEDERAL_TAX_AFTER_CREDITS, FEDERAL_FOREIGN_TAX_CREDIT}),
+        frozenset({FEDERAL_TAX_WITH_SURTAX, FEDERAL_FOREIGN_TAX_CREDIT}),
         frozenset({FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT}),
     ),
     (

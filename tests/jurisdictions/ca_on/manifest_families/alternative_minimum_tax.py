@@ -255,6 +255,10 @@ INPUTS = frozenset(
         "ca/amt_minimum_tax_carryover_applied",
         "ca/amt_t2203_column_5_percentage",
         "ca/amt_non_resident_or_deemed_resident",
+        # Form T2203 Part 2 "If you are subject to minimum tax, do not complete lines 4 to 10." and
+        # T1 line 127: the caller's choice, 1 when you are subject to minimum tax (Form T691 Part 3
+        # line 4 is then the surtax), else 0.
+        "ca/amt_subject_to_minimum_tax",
         "ca/amt_investment_tax_credit_claim",
         "ca/amt_foreign_business_income",
         "ca/amt_foreign_non_business_income",

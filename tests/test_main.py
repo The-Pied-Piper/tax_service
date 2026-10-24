@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1053
+        == 1061
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1053
+        == 1061
     )
 
 
@@ -1717,6 +1717,12 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/federal_tax_on_split_income",
         "ca/federal_tax_with_split_income",
         "ca/federal_tax_after_credits",
+        "ca/t2203_line_5",
+        "ca/t2203_line_6",
+        "ca/t2203_line_8",
+        "ca/t2203_federal_surtax_outside_canada",
+        "ca/federal_surtax_outside_canada",
+        "ca/federal_tax_with_surtax",
         "ca/itc_recapture_expenditure_at_15_percent",
         "ca/itc_recapture_expenditure_at_20_percent",
         "ca/labour_sponsored_funds_net_cost",
@@ -1754,6 +1760,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/foreign_tax_credit_net_income_with_split_income",
         "ca/foreign_tax_credit_net_income",
         "ca/basic_federal_tax_with_dividend_credit",
+        "ca/basic_federal_tax_with_dividend_credit_and_surtax",
         "ca/foreign_tax_credit_basic_federal_tax",
         "ca/federal_non_business_foreign_tax_credit",
         "ca/federal_foreign_tax_credit",
@@ -1966,6 +1973,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/amt_t2203_column_5_percentage",
         "ca/amt_federal_surtax_multiple_jurisdictions",
         "ca/amt_non_resident_or_deemed_resident",
+        "ca/amt_subject_to_minimum_tax",
+        "ca/t2203_has_tax_on_split_income",
         "ca/amt_line_3_has_amount",
         "ca/amt_federal_surtax_if_non_resident",
         "ca/amt_federal_surtax",
@@ -2500,7 +2509,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1053
+        == 1061
     )
     assert (
         len(
@@ -2508,7 +2517,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1053
+        == 1061
     )
 
 
@@ -2521,7 +2530,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1053
+        == 1061
     )
     assert (
         len(
@@ -2529,7 +2538,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1053
+        == 1061
     )
 
 

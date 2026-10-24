@@ -32,10 +32,12 @@ from app.jurisdictions.ca.capabilities.foreign_business_tax_credit_line_11 impor
 from app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit import (
     ForeignNonBusinessTaxCredit,
 )
+from app.jurisdictions.ca.capabilities.lesser_of_when_positive import LesserOfWhenPositive
 from app.jurisdictions.ca.capabilities.threshold_gate import ThresholdGate
 from app.jurisdictions.ca.catalog import (
     ADVANCED_CANADA_WORKERS_BENEFIT,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
     CREDITS_AGAINST_FEDERAL_TAX,
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EDUCATOR_SUPPLIES_EXPENSES,
@@ -308,7 +310,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME), Sum)
     assert isinstance(worksheet.producer_of(FOREIGN_TAX_CREDIT_NET_INCOME), Subtract)
     assert isinstance(worksheet.producer_of(BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT), Sum)
-    assert isinstance(worksheet.producer_of(FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX), Subtract)
+    assert isinstance(worksheet.producer_of(BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX), Sum)
+    assert isinstance(
+        worksheet.producer_of(FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX), SubtractNotBelowZero
+    )
     assert isinstance(
         worksheet.producer_of(FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT), ForeignNonBusinessTaxCredit
     )
@@ -322,7 +327,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     ):
         assert isinstance(worksheet.producer_of(kind), cls)
     assert isinstance(worksheet.producer_of(FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT), Sum)
-    assert isinstance(worksheet.producer_of(FEDERAL_FOREIGN_TAX_CREDIT), LesserOf)
+    assert isinstance(worksheet.producer_of(FEDERAL_FOREIGN_TAX_CREDIT), LesserOfWhenPositive)
     assert isinstance(
         worksheet.producer_of(FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT), SubtractNotBelowZero
     )

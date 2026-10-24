@@ -8,6 +8,7 @@ from app.domain.artifact import ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADA_TRAINING_CREDIT_CLAIMED,
@@ -49,10 +50,12 @@ from app.jurisdictions.ca.catalog import (
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_SURTAX_OUTSIDE_CANADA,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
+    FEDERAL_TAX_WITH_SURTAX,
     FEDERAL_TUITION_AMOUNT,
     FIRST_NATIONS_ABATEMENT,
     FIRST_TIER_DONATION_CREDIT,
@@ -91,6 +94,11 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_RETURN_TAXABLE_INCOME,
     SPOUSE_TRANSFERABLE_AMOUNTS,
     SPOUSE_UNUSED_AMOUNTS,
+    T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
+    T2203_HAS_TAX_ON_SPLIT_INCOME,
+    T2203_LINE_5,
+    T2203_LINE_6,
+    T2203_LINE_8,
     TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
     TOP_UP_CREDITS_BASE,
     TOP_UP_EXCESS,
@@ -354,10 +362,19 @@ def test_the_non_refundable_credits_kinds_are_money() -> None:
         assert kind.value_type is Decimal, kind.identifier
 
 
-def test_the_federal_tax_on_split_income_lines_are_non_negative(registry: ArtifactRegistry) -> None:
+def test_the_split_income_and_t2203_lines_are_non_negative(registry: ArtifactRegistry) -> None:
     # T1 line 120 is 33% of a non-negative amount and line 121 "Line 119 plus line 120 =" adds two
-    # non-negative taxes.
-    for kind in (FEDERAL_TAX_ON_SPLIT_INCOME, FEDERAL_TAX_WITH_SPLIT_INCOME):
+    # non-negative taxes. Form T2203 Part 2 line 6 "Enter whichever is more" is never below line 4
+    # (line 42900), line 8 is line 6 times a percentage, line 10 is line 8 times the rate of line
+    # 9, and the count of line 5 is 0 or 1.
+    for kind in (
+        FEDERAL_TAX_ON_SPLIT_INCOME,
+        FEDERAL_TAX_WITH_SPLIT_INCOME,
+        T2203_HAS_TAX_ON_SPLIT_INCOME,
+        T2203_LINE_6,
+        T2203_LINE_8,
+        T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
+    ):
         assert kind.non_negative is True, kind.identifier
         assert registry.kind(kind.identifier) is kind
 
@@ -460,6 +477,20 @@ def test_the_federal_foreign_tax_credit_kinds_are_the_registered_ones(
         registry.get("ca/federal_tax_less_foreign_tax_credit")
         is FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT
     )
+    assert registry.get("ca/t2203_has_tax_on_split_income") is T2203_HAS_TAX_ON_SPLIT_INCOME
+    assert registry.get("ca/t2203_line_5") is T2203_LINE_5
+    assert registry.get("ca/t2203_line_6") is T2203_LINE_6
+    assert registry.get("ca/t2203_line_8") is T2203_LINE_8
+    assert (
+        registry.get("ca/t2203_federal_surtax_outside_canada")
+        is T2203_FEDERAL_SURTAX_OUTSIDE_CANADA
+    )
+    assert registry.get("ca/federal_surtax_outside_canada") is FEDERAL_SURTAX_OUTSIDE_CANADA
+    assert registry.get("ca/federal_tax_with_surtax") is FEDERAL_TAX_WITH_SURTAX
+    assert (
+        registry.get("ca/basic_federal_tax_with_dividend_credit_and_surtax")
+        is BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX
+    )
 
 
 def test_the_federal_foreign_tax_credit_kinds_are_money() -> None:
@@ -474,20 +505,36 @@ def test_the_federal_foreign_tax_credit_kinds_are_money() -> None:
         FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
         FEDERAL_FOREIGN_TAX_CREDIT,
         FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
+        BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
+        T2203_LINE_5,
+        T2203_LINE_6,
+        T2203_LINE_8,
+        T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
+        FEDERAL_SURTAX_OUTSIDE_CANADA,
+        FEDERAL_TAX_WITH_SURTAX,
     ):
         assert kind.value_type is Decimal, kind.identifier
 
 
-def test_the_foreign_tax_credit_net_income_kinds_are_signed(registry: ArtifactRegistry) -> None:
+def test_the_signed_foreign_tax_credit_and_surtax_kinds_are_signed(
+    registry: ArtifactRegistry,
+) -> None:
     # Form T2209 note (3), net income: "Amount from line 23600 of your return (or the amount you
     # would have entered if the instructions said "if negative, show in brackets") plus the amount
     # on line 68360 of Form T1206, Total split income, minus any:" the listed deductions. The
     # note prints no "(if negative, enter "0")", and line 23600 in brackets is signed, so the
     # amount before the split income, the amount with it and the result may each be negative.
+    # Form T2203 line 5 takes "Line 15 minus line 21" of Form T1206, which prints no floor; Form
+    # T691 Part 3 line 4 prints no floor, so T1 line 127 may be negative, and T1 line 128 and
+    # note (4)'s sum with it may be too.
     for kind in (
         FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
         FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
         FOREIGN_TAX_CREDIT_NET_INCOME,
+        T2203_LINE_5,
+        FEDERAL_SURTAX_OUTSIDE_CANADA,
+        FEDERAL_TAX_WITH_SURTAX,
+        BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
     ):
         assert kind.non_negative is False, kind.identifier
         assert registry.kind(kind.identifier) is kind
@@ -498,8 +545,9 @@ def test_the_other_federal_foreign_tax_credit_kinds_are_non_negative(
     registry: ArtifactRegistry,
 ) -> None:
     # Note (4), basic federal tax: line 42900 plus the federal dividend tax credit, minus the
-    # First Nations abatement; line 3 is the lesser of two non-negative amounts, line 13 "should
-    # not be more than" line 42900, and T1 line 130 comes off line 128 within the limit.
+    # First Nations abatement, not below zero; line 3 is the lesser of two non-negative amounts,
+    # line 13 "should not be more than" line 42900, and T1 line 130 comes off line 128 within the
+    # limit.
     for kind in (
         FIRST_NATIONS_ABATEMENT,
         FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
