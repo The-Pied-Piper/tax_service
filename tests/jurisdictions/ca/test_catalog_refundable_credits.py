@@ -5,12 +5,20 @@ from __future__ import annotations
 from decimal import Decimal
 
 from app.domain.artifact import ArtifactRegistry
+from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
     CANADA_TRAINING_CREDIT,
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EDUCATOR_SUPPLIES_EXPENSES,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
+    HOME_RENOVATION_CLAIMED_BY_OTHERS,
+    HOME_RENOVATION_EXPENDITURES,
+    HOME_RENOVATION_LINE_3,
+    HOME_RENOVATION_LINE_6,
+    HOME_RENOVATION_LINE_8,
+    HOME_RENOVATION_REIMBURSED,
+    HOME_RENOVATIONS,
     JOURNALISM_LABOUR_TAX_CREDIT,
     MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
     MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5,
@@ -34,6 +42,7 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_SUPPLEMENT_LINE_16,
     MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
     MEDICAL_SUPPLEMENT_WORKING_INCOME,
+    MULTIGENERATIONAL_HOME_RENOVATION_CREDIT,
     PART_XII_2_TAX_CREDIT,
     PROVINCIAL_CREDITS,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
@@ -154,3 +163,60 @@ def test_the_refundable_credits_kinds_are_money() -> None:
         REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     ):
         assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_home_renovation_kinds_are_registered_and_money(registry: ArtifactRegistry) -> None:
+    # Schedule 12 line 1, line 2 and line 5 (the record's fields), lines 3, 6 and 8 (the totals over
+    # the renovations) and T1 line 45355 (the credit, line 10 of Schedule 12).
+    assert registry.get("ca/home_renovation_expenditures") is HOME_RENOVATION_EXPENDITURES
+    assert registry.get("ca/home_renovation_reimbursed") is HOME_RENOVATION_REIMBURSED
+    assert registry.get("ca/home_renovation_claimed_by_others") is HOME_RENOVATION_CLAIMED_BY_OTHERS
+    assert registry.get("ca/home_renovation_line_3") is HOME_RENOVATION_LINE_3
+    assert registry.get("ca/home_renovation_line_6") is HOME_RENOVATION_LINE_6
+    assert registry.get("ca/home_renovation_line_8") is HOME_RENOVATION_LINE_8
+    assert (
+        registry.get("ca/multigenerational_home_renovation_credit")
+        is MULTIGENERATIONAL_HOME_RENOVATION_CREDIT
+    )
+    for kind in (
+        HOME_RENOVATION_EXPENDITURES,
+        HOME_RENOVATION_REIMBURSED,
+        HOME_RENOVATION_CLAIMED_BY_OTHERS,
+        HOME_RENOVATION_LINE_3,
+        HOME_RENOVATION_LINE_6,
+        HOME_RENOVATION_LINE_8,
+        MULTIGENERATIONAL_HOME_RENOVATION_CREDIT,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_home_renovation_fields_are_non_negative_inputs() -> None:
+    for kind in (
+        HOME_RENOVATION_EXPENDITURES,
+        HOME_RENOVATION_REIMBURSED,
+        HOME_RENOVATION_CLAIMED_BY_OTHERS,
+    ):
+        assert kind.non_negative is True, kind.identifier
+
+
+def test_the_multigenerational_home_renovation_credit_is_non_negative() -> None:
+    # Line 10 of Schedule 12: line 8 multiplied by 14.5%, the amount for T1 line 45355.
+    assert MULTIGENERATIONAL_HOME_RENOVATION_CREDIT.identifier == (
+        "ca/multigenerational_home_renovation_credit"
+    )
+    assert MULTIGENERATIONAL_HOME_RENOVATION_CREDIT.non_negative is True
+
+
+def test_the_home_renovations_are_a_record_list_of_three_fields(registry: ArtifactRegistry) -> None:
+    # Schedule 12 Step 1: the table of each qualifying renovation, one record for each, holding
+    # line 1 (total qualifying expenditures), line 2 (reimbursed) and line 5 (claimed by other
+    # eligible individuals). The caller lists the renovations, so there is no eligibility field.
+    assert isinstance(HOME_RENOVATIONS, RecordListKind)
+    assert HOME_RENOVATIONS.identifier == "ca/home_renovations"
+    assert HOME_RENOVATIONS.value_type is RecordList
+    assert HOME_RENOVATIONS.fields == (
+        HOME_RENOVATION_EXPENDITURES,
+        HOME_RENOVATION_REIMBURSED,
+        HOME_RENOVATION_CLAIMED_BY_OTHERS,
+    )
+    assert registry.get("ca/home_renovations") is HOME_RENOVATIONS

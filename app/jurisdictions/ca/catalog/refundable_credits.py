@@ -1,13 +1,14 @@
 """The federal catalog: refundable credits and payments.
 
-Provincial credits, the GST/HST rebate, the educator and journalism credits, instalments and the
-refundable medical expense supplement.
+Provincial credits, the multigenerational home renovation credit, the GST/HST rebate, the educator
+and journalism credits, instalments and the refundable medical expense supplement.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
 
+from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog.base import CATALOG
 
 PROVINCIAL_CREDITS = CATALOG.declare("provincial_credits", Decimal, non_negative=True)
@@ -19,6 +20,67 @@ CANADA_TRAINING_CREDIT = CATALOG.declare("canada_training_credit", Decimal, non_
 Canada training credit", T1 line 156 and line 45350 "Canada training credit (CTC) (complete
 Schedule 11)": the amount claimed, at most line 4 (the lesser of 50% of the Canadian tuition fees
 and the limit on the notice)."""
+
+HOME_RENOVATION_EXPENDITURES = CATALOG.declare(
+    "home_renovation_expenditures", Decimal, non_negative=True
+)
+"""Total qualifying expenditures of a renovation, Schedule 12 Step 1 line 1 "Total amount paid from
+all sales slips and contracts included in the table above and any additional sheets of paper Total
+qualifying expenditures": the amount paid for one qualifying renovation, a field of each record of
+`ca/home_renovations`."""
+
+HOME_RENOVATION_REIMBURSED = CATALOG.declare(
+    "home_renovation_reimbursed", Decimal, non_negative=True
+)
+"""Amount reimbursed for a renovation, Schedule 12 Step 1 line 2 "Any amount that can reasonably be
+considered to be reimbursed (including government assistance received or receivable) included in
+the amount on line 1": a field of each record of `ca/home_renovations`."""
+
+HOME_RENOVATION_CLAIMED_BY_OTHERS = CATALOG.declare(
+    "home_renovation_claimed_by_others", Decimal, non_negative=True
+)
+"""Amount claimed by other eligible individuals for a renovation, Schedule 12 Step 1 line 5 "Amount
+of eligible expenses being claimed by other eligible individuals": a field of each record of
+`ca/home_renovations`."""
+
+HOME_RENOVATIONS = RecordListKind.declare(
+    CATALOG,
+    "home_renovations",
+    fields=(
+        HOME_RENOVATION_EXPENDITURES,
+        HOME_RENOVATION_REIMBURSED,
+        HOME_RENOVATION_CLAIMED_BY_OTHERS,
+    ),
+)
+"""Qualifying renovations, Schedule 12 Step 1 "If you paid qualifying expenditures for more than one
+qualifying renovation, complete this step for each qualifying renovation using an additional sheet
+of paper": a starting list with one record for each qualifying renovation, holding lines 1, 2 and 5.
+The caller lists only the renovations that qualify, and the expenses claimed for the medical expense
+or home accessibility credit are left out of line 1."""
+
+HOME_RENOVATION_LINE_3 = CATALOG.declare("home_renovation_line_3", Decimal, non_negative=True)
+"""Schedule 12 Step 1 line 3 "Line 1 minus line 2 (maximum $50,000 per qualifying renovation)": the
+total over the renovations of the renovation's line 1 less its line 2, at most the line 4 maximum,
+a part of line 7 and line 8. The caller keeps line 2 within line 1, so it is not below 0."""
+
+HOME_RENOVATION_LINE_6 = CATALOG.declare("home_renovation_line_6", Decimal, non_negative=True)
+"""Schedule 12 Step 1 line 6 "Line 4 minus line 5": the total over the renovations of the maximum
+per qualifying renovation less line 5. The caller keeps line 5 within the maximum, so it is not
+below 0."""
+
+HOME_RENOVATION_LINE_8 = CATALOG.declare("home_renovation_line_8", Decimal, non_negative=True)
+"""Schedule 12 Step 2 line 8 and line 45354 "Add the amounts from line 7 for each qualifying
+renovation. Your total qualifying expenditures": the total over the renovations of the lesser of
+line 3 and line 6 (line 7, "Enter whichever is less: amount from line 3 or line 6. Your qualifying
+expenditures for the qualifying renovation")."""
+
+MULTIGENERATIONAL_HOME_RENOVATION_CREDIT = CATALOG.declare(
+    "multigenerational_home_renovation_credit", Decimal, non_negative=True
+)
+"""Multigenerational home renovation tax credit, T1 line 157 and line 45355 "Multigenerational home
+renovation tax credit (MHRTC) (complete Schedule 12)": Schedule 12 line 10 "Line 8 multiplied by the
+percentage from line 9 Enter this amount on line 45355 of your return", line 9 being the applicable
+rate of 14.5%, rounded to the cent."""
 
 PART_XII_2_TAX_CREDIT = CATALOG.declare("part_xii_2_tax_credit", Decimal, non_negative=True)
 """Part XII.2 tax credit, T1 line 159 (45600) "Part XII.2 tax credit (box 38 of all T3 slips and
