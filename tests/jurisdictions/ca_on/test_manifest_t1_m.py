@@ -77,10 +77,10 @@ def test_the_manifest_has_the_form_t1_m_beside_the_other_forms() -> None:
     assert found.exports == t1_m.FORM_EXPORTS
 
 
-def test_the_form_holds_the_13_t1_m_selections() -> None:
+def test_the_form_holds_the_14_t1_m_selections() -> None:
     found = form()
 
-    assert len(found.capabilities) == 13
+    assert len(found.capabilities) == 14
     assert set(found.capabilities) == t1_m.FORM_STEPS
 
 

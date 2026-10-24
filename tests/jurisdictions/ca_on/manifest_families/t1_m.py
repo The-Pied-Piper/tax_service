@@ -1,7 +1,7 @@
 """The CA-ON manifest entries of Form T1-M, Moving Expenses Deduction (see `test_manifest.py` and
 `test_manifest_t1_m.py`).
 
-T1-M is a form of the manifest: its 13 selections belong to the form `ca/t1_m` (`FORM_STEPS`), run
+T1-M is a form of the manifest: its 14 selections belong to the form `ca/t1_m` (`FORM_STEPS`), run
 once for each move of `ca/t1_m_moves`, whose 19 fields are the caller's inputs of one move
 (`FORM_INPUTS`). The form exports line 29 and line 30 of each move, readable by the other forms as
 `ca/t1_m.<export>` (`FORM_EXPORTS`). The return's own entries are the instances input and the T1
@@ -54,6 +54,7 @@ from app.jurisdictions.ca.catalog import (
     MOVING_TRAVEL_EXPENSES,
     MOVING_TRAVEL_EXPENSES_SUBTOTAL,
     MOVING_UNUSED_EXPENSES,
+    MOVING_UNUSED_EXPENSES_BEFORE_TEST,
 )
 
 # The caller's inputs of one move, the fields of `ca/t1_m_moves` (the form's lines 1, 2, 4, 5, 6, 7,
@@ -227,6 +228,20 @@ FORM_STEPS = {
             "amount": "ca/moving_net_expenses_carried",
             "less": "ca/moving_net_eligible_income",
         },
+        produces={"output": "ca/moving_unused_expenses_before_test"},
+    ),
+    # T1-M Part 2 "If the amount on line 3 is less than 40 kilometres, you cannot deduct your
+    # moving expenses. If this is the case, do not complete the rest of this form." The line 30
+    # amount "Your unused moving expenses available to carry forward to a future year" is kept only
+    # when line 3 is at least the 40 kilometres of the `ca/moving_distance_threshold` dataset,
+    # otherwise 0.
+    CapabilitySelection(
+        name="ca/threshold_gate",
+        params={"threshold": "ca/moving_distance_threshold"},
+        consumes={
+            "amount": "ca/moving_unused_expenses_before_test",
+            "gate": "ca/moving_distance_difference",
+        },
         produces={"output": "ca/moving_unused_expenses"},
     ),
 }
@@ -317,6 +332,11 @@ FORM_WIRING = {
     (
         SubtractNotBelowZero,
         frozenset({MOVING_NET_EXPENSES_CARRIED, MOVING_NET_ELIGIBLE_INCOME}),
+        frozenset({MOVING_UNUSED_EXPENSES_BEFORE_TEST}),
+    ),
+    (
+        ThresholdGate,
+        frozenset({MOVING_UNUSED_EXPENSES_BEFORE_TEST, MOVING_DISTANCE_DIFFERENCE}),
         frozenset({MOVING_UNUSED_EXPENSES}),
     ),
 }

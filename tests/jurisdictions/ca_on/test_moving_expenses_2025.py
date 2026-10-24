@@ -116,6 +116,26 @@ def test_a_line_3_of_35_claims_nothing_on_line_29() -> None:
     assert worksheet.get(MOVING_EXPENSES_CLAIM).value == D("0")
 
 
+def test_a_line_3_of_35_carries_nothing_on_line_30() -> None:
+    # Line 24 is 2,500 and line 28 is 0 (no net eligible income): without the 40 kilometre test
+    # line 27 minus line 28 would carry 2,500.00; the form is not completed under 40 kilometres.
+    (worksheet,) = form_worksheets(
+        move(old_home_distance="75", new_home_distance="40", net_eligible_income="0")
+    )
+
+    assert worksheet.get(MOVING_DISTANCE_DIFFERENCE).value == D("35")
+    assert worksheet.get(MOVING_EXPENSES_CLAIM).value == D("0")
+    assert worksheet.get(MOVING_UNUSED_EXPENSES).value == D("0")
+
+
+def test_a_line_3_of_exactly_40_carries_line_27_minus_line_28_on_line_30() -> None:
+    (worksheet,) = form_worksheets(
+        move(old_home_distance="100", new_home_distance="60", net_eligible_income="0")
+    )
+
+    assert worksheet.get(MOVING_UNUSED_EXPENSES).value == D("2500.00")
+
+
 def test_a_line_3_of_exactly_40_is_at_least_40_and_claims() -> None:
     (worksheet,) = form_worksheets(move(old_home_distance="100", new_home_distance="60"))
 

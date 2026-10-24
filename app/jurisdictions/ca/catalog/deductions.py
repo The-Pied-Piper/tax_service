@@ -2110,11 +2110,20 @@ distance difference of line 3 is under the 40 kilometres of the `ca/moving_dista
 dataset (Part 2 "If the amount on line 3 is less than 40 kilometres, you cannot deduct your
 moving expenses.")."""
 
+MOVING_UNUSED_EXPENSES_BEFORE_TEST = CATALOG.declare(
+    "moving_unused_expenses_before_test", Decimal, non_negative=True
+)
+"""Line 27 less line 28 of Form T1-M Part 4 line 30 "Line 27 minus line 28 (if negative, enter
+"0")", before the 40 kilometre test of Part 2: the net moving expenses of line 27 less line 28, not
+below 0."""
+
 MOVING_UNUSED_EXPENSES = CATALOG.declare("moving_unused_expenses", Decimal, non_negative=True)
-"""Unused moving expenses available to carry forward, Form T1-M Part 4 line 30 "Line 27 minus
-line 28 (if negative, enter "0")" "Your unused moving expenses available to carry forward to a
-future year": the net moving expenses of line 27 less line 28, not below 0. Nothing on the
-return reads it."""
+"""Unused moving expenses available to carry forward, Form T1-M Part 4 line 30 "Your unused moving
+expenses available to carry forward to a future year": line 27 less line 28, not below 0, and 0
+when the distance difference of line 3 is under the 40 kilometres of the
+`ca/moving_distance_threshold` dataset (Part 2 "If the amount on line 3 is less than 40
+kilometres, you cannot deduct your moving expenses. If this is the case, do not complete the rest
+of this form."). Nothing on the return reads it."""
 
 MOVING_EXPENSES_DEDUCTION = CATALOG.declare("moving_expenses_deduction", Decimal, non_negative=True)
 """Moving expenses deduction, T1 line 21900 "Moving expenses (complete Form T1-M)": line 29 of each
