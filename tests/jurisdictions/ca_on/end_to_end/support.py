@@ -1295,6 +1295,7 @@ def business_vehicles(*vehicles: Mapping[str, str]) -> Artifact[RecordList]:
 BusinessCcaRow = (
     tuple[str, str, str, str, str, str, str, int, str, str, str]
     | tuple[str, str, str, str, str, str, str, int, str, str, str, int]
+    | tuple[str, str, str, str, str, str, str, int, str, str, str, int, str]
 )
 
 
@@ -1305,7 +1306,8 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
     class, else 0 (endnote 3), column 4 (the DIEP additions), column 6 (the proceeds of
     dispositions of DIEP) and column 9 (the immediate expensing amount), each "0" when the class
     has no DIEP; and, as a twelfth value when the row has one, 1 if the half-year rule treats the
-    row's additions the other way from their class, else 0."""
+    row's additions the other way from their class, else 0, and, as a thirteenth, endnote 9's
+    remaining personal part of the property's cost as decimal text, else "0"."""
     kind = BUSINESS_CCA_CLASSES
     assert isinstance(kind, RecordListKind)
     records: list[dict[ArtifactKind[Any], object]] = [
@@ -1321,6 +1323,7 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
             CCA_DIEP_ADDITIONS: D(diep_additions),
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
+            CCA_PERSONAL_PART_REMAINING: personal_part_remaining,
             CCA_HALF_YEAR_RULE_DIFFERS: half_year_rule_differs,
             CCA_RATE_ELECTION: 0,
         }
@@ -1336,9 +1339,11 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
             diep_additions,
             diep_proceeds,
             immediate_expensing,
-            *differs,
+            *extras,
         ) in rows
-        for half_year_rule_differs in (differs[0] if differs else 0,)
+        for half_year_rule_differs, personal_part_remaining in (
+            (extras[0] if extras else 0, D(str(extras[1])) if len(extras) > 1 else D(0)),
+        )
     ]
     return Artifact(kind, RecordList(kind.fields, records))
 
@@ -1476,15 +1481,22 @@ def farm_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decimal]]
     return [Artifact(kind, D(amounts.get(name, "0"))) for name, kind in by_name.items()]
 
 
+FarmFishCcaRow = (
+    tuple[str, str, str, str, str, str, str, int, str, str, str]
+    | tuple[str, str, str, str, str, str, str, int, str, str, str, str]
+)
+
+
 def farm_cca_classes(
-    *rows: tuple[str, str, str, str, str, str, str, int, str, str, str],
+    *rows: FarmFishCcaRow,
 ) -> Artifact[RecordList]:
     """The Form T2042 Area A rows, one record per class, with the columns of
     `business_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
     column 12, the CCA claimed (column 21) as decimal text, 1 if no property is left in the
     class, else 0 (endnote 3), column 4 (the DIEP additions), column 6 (the proceeds of
     dispositions of DIEP) and column 9 (the immediate expensing amount), each "0" when the class
-    has no DIEP."""
+    has no DIEP; and, as a twelfth value when the row has one, endnote 9's remaining personal part
+    of the property's cost as decimal text, else "0"."""
     kind = FARM_CCA_CLASSES
     assert isinstance(kind, RecordListKind)
     records: list[dict[ArtifactKind[Any], object]] = [
@@ -1500,6 +1512,7 @@ def farm_cca_classes(
             CCA_DIEP_ADDITIONS: D(diep_additions),
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
+            CCA_PERSONAL_PART_REMAINING: D(personal_part_remaining),
             CCA_HALF_YEAR_RULE_DIFFERS: 0,
             CCA_RATE_ELECTION: 0,
         }
@@ -1515,7 +1528,9 @@ def farm_cca_classes(
             diep_additions,
             diep_proceeds,
             immediate_expensing,
+            *part,
         ) in rows
+        for personal_part_remaining in (part[0] if part else "0",)
     ]
     return Artifact(kind, RecordList(kind.fields, records))
 
@@ -1524,9 +1539,7 @@ def t2042_statement(
     *,
     farm: Mapping[str, str] | None = None,
     farm_partner: int = 0,
-    farm_cca_classes_rows: tuple[
-        tuple[str, str, str, str, str, str, str, int, str, str, str], ...
-    ] = (),
+    farm_cca_classes_rows: tuple[FarmFishCcaRow, ...] = (),
     farm_vehicles_rows: tuple[Mapping[str, str], ...] = (),
     farm_epop_associated: int = 0,
     farm_epop_agreement_filed: int = 0,
@@ -1619,14 +1632,15 @@ def fish_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decimal]]
 
 
 def fish_cca_classes(
-    *rows: tuple[str, str, str, str, str, str, str, int, str, str, str],
+    *rows: FarmFishCcaRow,
 ) -> Artifact[RecordList]:
     """The Form T2121 Area A rows, one record per class, with the columns of
     `business_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
     column 12, the CCA claimed (column 21) as decimal text, 1 if no property is left in the
     class, else 0 (endnote 3), column 4 (the DIEP additions), column 6 (the proceeds of
     dispositions of DIEP) and column 9 (the immediate expensing amount), each "0" when the class
-    has no DIEP."""
+    has no DIEP; and, as a twelfth value when the row has one, endnote 9's remaining personal part
+    of the property's cost as decimal text, else "0"."""
     kind = FISH_CCA_CLASSES
     assert isinstance(kind, RecordListKind)
     records: list[dict[ArtifactKind[Any], object]] = [
@@ -1642,6 +1656,7 @@ def fish_cca_classes(
             CCA_DIEP_ADDITIONS: D(diep_additions),
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
+            CCA_PERSONAL_PART_REMAINING: D(personal_part_remaining),
             CCA_HALF_YEAR_RULE_DIFFERS: 0,
             CCA_RATE_ELECTION: 0,
         }
@@ -1657,7 +1672,9 @@ def fish_cca_classes(
             diep_additions,
             diep_proceeds,
             immediate_expensing,
+            *part,
         ) in rows
+        for personal_part_remaining in (part[0] if part else "0",)
     ]
     return Artifact(kind, RecordList(kind.fields, records))
 
@@ -1666,9 +1683,7 @@ def t2121_statement(
     *,
     fish: Mapping[str, str] | None = None,
     fish_partner: int = 0,
-    fish_cca_classes_rows: tuple[
-        tuple[str, str, str, str, str, str, str, int, str, str, str], ...
-    ] = (),
+    fish_cca_classes_rows: tuple[FarmFishCcaRow, ...] = (),
     fish_vehicles_rows: tuple[Mapping[str, str], ...] = (),
     fish_epop_associated: int = 0,
     fish_epop_agreement_filed: int = 0,

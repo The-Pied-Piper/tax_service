@@ -913,9 +913,9 @@ CCA_PERSONAL_PART_REMAINING = CATALOG.declare(
 """Remaining personal part, T776 Area A Note 9 (Column 24): "If, in the year, you disposed of a
 property that you used for both personal and rental use, and your rental use of that property
 changed from year to year, you must subtract any remaining personal part of this property's cost
-from the UCC at the end of the year": the caller's amount for the class, a field of each record of
-the rental list of capital cost allowance classes. Not the personal part of line 9936, which is
-`rental_cca_personal_part`."""
+from the UCC at the end of the year" (T2125, T2042 and T2121 endnote 9, with "business" for
+"rental"): the caller's amount for the class, a field of each record of the lists of capital cost
+allowance classes. Not the personal part of line 9936, which is `rental_cca_personal_part`."""
 
 CCA_HALF_YEAR_RULE_DIFFERS = CATALOG.declare("cca_half_year_rule_differs", int, non_negative=True)
 """Half-year rule differs from the class, Guide T4002 2025, "Column 18 - Adjustment for current-year

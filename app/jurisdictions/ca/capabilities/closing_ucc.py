@@ -10,7 +10,8 @@ of the year, one record per class in the caller's order: column 7 less the claim
 7 is negative or is positive with no property left, or when the row used the half-year rule on
 sale (Regulation 1100(2.5) allows no deduction in a later year; the rest is nil).
 
-T776 Area A Note 9: "If, in the year, you disposed of a property that you used for both personal
+T776 Area A Note 9 (T2125, T2042 and T2121 print it as endnote 9, with "business" for "rental"):
+"If, in the year, you disposed of a property that you used for both personal
 and rental use, and your rental use of that property changed from year to year, you must subtract
 any remaining personal part of this property's cost from the UCC at the end of the year." When the
 consumed list lists the remaining personal part, column 24 of a row that does not close at 0 is

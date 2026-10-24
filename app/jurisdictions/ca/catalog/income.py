@@ -1293,7 +1293,7 @@ starting list with one record for each class, holding the columns the filer ente
 number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
 proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
 CCA claimed), whether any property is left in the class, the remaining personal part of a
-property used for both personal and rental use (Note 9), which only the T776 has, and whether the
+property used for both personal and rental use (Note 9), and whether the
 additions are treated the opposite way from their class for the half-year rule (column 18), and the
 CCA rate the caller elects for it (a purpose-built rental or a building in a separate class),
 last."""
@@ -1852,6 +1852,7 @@ BUSINESS_CCA_CLASSES = RecordListKind.declare(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_PERSONAL_PART_REMAINING,
         CCA_HALF_YEAR_RULE_DIFFERS,
         CCA_RATE_ELECTION,
     ),
@@ -1860,7 +1861,8 @@ BUSINESS_CCA_CLASSES = RecordListKind.declare(
 starting list with one record for each class, holding the columns the filer enters (class
 number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
 proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
-CCA claimed), whether any property is left in the class and whether the additions are treated the
+CCA claimed), whether any property is left in the class, the remaining personal part of a
+property used for both personal and business use (endnote 9), whether the additions are treated the
 opposite way from their class for the half-year rule (column 18), and the CCA rate the
 caller elects for it (a purpose-built rental or a building in a separate class), last."""
 
@@ -2792,6 +2794,7 @@ FARM_CCA_CLASSES = RecordListKind.declare(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_PERSONAL_PART_REMAINING,
         CCA_HALF_YEAR_RULE_DIFFERS,
         CCA_RATE_ELECTION,
     ),
@@ -2800,7 +2803,8 @@ FARM_CCA_CLASSES = RecordListKind.declare(
 starting list with one record for each class, holding the columns the filer enters (class
 number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
 proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
-CCA claimed), whether any property is left in the class and whether the additions are treated the
+CCA claimed), whether any property is left in the class, the remaining personal part of a
+property used for both personal and business use (endnote 9), whether the additions are treated the
 opposite way from their class for the half-year rule (column 18), and the CCA rate the
 caller elects for it (a purpose-built rental or a building in a separate class), last."""
 
@@ -3188,6 +3192,7 @@ FISH_CCA_CLASSES = RecordListKind.declare(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_PERSONAL_PART_REMAINING,
         CCA_HALF_YEAR_RULE_DIFFERS,
         CCA_RATE_ELECTION,
     ),
@@ -3196,7 +3201,8 @@ FISH_CCA_CLASSES = RecordListKind.declare(
 starting list with one record for each class, holding the columns the filer enters (class
 number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
 proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
-CCA claimed), whether any property is left in the class and whether the additions are treated the
+CCA claimed), whether any property is left in the class, the remaining personal part of a
+property used for both personal and business use (endnote 9), whether the additions are treated the
 opposite way from their class for the half-year rule (column 18), and the CCA rate the
 caller elects for it (a purpose-built rental or a building in a separate class), last."""
 
