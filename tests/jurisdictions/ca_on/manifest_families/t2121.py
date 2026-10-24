@@ -718,8 +718,8 @@ FORM_STEPS = {
         produces={"output": "ca/fish_minister_allocation_given_checked"},
     ),
     # Area G "Total of percentage assigned: Total of column 3": the forms are silent on a
-    # percentage assigned to the business above that total. It is refused, not capped: a decision
-    # a choice, not a form rule. The checked percentage is the one the next step applies.
+    # percentage assigned to the business above that total. It is refused, not capped: a choice,
+    # not a form rule. The checked percentage is the one the next step applies.
     CapabilitySelection(
         name="core/at_most",
         params={},

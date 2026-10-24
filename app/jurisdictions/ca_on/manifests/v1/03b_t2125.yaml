@@ -230,8 +230,8 @@ capabilities:
       output: ca/business_epop_percentage_maximum
   # T2125 Area G "Total of percentage assigned: Total of column 3": the form is silent on a
   # percentage above the total of column 3, so the filer's own percentage is refused above it, not
-  # capped. That refusal is a choice, not a form rule. The checked
-  # percentage is the one the next step applies.
+  # capped. That refusal is a choice, not a form rule. The checked percentage
+  # is the one the next step applies.
   - name: core/at_most
     consumes:
       amount: ca/business_epop_percentage
@@ -276,8 +276,7 @@ capabilities:
       output: ca/business_immediate_expensing_allocated
   # T2125 Area A endnote 5 "$1.5 million, if you are not associated with any other eligible person
   # or partnership (EPOP) in the tax year": the answer to a yes or no question, a count of 1 or 0,
-  # checked before the step that reads it. A count of 2 or more is refused, not
-  # capped.
+  # checked before the step that reads it. A count of 2 or more is refused, not capped.
   - name: ca/yes_or_no_count
     consumes:
       count: ca/business_epop_associated
