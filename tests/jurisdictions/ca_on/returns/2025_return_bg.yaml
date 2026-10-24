@@ -55,8 +55,12 @@ description: >-
   claimed; line 49 is the amount from line 41, 100.00; line 50 is -100.00. Lines 51 and 52 (union
   dues and child care expenses) are 0 as none are claimed, since a claim would change taxable
   income; line 53 is -600.00 plus -100.00, -700.00. Lines 54 to 63: lines 55, 57 and 59 to 62 are
-  0 as none are claimed (line 59 is for Quebec only); line 56, the moving expenses of line 21900,
-  is a chosen figure of 200.00; line 58 is the enhanced CPP contributions of 565.00 (line 22215)
+  0 as none are claimed (line 59 is for Quebec only); line 56, the moving expenses of line 21900
+  (Form T1-M, one move of 100 and 10 kilometres with 200.00 of transportation and storage, and the
+  employment income of 60000 as its net eligible income), is 200.00, a chosen figure; the return
+  also has other income of 200.00 (line 13000, a chosen figure) so that the moving deduction leaves
+  the regular taxable income as it was; line 58 is the enhanced CPP contributions of 565.00
+  (line 22215)
   above; line 63 is -700.00 plus 200.00 plus 565.00, 65.00. Lines 64 to 68: line 64 is a chosen
   figure of 300.00, line 65 is 100.00, line 66 is not applicable and line 67 is 50.00; line 68
   is 450.00. Lines 69 to 77: line 69, other employment expenses of line 22900, is 0 as none are
@@ -242,6 +246,7 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-d/5006-d-25e.txt
 inputs:
   ca/employment_income: "60000"
+  ca/other_income: "200.00"
   # T4 boxes 24 (= 14) and 18: the required premium, Form T2204 line 16 (T1 line 31200).
   ca/t2204_insurable_earnings: "60000"
   ca/t2204_premiums_deducted: "984.00"
@@ -277,7 +282,26 @@ inputs:
   ca/amt_limited_partnership_difference_no_election: "600.00"
   ca/amt_non_capital_losses_difference: "100.00"
   ca/amt_net_capital_losses_difference: "50.00"
-  ca/amt_moving_expenses_deduction: "200.00"
+  ca/t1_m_moves:
+    - ca/moving_old_home_distance: "100"
+      ca/moving_new_home_distance: "10"
+      ca/moving_transportation_and_storage: "200.00"
+      ca/moving_travel_expenses: "0"
+      ca/moving_accommodation_expenses: "0"
+      ca/moving_meal_expenses: "0"
+      ca/moving_temporary_lodging: "0"
+      ca/moving_temporary_meals: "0"
+      ca/moving_lease_cancellation: "0"
+      ca/moving_incidental_costs: "0"
+      ca/moving_old_home_maintenance: "0"
+      ca/moving_selling_commission: "0"
+      ca/moving_selling_legal_fees: "0"
+      ca/moving_selling_advertising: "0"
+      ca/moving_selling_other_costs: "0"
+      ca/moving_buying_legal_fees: "0"
+      ca/moving_buying_taxes: "0"
+      ca/moving_reimbursement: "0"
+      ca/moving_net_eligible_income: "60000"
   ca/amt_non_deductible_interest: "300.00"
   ca/amt_life_insurance_premiums_as_collateral: "100.00"
   ca/amt_investment_counsel_fees: "50.00"

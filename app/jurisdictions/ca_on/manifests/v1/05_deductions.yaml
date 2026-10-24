@@ -380,13 +380,20 @@ capabilities:
       records: ca/t929.disability_supports_deduction
     produces:
       output: ca/disability_supports_deduction
+  # T1 line 21900 "Moving expenses (complete Form T1-M)": the line 29 amounts of all the moves added
+  # (the form ca/t1_m, one copy for each move, in 05k_t1_m.yaml), 0 with no move.
+  - name: core/record_total
+    consumes:
+      records: ca/t1_m.moving_expenses_claim
+    produces:
+      output: ca/moving_expenses_deduction
   # T1 line 53 and line 23300 "Add lines 35 to 52.": the deductions wired so far in the form's line
-  # order (20700, 20800, 20805, 21000, 21200, 21300, 21400, 21500, 21700, 22000, 22100, 22200, 22215,
-  # 22400, 23100, 23200), line 23100 being the clergy residence deduction (Form T1223 Part C, in
-  # 22_clergy_residence_deduction.yaml) and line 23200 the caller's other deductions and then the
-  # total split income of Form T1206 Part 1 line 4 ("Enter this amount on line 23200 of your
-  # return."). Not wired yet: 21900 and 22900; lines 20810 and 21999 have no line among lines 35 to
-  # 52 and nothing on this return reads them.
+  # order (20700, 20800, 20805, 21000, 21200, 21300, 21400, 21500, 21700, 21900, 22000, 22100, 22200, 22215,
+  # 22400, 23100, 23200), line 21900 being the moving expenses of Form T1-M ("Enter this amount on
+  # line 21900 of your return.", the total over the moves) and line 23200 the caller's other
+  # deductions and then the total split income of Form T1206 Part 1 line 4 ("Enter this amount on
+  # line 23200 of your return."). Not wired yet: 22900; lines 20810 and 21999 have no line
+  # among lines 35 to 52 and nothing on this return reads them.
   - name: core/sum
     consumes:
       parts:
@@ -399,6 +406,7 @@ capabilities:
         - ca/child_care_expenses
         - ca/disability_supports_deduction
         - ca/allowable_business_investment_loss
+        - ca/moving_expenses_deduction
         - ca/support_payments_deduction
         - ca/carrying_charges_interest_expenses_and_other_expenses
         - ca/cpp_deduction_on_self_employment_and_other_earnings

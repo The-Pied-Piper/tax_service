@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Any
 
 import pytest
 
-from app.domain.artifact import ArtifactRegistry
+from app.domain.artifact import ArtifactKind, ArtifactRegistry
 from app.domain.errors import InvalidRecordError
 from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
@@ -1380,3 +1381,102 @@ def test_t929_line_3_is_signed_as_the_form_does_not_floor_it() -> None:
 def test_the_t929_instances_is_a_record_list_of_no_fields() -> None:
     assert isinstance(T929_INSTANCES, RecordListKind)
     assert T929_INSTANCES.fields == ()
+
+
+# --- moving expenses, Form T1-M (T1 line 21900) -----------------------------------------------
+
+# The 19 caller inputs of one move, the fields of `ca/t1_m_moves`, in the form's line order: lines
+# 1, 2, 4, 5, 6, 7, 9, 10, 12, 13, 14, 16, 17, 18, 19, 21, 22, 25 and 28.
+MOVING_INPUTS = (
+    "ca/moving_old_home_distance",
+    "ca/moving_new_home_distance",
+    "ca/moving_transportation_and_storage",
+    "ca/moving_travel_expenses",
+    "ca/moving_accommodation_expenses",
+    "ca/moving_meal_expenses",
+    "ca/moving_temporary_lodging",
+    "ca/moving_temporary_meals",
+    "ca/moving_lease_cancellation",
+    "ca/moving_incidental_costs",
+    "ca/moving_old_home_maintenance",
+    "ca/moving_selling_commission",
+    "ca/moving_selling_legal_fees",
+    "ca/moving_selling_advertising",
+    "ca/moving_selling_other_costs",
+    "ca/moving_buying_legal_fees",
+    "ca/moving_buying_taxes",
+    "ca/moving_reimbursement",
+    "ca/moving_net_eligible_income",
+)
+
+# The computed lines of one move, the exports and T1 line 21900: line 3 (signed, the form prints no
+# floor), line 8, 11, 14 (capped), 15, 20, 23, 24, 26, 27, the lesser of 27 and 28, line 29 (gated
+# by the 40 kilometre test), line 30 and the total of line 21900.
+MOVING_COMPUTED = (
+    "ca/moving_distance_difference",
+    "ca/moving_travel_expenses_subtotal",
+    "ca/moving_temporary_living_subtotal",
+    "ca/moving_old_home_maintenance_capped",
+    "ca/moving_lease_and_incidental_subtotal",
+    "ca/moving_selling_subtotal",
+    "ca/moving_buying_subtotal",
+    "ca/moving_total_expenses",
+    "ca/moving_net_expenses",
+    "ca/moving_net_expenses_carried",
+    "ca/moving_lesser_of_expenses_and_income",
+    "ca/moving_expenses_claim",
+    "ca/moving_unused_expenses",
+    "ca/moving_expenses_deduction",
+)
+
+
+def kind_of(registry: ArtifactRegistry, identifier: str) -> ArtifactKind[Any]:
+    """The registered kind `identifier`; the registry raises for a kind it does not hold."""
+    kind = registry.get(identifier)
+    assert isinstance(kind, ArtifactKind), identifier
+    return kind
+
+
+def test_the_moving_expenses_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    for identifier in ("ca/t1_m_moves", *MOVING_INPUTS, *MOVING_COMPUTED):
+        assert kind_of(registry, identifier).identifier == identifier, identifier
+
+
+def test_the_t1_m_moves_list_the_19_inputs_of_one_move_in_the_form_line_order(
+    registry: ArtifactRegistry,
+) -> None:
+    moves = registry.get("ca/t1_m_moves")
+
+    assert isinstance(moves, RecordListKind)
+    assert tuple(field.identifier for field in moves.fields) == MOVING_INPUTS
+    assert len(moves.fields) == 19
+
+
+def test_the_moving_inputs_are_decimals_that_cannot_be_negative(registry: ArtifactRegistry) -> None:
+    # Distances are whole kilometres, but they are Decimals: `core/subtract` takes Decimals only,
+    # and a kind of another value type cannot be wired to it.
+    for identifier in MOVING_INPUTS:
+        kind = kind_of(registry, identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+
+
+def test_the_moving_amounts_are_decimals(registry: ArtifactRegistry) -> None:
+    for identifier in MOVING_COMPUTED:
+        assert kind_of(registry, identifier).value_type is Decimal, identifier
+
+
+def test_only_the_distance_difference_of_the_moving_lines_may_be_negative(
+    registry: ArtifactRegistry,
+) -> None:
+    # Line 3, "Line 1 minus line 2", prints no floor; every other computed line of the form is a
+    # sum, a lesser amount or a floor at 0 ("if negative, enter "0"").
+    assert kind_of(registry, "ca/moving_distance_difference").non_negative is False
+    for identifier in MOVING_COMPUTED[1:]:
+        assert kind_of(registry, identifier).non_negative is True, identifier
+
+
+def test_the_amt_moving_expenses_stand_in_is_no_longer_a_kind(registry: ArtifactRegistry) -> None:
+    # Form T691 Part 1 line 56 is "Moving expenses deduction from line 21900": the alternative
+    # minimum tax reads the computed line 21900, so the caller's stand-in is removed.
+    assert "ca/amt_moving_expenses_deduction" not in registry.identifiers()

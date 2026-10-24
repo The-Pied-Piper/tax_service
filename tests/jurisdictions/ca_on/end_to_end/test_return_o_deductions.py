@@ -65,6 +65,7 @@ def test_line_23300_adds_every_wired_deduction_once_in_the_forms_line_order() ->
         "+ elected_split_pension_deduction 8 + union_dues 16 + uccb_repayment 32 "
         "+ child_care_expenses 0 + disability_supports_deduction 0 "
         "+ allowable_business_investment_loss 64 "
+        "+ moving_expenses_deduction 0 "
         "+ support_payments_deduction 128 "
         "+ carrying_charges_interest_expenses_and_other_expenses 256 "
         "+ cpp_deduction_on_self_employment_and_other_earnings 0 "

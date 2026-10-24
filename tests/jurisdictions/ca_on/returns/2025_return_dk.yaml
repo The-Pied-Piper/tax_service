@@ -1,0 +1,96 @@
+# Return DK: Form T1-M, the moving expenses deduction (T1 line 21900), for two moves, each on its own
+# copy of the form. The return reports no income of its own (the earnings at the new work location
+# are on each move's line 28), so the moves are the only lines of the return that fire.
+jurisdiction: CA-ON
+tax_year: 2025
+description: >-
+  Return DK: a 2025 Ontario filer who moved twice to work and reports no income of its own
+  on this return (the net amount earned at the new work location, 40,000.00 for each move, is each
+  move's line 28: a chosen figure). Move 1 (a chosen figure): old home
+  100 kilometres from the new work location, new home 10 kilometres from it, so line 3 is 100 minus
+  10 = 90, at least 40, so the move counts. Transportation and storage costs 2,000.00 (line 4),
+  travel expenses 500.00 (line 5), accommodation, meals, temporary living, lease, incidental costs,
+  selling and buying costs all 0.00 (not claimed), no reimbursement (line 25 is 0.00), and line 28
+  is 40,000.00 (the net eligible income at the new work location). Line 8 is 500.00 (lines 5 to 7),
+  line 15 and line 20 and line 23 are 0.00, line 24 is 2,000.00 plus 500.00 = 2,500.00, line 26 is
+  2,500.00 minus 0.00 = 2,500.00, line 27 is 2,500.00, and line 29 is the lesser of 2,500.00 and
+  40,000.00, 2,500.00, which is line 21900 of the move. Line 30 is 2,500.00 minus 40,000.00, below
+  zero, so 0.00. Move 2 (a chosen figure): old home 200 kilometres, new home 50 kilometres, so line 3
+  is 150, at least 40. Transportation and storage costs 1,000.00 (line 4) and nothing else, no
+  reimbursement, and line 28 is 40,000.00; line 26 is 1,000.00, line 29 is 1,000.00 and line 30 is
+  0.00. Line 21900 is the total of the line 29 amounts of the two moves: 2,500.00 + 1,000.00 =
+  3,500.00. Line 23300 "Add lines 35 to 52" takes line 21900 with no other deduction, so the
+  deductions are 3,500.00 and line 23400 "Line 34 minus line 53" is 0.00 - 3,500.00 = -3,500.00
+  (net income before adjustments, shown in brackets). The last two expected lines are the ones
+  every return with no income computes: the alternative minimum tax carryover available for 2026
+  (2,338.71) and the largest amount subject to second additional CPP contributions (9,900.00).
+sources:
+  - >-
+    CRA, Form T1-M, Moving Expenses Deduction (2025, Protected B when completed), page 1: "You must
+    complete a separate Form T1-M for each eligible move. Enter the total from line 29 in Part 4 of
+    each form on line 21900 of your Income Tax and Benefit Return." and "Complete a separate form
+    for each move to calculate your eligible moving expenses deduction."
+    https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t1-m/t1-m-25e.pdf
+  - >-
+    CRA, Form T1-M, Part 2 "Calculation of distance in kilometres": "Line 1 minus line 2" (line 3)
+    and "If the amount on line 3 is less than 40 kilometres, you cannot deduct your moving expenses."
+    https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t1-m/t1-m-25e.pdf
+  - >-
+    CRA, Form T1-M, Part 4 "Allowable moving expenses": "Add lines 5 to 7." (line 8), "Add lines 4,
+    8, 11, 15, 20 and 23." (line 24), "Line 24 minus line 25 (if negative, enter "0")" (line 26),
+    "Amount from line 26 of the previous page" (line 27), "Enter whichever is less: amount from line
+    27 or line 28." (line 29, "Enter this amount on line 21900 of your return.") and "Line 27 minus
+    line 28 (if negative, enter "0")" (line 30).
+    https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t1-m/t1-m-25e.pdf
+  - >-
+    CRA, T1-2025 Ontario edition (form 5006-R): "Line 44 and line 21900: Moving expenses (complete
+    Form T1-M)"; "Line 53 and line 23300: Add lines 35 to 52."
+    https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
+inputs:
+  ca/cpp_months: "12"
+  ca/t1_m_moves:
+    - ca/moving_old_home_distance: "100"
+      ca/moving_new_home_distance: "10"
+      ca/moving_transportation_and_storage: "2000"
+      ca/moving_travel_expenses: "500"
+      ca/moving_accommodation_expenses: "0"
+      ca/moving_meal_expenses: "0"
+      ca/moving_temporary_lodging: "0"
+      ca/moving_temporary_meals: "0"
+      ca/moving_lease_cancellation: "0"
+      ca/moving_incidental_costs: "0"
+      ca/moving_old_home_maintenance: "0"
+      ca/moving_selling_commission: "0"
+      ca/moving_selling_legal_fees: "0"
+      ca/moving_selling_advertising: "0"
+      ca/moving_selling_other_costs: "0"
+      ca/moving_buying_legal_fees: "0"
+      ca/moving_buying_taxes: "0"
+      ca/moving_reimbursement: "0"
+      ca/moving_net_eligible_income: "40000"
+    - ca/moving_old_home_distance: "200"
+      ca/moving_new_home_distance: "50"
+      ca/moving_transportation_and_storage: "1000"
+      ca/moving_travel_expenses: "0"
+      ca/moving_accommodation_expenses: "0"
+      ca/moving_meal_expenses: "0"
+      ca/moving_temporary_lodging: "0"
+      ca/moving_temporary_meals: "0"
+      ca/moving_lease_cancellation: "0"
+      ca/moving_incidental_costs: "0"
+      ca/moving_old_home_maintenance: "0"
+      ca/moving_selling_commission: "0"
+      ca/moving_selling_legal_fees: "0"
+      ca/moving_selling_advertising: "0"
+      ca/moving_selling_other_costs: "0"
+      ca/moving_buying_legal_fees: "0"
+      ca/moving_buying_taxes: "0"
+      ca/moving_reimbursement: "0"
+      ca/moving_net_eligible_income: "40000"
+expected:
+  ca-on/return:
+    - ca/moving_expenses_deduction: "3500.00"
+      ca/deductions_from_total_income: "3500.00"
+      ca/net_income_before_adjustments: "-3500.00"
+      ca/amt_carryover_available_for_2026: "2338.71"
+      ca/cpp_second_additional_earnings_maximum: "9900.00"

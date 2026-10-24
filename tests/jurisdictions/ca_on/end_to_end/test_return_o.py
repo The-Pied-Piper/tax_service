@@ -102,6 +102,7 @@ def test_return_os_deductions_are_14500_and_its_net_income_before_adjustments_45
         "+ elected_split_pension_deduction 0 + union_dues 0 + uccb_repayment 0 "
         "+ child_care_expenses 0 + disability_supports_deduction 0 "
         "+ allowable_business_investment_loss 5000 "
+        "+ moving_expenses_deduction 0 "
         "+ support_payments_deduction 6000 "
         "+ carrying_charges_interest_expenses_and_other_expenses 500 "
         "+ cpp_deduction_on_self_employment_and_other_earnings 0 "

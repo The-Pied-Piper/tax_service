@@ -78,6 +78,10 @@ inputs:
   # Form RC359: the copies of the form, one record for each employer with EPSP contributions
   # (any number, none included); the form ca/rc359 reads their fields.
   - ca/rc359_employers
+  # Form T1-M: the moves, one record for each move (any number); the form ca/t1_m reads their
+  # fields, the 19 inputs of the form's lines 1, 2, 4, 5, 6, 7, 9, 10, 12, 13, 14, 16, 17, 18, 19,
+  # 21, 22, 25 and 28.
+  - ca/t1_m_moves
   - ca/taxable_support_payments
   - ca/rrsp_income
   - ca/fhsa_income
@@ -337,12 +341,12 @@ inputs:
   - ca/amt_graduated_rate_estate_capital_gains
   - ca/amt_publicly_listed_gifts_total
   - ca/amt_publicly_listed_gifts_t1170_line_68231
-  # Form T691 Part 1 lines 28, 29 and 31, 35 to 37, 39 to 42, 56, 59, 64 to 67 and 70 to 75: the
+  # Form T691 Part 1 lines 28, 29 and 31, 35 to 37, 39 to 42, 59, 64 to 67 and 70 to 75: the
   # caller's figures, entered as the form takes them (the T4 slips' security options boxes, the
   # T1212 amount, the gifts under a security option plan, the prospector and deferred profit-sharing
   # deductions, the limited partnership and non-capital and net capital losses differences, the
-  # moving expenses and PPIP premiums deductions, the non-deductible property expenses and the
-  # employment expenses).
+  # PPIP premiums deduction, the non-deductible property expenses and the employment expenses).
+  # Line 56, the moving expenses deduction, is the computed line 21900 and is not an input.
   - ca/amt_t4_security_options_boxes_39_and_91
   - ca/amt_t1212_line_2_deferred_security_options
   - ca/amt_security_option_publicly_listed_gifts
@@ -353,7 +357,6 @@ inputs:
   - ca/amt_limited_partnership_difference_election
   - ca/amt_non_capital_losses_difference
   - ca/amt_net_capital_losses_difference
-  - ca/amt_moving_expenses_deduction
   - ca/amt_ppip_premiums_deduction
   - ca/amt_non_deductible_interest
   - ca/amt_life_insurance_premiums_as_collateral
