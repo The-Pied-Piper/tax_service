@@ -98,7 +98,9 @@ from app.jurisdictions.ca.catalog import (
     FIRST_TIER_DONATION_CREDIT,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
+    HOME_RENOVATION_LINE_8,
     INCLUDED_CAPITAL_GAIN,
+    INVESTMENT_TAX_CREDIT_REFUND,
     ITC_AGRICULTURAL_SRED_CONTRIBUTIONS,
     ITC_AGRICULTURAL_SRED_CREDIT,
     ITC_APPRENTICESHIP_CREDIT,
@@ -107,6 +109,7 @@ from app.jurisdictions.ca.catalog import (
     ITC_CRITICAL_MINERAL_EXPENDITURES,
     ITC_MINERAL_EXPLORATION_CREDIT,
     ITC_MINERAL_EXPLORATION_EXPENDITURES,
+    ITC_PART_E_AMOUNT_17,
     ITC_QUALIFIED_PROPERTY,
     ITC_QUALIFIED_PROPERTY_CREDIT,
     ITC_RECAPTURE_AT_15_PERCENT,
@@ -126,6 +129,7 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_SUPPLEMENT_LINE_11,
     MEDICAL_SUPPLEMENT_LINE_13,
     MEDICAL_SUPPLEMENT_LINE_15,
+    MULTIGENERATIONAL_HOME_RENOVATION_CREDIT,
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     OTHER_DIVIDENDS_CREDIT,
@@ -152,6 +156,8 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_18,
     SPLIT_INCOME_LINE_19,
     SPLIT_INCOME_LINE_20,
+    T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
+    T2203_LINE_8,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
@@ -289,6 +295,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert rated == {
+        # Form T2203 Part 2 line 10 "Line 8 multiplied by the percentage from line 9": line 8,
+        # 0.00 for Return A (the percentage is "0"), at the 48% of line 9, 0.00 times 0.48, 0.00.
+        T2203_FEDERAL_SURTAX_OUTSIDE_CANADA: RateAppliedLine(
+            output=T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
+            base=T2203_LINE_8,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.48")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
         # Form T691 Part 4 line 6 "Foreign income limit for special foreign tax credit: line 4
         # multiplied by the percentage on line 5 (if negative, enter "0")", with line 5 "Applicable
         # rate" "× 20.5%": line 4, 0.00 for Return A, at 20.5%, 0 times 0.205, 0.00.
@@ -479,6 +495,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.10")),
             CENT,
             D("0"),
+        ),
+        # Form T2038(IND) Part E amount O, line 45400: no refund designated, so nothing is refunded.
+        INVESTMENT_TAX_CREDIT_REFUND: RateAppliedLine(
+            INVESTMENT_TAX_CREDIT_REFUND,
+            ITC_PART_E_AMOUNT_17,
+            D("0"),
+            Rate(D("0.40")),
+            CENT,
+            D("0.00"),
         ),
         # Form T2038(IND) Parts A and B, rate 0.15: nothing entered.
         ITC_MINERAL_EXPLORATION_CREDIT: RateAppliedLine(
@@ -986,6 +1011,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base=CANADIAN_TUITION_FEES,
             base_amount=D("0"),
             rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 12 line 10 and line 45355 (Return A claims no renovation: every figure is 0).
+        MULTIGENERATIONAL_HOME_RENOVATION_CREDIT: RateAppliedLine(
+            output=MULTIGENERATIONAL_HOME_RENOVATION_CREDIT,
+            base=HOME_RENOVATION_LINE_8,
+            base_amount=D("0"),
+            rate=Rate(D("0.145")),
             rounding=CENT,
             result=D("0.00"),
         ),

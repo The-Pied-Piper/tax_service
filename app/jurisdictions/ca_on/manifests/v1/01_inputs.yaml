@@ -198,9 +198,24 @@ inputs:
   - ca/ei_excluded_slips
   - ca/ei_insurable_earnings
   - ca/ei_special_benefits_agreement
+  # Form T2204 (Employee Overpayment of Employment Insurance Premiums): line 1 "Total EI
+  # insurable earnings (box 24 or, if blank, box 14 of your T4 slips) (1)", line 2 "Total
+  # self-employment and other earnings eligible for the EI program for access to EI special
+  # benefits" and line 4 "Total premiums deducted: Residents of other than Quebec (box 18 and
+  # box 55 of your T4 slips)".
+  - ca/t2204_insurable_earnings
+  - ca/t2204_self_employment_earnings
+  - ca/t2204_premiums_deducted
   - ca/canadian_tuition_fees
   - ca/canada_training_credit_limit
   - ca/canada_training_credit_claimed
+  # Schedule 12 (T1 line 157 and line 45355), Step 1: one record for each qualifying renovation the
+  # caller lists, holding line 1 "Total amount paid from all sales slips and contracts included in
+  # the table above and any additional sheets of paper Total qualifying expenditures", line 2
+  # "Any amount that can reasonably be considered to be reimbursed (including government assistance
+  # received or receivable) included in the amount on line 1" and line 5 "Amount of eligible
+  # expenses being claimed by other eligible individuals".
+  - ca/home_renovations
   - ca/foreign_tuition_fees
   - ca/unused_tuition_from_2024
   - ca/tuition_transfer_elected
@@ -345,7 +360,18 @@ inputs:
   - ca/political_contributions
   - ca/disability_supports_deduction
   - ca/other_employment_expenses
-  - ca/clergy_residence_deduction
+  # Form T1223 Part C, the clergy residence deduction (line 23100): the figures the form takes from
+  # the filer, entered as the form takes them. Part C (A), the employer's residence benefit (box 30
+  # of the T4 slip); line 1, the income from qualifying employment from all eligible employers;
+  # line 3, the number of months in qualifying employment; line 6, the actual rent and eligible
+  # utilities paid or the fair rental value of a residence owned; line 7, all amounts claimed for
+  # the accommodation, including a spouse's; and whether Part C (B) is completed (1) or not (0).
+  - ca/clergy_employer_residence_benefit
+  - ca/clergy_qualifying_employment_income
+  - ca/clergy_months_in_qualifying_employment
+  - ca/clergy_accommodation_cost
+  - ca/clergy_other_accommodation_claims
+  - ca/clergy_residence_part_b_completed
   - ca/net_business_income
   - ca/net_professional_income
   - ca/net_commission_income

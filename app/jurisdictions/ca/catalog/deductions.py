@@ -362,6 +362,94 @@ EXPLORATION_AND_DEVELOPMENT_EXPENSES = CATALOG.declare(
 expenses (complete Form T1229)": a starting amount until CRA publishes a 2025 edition of Form
 T1229 (the latest is 2023)."""
 
+CLERGY_EMPLOYER_RESIDENCE_BENEFIT = CATALOG.declare(
+    "clergy_employer_residence_benefit", Decimal, non_negative=True
+)
+"""Clergy employer residence benefit, Form T1223 Part C (A) "the value of this benefit (including
+any allowance for eligible utilities) is shown as a taxable benefit in box 30 of your T4 slip": the
+amount for a residence the employer provided, a starting amount taken from box 30. It is added to
+the (B) amount in line (C)."""
+
+CLERGY_QUALIFYING_EMPLOYMENT_INCOME = CATALOG.declare(
+    "clergy_qualifying_employment_income", Decimal, non_negative=True
+)
+"""Income from qualifying employment, Form T1223 Part C line 1 "Income from qualifying employment
+from all eligible employers (see note 1)": a starting amount, the income of all eligible employers
+combined. Line 2 is one third of it and line 10 is not more than it."""
+
+CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT = CATALOG.declare(
+    "clergy_months_in_qualifying_employment", int, non_negative=True
+)
+"""Number of months in qualifying employment, Form T1223 Part C line 3 "Number of months in
+qualifying employment": a count, the months the filer gives. Line 4 multiplies it by $1,000."""
+
+CLERGY_ACCOMMODATION_COST = CATALOG.declare("clergy_accommodation_cost", Decimal, non_negative=True)
+"""Actual rent and eligible utilities, Form T1223 Part C line 6 "Actual rent and eligible utilities
+paid or, if residence is owned, fair rental value including eligible utilities for the total period
+in the year that the residence was owned or rented and you were in qualifying employment (see note 2
+and note 3)": a starting amount, taken as the form takes it."""
+
+CLERGY_OTHER_ACCOMMODATION_CLAIMS = CATALOG.declare(
+    "clergy_other_accommodation_claims", Decimal, non_negative=True
+)
+"""All amounts claimed for the accommodation, Form T1223 Part C line 7 "All amounts claimed by you,
+or any person, for the accommodation (see note 4)": a starting amount, including a spouse's or
+common-law partner's claim."""
+
+CLERGY_RESIDENCE_PART_B_COMPLETED = CATALOG.declare(
+    "clergy_residence_part_b_completed", int, non_negative=True
+)
+"""Form T1223 Part C (B) completed: a count, 1 when the filer completes the (B) calculation (lines 1
+to 10) and 0 when only the (A) employer-provided residence is claimed. A starting count, stated by
+the filer."""
+
+CLERGY_RESIDENCE_LINE_2 = CATALOG.declare("clergy_residence_line_2", Decimal, non_negative=True)
+"""Form T1223 Part C line 2 "Amount from line 1 multiplied by 1/3": one third of the income from
+qualifying employment, rounded half-up to the cent."""
+
+CLERGY_RESIDENCE_MONTHS_AMOUNT = CATALOG.declare(
+    "clergy_residence_months_amount", Decimal, non_negative=True
+)
+"""Form T1223 Part C line 4 "Line 3 multiplied by $1,000 (maximum $10,000)", before the maximum: the
+months in qualifying employment times $1,000."""
+
+CLERGY_RESIDENCE_LINE_4 = CATALOG.declare("clergy_residence_line_4", Decimal, non_negative=True)
+"""Form T1223 Part C line 4 "Line 3 multiplied by $1,000 (maximum $10,000)": the months amount, not
+more than the maximum of $10,000."""
+
+CLERGY_RESIDENCE_LINE_5 = CATALOG.declare("clergy_residence_line_5", Decimal, non_negative=True)
+"""Form T1223 Part C line 5 "Enter whichever is more: line 2 or line 4.": the greater of lines 2
+and 4."""
+
+CLERGY_RESIDENCE_LINE_8 = CATALOG.declare("clergy_residence_line_8", Decimal)
+"""Form T1223 Part C line 8 "Line 6 minus line 7 =": the accommodation cost less the other claims.
+The form prints no floor, so a negative line 8 passes through to line 9."""
+
+CLERGY_RESIDENCE_LINE_9 = CATALOG.declare("clergy_residence_line_9", Decimal)
+"""Form T1223 Part C line 9 "Enter whichever is less: Line 5 or line 8.": the lesser of lines 5 and
+8, signed as the form prints it."""
+
+CLERGY_RESIDENCE_LINE_10 = CATALOG.declare("clergy_residence_line_10", Decimal)
+"""Form T1223 Part C line 10 "Enter whichever is less: Line 1 or line 9.": the (B) amount, the
+lesser of the income from qualifying employment and line 9."""
+
+CLERGY_RESIDENCE_TOTAL = CATALOG.declare("clergy_residence_total", Decimal)
+"""Form T1223 Part C (C) "add amounts (A) and (B)": the employer residence benefit (A) plus the (B)
+amount on line 10, not floored."""
+
+CLERGY_RESIDENCE_TOTAL_LIMITED = CATALOG.declare("clergy_residence_total_limited", Decimal)
+"""Form T1223 Part C (C) "The amount claimed for the clergy residence deduction cannot be more than
+the income from qualifying employment on line 1.": the total, not more than line 1."""
+
+CLERGY_RESIDENCE_DEDUCTION = CATALOG.declare(
+    "clergy_residence_deduction", Decimal, non_negative=True
+)
+"""Clergy residence deduction, T1 line 51 and line 23100 "Clergy residence deduction (complete Form
+T1223)", Form T1223 Part C "Enter this amount on line 23100 of your return.": the total of (A) and
+(B), limited to line 1 when Part C (B) is completed. The Federal Worksheet "Line 45200 - Refundable
+medical expense supplement" takes it off the employment income, as line 23100, and the alternative
+minimum tax reads it as line 23100."""
+
 OTHER_DEDUCTIONS = CATALOG.declare("other_deductions", Decimal, non_negative=True)
 """Other deductions, T1 line 52 and line 23200 "Other deductions": a starting amount, which
 includes the RDSP income repayment (a starting amount of its own, Federal Worksheet for line

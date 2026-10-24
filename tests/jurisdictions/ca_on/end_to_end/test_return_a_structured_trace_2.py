@@ -122,6 +122,7 @@ from app.jurisdictions.ca.catalog import (
     ANNUAL_GAINS_LINE_3,
     ANNUAL_GAINS_SCHEDULE_3_TOTAL,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
     BASIC_PERSONAL_AMOUNT,
     BOND_GAIN_OR_LOSS,
     BUSINESS_ADJUSTED_GROSS_SALES,
@@ -297,7 +298,10 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN,
     CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
     CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
+    CLERGY_EMPLOYER_RESIDENCE_BENEFIT,
     CLERGY_RESIDENCE_DEDUCTION,
+    CLERGY_RESIDENCE_LINE_10,
+    CLERGY_RESIDENCE_TOTAL,
     COMMISSION_INCOME,
     CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
@@ -407,6 +411,7 @@ from app.jurisdictions.ca.catalog import (
     EI_CONTROLLED_CORPORATION_EARNINGS,
     EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
     EI_NET_SELF_EMPLOYMENT_INCOME,
+    EI_OVERPAYMENT,
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PREMIUMS,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
@@ -527,12 +532,14 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_SURTAX_OUTSIDE_CANADA,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
+    FEDERAL_TAX_WITH_SURTAX,
     FEDERAL_TUITION_AMOUNT,
     FHSA_ANNUAL_AMOUNT,
     FHSA_ANNUAL_AMOUNT_FOR_2024,
@@ -642,12 +649,18 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
     INVESTMENT_TAX_CREDIT,
+    INVESTMENT_TAX_CREDIT_REFUND,
     ITC_AGRICULTURAL_SRED_CREDIT,
     ITC_AMOUNT_H,
+    ITC_AMOUNT_M,
     ITC_APPRENTICESHIP_CREDIT,
     ITC_APPRENTICESHIP_T3_BOX_40,
     ITC_APPRENTICESHIP_WAGES_TOTAL,
     ITC_APPRENTICESHIP_WAGES_WITH_T3,
+    ITC_CARRYBACK_FIRST_PREVIOUS_YEAR,
+    ITC_CARRYBACK_REQUESTED,
+    ITC_CARRYBACK_SECOND_PREVIOUS_YEAR,
+    ITC_CARRYBACK_THIRD_PREVIOUS_YEAR,
     ITC_CRITICAL_MINERAL_CREDIT,
     ITC_MINERAL_EXPLORATION_CREDIT,
     ITC_NONREFUNDABLE_CREDITS,
@@ -655,6 +668,8 @@ from app.jurisdictions.ca.catalog import (
     ITC_PART_D_AMOUNT_5,
     ITC_PART_D_AMOUNT_13,
     ITC_PART_D_SUBTOTAL,
+    ITC_PART_E_AMOUNT_12,
+    ITC_PART_E_AMOUNT_14,
     ITC_QUALIFIED_PROPERTY_CREDIT,
     ITC_RECAPTURE,
     ITC_RECAPTURE_AT_15_PERCENT,
@@ -684,6 +699,7 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_SUPPLEMENT_LINE_11,
     MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
     MEDICAL_SUPPLEMENT_WORKING_INCOME,
+    MULTIGENERATIONAL_HOME_RENOVATION_CREDIT,
     NET_BUSINESS_INCOME,
     NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
@@ -912,6 +928,14 @@ from app.jurisdictions.ca.catalog import (
     T657_GAINS_2001,
     T657_GAINS_2002_TO_2024,
     T657_T2017_LINE_13,
+    T2204_LINE_1,
+    T2204_LINE_1_PLUS_2,
+    T2204_LINE_6,
+    T2204_LINE_9,
+    T2204_LINE_10,
+    T2204_LINE_12,
+    T2204_PREMIUMS_DEDUCTED,
+    T2204_SELF_EMPLOYMENT_EARNINGS,
     T5013_DIVIDEND_TAX_CREDIT,
     T5013_INVESTMENT_INCOME,
     T5013_TAXABLE_DIVIDENDS,
@@ -1062,6 +1086,21 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ITC_PART_D_AMOUNT_5,
             ((ITC_OPENING_BALANCE, D("0")), (ITC_PART_D_SUBTOTAL, D("0.00"))),
             D("0.00"),
+        ),
+        # Form T2038(IND) Part E, the carryback and refund of the ITC (Return A: every figure is 0).
+        ITC_CARRYBACK_REQUESTED: SumLine(
+            ITC_CARRYBACK_REQUESTED,
+            (
+                (ITC_CARRYBACK_THIRD_PREVIOUS_YEAR, D("0")),
+                (ITC_CARRYBACK_SECOND_PREVIOUS_YEAR, D("0")),
+                (ITC_CARRYBACK_FIRST_PREVIOUS_YEAR, D("0")),
+            ),
+            D("0"),
+        ),
+        ITC_PART_E_AMOUNT_14: SumLine(
+            ITC_PART_E_AMOUNT_14,
+            ((ITC_PART_E_AMOUNT_12, D("0")), (ITC_AMOUNT_M, D("0"))),
+            D("0"),
         ),
         # Form T2038(IND) Part D amount 13 "Subtotal (add amounts 11 and 12)": amount 11, amount H
         # (16951.38), and amount 12, the federal foreign tax credit of line 40500 (0): 16951.38.
@@ -2135,9 +2174,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         CHILD_CARE_EARNED_INCOME: SumLine(
             CHILD_CARE_EARNED_INCOME, ((EMPLOYMENT_INCOME, D("110000")),), D("110000")
         ),
+        # Form T1223 Part C (A) plus line 10: the box 30 benefit and line 10, both 0 on Return A.
+        CLERGY_RESIDENCE_TOTAL: SumLine(
+            CLERGY_RESIDENCE_TOTAL,
+            ((CLERGY_EMPLOYER_RESIDENCE_BENEFIT, D("0")), (CLERGY_RESIDENCE_LINE_10, D("0"))),
+            D("0"),
+        ),
         # T1 line 23300, in line order: 20700, 20800, 20805, 21000, 21200, 21300, 21400, 21700,
-        # 22000, 22100, 22200, 22215, 22400, 23200 (the caller's other deductions), then the total
-        # split income of Form T1206 Part 1 line 4, here 0.
+        # 22000, 22100, 22200, 22215, 22400, 23100, 23200 (the caller's other deductions), then the
+        # total split income of Form T1206 Part 1 line 4, here 0.
         DEDUCTIONS_FROM_TOTAL_INCOME: SumLine(
             DEDUCTIONS_FROM_TOTAL_INCOME,
             (
@@ -2154,6 +2199,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
                 (CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, D("1074.00")),
                 (EXPLORATION_AND_DEVELOPMENT_EXPENSES, D("0")),
+                (CLERGY_RESIDENCE_DEDUCTION, D("0")),
                 (OTHER_DEDUCTIONS, D("0")),
                 (TOTAL_SPLIT_INCOME, D("0")),
             ),
@@ -2647,11 +2693,33 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("115000"),
         ),
+        # T1 line 128 "Line 126 plus line 127 =": line 126, 16951.38, plus line 127, the surtax
+        # outside Canada, 0.00 for Return A (the percentage on T2203 line 7 is "0"). The total is
+        # 16951.38.
+        FEDERAL_TAX_WITH_SURTAX: SumLine(
+            FEDERAL_TAX_WITH_SURTAX,
+            (
+                (FEDERAL_TAX_AFTER_CREDITS, D("16951.38")),
+                (FEDERAL_SURTAX_OUTSIDE_CANADA, D("0.00")),
+            ),
+            D("16951.38"),
+        ),
         # Form T2209 note (4), basic federal tax: "Line 42900 of your return plus any federal
         # dividend tax credit (line 40425 of your return)": Return A has no dividends.
         BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT: SumLine(
             BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
             ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")), (DIVIDEND_TAX_CREDIT, D("0"))),
+            D("16951.38"),
+        ),
+        # Form T2209 note (4), basic federal tax "plus any: federal surtax on income allocated to
+        # "Other (Outside Canada)"": line 42900 plus the dividend tax credit, 16951.38, plus the
+        # surtax of T1 line 127, 0.00 for Return A (the percentage is "0"): 16951.38.
+        BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX: SumLine(
+            BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
+            (
+                (BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT, D("16951.38")),
+                (FEDERAL_SURTAX_OUTSIDE_CANADA, D("0.00")),
+            ),
             D("16951.38"),
         ),
         # T1 line 138 (line 41600) "Add lines 135 to 137.": lines 135, 136 (the investment tax
@@ -2795,15 +2863,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # T1 line 165 (line 47900) "Provincial or territorial credits": ON479 line 21.
         PROVINCIAL_CREDITS: SumLine(PROVINCIAL_CREDITS, ((ONTARIO_CREDITS, D("0")),), D("0")),
         # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line
-        # 155 (45300), the Canada workers benefit, and line 165 (47900), in line order.
+        # 153 (45000), the EI overpayment, line 155 (45300), the Canada workers benefit, and line
+        # 165 (47900), in line order.
         TOTAL_CREDITS: SumLine(
             TOTAL_CREDITS,
             (
                 (INCOME_TAX_DEDUCTED, D("25000")),
                 (CPP_OVERPAYMENT, D("0")),
+                (EI_OVERPAYMENT, D("0")),
                 (REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT, D("0.00")),
                 (CANADA_WORKERS_BENEFIT, D("0")),
                 (CANADA_TRAINING_CREDIT, D("0")),
+                (MULTIGENERATIONAL_HOME_RENOVATION_CREDIT, D("0.00")),
+                (INVESTMENT_TAX_CREDIT_REFUND, D("0.00")),
                 (PART_XII_2_TAX_CREDIT, D("0")),
                 (EMPLOYEE_AND_PARTNER_GST_HST_REBATE, D("0")),
                 (EDUCATOR_SCHOOL_SUPPLY_CREDIT, D("0")),
@@ -3892,6 +3964,27 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("1597.44"),
         ),
+        # Form T2204 line 9 "Total premiums deducted from line 4 above": line 4, the premiums
+        # deducted (0), carried over: 0.
+        T2204_LINE_9: SumLine(T2204_LINE_9, ((T2204_PREMIUMS_DEDUCTED, D("0")),), D("0")),
+        # Form T2204 line 6 "Line 4 plus line 5": line 4, the premiums deducted (0), and line 5, the
+        # Schedule 13 line 9 premiums payable on self-employment earnings (0): 0.
+        T2204_LINE_6: SumLine(
+            T2204_LINE_6,
+            ((T2204_PREMIUMS_DEDUCTED, D("0")), (EI_PAYABLE_ON_SELF_EMPLOYMENT, D("0"))),
+            D("0"),
+        ),
+        # Form T2204 line 3 "Line 1 plus line 2", before its maximum: line 1, the total EI insurable
+        # earnings after note (1) (0), and line 2, the self-employment earnings eligible under the
+        # agreement (0): 0.
+        T2204_LINE_1_PLUS_2: SumLine(
+            T2204_LINE_1_PLUS_2,
+            ((T2204_LINE_1, D("0")), (T2204_SELF_EMPLOYMENT_EARNINGS, D("0"))),
+            D("0"),
+        ),
+        # Form T2204 line 12 "Enter the amount from line 10 or line 11, whichever applies.": line
+        # 10, 0.00 (1.64% of line 1, which is 0): 0.00.
+        T2204_LINE_12: SumLine(T2204_LINE_12, ((T2204_LINE_10, D("0.00")),), D("0.00")),
     }
     # Form T1206 Part 1 "(If the TOSI-adjusted net income at line 6 is negative, use the negative
     # value when it is part of an adjusted net income calculation, otherwise use zero.)": the

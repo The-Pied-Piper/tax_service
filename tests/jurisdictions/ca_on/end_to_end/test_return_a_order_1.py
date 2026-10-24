@@ -66,6 +66,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     AMT_TOTAL_FOREIGN_INCOME,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
     BASIC_PERSONAL_AMOUNT,
     BUSINESS_ADJUSTED_GROSS_SALES,
     BUSINESS_CCA_CLAIM,
@@ -300,6 +301,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_SURTAX_OUTSIDE_CANADA,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
@@ -307,6 +309,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
+    FEDERAL_TAX_WITH_SURTAX,
     FHSA_ANNUAL_AMOUNT,
     FHSA_ANNUAL_AMOUNT_FOR_2024,
     FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD,
@@ -561,6 +564,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_CAREGIVER_BEFORE_MAXIMUM,
     SPOUSE_CAREGIVER_LIMIT,
     SPOUSE_INFIRMITY_SUPPLEMENT,
+    T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_DIVIDENDS,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -662,8 +666,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1053
-    assert len(order) == 1053
+    assert len(order) == 1104
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     # Part 8 line 12: the check is ordered after the cap it is made against. The claim is an input,
@@ -1491,12 +1494,30 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT]
     )
     assert position[DIVIDEND_TAX_CREDIT] < position[BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT]
+    # Note (4) takes the surtax of T1 line 127 on top of line 42900 and the dividend credit, then
+    # the First Nations abatement comes off that sum.
+    assert (
+        position[FEDERAL_SURTAX_OUTSIDE_CANADA]
+        < position[BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX]
+        < position[FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX]
+    )
+    assert (
+        position[BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT]
+        < position[BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX]
+    )
+    # T2203 line 10 is the surtax outside Canada, T1 line 127. T1 line 128 is line 126 plus line
+    # 127, and the limit on T2209 line 13 and T1 line 130 both read line 128.
+    assert position[T2203_FEDERAL_SURTAX_OUTSIDE_CANADA] < position[FEDERAL_SURTAX_OUTSIDE_CANADA]
+    assert position[FEDERAL_TAX_AFTER_CREDITS] < position[FEDERAL_SURTAX_OUTSIDE_CANADA]
+    assert position[FEDERAL_SURTAX_OUTSIDE_CANADA] < position[FEDERAL_TAX_WITH_SURTAX]
     assert (
         position[FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT]
         < position[FEDERAL_FOREIGN_TAX_CREDIT]
         < position[FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT]
         < position[FEDERAL_TAX_WITH_ITC_RECAPTURE]
     )
+    assert position[FEDERAL_TAX_WITH_SURTAX] < position[FEDERAL_FOREIGN_TAX_CREDIT]
+    assert position[FEDERAL_TAX_WITH_SURTAX] < position[FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT]
     assert (
         position[LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM]
         < position[LABOUR_SPONSORED_FUNDS_CREDIT]

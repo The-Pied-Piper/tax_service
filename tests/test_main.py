@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1053
+        == 1104
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1053
+        == 1104
     )
 
 
@@ -1381,6 +1381,22 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/itc_part_d_amount_11_applies",
         "ca/itc_claim_limit",
         "ca/investment_tax_credit",
+        "ca/itc_carryback_third_previous_year",
+        "ca/itc_carryback_second_previous_year",
+        "ca/itc_carryback_first_previous_year",
+        "ca/itc_refund_designation",
+        "ca/itc_part_e_amount_3",
+        "ca/itc_part_e_amount_6",
+        "ca/itc_amount_l",
+        "ca/itc_carryback_requested",
+        "ca/itc_amount_m",
+        "ca/itc_part_e_amount_9",
+        "ca/itc_part_e_amount_12",
+        "ca/itc_part_e_amount_14",
+        "ca/itc_part_e_amount_16",
+        "ca/itc_amount_n",
+        "ca/itc_part_e_amount_17",
+        "ca/investment_tax_credit_refund",
         "ca/spouses_claimed",
         "ca/spouse_caregiver_eligible",
         "ca/spouse_net_income",
@@ -1399,6 +1415,13 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/spouse_caregiver_amount",
         "ca/infirm_dependants",
         "ca/caregiver_amount",
+        "ca/home_renovations",
+        "ca/home_renovation_expenditures",
+        "ca/home_renovation_reimbursed",
+        "ca/home_renovation_claimed_by_others",
+        "ca/home_renovation_line_3",
+        "ca/home_renovation_line_6",
+        "ca/home_renovation_line_8",
         "ca/other_dependant_medical_expenses",
         "ca/other_dependants",
         "ca/other_dependants_medical",
@@ -1725,6 +1748,12 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/federal_tax_on_split_income",
         "ca/federal_tax_with_split_income",
         "ca/federal_tax_after_credits",
+        "ca/t2203_line_5",
+        "ca/t2203_line_6",
+        "ca/t2203_line_8",
+        "ca/t2203_federal_surtax_outside_canada",
+        "ca/federal_surtax_outside_canada",
+        "ca/federal_tax_with_surtax",
         "ca/itc_recapture_expenditure_at_15_percent",
         "ca/itc_recapture_expenditure_at_20_percent",
         "ca/labour_sponsored_funds_net_cost",
@@ -1739,6 +1768,21 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/disability_supports_deduction",
         "ca/other_employment_expenses",
         "ca/clergy_residence_deduction",
+        "ca/clergy_employer_residence_benefit",
+        "ca/clergy_qualifying_employment_income",
+        "ca/clergy_months_in_qualifying_employment",
+        "ca/clergy_accommodation_cost",
+        "ca/clergy_other_accommodation_claims",
+        "ca/clergy_residence_part_b_completed",
+        "ca/clergy_residence_line_2",
+        "ca/clergy_residence_months_amount",
+        "ca/clergy_residence_line_4",
+        "ca/clergy_residence_line_5",
+        "ca/clergy_residence_line_8",
+        "ca/clergy_residence_line_9",
+        "ca/clergy_residence_line_10",
+        "ca/clergy_residence_total",
+        "ca/clergy_residence_total_limited",
         "ca/net_business_income",
         "ca/net_professional_income",
         "ca/net_commission_income",
@@ -1762,6 +1806,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/foreign_tax_credit_net_income_with_split_income",
         "ca/foreign_tax_credit_net_income",
         "ca/basic_federal_tax_with_dividend_credit",
+        "ca/basic_federal_tax_with_dividend_credit_and_surtax",
         "ca/foreign_tax_credit_basic_federal_tax",
         "ca/federal_non_business_foreign_tax_credit",
         "ca/federal_foreign_tax_credit",
@@ -1974,6 +2019,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/amt_t2203_column_5_percentage",
         "ca/amt_federal_surtax_multiple_jurisdictions",
         "ca/amt_non_resident_or_deemed_resident",
+        "ca/amt_subject_to_minimum_tax",
+        "ca/t2203_has_tax_on_split_income",
         "ca/amt_line_3_has_amount",
         "ca/amt_federal_surtax_if_non_resident",
         "ca/amt_federal_surtax",
@@ -2180,6 +2227,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/canada_workers_benefit_with_dependant",
         "ca/canada_workers_benefit",
         "ca/canada_training_credit",
+        "ca/multigenerational_home_renovation_credit",
         "ca/provincial_credits",
         "ca/part_xii_2_tax_credit",
         "ca/employee_and_partner_gst_hst_rebate",
@@ -2214,6 +2262,26 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/total_credits",
         "ca/refund_or_balance_owing",
         "ca/refund",
+        "ca/t2204_insurable_earnings",
+        "ca/t2204_self_employment_earnings",
+        "ca/t2204_premiums_deducted",
+        "ca/t2204_line_1_count",
+        "ca/t2204_line_1",
+        "ca/t2204_line_1_plus_2",
+        "ca/t2204_line_3",
+        "ca/t2204_exemption",
+        "ca/t2204_line_6",
+        "ca/t2204_line_7",
+        "ca/t2204_line_8",
+        "ca/t2204_line_9",
+        "ca/t2204_line_10",
+        "ca/t2204_line_12",
+        "ca/t2204_line_13",
+        "ca/t2204_line_14",
+        "ca/t2204_line_15",
+        "ca/t2204_line_15_count",
+        "ca/t2204_line_16",
+        "ca/ei_overpayment",
         "ca/charitable_donations",
         "ca/government_donations",
         "ca/university_donations_outside_canada",
@@ -2508,7 +2576,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1053
+        == 1104
     )
     assert (
         len(
@@ -2516,7 +2584,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1053
+        == 1104
     )
 
 
@@ -2529,7 +2597,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1053
+        == 1104
     )
     assert (
         len(
@@ -2537,7 +2605,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1053
+        == 1104
     )
 
 

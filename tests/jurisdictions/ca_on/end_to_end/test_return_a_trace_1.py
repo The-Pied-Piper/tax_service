@@ -178,6 +178,7 @@ def test_the_trace_explains_the_computation() -> None:
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
         "+ cpp_deduction_on_self_employment_and_other_earnings 0 "
         "+ cpp_enhanced_contributions_on_return 1074 + exploration_and_development_expenses 0 "
+        "+ clergy_residence_deduction 0 "
         "+ other_deductions 0 + total_split_income 0 = 5000",
         "5000",
     )
@@ -1014,9 +1015,11 @@ def test_the_trace_explains_the_computation() -> None:
     )
     position(
         "total_credits: income_tax_deducted 25000 + cpp_overpayment 0 "
+        "+ ei_overpayment 0 "
         "+ refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 0 "
-        "+ canada_training_credit 0 + part_xii_2_tax_credit 0 + "
+        "+ canada_training_credit 0 + multigenerational_home_renovation_credit 0 "
+        "+ investment_tax_credit_refund 0 + part_xii_2_tax_credit 0 + "
         "employee_and_partner_gst_hst_rebate 0 "
         "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
         "+ tax_paid_by_instalments 0 + provincial_credits 0 = 25000",

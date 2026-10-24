@@ -94,7 +94,6 @@ from app.jurisdictions.ca.catalog import (
     ANNUAL_GAINS_LINE_9,
     ANNUAL_GAINS_LINE_10,
     ANNUAL_GAINS_LINE_12,
-    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
     BUSINESS_CCA_CLAIM,
@@ -225,6 +224,14 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CLERGY_ACCOMMODATION_COST,
+    CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT,
+    CLERGY_OTHER_ACCOMMODATION_CLAIMS,
+    CLERGY_QUALIFYING_EMPLOYMENT_INCOME,
+    CLERGY_RESIDENCE_LINE_2,
+    CLERGY_RESIDENCE_LINE_4,
+    CLERGY_RESIDENCE_LINE_8,
+    CLERGY_RESIDENCE_MONTHS_AMOUNT,
     CPP_ACTUAL_BASE_CONTRIBUTIONS,
     CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_BASE_CONTRIBUTIONS,
@@ -309,6 +316,7 @@ from app.jurisdictions.ca.catalog import (
     EDUCATOR_SUPPLIES_EXPENSES,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
     EI_MAXIMUM_INSURABLE_EARNINGS,
+    EI_OVERPAYMENT,
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
     EI_SPECIAL_BENEFITS_AGREEMENT,
@@ -371,7 +379,6 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
-    FIRST_NATIONS_ABATEMENT,
     FISH_CCA_CLAIM,
     FISH_CCA_CLAIM_LESS_PERSONAL_PART,
     FISH_CCA_PERSONAL_PART,
@@ -398,7 +405,6 @@ from app.jurisdictions.ca.catalog import (
     FISH_REPAIRS_YOUR_COST,
     FISH_TOTAL_EXPENSES,
     FISHING_INCOME,
-    FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
     FOREIGN_TAX_CREDIT_NET_INCOME,
     FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
     FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
@@ -410,9 +416,19 @@ from app.jurisdictions.ca.catalog import (
     INTEREST_AND_OTHER_INVESTMENT_INCOME,
     INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
+    INVESTMENT_TAX_CREDIT,
+    ITC_AMOUNT_L,
+    ITC_AMOUNT_N,
     ITC_AVAILABLE,
     ITC_GRADUATED_RATE_ESTATE_ALLOCATION,
+    ITC_OPENING_BALANCE,
     ITC_PART_D_AMOUNT_5,
+    ITC_PART_E_AMOUNT_3,
+    ITC_PART_E_AMOUNT_6,
+    ITC_PART_E_AMOUNT_9,
+    ITC_PART_E_AMOUNT_12,
+    ITC_PART_E_AMOUNT_16,
+    ITC_REFUNDABLE_CREDITS,
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
@@ -565,6 +581,16 @@ from app.jurisdictions.ca.catalog import (
     T657_PART_2_EXCLUDED_F,
     T657_PART_2_EXCLUDED_G,
     T657_PART_2_EXCLUDED_H,
+    T2203_HAS_TAX_ON_SPLIT_INCOME,
+    T2203_LINE_5,
+    T2204_EXEMPTION,
+    T2204_INSURABLE_EARNINGS,
+    T2204_LINE_1,
+    T2204_LINE_1_COUNT,
+    T2204_LINE_1_PLUS_2,
+    T2204_LINE_3,
+    T2204_LINE_15,
+    T2204_LINE_15_COUNT,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_DIVIDENDS,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -685,6 +711,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0.00"),
             result=D("16951.38"),
         ),
+        # Form T1223 Part C line 8 "Line 6 minus line 7": both 0 on Return A.
+        CLERGY_RESIDENCE_LINE_8: SubtractedLine(
+            output=CLERGY_RESIDENCE_LINE_8,
+            minuend=CLERGY_ACCOMMODATION_COST,
+            minuend_amount=D("0"),
+            subtrahend=CLERGY_OTHER_ACCOMMODATION_CLAIMS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Worksheet ON428 line 8 "Line 6 minus line 7": line 6, the surtax on line 3 (523.79), less
         # line 7, the surtax on line 65 of the form (523.79): 0.
         ontario.WORKSHEET_ON428_LINE_8: SubtractedLine(
@@ -754,6 +789,47 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0.00"),
         ),
+        # Form T2038(IND) Part E, the carryback and refund of the ITC (Return A: every figure is 0).
+        ITC_PART_E_AMOUNT_3: SubtractedLine(
+            output=ITC_PART_E_AMOUNT_3,
+            minuend=ITC_AVAILABLE,
+            minuend_amount=D("0"),
+            subtrahend=ITC_OPENING_BALANCE,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        ITC_AMOUNT_L: SubtractedLine(
+            output=ITC_AMOUNT_L,
+            minuend=ITC_PART_E_AMOUNT_3,
+            minuend_amount=D("0"),
+            subtrahend=ITC_PART_E_AMOUNT_6,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        ITC_PART_E_AMOUNT_9: SubtractedLine(
+            output=ITC_PART_E_AMOUNT_9,
+            minuend=ITC_REFUNDABLE_CREDITS,
+            minuend_amount=D("0"),
+            subtrahend=ITC_GRADUATED_RATE_ESTATE_ALLOCATION,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        ITC_PART_E_AMOUNT_12: SubtractedLine(
+            output=ITC_PART_E_AMOUNT_12,
+            minuend=INVESTMENT_TAX_CREDIT,
+            minuend_amount=D("0"),
+            subtrahend=ITC_OPENING_BALANCE,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        ITC_AMOUNT_N: SubtractedLine(
+            output=ITC_AMOUNT_N,
+            minuend=ITC_PART_E_AMOUNT_9,
+            minuend_amount=D("0"),
+            subtrahend=ITC_PART_E_AMOUNT_16,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Form T2209 note (3), net income: line 23400 less line 23500 (the line 23600 amount, here
         # not floored), none repaid on Return A; then the deductions it lists, none on Return A,
         # come off that amount plus line 68360 of Form T1206.
@@ -772,16 +848,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
             subtrahend_amount=D("0"),
             result=D("115000"),
-        ),
-        # Note (4), basic federal tax: line 42900 plus the dividend tax credit, less the federal
-        # refundable First Nations abatement (line 44100), none on Return A.
-        FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX: SubtractedLine(
-            output=FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
-            minuend=BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
-            minuend_amount=D("16951.38"),
-            subtrahend=FIRST_NATIONS_ABATEMENT,
-            subtrahend_amount=D("0"),
-            result=D("16951.38"),
         ),
         # Schedule 8 Part 5 line 74 "Line 72 minus line 73": 0.00 and line 73 ("0", line 24 of
         # Part 3 is 0) for Return A.
@@ -2362,10 +2428,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         AMT_BASIC_EXEMPTION: CreditAmountLine(
             AMT_BASIC_EXEMPTION, Credit(amount=D("177882.00")), CENT, D("177882.00")
         ),
+        # Form T2204 line 7 "Amount from line 3 – $2,000": the $2,000 exemption, claimed whole.
+        T2204_EXEMPTION: CreditAmountLine(
+            output=T2204_EXEMPTION,
+            basis=Credit(amount=D("2000.00")),
+            rounding=CENT,
+            value=D("2000.00"),
+        ),
     }
     assert per_unit == {
         # Form T2222 lines 1, 2, 6 and 7 "multiplied by $11.00" and "multiplied by $5.50": Return A
         # has no days.
+        # Form T1223 Part C line 4 before its maximum: 0 months at $1,000 a month.
+        CLERGY_RESIDENCE_MONTHS_AMOUNT: PerUnitAmountLine(
+            output=CLERGY_RESIDENCE_MONTHS_AMOUNT,
+            count_kind=CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT,
+            count=0,
+            per_unit=Amount(D("1000")),
+            rounding=CENT,
+            result=D("0"),
+        ),
         ZONE_A_BASIC_RESIDENCY_AMOUNT: PerUnitAmountLine(
             output=ZONE_A_BASIC_RESIDENCY_AMOUNT,
             count_kind=ZONE_A_DAYS_LIVED,
@@ -2463,6 +2545,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert fractions == {
         # Schedule 8 Part 5 line 48 "multiplied by 2": 0 x 2 for Return A.
+        # Form T1223 Part C line 2 "Amount from line 1 multiplied by 1/3": line 1 is 0 on Return A.
+        CLERGY_RESIDENCE_LINE_2: FractionAppliedLine(
+            output=CLERGY_RESIDENCE_LINE_2,
+            base=CLERGY_QUALIFYING_EMPLOYMENT_INCOME,
+            base_amount=D("0"),
+            fraction=Fraction(1, 3),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
         CPP_PART_5_LINE_48: FractionAppliedLine(
             output=CPP_PART_5_LINE_48,
             base=CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
@@ -2975,6 +3066,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             result=D("0"),
         ),
+        # Form T2203 Part 2 line 5 "If you have to pay tax on split income, enter the amount from
+        # line 22 of your Form T1206. If not, enter "0"." The count of "you have to pay tax on split
+        # income" is 0 for Return A, so line 22 of Form T1206 (0.00) times 0 is 0.
+        T2203_LINE_5: TimesCountLine(
+            output=T2203_LINE_5,
+            amount_kind=SPLIT_INCOME_LINE_22,
+            amount_value=D("0.00"),
+            count_kind=T2203_HAS_TAX_ON_SPLIT_INCOME,
+            count=0,
+            result=D("0"),
+        ),
         # T1 line 31000 from Schedule 8 Part 5 line 70, once for each Part 5 completed: 0 for
         # Return A.
         CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT: TimesCountLine(
@@ -3228,6 +3330,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             result=D("0"),
         ),
+        # Form T2204 line 1 "Total EI insurable earnings (box 24 or, if blank, box 14 of your T4
+        # slips) (1)": the insurable earnings, 0, times a count of 0, as the note (1) applies.
+        T2204_LINE_1: TimesCountLine(
+            output=T2204_LINE_1,
+            amount_kind=T2204_INSURABLE_EARNINGS,
+            amount_value=D("0"),
+            count_kind=T2204_LINE_1_COUNT,
+            count=0,
+            result=D("0"),
+        ),
+        # T1 line 45000 "Employment insurance (EI) overpayment": Form T2204 line 15, 0, times a
+        # count of 0, as line 15 is not more than $1.
+        EI_OVERPAYMENT: TimesCountLine(
+            output=EI_OVERPAYMENT,
+            amount_kind=T2204_LINE_15,
+            amount_value=D("0"),
+            count_kind=T2204_LINE_15_COUNT,
+            count=0,
+            result=D("0"),
+        ),
     }
     assert multiples == {
         ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS: MultipleOverLine(
@@ -3253,6 +3375,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert capped == {
         # The guide's line 41400 "to a maximum of $750", after the 15%: 0 is below it.
+        # Form T1223 Part C line 4 "(maximum $10,000)": the months amount, 0, within the maximum.
+        CLERGY_RESIDENCE_LINE_4: CappedAmountLine(
+            CLERGY_RESIDENCE_LINE_4,
+            CLERGY_RESIDENCE_MONTHS_AMOUNT,
+            D("0"),
+            Amount(D("10000")),
+            CENT,
+            D("0"),
+        ),
         LABOUR_SPONSORED_FUNDS_CREDIT: CappedAmountLine(
             LABOUR_SPONSORED_FUNDS_CREDIT,
             LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
@@ -3399,6 +3530,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             cap=Amount(D("5000")),
             rounding=CENT,
             result=D("0.00"),
+        ),
+        # Form T2204 line 3 "Line 1 plus line 2 (maximum $65,700)": 0.00 is below the maximum.
+        T2204_LINE_3: CappedAmountLine(
+            T2204_LINE_3,
+            T2204_LINE_1_PLUS_2,
+            D("0"),
+            Amount(D("65700.00")),
+            CENT,
+            D("0.00"),
         ),
     }
 

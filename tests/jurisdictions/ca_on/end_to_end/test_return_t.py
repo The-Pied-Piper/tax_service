@@ -16,9 +16,12 @@ from app.jurisdictions.ca.catalog import (
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EDUCATOR_SUPPLIES_EXPENSES,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
+    EI_OVERPAYMENT,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     INCOME_TAX_DEDUCTED,
+    INVESTMENT_TAX_CREDIT_REFUND,
     JOURNALISM_LABOUR_TAX_CREDIT,
+    MULTIGENERATIONAL_HOME_RENOVATION_CREDIT,
     PART_XII_2_TAX_CREDIT,
     PROVINCIAL_CREDITS,
     REFUND,
@@ -106,9 +109,12 @@ def test_return_ts_total_credits_add_lines_150_to_165_in_line_order() -> None:
     assert line.parts == (
         (INCOME_TAX_DEDUCTED, D("4929.83")),
         (CPP_OVERPAYMENT, D("0")),
+        (EI_OVERPAYMENT, D("0")),
         (REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT, D("0.00")),
         (CANADA_WORKERS_BENEFIT, D("0")),
         (CANADA_TRAINING_CREDIT, D("0")),
+        (MULTIGENERATIONAL_HOME_RENOVATION_CREDIT, D("0.00")),
+        (INVESTMENT_TAX_CREDIT_REFUND, D("0.00")),
         (PART_XII_2_TAX_CREDIT, D("50")),
         (EMPLOYEE_AND_PARTNER_GST_HST_REBATE, D("150")),
         (EDUCATOR_SCHOOL_SUPPLY_CREDIT, D("250.00")),
@@ -119,9 +125,11 @@ def test_return_ts_total_credits_add_lines_150_to_165_in_line_order() -> None:
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "total_credits: income_tax_deducted 4929.83 + cpp_overpayment 0 "
+        "+ ei_overpayment 0 "
         "+ refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 0 "
-        "+ canada_training_credit 0 + part_xii_2_tax_credit 50 + "
+        "+ canada_training_credit 0 + multigenerational_home_renovation_credit 0 "
+        "+ investment_tax_credit_refund 0 + part_xii_2_tax_credit 50 + "
         "employee_and_partner_gst_hst_rebate 150 "
         "+ educator_school_supply_credit 250 + journalism_labour_tax_credit 75 "
         "+ tax_paid_by_instalments 2000 + provincial_credits 0 = 7454.83"

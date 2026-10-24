@@ -656,6 +656,15 @@ AMT_NON_RESIDENT_OR_DEEMED_RESIDENT = CATALOG.declare(
 deemed resident, enter the amount from line 2.": a yes or no count, 1 when you are a non-resident or
 deemed resident and 0 otherwise, a starting count."""
 
+AMT_SUBJECT_TO_MINIMUM_TAX = CATALOG.declare("amt_subject_to_minimum_tax", int, non_negative=True)
+"""Subject to minimum tax, Form T2203 Part 2 "If you are subject to minimum tax, do not complete
+lines 4 to 10. Instead, calculate the federal surtax on income you allocated to "Other (Outside
+Canada)" on Form T691 and enter it on line 10.": a yes or no count, 1 when you are subject to
+minimum tax and 0 otherwise, the caller's choice. It is an input and not derived from Form T691 Part
+5 line 11 (`amt_part_5_line_11_is_positive`): that line reads the federal foreign tax credit (line
+129), which the surtax of line 127 feeds, so deriving it there would be a cycle through the federal
+foreign tax credit."""
+
 AMT_LINE_3_HAS_AMOUNT = CATALOG.declare("amt_line_3_has_amount", int, non_negative=True)
 """You have an amount on line 3, Form T691 Part 3 line 4 "If you have an amount on line 3, enter
 that amount.": 1 when line 3 is not 0, and 0 otherwise, the count of the condition."""

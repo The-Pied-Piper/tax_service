@@ -35,6 +35,22 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CLERGY_ACCOMMODATION_COST,
+    CLERGY_EMPLOYER_RESIDENCE_BENEFIT,
+    CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT,
+    CLERGY_OTHER_ACCOMMODATION_CLAIMS,
+    CLERGY_QUALIFYING_EMPLOYMENT_INCOME,
+    CLERGY_RESIDENCE_DEDUCTION,
+    CLERGY_RESIDENCE_LINE_2,
+    CLERGY_RESIDENCE_LINE_4,
+    CLERGY_RESIDENCE_LINE_5,
+    CLERGY_RESIDENCE_LINE_8,
+    CLERGY_RESIDENCE_LINE_9,
+    CLERGY_RESIDENCE_LINE_10,
+    CLERGY_RESIDENCE_MONTHS_AMOUNT,
+    CLERGY_RESIDENCE_PART_B_COMPLETED,
+    CLERGY_RESIDENCE_TOTAL,
+    CLERGY_RESIDENCE_TOTAL_LIMITED,
     CPP_ACTUAL_BASE_CONTRIBUTIONS,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASIC_EXEMPTION,
@@ -1211,3 +1227,99 @@ def test_the_lines_the_part_5_routing_reads_are_non_negative_money(
         assert kind.non_negative is True, identifier
         assert identifier not in SIGNED, identifier
         assert identifier in REGISTERED, identifier
+
+
+# Form T1223 Part C, 2025: the clergy residence deduction, T1 line 23100. The six inputs are the
+# figures the form takes from the filer (Part C (A), lines 1, 3, 6 and 7, and the Part C (B)
+# choice); the lines 2 to 10 and the totals are calculated from them and the datasets. Line 23100
+# was a starting amount (an input) until it was calculated here.
+
+
+def test_the_clergy_residence_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert registry.get("ca/clergy_employer_residence_benefit") is CLERGY_EMPLOYER_RESIDENCE_BENEFIT
+    assert (
+        registry.get("ca/clergy_qualifying_employment_income")
+        is CLERGY_QUALIFYING_EMPLOYMENT_INCOME
+    )
+    assert (
+        registry.get("ca/clergy_months_in_qualifying_employment")
+        is CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT
+    )
+    assert registry.get("ca/clergy_accommodation_cost") is CLERGY_ACCOMMODATION_COST
+    assert registry.get("ca/clergy_other_accommodation_claims") is CLERGY_OTHER_ACCOMMODATION_CLAIMS
+    assert registry.get("ca/clergy_residence_part_b_completed") is CLERGY_RESIDENCE_PART_B_COMPLETED
+    assert registry.get("ca/clergy_residence_line_2") is CLERGY_RESIDENCE_LINE_2
+    assert registry.get("ca/clergy_residence_months_amount") is CLERGY_RESIDENCE_MONTHS_AMOUNT
+    assert registry.get("ca/clergy_residence_line_4") is CLERGY_RESIDENCE_LINE_4
+    assert registry.get("ca/clergy_residence_line_5") is CLERGY_RESIDENCE_LINE_5
+    assert registry.get("ca/clergy_residence_line_8") is CLERGY_RESIDENCE_LINE_8
+    assert registry.get("ca/clergy_residence_line_9") is CLERGY_RESIDENCE_LINE_9
+    assert registry.get("ca/clergy_residence_line_10") is CLERGY_RESIDENCE_LINE_10
+    assert registry.get("ca/clergy_residence_total") is CLERGY_RESIDENCE_TOTAL
+    assert registry.get("ca/clergy_residence_total_limited") is CLERGY_RESIDENCE_TOTAL_LIMITED
+    assert registry.get("ca/clergy_residence_deduction") is CLERGY_RESIDENCE_DEDUCTION
+
+
+def test_the_clergy_residence_money_kinds_are_decimal(registry: ArtifactRegistry) -> None:
+    for kind in (
+        CLERGY_EMPLOYER_RESIDENCE_BENEFIT,
+        CLERGY_QUALIFYING_EMPLOYMENT_INCOME,
+        CLERGY_ACCOMMODATION_COST,
+        CLERGY_OTHER_ACCOMMODATION_CLAIMS,
+        CLERGY_RESIDENCE_LINE_2,
+        CLERGY_RESIDENCE_MONTHS_AMOUNT,
+        CLERGY_RESIDENCE_LINE_4,
+        CLERGY_RESIDENCE_LINE_5,
+        CLERGY_RESIDENCE_LINE_8,
+        CLERGY_RESIDENCE_LINE_9,
+        CLERGY_RESIDENCE_LINE_10,
+        CLERGY_RESIDENCE_TOTAL,
+        CLERGY_RESIDENCE_TOTAL_LIMITED,
+        CLERGY_RESIDENCE_DEDUCTION,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_clergy_residence_counts_are_int_kinds(registry: ArtifactRegistry) -> None:
+    # T1223 Part C line 3 "Number of months in qualifying employment" is a count of months, and
+    # (B) being completed is a 0 or 1 the filer states.
+    assert CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT.value_type is int
+    assert CLERGY_RESIDENCE_PART_B_COMPLETED.value_type is int
+    assert registry.get("ca/clergy_months_in_qualifying_employment") is (
+        CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT
+    )
+    assert registry.get("ca/clergy_residence_part_b_completed") is CLERGY_RESIDENCE_PART_B_COMPLETED
+
+
+def test_the_clergy_residence_amounts_on_lines_2_to_5_and_the_inputs_are_not_below_zero() -> None:
+    # Each is a dollars-and-cents line that cannot be negative on the form as modelled: the
+    # fraction of the income, the months amount, its cap, the greater of lines 2 and 4, and the
+    # figures the filer enters.
+    for kind in (
+        CLERGY_EMPLOYER_RESIDENCE_BENEFIT,
+        CLERGY_QUALIFYING_EMPLOYMENT_INCOME,
+        CLERGY_MONTHS_IN_QUALIFYING_EMPLOYMENT,
+        CLERGY_ACCOMMODATION_COST,
+        CLERGY_OTHER_ACCOMMODATION_CLAIMS,
+        CLERGY_RESIDENCE_PART_B_COMPLETED,
+        CLERGY_RESIDENCE_LINE_2,
+        CLERGY_RESIDENCE_MONTHS_AMOUNT,
+        CLERGY_RESIDENCE_LINE_4,
+        CLERGY_RESIDENCE_LINE_5,
+        CLERGY_RESIDENCE_DEDUCTION,
+    ):
+        assert kind.non_negative is True, kind.identifier
+
+
+def test_the_clergy_residence_lines_8_to_10_and_the_totals_are_signed() -> None:
+    # Form T1223 Part C line 8 "Line 6 minus line 7 =", line 9 "Enter whichever is less: Line 5 or
+    # line 8." and line 10 "Enter whichever is less: Line 1 or line 9." print no floor, so a
+    # negative line 8 passes through; the (A) and (B) total and its limit are not floored either.
+    for kind in (
+        CLERGY_RESIDENCE_LINE_8,
+        CLERGY_RESIDENCE_LINE_9,
+        CLERGY_RESIDENCE_LINE_10,
+        CLERGY_RESIDENCE_TOTAL,
+        CLERGY_RESIDENCE_TOTAL_LIMITED,
+    ):
+        assert kind.non_negative is False, kind.identifier

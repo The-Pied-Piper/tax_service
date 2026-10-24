@@ -1,4 +1,4 @@
-"""The 2025 investment tax credit rates of Form T2038(IND) Parts A and B, against CRA's form.
+"""The 2025 investment tax credit rates of Form T2038(IND) Parts A, B and E, against CRA's form.
 
 2025 Form T2038(IND), Investment Tax Credit (Individuals), Part A, "Scientific research and
 experimental development (SR&ED)": line 67120 "× 0.15 =" amount 1, line 67130 "× 0.15 =" amount 2,
@@ -6,9 +6,11 @@ and "Qualified property": line 67140 "× 0.10 =" amount 4. Part B, "Mineral expl
 (METC)": line 67170 "× 0.15 =" amount B; "Critical mineral exploration tax credit (CMETC)": line
 67175 "× 0.30 =" amount C; "Apprenticeship job creation tax credit (AJCTC)": line 67180 "× 0.10 ="
 amount D; "Repayment of assistance for SR&ED": line 67184 "× 0.20 =" amount 1 and line 67185
-"× 0.15 =" amount 2. Each percentage is a rate (the `rate` kind), rounded half-up to the cent, as
-every dollars-and-cents box on the forms is. Confirmed from the PDF (docs/cra-forms-2025/
-t2038-ind-25e.pdf; no .txt published), so the datasets cite the PDF.
+"× 0.15 =" amount 2. Part E, "Calculating an ITC refund": "The refundable rate" amount 18, printed
+as "0.40", the rate at which amount 17 is refunded (amount O, line 45400). Each percentage is a
+rate (the `rate` kind), rounded half-up to the cent, as every dollars-and-cents box on the forms
+is. Confirmed from the PDF (docs/cra-forms-2025/t2038-ind-25e.pdf; no .txt published), so the
+datasets cite the PDF.
 
 The datasets are tested as rates on their own; the lines together, from the caller's figures to
 amounts A and F, are in the `end_to_end` tests.
@@ -40,6 +42,7 @@ RATES: tuple[tuple[str, str], ...] = (
     ("ca/itc_part_b_amount_d_rate", "0.10"),
     ("ca/itc_part_b_repayment_line_1_rate", "0.20"),
     ("ca/itc_part_b_repayment_line_2_rate", "0.15"),
+    ("ca/itc_part_e_refundable_rate", "0.40"),
 )
 
 

@@ -33,6 +33,7 @@ HOMES: dict[str, tuple[str, ...]] = {
         "ImmediateExpensingLine",
     ),
     "apprenticeship": ("ApprenticeWagesLine",),
+    "home_renovation": ("RenovationLine3", "RenovationLine6", "RenovationLine7"),
     "vehicles": ("BusinessVehicleLine",),
     "dependants": (
         "CaregiverClaimLine",

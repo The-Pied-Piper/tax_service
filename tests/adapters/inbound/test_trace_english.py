@@ -158,6 +158,9 @@ from app.jurisdictions.ca.trace import (
     PrincipalResidenceWorksheetLine66,
     ProratedByDaysLine,
     RecapturedCcaLine,
+    RenovationLine3,
+    RenovationLine6,
+    RenovationLine7,
     ShortTermRentalNonCompliantCcaByClassLine,
     ShortTermRentalNonCompliantCcaLine,
     ShortTermRentalNonCompliantLine,
@@ -5855,4 +5858,75 @@ def test_renders_the_days_of_a_full_year_of_a_366_day_dataset() -> None:
 
     assert render(line) == (
         "prorated_limit: unprorated_limit 1500000 × fiscal_period_days 153 / 366 = 627049.18"
+    )
+
+
+# --- Schedule 12, the multigenerational home renovation credit, per renovation -----------------
+#
+# Line 3 "Line 1 minus line 2 (maximum $50,000 per qualifying renovation)": "renovation <n>:
+# expenditures <e> less reimbursed <r>, at most <maximum> = <result>". Line 6 "Line 4 minus line
+# 5": "renovation <n>: maximum <maximum> less claimed by others <c> = <result>". Line 7 "Enter
+# whichever is less: amount from line 3 or line 6": "renovation <n>: lesser of line 3 <a> and
+# line 6 <b> = <result>". Each total is the items total under its output's label. Every figure
+# prints without trailing zeros.
+
+HOME_LINE_3 = ArtifactKind("ex/home_renovation_line_3", Decimal)
+HOME_LINE_6 = ArtifactKind("ex/home_renovation_line_6", Decimal)
+HOME_LINE_8 = ArtifactKind("ex/home_renovation_line_8", Decimal)
+
+
+def test_renders_the_first_renovations_line_3_at_the_maximum() -> None:
+    line = RenovationLine3(HOME_LINE_3, 1, D("60000"), D("0"), Amount(D("50000")), D("50000"))
+
+    assert render(line) == (
+        "home_renovation_line_3: renovation 1: expenditures 60000 less reimbursed 0, at most 50000 "
+        "= 50000"
+    )
+
+
+def test_renders_the_second_renovations_line_3_below_the_maximum() -> None:
+    line = RenovationLine3(HOME_LINE_3, 2, D("30000"), D("5000"), Amount(D("50000")), D("25000"))
+
+    assert render(line) == (
+        "home_renovation_line_3: renovation 2: expenditures 30000 less reimbursed 5000, at most "
+        "50000 = 25000"
+    )
+
+
+def test_renders_a_renovations_line_3_without_trailing_zeros() -> None:
+    line = RenovationLine3(
+        HOME_LINE_3, 2, D("30000.00"), D("5000.00"), Amount(D("50000.00")), D("25000.00")
+    )
+
+    assert render(line) == (
+        "home_renovation_line_3: renovation 2: expenditures 30000 less reimbursed 5000, at most "
+        "50000 = 25000"
+    )
+
+
+def test_renders_the_second_renovations_line_6_after_the_claim_by_others() -> None:
+    line = RenovationLine6(HOME_LINE_6, 2, Amount(D("50000")), D("10000"), D("40000"))
+
+    assert render(line) == (
+        "home_renovation_line_6: renovation 2: maximum 50000 less claimed by others 10000 = 40000"
+    )
+
+
+def test_renders_the_second_renovations_line_7_as_the_lesser_of_lines_3_and_6() -> None:
+    line = RenovationLine7(HOME_LINE_8, 2, D("25000"), D("40000"), D("25000"))
+
+    assert render(line) == (
+        "home_renovation_line_8: renovation 2: lesser of line 3 25000 and line 6 40000 = 25000"
+    )
+
+
+def test_renders_the_items_total_of_two_renovations() -> None:
+    line = ItemsTotalLine(HOME_LINE_8, ((1, D("50000")), (2, D("25000"))), D("75000"))
+
+    assert render(line) == "home_renovation_line_8: item 1 50000 + item 2 25000 = 75000"
+
+
+def test_renders_the_items_total_of_no_renovations() -> None:
+    assert render(ItemsTotalLine(HOME_LINE_8, (), D("0"))) == (
+        "home_renovation_line_8: no items = 0"
     )

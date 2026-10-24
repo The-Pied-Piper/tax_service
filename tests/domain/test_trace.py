@@ -154,6 +154,9 @@ from app.jurisdictions.ca.trace import (
     PrincipalResidenceWorksheetLine66,
     ProratedByDaysLine,
     RecapturedCcaLine,
+    RenovationLine3,
+    RenovationLine6,
+    RenovationLine7,
     ShortTermRentalNonCompliantCcaByClassLine,
     ShortTermRentalNonCompliantCcaLine,
     ShortTermRentalNonCompliantLine,
@@ -221,6 +224,9 @@ CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 CAREGIVER = ArtifactKind("ex/caregiver_amount", Decimal)
 APPRENTICESHIP = ArtifactKind("ex/apprenticeship_wages_total", Decimal)
 MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
+RENOVATION_3 = ArtifactKind("ex/home_renovation_line_3", Decimal)
+RENOVATION_6 = ArtifactKind("ex/home_renovation_line_6", Decimal)
+RENOVATION_8 = ArtifactKind("ex/home_renovation_line_8", Decimal)
 MEDICAL_REDUCTION = ClaimReduction(Rate(D("0.03")), D("2834"), D("15551"))
 LIMITED = ArtifactKind("ex/limited_amount", Decimal)
 DIVIDED = ArtifactKind("ex/divided_amount", Decimal)
@@ -419,6 +425,25 @@ def caregiver_claim_line() -> CaregiverClaimLine:
         CENT,
         D("3798.00"),
     )
+
+
+def renovation_line_3() -> RenovationLine3:
+    return RenovationLine3(
+        RENOVATION_3,
+        2,
+        D("60000"),
+        D("5000"),
+        Amount(D("50000")),
+        D("50000"),
+    )
+
+
+def renovation_line_6() -> RenovationLine6:
+    return RenovationLine6(RENOVATION_6, 2, Amount(D("50000")), D("10000"), D("40000"))
+
+
+def renovation_line_7() -> RenovationLine7:
+    return RenovationLine7(RENOVATION_8, 2, D("50000"), D("40000"), D("40000"))
 
 
 def apprentice_wages_line() -> ApprenticeWagesLine:
@@ -709,6 +734,9 @@ ALL_LINES = [
     rate_by_income_band_line,
     chosen_rate_applied_line,
     caregiver_claim_line,
+    renovation_line_3,
+    renovation_line_6,
+    renovation_line_7,
     caregiver_claim_less_claimed_line,
     disability_transfer_line,
     principal_residence_gain_line,
@@ -2537,6 +2565,95 @@ def test_caregiver_claim_lines_differ_by_each_field() -> None:
 
 def test_caregiver_claim_lines_are_hashable() -> None:
     assert hash(caregiver_claim_line()) == hash(caregiver_claim_line())
+
+
+def test_renovation_line_3_fields_in_order() -> None:
+    line = renovation_line_3()
+
+    assert line == RenovationLine3(
+        output=RENOVATION_3,
+        position=2,
+        expenditures=D("60000"),
+        reimbursed=D("5000"),
+        maximum=Amount(D("50000")),
+        result=D("50000"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "expenditures",
+        "reimbursed",
+        "maximum",
+        "result",
+    ]
+    assert line.amount == D("50000")
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_renovation_line_6_fields_in_order() -> None:
+    line = renovation_line_6()
+
+    assert line == RenovationLine6(
+        output=RENOVATION_6,
+        position=2,
+        maximum=Amount(D("50000")),
+        claimed_by_others=D("10000"),
+        result=D("40000"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "maximum",
+        "claimed_by_others",
+        "result",
+    ]
+    assert line.amount == D("40000")
+
+
+def test_renovation_line_7_fields_in_order() -> None:
+    line = renovation_line_7()
+
+    assert line == RenovationLine7(
+        output=RENOVATION_8,
+        position=2,
+        line_3=D("50000"),
+        line_6=D("40000"),
+        result=D("40000"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "line_3",
+        "line_6",
+        "result",
+    ]
+    assert line.amount == D("40000")
+
+
+def test_renovation_lines_differ_by_each_field() -> None:
+    line = renovation_line_3()
+
+    assert line != RenovationLine3(
+        RENOVATION_3, 1, D("60000"), D("5000"), Amount(D("50000")), D("50000")
+    )
+    assert line != RenovationLine3(
+        RENOVATION_3, 2, D("60001"), D("5000"), Amount(D("50000")), D("50000")
+    )
+    assert line != RenovationLine3(
+        RENOVATION_3, 2, D("60000"), D("5001"), Amount(D("50000")), D("50000")
+    )
+    assert line != RenovationLine3(
+        RENOVATION_3, 2, D("60000"), D("5000"), Amount(D("40000")), D("50000")
+    )
+    assert line != RenovationLine3(
+        RENOVATION_3, 2, D("60000"), D("5000"), Amount(D("50000")), D("50001")
+    )
+
+
+def test_renovation_lines_are_hashable() -> None:
+    assert hash(renovation_line_3()) == hash(renovation_line_3())
+    assert hash(renovation_line_6()) == hash(renovation_line_6())
+    assert hash(renovation_line_7()) == hash(renovation_line_7())
 
 
 def test_other_dependant_medical_line_fields_in_order() -> None:
