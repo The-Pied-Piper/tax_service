@@ -666,7 +666,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1078
+    assert len(order) == 1088
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     # Part 8 line 12: the check is ordered after the cap it is made against. The claim is an input,

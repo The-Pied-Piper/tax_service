@@ -1654,6 +1654,21 @@ REGISTERED = frozenset(
         "ca/disability_supports_deduction",
         "ca/other_employment_expenses",
         "ca/clergy_residence_deduction",
+        "ca/clergy_employer_residence_benefit",
+        "ca/clergy_qualifying_employment_income",
+        "ca/clergy_months_in_qualifying_employment",
+        "ca/clergy_accommodation_cost",
+        "ca/clergy_other_accommodation_claims",
+        "ca/clergy_residence_part_b_completed",
+        "ca/clergy_residence_line_2",
+        "ca/clergy_residence_months_amount",
+        "ca/clergy_residence_line_4",
+        "ca/clergy_residence_line_5",
+        "ca/clergy_residence_line_8",
+        "ca/clergy_residence_line_9",
+        "ca/clergy_residence_line_10",
+        "ca/clergy_residence_total",
+        "ca/clergy_residence_total_limited",
         "ca/net_business_income",
         "ca/net_professional_income",
         "ca/net_commission_income",
@@ -2583,6 +2598,11 @@ SIGNED = frozenset(
         "ca/business_epop_percentage_room",
         "ca/farm_epop_percentage_room",
         "ca/fish_epop_percentage_room",
+        "ca/clergy_residence_line_8",
+        "ca/clergy_residence_line_9",
+        "ca/clergy_residence_line_10",
+        "ca/clergy_residence_total",
+        "ca/clergy_residence_total_limited",
     }
 )
 
@@ -2728,6 +2748,8 @@ COUNTS = frozenset(
         "ca/fish_minister_allocation_given_checked",
         "ca/t2204_line_1_count",
         "ca/t2204_line_15_count",
+        "ca/clergy_months_in_qualifying_employment",
+        "ca/clergy_residence_part_b_completed",
     }
 )
 

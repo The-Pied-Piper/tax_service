@@ -178,6 +178,7 @@ def test_the_trace_explains_the_computation() -> None:
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
         "+ cpp_deduction_on_self_employment_and_other_earnings 0 "
         "+ cpp_enhanced_contributions_on_return 1074 + exploration_and_development_expenses 0 "
+        "+ clergy_residence_deduction 0 "
         "+ other_deductions 0 + total_split_income 0 = 5000",
         "5000",
     )

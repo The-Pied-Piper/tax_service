@@ -7,7 +7,6 @@ from decimal import Decimal
 from app.domain.artifact import ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
     AGED_18_OR_OLDER_AT_END_OF_2025,
-    CLERGY_RESIDENCE_DEDUCTION,
     DISABILITY_SUPPORTS_DEDUCTION,
     NET_BUSINESS_INCOME,
     NET_COMMISSION_INCOME,
@@ -35,7 +34,6 @@ def test_the_other_inputs_kinds_are_the_registered_ones(registry: ArtifactRegist
     assert registry.get("ca/political_contributions") is POLITICAL_CONTRIBUTIONS
     assert registry.get("ca/disability_supports_deduction") is DISABILITY_SUPPORTS_DEDUCTION
     assert registry.get("ca/other_employment_expenses") is OTHER_EMPLOYMENT_EXPENSES
-    assert registry.get("ca/clergy_residence_deduction") is CLERGY_RESIDENCE_DEDUCTION
     assert registry.get("ca/net_business_income") is NET_BUSINESS_INCOME
     assert registry.get("ca/net_professional_income") is NET_PROFESSIONAL_INCOME
     assert registry.get("ca/net_commission_income") is NET_COMMISSION_INCOME
@@ -69,7 +67,6 @@ def test_the_other_inputs_kinds_are_money() -> None:
         POLITICAL_CONTRIBUTIONS,
         DISABILITY_SUPPORTS_DEDUCTION,
         OTHER_EMPLOYMENT_EXPENSES,
-        CLERGY_RESIDENCE_DEDUCTION,
         NET_BUSINESS_INCOME,
         NET_PROFESSIONAL_INCOME,
         NET_COMMISSION_INCOME,

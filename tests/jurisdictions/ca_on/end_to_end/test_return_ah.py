@@ -182,13 +182,14 @@ def test_wage_loss_replacement_plan_amounts_do_not_count_toward_the_working_inco
 
 @pytest.mark.parametrize(
     "deduction",
-    ["other_employment_expenses", "clergy_residence_deduction"],
+    ["other_employment_expenses", "clergy_employer_residence_benefit"],
 )
 @pytest.mark.parametrize(("amount", "met"), [("100", True), ("100.01", False)])
 def test_lines_22900_and_23100_come_off_the_employment_income(
     deduction: str, amount: str, met: bool
 ) -> None:
     # Employment income of 4490 less 100 is exactly 4390; a cent more comes off and it is short.
+    # Line 23100 is the employer residence benefit (A) when the (B) part is not completed.
     worksheet = return_ah("4490", **{deduction: amount})
 
     assert worksheet.get(MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS).value == D(amount)
