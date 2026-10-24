@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1113
+        == 1128
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1113
+        == 1128
     )
 
 
@@ -1712,6 +1712,34 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/ei_premiums_on_self_employment",
         "ca/ei_payable_on_self_employment",
         "ca/canada_employment_amount",
+        "ca/volunteer_firefighters_conditions_met",
+        "ca/search_and_rescue_conditions_met",
+        "ca/home_buyers_claim",
+        "ca/home_accessibility_expenses",
+        "ca/home_accessibility_claimed_by_others",
+        "ca/adoption_child_expenses",
+        "ca/adoption_expense_children",
+        "ca/pension_foreign_income",
+        "ca/pension_us_ira_income",
+        "ca/pension_rrif_transferred",
+        "ca/pension_annuity_payments",
+        "ca/pension_annuity_conditions_met",
+        "ca/student_loan_interest",
+        "ca/volunteer_firefighters_credit",
+        "ca/search_and_rescue_credit",
+        "ca/volunteer_credits_claimed",
+        "ca/volunteer_amount_maximum",
+        "ca/volunteer_credits_checked",
+        "ca/home_buyers_maximum",
+        "ca/home_buyers_credit",
+        "ca/home_accessibility_line_2",
+        "ca/home_accessibility_credit",
+        "ca/adoption_credit",
+        "ca/pension_chart_line_5",
+        "ca/pension_chart_line_6",
+        "ca/pension_chart_line_7",
+        "ca/pension_chart_line_8",
+        "ca/pension_income_credit",
         "ca/canadian_tuition_fees",
         "ca/canada_training_credit_limit",
         "ca/canada_training_credit_claimed",
@@ -2619,7 +2647,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1113
+        == 1128
     )
     assert (
         len(
@@ -2627,7 +2655,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1113
+        == 1128
     )
 
 
@@ -2640,7 +2668,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1113
+        == 1128
     )
     assert (
         len(
@@ -2648,7 +2676,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1113
+        == 1128
     )
 
 

@@ -9,6 +9,8 @@ from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.greater_of import GreaterOf
 from app.domain.capabilities.lesser_of import LesserOf
+from app.domain.capabilities.per_unit_amount import PerUnitAmount
+from app.domain.capabilities.record_total import RecordTotal
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
@@ -41,6 +43,8 @@ from app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit import (
 )
 from app.jurisdictions.ca.capabilities.lesser_of_when_positive import LesserOfWhenPositive
 from app.jurisdictions.ca.catalog import (
+    ADOPTION_CREDIT,
+    ADOPTION_EXPENSE_CHILDREN,
     AGE_AMOUNT,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
     AMT_FEDERAL_SURTAX,
@@ -137,6 +141,13 @@ from app.jurisdictions.ca.catalog import (
     GOVERNMENT_DONATIONS,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
+    HOME_ACCESSIBILITY_CLAIMED_BY_OTHERS,
+    HOME_ACCESSIBILITY_CREDIT,
+    HOME_ACCESSIBILITY_EXPENSES,
+    HOME_ACCESSIBILITY_LINE_2,
+    HOME_BUYERS_CLAIM,
+    HOME_BUYERS_CREDIT,
+    HOME_BUYERS_MAXIMUM,
     INFIRM_CHILDREN_AMOUNT,
     ITC_RECAPTURE,
     ITC_RECAPTURE_AT_15_PERCENT,
@@ -150,10 +161,23 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     OTHER_PAYMENTS_DEDUCTION,
+    OTHER_PENSIONS_AND_SUPERANNUATION,
+    PENSION_ANNUITY_CONDITIONS_MET,
+    PENSION_ANNUITY_PAYMENTS,
+    PENSION_CHART_LINE_5,
+    PENSION_CHART_LINE_6,
+    PENSION_CHART_LINE_7,
+    PENSION_CHART_LINE_8,
+    PENSION_FOREIGN_INCOME,
+    PENSION_INCOME_CREDIT,
+    PENSION_RRIF_TRANSFERRED,
+    PENSION_US_IRA_INCOME,
     QBT_CAPITAL_GAINS_DEDUCTION,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    SEARCH_AND_RESCUE_CONDITIONS_MET,
+    SEARCH_AND_RESCUE_CREDIT,
     SECURITY_OPTIONS_DEDUCTIONS,
     SELF_EMPLOYED_CPP_BASE_CREDIT,
     SELF_EMPLOYED_EI_PREMIUMS,
@@ -177,6 +201,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_RETURN_TAXABLE_INCOME,
     SPOUSE_TRANSFERABLE_AMOUNTS,
     SPOUSE_UNUSED_AMOUNTS,
+    STUDENT_LOAN_INTEREST,
     T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
     T2203_HAS_TAX_ON_SPLIT_INCOME,
     T2203_LINE_5,
@@ -206,6 +231,11 @@ from app.jurisdictions.ca.catalog import (
     UNUSED_FEDERAL_TUITION,
     UNUSED_TUITION_CLAIMED,
     UNUSED_TUITION_FROM_2024,
+    VOLUNTEER_AMOUNT_MAXIMUM,
+    VOLUNTEER_CREDITS_CHECKED,
+    VOLUNTEER_CREDITS_CLAIMED,
+    VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET,
+    VOLUNTEER_FIREFIGHTERS_CREDIT,
 )
 
 INPUTS = frozenset(
@@ -246,12 +276,31 @@ INPUTS = frozenset(
         "ca/spouse_return_line_96",
         "ca/spouse_return_federal_tuition_amount",
         "ca/spouse_not_separated_90_days",
+        # T1 lines 31220 and 31240, the caller's counts (1 when the conditions are met).
+        "ca/volunteer_firefighters_conditions_met",
+        "ca/search_and_rescue_conditions_met",
+        # T1 line 31270 "Home buyers' amount", the claim, at most $10,000.
+        "ca/home_buyers_claim",
+        # Worksheet for line 31285, line 1 and line 3.
+        "ca/home_accessibility_expenses",
+        "ca/home_accessibility_claimed_by_others",
+        # T1 line 31300, one record per eligible child.
+        "ca/adoption_expense_children",
+        # Worksheet for line 31400, lines 2 to 4 and line 7, and the 65-or-older gate.
+        "ca/pension_foreign_income",
+        "ca/pension_us_ira_income",
+        "ca/pension_rrif_transferred",
+        "ca/pension_annuity_payments",
+        "ca/pension_annuity_conditions_met",
+        # T1 line 31900 "Interest paid on your student loans".
+        "ca/student_loan_interest",
     }
 )
 
 OUTPUTS = frozenset(
     {
         "ca/tuition_carried_forward",
+        "ca/volunteer_credits_checked",
         "ca/foreign_tax_credit_sheets",
         "ca/foreign_business_tax_credit_line_4",
         "ca/foreign_business_tax_credit_line_5",
@@ -607,9 +656,16 @@ STEPS = {
                 "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
+                "ca/volunteer_firefighters_credit",
+                "ca/search_and_rescue_credit",
                 "ca/canada_employment_amount",
+                "ca/home_buyers_credit",
+                "ca/home_accessibility_credit",
+                "ca/adoption_credit",
+                "ca/pension_income_credit",
                 "ca/disability_amount_for_self",
                 "ca/disability_transferred_amount",
+                "ca/student_loan_interest",
                 "ca/federal_tuition_amount",
                 "ca/tuition_transferred_from_child",
                 "ca/amounts_transferred_from_spouse",
@@ -1311,6 +1367,169 @@ STEPS = {
         consumes={"parts": ("ca/federal_tax_less_foreign_tax_credit", "ca/itc_recapture")},
         produces={"output": "ca/federal_tax_with_itc_recapture"},
     ),
+    # T1 line 31220 "Volunteer firefighters' amount (VFA)" (line 90): "You can claim $6,000 for the
+    # volunteer firefighters' amount (VFA) or search and rescue volunteers' amount (SRVA), but not
+    # both, if you meet all of the following conditions:" (T1 guide 5000-G, 2025). The amount is
+    # $6,000 times the conditions met (a caller's count, 1 or 0).
+    CapabilitySelection(
+        name="core/per_unit_amount",
+        params={"amount": "ca/volunteer_firefighters_amount"},
+        consumes={"count": "ca/volunteer_firefighters_conditions_met"},
+        produces={"output": "ca/volunteer_firefighters_credit"},
+    ),
+    # T1 line 31240 "Search and rescue volunteers' amount (SRVA)" (line 91): the same $6,000
+    # amount times the conditions met for search and rescue (a caller's count, 1 or 0).
+    CapabilitySelection(
+        name="core/per_unit_amount",
+        params={"amount": "ca/search_and_rescue_volunteers_amount"},
+        consumes={"count": "ca/search_and_rescue_conditions_met"},
+        produces={"output": "ca/search_and_rescue_credit"},
+    ),
+    # The VFA and the SRVA together, before the "but not both" maximum (line 31220 and line 31240).
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/volunteer_firefighters_credit",
+                "ca/search_and_rescue_credit",
+            )
+        },
+        produces={"output": "ca/volunteer_credits_claimed"},
+    ),
+    # "but not both": the maximum of $6,000 for the VFA or the SRVA (T1 guide 5000-G, 2025).
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/volunteer_amount_maximum"},
+        consumes={},
+        produces={"output": "ca/volunteer_amount_maximum"},
+    ),
+    # "but not both": the VFA and the SRVA together at most the maximum. Above it the claim is an
+    # input error (`InputAboveBoundError`), not capped. The result is a checked side artifact,
+    # not summed (line 31220 and line 31240 are summed on line 33500 above).
+    CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={
+            "amount": "ca/volunteer_credits_claimed",
+            "bound": "ca/volunteer_amount_maximum",
+        },
+        produces={"output": "ca/volunteer_credits_checked"},
+    ),
+    # T1 line 31270 "Home buyers' amount (maximum $10,000)" (line 93): "Enter $10,000 on line 31270
+    # of your return if you are not splitting the amount with your spouse or common-law partner."
+    # The maximum is $10,000 (T1 guide 5000-G, 2025).
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/home_buyers_maximum"},
+        consumes={},
+        produces={"output": "ca/home_buyers_maximum"},
+    ),
+    # T1 line 31270: the filer's claim, at most the maximum ("You and your spouse or common-law
+    # partner can split the claim but the combined total cannot be more than $10,000." The split
+    # is an election, so the filer enters their share). Above it is an input error.
+    CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={
+            "amount": "ca/home_buyers_claim",
+            "bound": "ca/home_buyers_maximum",
+        },
+        produces={"output": "ca/home_buyers_credit"},
+    ),
+    # Worksheet for line 31285 "Home accessibility expenses (use Federal Worksheet) (maximum
+    # $20,000)", line 2: "Enter whichever is less: amount from line 1 or $20,000." (line 1, the
+    # total eligible expenses, is the caller's input).
+    CapabilitySelection(
+        name="core/capped_amount",
+        params={"cap": "ca/home_accessibility_maximum"},
+        consumes={"base": "ca/home_accessibility_expenses"},
+        produces={"output": "ca/home_accessibility_line_2"},
+    ),
+    # Worksheet for line 31285, line 4: "Line 2 minus line 3 Enter this amount on line 31285 of
+    # your return." Line 3 is the amount claimed by other qualifying individuals in the same
+    # dwelling. The form prints "minus" without "(if negative, enter "0")"; the result is taken
+    # as not below zero (a departure, flagged in the PR body).
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/home_accessibility_line_2",
+            "less": "ca/home_accessibility_claimed_by_others",
+        },
+        produces={"output": "ca/home_accessibility_credit"},
+    ),
+    # T1 line 31300 "Adoption expenses" (line 95): "Enter on line 31300 of your return the amount of
+    # eligible adoption expenses that you can claim for all eligible children." The list holds one
+    # record for each child, the filer's eligible expenses for that child; the form has no federal
+    # maximum for line 31300 (the guide and the T1 are silent), so the total is taken as entered.
+    CapabilitySelection(
+        name="core/record_total",
+        params={},
+        consumes={"records": "ca/adoption_expense_children"},
+        produces={"output": "ca/adoption_credit"},
+    ),
+    # Worksheet for line 31400 "Pension income amount" (line 97), line 5: "Add lines 2 to 4." (the
+    # foreign pension income, the U.S. IRA income and the RRIF or PRPP amounts transferred).
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/pension_foreign_income",
+                "ca/pension_us_ira_income",
+                "ca/pension_rrif_transferred",
+            )
+        },
+        produces={"output": "ca/pension_chart_line_5"},
+    ),
+    # Worksheet for line 31400, line 6: "Line 1 minus line 5", line 1 being the amount from line
+    # 11500 of the return (`ca/other_pensions_and_superannuation`). The form prints "minus" without
+    # "(if negative, enter "0")"; the result is taken as not below zero (a departure, flagged in the
+    # PR body).
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/other_pensions_and_superannuation",
+            "less": "ca/pension_chart_line_5",
+        },
+        produces={"output": "ca/pension_chart_line_6"},
+    ),
+    # Worksheet for line 31400, line 7: "Annuity payments from line 12900 of your return (box 16 of
+    # all your T4RSP slips) only if you were 65 years of age or older on December 31, 2025, or you
+    # received the payments because of the death of your spouse or common-law partner". The gate is
+    # the caller's 0 or 1 count, and the payments count once when it is 1.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/pension_annuity_payments",
+            "count": "ca/pension_annuity_conditions_met",
+        },
+        produces={"output": "ca/pension_chart_line_7"},
+    ),
+    # Worksheet for line 31400, line 8: "Line 6 plus line 7".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/pension_chart_line_6",
+                "ca/pension_chart_line_7",
+            )
+        },
+        produces={"output": "ca/pension_chart_line_8"},
+    ),
+    # Worksheet for line 31400, the last line: "Enter on line 31400 of your return whichever amount
+    # is less: line 8 or $2,000." (maximum $2,000, T1 guide 5000-G and the T1 line 97). The T1032
+    # pension split is a spouse-coupled election, an input, not wired here.
+    CapabilitySelection(
+        name="core/capped_amount",
+        params={"cap": "ca/pension_income_maximum"},
+        consumes={"base": "ca/pension_chart_line_8"},
+        produces={"output": "ca/pension_income_credit"},
+    ),
 }
 
 WIRING = {
@@ -1507,10 +1726,17 @@ WIRING = {
                 CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+                VOLUNTEER_FIREFIGHTERS_CREDIT,
+                SEARCH_AND_RESCUE_CREDIT,
                 CANADA_EMPLOYMENT_AMOUNT,
+                HOME_BUYERS_CREDIT,
+                HOME_ACCESSIBILITY_CREDIT,
+                ADOPTION_CREDIT,
+                PENSION_INCOME_CREDIT,
                 MEDICAL_CLAIM,
                 DISABILITY_AMOUNT_FOR_SELF,
                 DISABILITY_TRANSFERRED_AMOUNT,
+                STUDENT_LOAN_INTEREST,
                 FEDERAL_TUITION_AMOUNT,
                 TUITION_TRANSFERRED_FROM_CHILD,
                 AMOUNTS_TRANSFERRED_FROM_SPOUSE,
@@ -1854,4 +2080,59 @@ WIRING = {
         frozenset({FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT, ITC_RECAPTURE}),
         frozenset({FEDERAL_TAX_WITH_ITC_RECAPTURE}),
     ),
+    (
+        PerUnitAmount,
+        frozenset({VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET}),
+        frozenset({VOLUNTEER_FIREFIGHTERS_CREDIT}),
+    ),
+    (
+        PerUnitAmount,
+        frozenset({SEARCH_AND_RESCUE_CONDITIONS_MET}),
+        frozenset({SEARCH_AND_RESCUE_CREDIT}),
+    ),
+    (
+        Sum,
+        frozenset({VOLUNTEER_FIREFIGHTERS_CREDIT, SEARCH_AND_RESCUE_CREDIT}),
+        frozenset({VOLUNTEER_CREDITS_CLAIMED}),
+    ),
+    (CreditAmount, frozenset(), frozenset({VOLUNTEER_AMOUNT_MAXIMUM})),
+    (
+        AtMost,
+        frozenset({VOLUNTEER_CREDITS_CLAIMED, VOLUNTEER_AMOUNT_MAXIMUM}),
+        frozenset({VOLUNTEER_CREDITS_CHECKED}),
+    ),
+    (CreditAmount, frozenset(), frozenset({HOME_BUYERS_MAXIMUM})),
+    (AtMost, frozenset({HOME_BUYERS_CLAIM, HOME_BUYERS_MAXIMUM}), frozenset({HOME_BUYERS_CREDIT})),
+    (
+        CappedAmount,
+        frozenset({HOME_ACCESSIBILITY_EXPENSES}),
+        frozenset({HOME_ACCESSIBILITY_LINE_2}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({HOME_ACCESSIBILITY_LINE_2, HOME_ACCESSIBILITY_CLAIMED_BY_OTHERS}),
+        frozenset({HOME_ACCESSIBILITY_CREDIT}),
+    ),
+    (RecordTotal, frozenset({ADOPTION_EXPENSE_CHILDREN}), frozenset({ADOPTION_CREDIT})),
+    (
+        Sum,
+        frozenset({PENSION_FOREIGN_INCOME, PENSION_US_IRA_INCOME, PENSION_RRIF_TRANSFERRED}),
+        frozenset({PENSION_CHART_LINE_5}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({OTHER_PENSIONS_AND_SUPERANNUATION, PENSION_CHART_LINE_5}),
+        frozenset({PENSION_CHART_LINE_6}),
+    ),
+    (
+        TimesCount,
+        frozenset({PENSION_ANNUITY_PAYMENTS, PENSION_ANNUITY_CONDITIONS_MET}),
+        frozenset({PENSION_CHART_LINE_7}),
+    ),
+    (
+        Sum,
+        frozenset({PENSION_CHART_LINE_6, PENSION_CHART_LINE_7}),
+        frozenset({PENSION_CHART_LINE_8}),
+    ),
+    (CappedAmount, frozenset({PENSION_CHART_LINE_8}), frozenset({PENSION_INCOME_CREDIT})),
 }

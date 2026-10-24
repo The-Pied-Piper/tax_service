@@ -1,0 +1,106 @@
+# Return DG: the federal non-refundable amounts of T1 lines 31220, 31240, 31270, 31285, 31300,
+# 31400 and 31900 (federal part of #179), wired into the line 33500 sum. An adult filer with
+# employment income and a pension, claiming the volunteer firefighters' amount, the home buyers'
+# amount, home accessibility expenses, one adoption, the pension income amount and student loan
+# interest, with no spouse and no line 31400 exclusions.
+jurisdiction: CA-ON
+tax_year: 2025
+description: >-
+  Return DG: a 2025 Ontario resident in Canada throughout 2025, aged 18 or older, with no
+  spouse. Employment income is $100,000 (T1 line 10100, a chosen figure), and other pension
+  income is $20,000 (T1 line 11500, "Other pensions or superannuation", a chosen figure), with
+  nothing excluded from the pension and no foreign pension, U.S. IRA or RRIF amounts (all 0,
+  chosen). Taxable income (line 26000) is 118,926.00 as the engine computes it on main for
+  this income, which is not hand-traced here; the amounts below are the new lines.
+  Volunteer firefighters' amount (line 31220): the filer completed 200 hours of eligible
+  volunteer firefighting services (a chosen count of 1), so the amount is 6,000.00. Search and
+  rescue volunteers' amount (line 31240): not claimed (a chosen count of 0), so 0.00. The
+  two together are 6,000.00, at most the $6,000 "but not both" maximum, so the check is 6,000.00.
+  Home buyers' amount (line 31270): a claim of 10,000 (a chosen figure), at most the $10,000
+  maximum, so 10,000.00.
+  Home accessibility expenses (Federal Worksheet, line 31285): line 1 is 25,000 of eligible
+  expenses (a chosen figure) and line 3 is 0 claimed by other qualifying individuals (chosen).
+  Line 2 is the lesser of 25,000 and $20,000, which is 20,000.00; line 4 is 20,000.00 less 0,
+  so 20,000.00 on line 31285. The expenses are not the MHRTC expenses (Schedule 12), which are
+  not claimed here.
+  Adoption expenses (line 31300): one child with eligible expenses of 8,000 (a chosen figure),
+  so the list holds one record of 8,000 and line 31300 is 8,000.00. The form has no federal
+  maximum for line 31300 (the check recorded on the ticket), so the amount is taken as entered.
+  Pension income amount (Federal Worksheet, line 31400): line 1 is 20,000.00 (line 11500);
+  line 2 to line 4 are 0, so line 5 is 0.00 and line 6 is 20,000.00. The filer is under 65 and
+  the payments are not because of a spouse's death (a chosen 0), so line 7 is 0.00 and line 8
+  is 20,000.00. Line 31400 is the lesser of 20,000.00 and $2,000, which is 2,000.00.
+  Student loan interest (line 31900): 600 (a chosen figure), entered as the eligible amount.
+  The federal total of credit amounts (line 33500) is the base of 22,033.58 (the CPP, EI and
+  other amounts main computes for this income, unchanged by this ticket) plus the new amounts:
+  6,000.00 + 10,000.00 + 20,000.00 + 8,000.00 + 2,000.00 + 600.00 = 46,600.00, so 68,633.58.
+  At 14.5% that is 9,951.87 (the credit amounts at the credit rate), an increase of 6,757.00
+  on the base of 3,194.87. Basic federal tax after credits is
+  therefore 17,972.14 - 6,757.00 = 11,215.14 before the top-up tax credit (line 34990), which
+  rises with line 33800 by (9,951.87 - 8,319.38) x 3.45% = 56.32 (rounded half-up), so it is
+  11,158.82, which is positive, so the net federal tax is positive.
+  Not triggered: the surtax on income earned outside Canada, the foreign tax credit, the
+  alternative minimum tax and the Canada workers benefit, none of which this return claims.
+  The Ontario side is not hand-traced here and its lines are not asserted.
+sources:
+  - >-
+    CRA, Form T1 Guide 5006-R 2025, Part 1 lines 90 to 102 ("Line 90 and line 31220: Volunteer
+    firefighters' amount (VFA)"; "Line 91 and line 31240: Search and rescue volunteers' amount
+    (SRVA)"; "Line 93 and line 31270: Home buyers' amount (maximum $10,000)"; "Line 94 and line
+    31285: Home accessibility expenses (use Federal Worksheet) (maximum $20,000)"; "Line 95 and
+    line 31300: Adoption expenses"; "Line 97 and line 31400: Pension income amount (use Federal
+    Worksheet) (maximum $2,000)"; "Line 102 and line 31900: Interest paid on your student loans
+    (go to canada.ca/taxes-students)")
+    (https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt, confirmed
+    text, docs/cra-forms-2025/5006-r-25e.txt).
+  - >-
+    CRA, Form T1 General Guide 5000-G 2025 (https://www.canada.ca/content/dam/cra-arc/formspubs/pub/5000-g/5000-g-25e.txt,
+    confirmed text, docs/cra-forms-2025/5000-g-25e.txt): "You can claim $6,000 for the volunteer
+    firefighters' amount (VFA) or search and rescue volunteers' amount (SRVA), but not both, if
+    you meet all of the following conditions:"; "Enter $10,000 on line 31270 of your return if
+    you are not splitting the amount with your spouse or common-law partner."; "Enter on line
+    31300 of your return the amount of eligible adoption expenses that you can claim for all
+    eligible children."; "Enter the eligible amount of interest paid on your student loans on
+    line 31900 of your return."
+  - >-
+    CRA, Federal Worksheet 2025, Line 31285 and Line 31400 (https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt,
+    confirmed text, docs/cra-forms-2025/5000-d1-25e.txt): "Line 2: Enter whichever is less: amount
+    from line 1 or $20,000."; "Line 4: Line 2 minus line 3 Enter this amount on line 31285 of your
+    return."; "Line 6: Line 1 minus line 5"; "Enter on line 31400 of your return whichever amount is
+    less: line 8 or $2,000."
+inputs:
+  ca/employment_income: "100000"
+  ca/other_pensions_and_superannuation: "20000"
+  ca/volunteer_firefighters_conditions_met: "1"
+  ca/search_and_rescue_conditions_met: "0"
+  ca/home_buyers_claim: "10000"
+  ca/home_accessibility_expenses: "25000"
+  ca/home_accessibility_claimed_by_others: "0"
+  ca/adoption_expense_children:
+    - ca/adoption_child_expenses: "8000"
+  ca/pension_foreign_income: "0"
+  ca/pension_us_ira_income: "0"
+  ca/pension_rrif_transferred: "0"
+  ca/pension_annuity_payments: "0"
+  ca/pension_annuity_conditions_met: "0"
+  ca/student_loan_interest: "600"
+expected:
+  ca-on/return:
+    - ca/volunteer_firefighters_credit: "6000.00"
+      ca/volunteer_credits_claimed: "6000.00"
+      ca/volunteer_amount_maximum: "6000.00"
+      ca/volunteer_credits_checked: "6000.00"
+      ca/home_buyers_maximum: "10000.00"
+      ca/home_buyers_credit: "10000.00"
+      ca/home_accessibility_line_2: "20000.00"
+      ca/home_accessibility_credit: "20000.00"
+      ca/adoption_credit: "8000.00"
+      ca/pension_chart_line_5: "0.00"
+      ca/pension_chart_line_6: "20000.00"
+      ca/pension_chart_line_7: "0.00"
+      ca/pension_chart_line_8: "20000.00"
+      ca/pension_income_credit: "2000.00"
+      ca/non_refundable_credit_amounts: "68633.58"
+      ca/credit_amounts_at_credit_rate: "9951.87"
+      ca/non_refundable_tax_credits: "9951.87"
+      ca/federal_tax_after_credits: "11158.82"

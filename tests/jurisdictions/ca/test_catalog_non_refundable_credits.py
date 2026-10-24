@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Any
 
-from app.domain.artifact import ArtifactRegistry
+from app.domain.artifact import ArtifactKind, ArtifactRegistry
+from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog import (
+    ADOPTION_CHILD_EXPENSES,
+    ADOPTION_CREDIT,
+    ADOPTION_EXPENSE_CHILDREN,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
@@ -69,6 +74,13 @@ from app.jurisdictions.ca.catalog import (
     GOVERNMENT_DONATIONS,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
+    HOME_ACCESSIBILITY_CLAIMED_BY_OTHERS,
+    HOME_ACCESSIBILITY_CREDIT,
+    HOME_ACCESSIBILITY_EXPENSES,
+    HOME_ACCESSIBILITY_LINE_2,
+    HOME_BUYERS_CLAIM,
+    HOME_BUYERS_CREDIT,
+    HOME_BUYERS_MAXIMUM,
     ITC_RECAPTURE,
     ITC_RECAPTURE_AT_15_PERCENT,
     ITC_RECAPTURE_AT_20_PERCENT,
@@ -76,8 +88,20 @@ from app.jurisdictions.ca.catalog import (
     ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    PENSION_ANNUITY_CONDITIONS_MET,
+    PENSION_ANNUITY_PAYMENTS,
+    PENSION_CHART_LINE_5,
+    PENSION_CHART_LINE_6,
+    PENSION_CHART_LINE_7,
+    PENSION_CHART_LINE_8,
+    PENSION_FOREIGN_INCOME,
+    PENSION_INCOME_CREDIT,
+    PENSION_RRIF_TRANSFERRED,
+    PENSION_US_IRA_INCOME,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    SEARCH_AND_RESCUE_CONDITIONS_MET,
+    SEARCH_AND_RESCUE_CREDIT,
     SPOUSE_ADJUSTED_TAXABLE_INCOME,
     SPOUSE_CREDITS_USED,
     SPOUSE_DESIGNATED_TUITION,
@@ -94,6 +118,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_RETURN_TAXABLE_INCOME,
     SPOUSE_TRANSFERABLE_AMOUNTS,
     SPOUSE_UNUSED_AMOUNTS,
+    STUDENT_LOAN_INTEREST,
     T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
     T2203_HAS_TAX_ON_SPLIT_INCOME,
     T2203_LINE_5,
@@ -121,6 +146,11 @@ from app.jurisdictions.ca.catalog import (
     UNUSED_FEDERAL_TUITION,
     UNUSED_TUITION_CLAIMED,
     UNUSED_TUITION_FROM_2024,
+    VOLUNTEER_AMOUNT_MAXIMUM,
+    VOLUNTEER_CREDITS_CHECKED,
+    VOLUNTEER_CREDITS_CLAIMED,
+    VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET,
+    VOLUNTEER_FIREFIGHTERS_CREDIT,
 )
 from tests.jurisdictions.ca.catalog_snapshot import SIGNED
 
@@ -559,3 +589,106 @@ def test_the_other_federal_foreign_tax_credit_kinds_are_non_negative(
     ):
         assert kind.non_negative is True, kind.identifier
         assert registry.kind(kind.identifier) is kind
+
+
+# --- Other federal non-refundable amounts: T1 lines 31220, 31240, 31270, 31285, 31300, 31400 and
+# 31900 (federal part of #179) -------------------------------------------------------------------
+
+
+def test_the_other_federal_non_refundable_amount_kinds_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    for identifier, kind in OTHER_FEDERAL_NON_REFUNDABLE_KINDS:
+        assert registry.get(identifier) is kind, identifier
+
+
+def test_the_other_federal_non_refundable_amount_kinds_are_money() -> None:
+    # Dollars-and-cents boxes and credits: the caller's claims, the form's lines and the line
+    # amounts, each a Decimal (the lines are rounded half-up to the cent through their datasets).
+    for kind in (
+        HOME_BUYERS_CLAIM,
+        HOME_ACCESSIBILITY_EXPENSES,
+        HOME_ACCESSIBILITY_CLAIMED_BY_OTHERS,
+        ADOPTION_CHILD_EXPENSES,
+        PENSION_FOREIGN_INCOME,
+        PENSION_US_IRA_INCOME,
+        PENSION_RRIF_TRANSFERRED,
+        PENSION_ANNUITY_PAYMENTS,
+        STUDENT_LOAN_INTEREST,
+        VOLUNTEER_FIREFIGHTERS_CREDIT,
+        SEARCH_AND_RESCUE_CREDIT,
+        VOLUNTEER_CREDITS_CLAIMED,
+        VOLUNTEER_AMOUNT_MAXIMUM,
+        VOLUNTEER_CREDITS_CHECKED,
+        HOME_BUYERS_MAXIMUM,
+        HOME_BUYERS_CREDIT,
+        HOME_ACCESSIBILITY_LINE_2,
+        HOME_ACCESSIBILITY_CREDIT,
+        ADOPTION_CREDIT,
+        PENSION_CHART_LINE_5,
+        PENSION_CHART_LINE_6,
+        PENSION_CHART_LINE_7,
+        PENSION_CHART_LINE_8,
+        PENSION_INCOME_CREDIT,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+
+
+def test_the_conditions_and_the_annuity_gate_are_non_negative_counts() -> None:
+    # T1 line 31220 "You can claim $6,000 for the volunteer firefighters' amount (VFA) or search
+    # and rescue volunteers' amount (SRVA), but not both": the conditions met are 0 or 1 (a
+    # caller's count). Worksheet for line 31400, line 7: "only if you were 65 years of age or
+    # older on December 31, 2025, or you received the payments because of the death of your
+    # spouse or common-law partner" is a 0 or 1 gate on the annuity payments.
+    for kind in (
+        VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET,
+        SEARCH_AND_RESCUE_CONDITIONS_MET,
+        PENSION_ANNUITY_CONDITIONS_MET,
+    ):
+        assert kind.value_type is int, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+
+
+def test_the_adoption_expense_children_are_a_record_list_of_one_money_field(
+    registry: ArtifactRegistry,
+) -> None:
+    # T1 line 31300 "Adoption expenses", Enter "the amount of eligible adoption expenses that you
+    # can claim for all eligible children": one record per child, holding the filer's eligible
+    # expenses for that child.
+    assert isinstance(ADOPTION_EXPENSE_CHILDREN, RecordListKind)
+    assert ADOPTION_EXPENSE_CHILDREN.fields == (ADOPTION_CHILD_EXPENSES,)
+    assert registry.get("ca/adoption_expense_children") is ADOPTION_EXPENSE_CHILDREN
+    assert registry.get("ca/adoption_child_expenses") is ADOPTION_CHILD_EXPENSES
+    assert ADOPTION_CHILD_EXPENSES.value_type is Decimal
+    assert ADOPTION_CHILD_EXPENSES.non_negative is True
+
+
+OTHER_FEDERAL_NON_REFUNDABLE_KINDS: list[tuple[str, ArtifactKind[Any]]] = [
+    ("ca/volunteer_firefighters_conditions_met", VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET),
+    ("ca/search_and_rescue_conditions_met", SEARCH_AND_RESCUE_CONDITIONS_MET),
+    ("ca/home_buyers_claim", HOME_BUYERS_CLAIM),
+    ("ca/home_accessibility_expenses", HOME_ACCESSIBILITY_EXPENSES),
+    ("ca/home_accessibility_claimed_by_others", HOME_ACCESSIBILITY_CLAIMED_BY_OTHERS),
+    ("ca/pension_foreign_income", PENSION_FOREIGN_INCOME),
+    ("ca/pension_us_ira_income", PENSION_US_IRA_INCOME),
+    ("ca/pension_rrif_transferred", PENSION_RRIF_TRANSFERRED),
+    ("ca/pension_annuity_payments", PENSION_ANNUITY_PAYMENTS),
+    ("ca/pension_annuity_conditions_met", PENSION_ANNUITY_CONDITIONS_MET),
+    ("ca/student_loan_interest", STUDENT_LOAN_INTEREST),
+    ("ca/volunteer_firefighters_credit", VOLUNTEER_FIREFIGHTERS_CREDIT),
+    ("ca/search_and_rescue_credit", SEARCH_AND_RESCUE_CREDIT),
+    ("ca/volunteer_credits_claimed", VOLUNTEER_CREDITS_CLAIMED),
+    ("ca/volunteer_amount_maximum", VOLUNTEER_AMOUNT_MAXIMUM),
+    ("ca/volunteer_credits_checked", VOLUNTEER_CREDITS_CHECKED),
+    ("ca/home_buyers_maximum", HOME_BUYERS_MAXIMUM),
+    ("ca/home_buyers_credit", HOME_BUYERS_CREDIT),
+    ("ca/home_accessibility_line_2", HOME_ACCESSIBILITY_LINE_2),
+    ("ca/home_accessibility_credit", HOME_ACCESSIBILITY_CREDIT),
+    ("ca/adoption_credit", ADOPTION_CREDIT),
+    ("ca/pension_chart_line_5", PENSION_CHART_LINE_5),
+    ("ca/pension_chart_line_6", PENSION_CHART_LINE_6),
+    ("ca/pension_chart_line_7", PENSION_CHART_LINE_7),
+    ("ca/pension_chart_line_8", PENSION_CHART_LINE_8),
+    ("ca/pension_income_credit", PENSION_INCOME_CREDIT),
+]

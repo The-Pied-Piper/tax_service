@@ -18,6 +18,18 @@ from app.domain.record_list import RecordList, RecordListKind
 from app.domain.trace import TraceLine
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
+    ADOPTION_EXPENSE_CHILDREN,
+    HOME_ACCESSIBILITY_CLAIMED_BY_OTHERS,
+    HOME_ACCESSIBILITY_EXPENSES,
+    HOME_BUYERS_CLAIM,
+    PENSION_ANNUITY_CONDITIONS_MET,
+    PENSION_ANNUITY_PAYMENTS,
+    PENSION_FOREIGN_INCOME,
+    PENSION_RRIF_TRANSFERRED,
+    PENSION_US_IRA_INCOME,
+    SEARCH_AND_RESCUE_CONDITIONS_MET,
+    STUDENT_LOAN_INTEREST,
+    VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET,
     ADDITIONAL_DEDUCTIONS,
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGED_18_OR_OLDER_AT_END_OF_2025,
@@ -933,6 +945,31 @@ POLITICAL_COLUMN_LINES = {
 def service() -> TaxComputationService:
     """One service for the whole run, so each (jurisdiction, tax year) is composed once."""
     return build_tax_computation()
+
+
+
+def blank_other_federal_credit_inputs() -> list[Artifact[Any]]:
+    """The inputs of T1 lines 31220 to 31900 (#431) with no claim: counts 0, amounts 0, no children."""
+    counts = (
+        VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET,
+        SEARCH_AND_RESCUE_CONDITIONS_MET,
+        PENSION_ANNUITY_CONDITIONS_MET,
+    )
+    amounts = (
+        HOME_BUYERS_CLAIM,
+        HOME_ACCESSIBILITY_EXPENSES,
+        HOME_ACCESSIBILITY_CLAIMED_BY_OTHERS,
+        PENSION_FOREIGN_INCOME,
+        PENSION_US_IRA_INCOME,
+        PENSION_RRIF_TRANSFERRED,
+        PENSION_ANNUITY_PAYMENTS,
+        STUDENT_LOAN_INTEREST,
+    )
+    return [
+        *(Artifact(kind, 0) for kind in counts),
+        *(Artifact(kind, D("0")) for kind in amounts),
+        Artifact(ADOPTION_EXPENSE_CHILDREN, RecordList(ADOPTION_EXPENSE_CHILDREN.fields, [])),
+    ]
 
 
 def slips(*expenses: str) -> Artifact[RecordList]:
@@ -3144,6 +3181,7 @@ def starting(
         Artifact(SPOUSE_RETURN_LINE_96, D(spouse_return_line_96)),
         Artifact(SPOUSE_RETURN_FEDERAL_TUITION_AMOUNT, D(spouse_return_federal_tuition_amount)),
         Artifact(SPOUSE_NOT_SEPARATED_90_DAYS, spouse_not_separated_90_days),
+        *blank_other_federal_credit_inputs(),
         Artifact(ontario.SPOUSE_RETURN_ONTARIO_AGE_AMOUNT, D(spouse_return_ontario_age_amount)),
         Artifact(
             ontario.SPOUSE_RETURN_ONTARIO_PENSION_INCOME_AMOUNT,
