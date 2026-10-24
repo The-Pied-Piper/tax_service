@@ -91,7 +91,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
-    AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
@@ -249,7 +248,6 @@ LOSSES_AND_DEDUCTIONS_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
-    AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_DEDUCTIONS_TOTAL,
 )
@@ -602,7 +600,6 @@ def test_the_losses_and_deductions_kinds_are_the_registered_ones(
     assert (
         registry.get("ca/amt_losses_and_deductions_subtotal") is AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL
     )
-    assert registry.get("ca/amt_moving_expenses_deduction") is AMT_MOVING_EXPENSES_DEDUCTION
     assert registry.get("ca/amt_ppip_premiums_deduction") is AMT_PPIP_PREMIUMS_DEDUCTION
     assert registry.get("ca/amt_deductions_total") is AMT_DEDUCTIONS_TOTAL
 

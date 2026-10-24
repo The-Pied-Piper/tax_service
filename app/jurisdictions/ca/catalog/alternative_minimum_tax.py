@@ -330,12 +330,6 @@ AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL = CATALOG.declare("amt_losses_and_deductions_
 47, 50, 51 (the union dues of line 21200) and 52 (the child care expenses of line 21400), a loss in
 brackets when line 47 or 50 is one."""
 
-AMT_MOVING_EXPENSES_DEDUCTION = CATALOG.declare(
-    "amt_moving_expenses_deduction", Decimal, non_negative=True
-)
-"""Moving expenses deduction, Form T691 Part 1 line 56 "Moving expenses deduction from line 21900 of
-your return": a starting amount, the caller's figure."""
-
 AMT_PPIP_PREMIUMS_DEDUCTION = CATALOG.declare(
     "amt_ppip_premiums_deduction", Decimal, non_negative=True
 )

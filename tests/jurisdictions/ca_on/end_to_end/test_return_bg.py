@@ -215,7 +215,20 @@ def return_bg(
         amt_limited_partnership_difference_no_election=limited_partnership_no_election,
         amt_non_capital_losses_difference=non_capital_difference,
         amt_net_capital_losses_difference=net_capital_difference,
-        amt_moving_expenses_deduction=moving_expenses,
+        # Form T1-M, one move: 100 and 10 kilometres (line 3 is 90), transportation and storage of
+        # moving_expenses (line 4), no reimbursement, and 60000 of employment income at the new
+        # work location as the net eligible income (line 28, a chosen figure). Line 29 is
+        # moving_expenses, and it is the moving expenses deduction of line 21900 that the
+        # alternative minimum tax reads (line 56).
+        moving_moves=(
+            {
+                "old_home_distance": "100",
+                "new_home_distance": "10",
+                "transportation_and_storage": moving_expenses,
+                "net_eligible_income": "60000",
+            },
+        ),
+        other_income=moving_expenses,
         amt_non_deductible_interest=non_deductible_interest,
         amt_life_insurance_premiums_as_collateral=life_insurance_premiums,
         amt_investment_counsel_fees=investment_counsel_fees,

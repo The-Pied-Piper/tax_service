@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1128
+        == 1129
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1128
+        == 1129
     )
 
 
@@ -1979,7 +1979,40 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/amt_limited_partnership_losses_adjustment",
         "ca/amt_non_capital_losses_adjustment",
         "ca/amt_losses_and_deductions_subtotal",
-        "ca/amt_moving_expenses_deduction",
+        "ca/moving_old_home_distance",
+        "ca/moving_new_home_distance",
+        "ca/moving_transportation_and_storage",
+        "ca/moving_travel_expenses",
+        "ca/moving_accommodation_expenses",
+        "ca/moving_meal_expenses",
+        "ca/moving_temporary_lodging",
+        "ca/moving_temporary_meals",
+        "ca/moving_lease_cancellation",
+        "ca/moving_incidental_costs",
+        "ca/moving_old_home_maintenance",
+        "ca/moving_selling_commission",
+        "ca/moving_selling_legal_fees",
+        "ca/moving_selling_advertising",
+        "ca/moving_selling_other_costs",
+        "ca/moving_buying_legal_fees",
+        "ca/moving_buying_taxes",
+        "ca/moving_reimbursement",
+        "ca/moving_net_eligible_income",
+        "ca/t1_m_moves",
+        "ca/moving_distance_difference",
+        "ca/moving_travel_expenses_subtotal",
+        "ca/moving_temporary_living_subtotal",
+        "ca/moving_old_home_maintenance_capped",
+        "ca/moving_lease_and_incidental_subtotal",
+        "ca/moving_selling_subtotal",
+        "ca/moving_buying_subtotal",
+        "ca/moving_total_expenses",
+        "ca/moving_net_expenses",
+        "ca/moving_net_expenses_carried",
+        "ca/moving_lesser_of_expenses_and_income",
+        "ca/moving_expenses_claim",
+        "ca/moving_unused_expenses",
+        "ca/moving_expenses_deduction",
         "ca/amt_ppip_premiums_deduction",
         "ca/amt_deductions_total",
         "ca/amt_non_deductible_interest",
@@ -2647,7 +2680,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1128
+        == 1129
     )
     assert (
         len(
@@ -2655,7 +2688,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1128
+        == 1129
     )
 
 
@@ -2668,7 +2701,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1128
+        == 1129
     )
     assert (
         len(
@@ -2676,7 +2709,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1128
+        == 1129
     )
 
 

@@ -46,7 +46,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
-    AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_DEDUCTIBLE_INTEREST,
@@ -448,6 +447,25 @@ from app.jurisdictions.ca.catalog import (
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     LISTED_PERSONAL_PROPERTY_DISPOSITIONS,
     MEDICAL_EXPENSES,
+    MOVING_ACCOMMODATION_EXPENSES,
+    MOVING_BUYING_LEGAL_FEES,
+    MOVING_BUYING_TAXES,
+    MOVING_INCIDENTAL_COSTS,
+    MOVING_LEASE_CANCELLATION,
+    MOVING_MEAL_EXPENSES,
+    MOVING_NET_ELIGIBLE_INCOME,
+    MOVING_NEW_HOME_DISTANCE,
+    MOVING_OLD_HOME_DISTANCE,
+    MOVING_OLD_HOME_MAINTENANCE,
+    MOVING_REIMBURSEMENT,
+    MOVING_SELLING_ADVERTISING,
+    MOVING_SELLING_COMMISSION,
+    MOVING_SELLING_LEGAL_FEES,
+    MOVING_SELLING_OTHER_COSTS,
+    MOVING_TEMPORARY_LODGING,
+    MOVING_TEMPORARY_MEALS,
+    MOVING_TRANSPORTATION_AND_STORAGE,
+    MOVING_TRAVEL_EXPENSES,
     NET_BUSINESS_INCOME,
     NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     NET_CAPITAL_LOSSES_CLAIMED,
@@ -675,6 +693,7 @@ from app.jurisdictions.ca.catalog import (
     STANDARD_AMOUNT_ALLOCATED_3,
     STUDENT_LOAN_INTEREST,
     SUPPORT_PAYMENTS_DEDUCTION,
+    T1_M_MOVES,
     T3_CAPITAL_GAINS_OR_LOSSES,
     T3_DIVIDEND_TAX_CREDIT,
     T3_INVESTMENT_INCOME,
@@ -1875,6 +1894,60 @@ def t2121_statements(statements: Iterable[Mapping[str, Any]]) -> Artifact[Record
     return Artifact(T2121_STATEMENTS, RecordList(T2121_STATEMENTS.fields, records))
 
 
+def t1_m_move(
+    *,
+    old_home_distance: str = "0",
+    new_home_distance: str = "0",
+    transportation_and_storage: str = "0",
+    travel_expenses: str = "0",
+    accommodation_expenses: str = "0",
+    meal_expenses: str = "0",
+    temporary_lodging: str = "0",
+    temporary_meals: str = "0",
+    lease_cancellation: str = "0",
+    incidental_costs: str = "0",
+    old_home_maintenance: str = "0",
+    selling_commission: str = "0",
+    selling_legal_fees: str = "0",
+    selling_advertising: str = "0",
+    selling_other_costs: str = "0",
+    buying_legal_fees: str = "0",
+    buying_taxes: str = "0",
+    reimbursement: str = "0",
+    net_eligible_income: str = "0",
+) -> dict[ArtifactKind[Any], object]:
+    """One Form T1-M move, a record of `ca/t1_m_moves`: its 19 caller inputs (the form's lines 1, 2,
+    4, 5, 6, 7, 9, 10, 12, 13, 14, 16, 17, 18, 19, 21, 22, 25 and 28), as given or 0."""
+    values = {
+        MOVING_OLD_HOME_DISTANCE: old_home_distance,
+        MOVING_NEW_HOME_DISTANCE: new_home_distance,
+        MOVING_TRANSPORTATION_AND_STORAGE: transportation_and_storage,
+        MOVING_TRAVEL_EXPENSES: travel_expenses,
+        MOVING_ACCOMMODATION_EXPENSES: accommodation_expenses,
+        MOVING_MEAL_EXPENSES: meal_expenses,
+        MOVING_TEMPORARY_LODGING: temporary_lodging,
+        MOVING_TEMPORARY_MEALS: temporary_meals,
+        MOVING_LEASE_CANCELLATION: lease_cancellation,
+        MOVING_INCIDENTAL_COSTS: incidental_costs,
+        MOVING_OLD_HOME_MAINTENANCE: old_home_maintenance,
+        MOVING_SELLING_COMMISSION: selling_commission,
+        MOVING_SELLING_LEGAL_FEES: selling_legal_fees,
+        MOVING_SELLING_ADVERTISING: selling_advertising,
+        MOVING_SELLING_OTHER_COSTS: selling_other_costs,
+        MOVING_BUYING_LEGAL_FEES: buying_legal_fees,
+        MOVING_BUYING_TAXES: buying_taxes,
+        MOVING_REIMBURSEMENT: reimbursement,
+        MOVING_NET_ELIGIBLE_INCOME: net_eligible_income,
+    }
+    return {kind: D(value) for kind, value in values.items()}
+
+
+def t1_m_moves(moves: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
+    """The moves of Form T1-M, one record for each mapping of `t1_m_move` arguments."""
+    records = [t1_m_move(**move) for move in moves]
+    return Artifact(T1_M_MOVES, RecordList(T1_M_MOVES.fields, records))
+
+
 def t2048_disposition(
     *,
     qbt_election_eligible_amount: str = "0",
@@ -2221,6 +2294,7 @@ def starting(
     farm_statements: tuple[Mapping[str, Any], ...] | None = None,
     fish_statements: tuple[Mapping[str, Any], ...] | None = None,
     rc359_employers: tuple[Mapping[str, Any], ...] = (),
+    moving_moves: tuple[Mapping[str, Any], ...] | None = None,
     schedule_8_copies: int = 1,
     rc381_copies: int = 0,
     t929_copies: int = 0,
@@ -2606,7 +2680,6 @@ def starting(
     amt_limited_partnership_difference_election: str = "0",
     amt_non_capital_losses_difference: str = "0",
     amt_net_capital_losses_difference: str = "0",
-    amt_moving_expenses_deduction: str = "0",
     amt_ppip_premiums_deduction: str = "0",
     amt_non_deductible_interest: str = "0",
     amt_life_insurance_premiums_as_collateral: str = "0",
@@ -2677,6 +2750,7 @@ def starting(
     business_statement_list = blank if business_statements is None else business_statements
     farm_statement_list = blank if farm_statements is None else farm_statements
     fish_statement_list = blank if fish_statements is None else fish_statements
+    moving_move_list = () if moving_moves is None else moving_moves
     one_disposition: tuple[Mapping[str, Any], ...] = (
         {
             "qbt_election_eligible_amount": qbt_election_eligible_amount,
@@ -2781,6 +2855,7 @@ def starting(
         t2042_statements(farm_statement_list),
         t2121_statements(fish_statement_list),
         rc359_employers_list(rc359_employers),
+        t1_m_moves(moving_move_list),
         Artifact(
             SCHEDULE_8_INSTANCES,
             RecordList(SCHEDULE_8_INSTANCES.fields, [{} for _ in range(schedule_8_copies)]),
@@ -3391,7 +3466,6 @@ def starting(
         ),
         Artifact(AMT_NON_CAPITAL_LOSSES_DIFFERENCE, D(amt_non_capital_losses_difference)),
         Artifact(AMT_NET_CAPITAL_LOSSES_DIFFERENCE, D(amt_net_capital_losses_difference)),
-        Artifact(AMT_MOVING_EXPENSES_DEDUCTION, D(amt_moving_expenses_deduction)),
         Artifact(AMT_PPIP_PREMIUMS_DEDUCTION, D(amt_ppip_premiums_deduction)),
         Artifact(AMT_NON_DEDUCTIBLE_INTEREST, D(amt_non_deductible_interest)),
         Artifact(

@@ -174,6 +174,7 @@ def test_the_trace_explains_the_computation() -> None:
         "+ elected_split_pension_deduction 0 + union_dues 2000 + uccb_repayment 0 "
         "+ child_care_expenses 0 + disability_supports_deduction 0 "
         "+ allowable_business_investment_loss 0 "
+        "+ moving_expenses_deduction 0 "
         "+ support_payments_deduction 0 "
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
         "+ cpp_deduction_on_self_employment_and_other_earnings 0 "

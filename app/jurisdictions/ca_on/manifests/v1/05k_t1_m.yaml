@@ -1,0 +1,125 @@
+# Form T1-M, Moving Expenses Deduction: the form ca/t1_m, run once for each move of the list
+# ca/t1_m_moves (one for each move; any number, none included). Each move's fields are the T1-M
+# inputs. The form exports its line 29, "Enter this amount on line 21900 of your return", which
+# T1 line 21900 adds over the moves, and its line 30, which nothing on the return reads.
+form:
+  name: ca/t1_m
+  instances: ca/t1_m_moves
+  exports:
+    - ca/moving_expenses_claim
+    - ca/moving_unused_expenses
+capabilities:
+  # T1-M Part 2 "Line 1 minus line 2" (line 3): the old home distance less the new one. The form
+  # prints no floor, so the difference is signed.
+  - name: core/subtract
+    consumes:
+      amount: ca/moving_old_home_distance
+      less: ca/moving_new_home_distance
+    produces:
+      output: ca/moving_distance_difference
+  # T1-M Part 4 "Add lines 5 to 7." (line 8): the travel, accommodation and meal expenses.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/moving_travel_expenses
+        - ca/moving_accommodation_expenses
+        - ca/moving_meal_expenses
+    produces:
+      output: ca/moving_travel_expenses_subtotal
+  # T1-M Part 4 "Line 9 plus line 10" (line 11): the temporary lodging and meals.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/moving_temporary_lodging
+        - ca/moving_temporary_meals
+    produces:
+      output: ca/moving_temporary_living_subtotal
+  # T1-M Part 4 "Costs to maintain your old home when vacant (maximum $5,000)" (line 14): the
+  # caller's costs, not above the $5,000 maximum.
+  - name: core/capped_amount
+    params:
+      cap: ca/moving_old_home_maintenance_cap
+    consumes:
+      base: ca/moving_old_home_maintenance
+    produces:
+      output: ca/moving_old_home_maintenance_capped
+  # T1-M Part 4 "Add lines 12 to 14." (line 15): the lease, the incidental costs and line 14.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/moving_lease_cancellation
+        - ca/moving_incidental_costs
+        - ca/moving_old_home_maintenance_capped
+    produces:
+      output: ca/moving_lease_and_incidental_subtotal
+  # T1-M Part 4 "Add lines 16 to 19." (line 20): the costs of selling the old home.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/moving_selling_commission
+        - ca/moving_selling_legal_fees
+        - ca/moving_selling_advertising
+        - ca/moving_selling_other_costs
+    produces:
+      output: ca/moving_selling_subtotal
+  # T1-M Part 4 "Line 21 plus line 22" (line 23): the costs of buying the new home.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/moving_buying_legal_fees
+        - ca/moving_buying_taxes
+    produces:
+      output: ca/moving_buying_subtotal
+  # T1-M Part 4 "Add lines 4, 8, 11, 15, 20 and 23." (line 24) "Total moving expenses".
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/moving_transportation_and_storage
+        - ca/moving_travel_expenses_subtotal
+        - ca/moving_temporary_living_subtotal
+        - ca/moving_lease_and_incidental_subtotal
+        - ca/moving_selling_subtotal
+        - ca/moving_buying_subtotal
+    produces:
+      output: ca/moving_total_expenses
+  # T1-M Part 4 "Line 24 minus line 25 (if negative, enter "0")" (line 26) "Net moving expenses".
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/moving_total_expenses
+      less: ca/moving_reimbursement
+    produces:
+      output: ca/moving_net_expenses
+  # T1-M Part 4 "Amount from line 26 of the previous page" (line 27).
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/moving_net_expenses
+    produces:
+      output: ca/moving_net_expenses_carried
+  # T1-M Part 4 "Enter whichever is less: amount from line 27 or line 28." (before line 29).
+  - name: core/lesser_of
+    consumes:
+      amounts:
+        - ca/moving_net_expenses_carried
+        - ca/moving_net_eligible_income
+    produces:
+      output: ca/moving_lesser_of_expenses_and_income
+  # T1-M Part 2 "If the amount on line 3 is less than 40 kilometres, you cannot deduct your moving
+  # expenses." The line 29 amount is claimed only when line 3 is at least the 40 kilometres of the
+  # `ca/moving_distance_threshold` dataset, otherwise 0.
+  - name: ca/threshold_gate
+    params:
+      threshold: ca/moving_distance_threshold
+    consumes:
+      amount: ca/moving_lesser_of_expenses_and_income
+      gate: ca/moving_distance_difference
+    produces:
+      output: ca/moving_expenses_claim
+  # T1-M Part 4 "Line 27 minus line 28 (if negative, enter "0")" (line 30) "Your unused moving
+  # expenses available to carry forward to a future year".
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/moving_net_expenses_carried
+      less: ca/moving_net_eligible_income
+    produces:
+      output: ca/moving_unused_expenses

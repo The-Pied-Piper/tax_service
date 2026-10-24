@@ -697,6 +697,8 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_SUPPLEMENT_LINE_15,
     MEDICAL_SUPPLEMENT_LINE_16,
     MEDICAL_THRESHOLD,
+    MOVING_EXPENSES_CLAIM,
+    MOVING_EXPENSES_DEDUCTION,
     NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
     NET_CAPITAL_LOSSES_CLAIMED,
@@ -4506,6 +4508,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         RC359_TAX_TOTAL: RecordTotalLine(RC359_TAX_TOTAL, RC359_TAX_ON_EXCESS_EPSP, (), D("0")),
         FLOW_THROUGH_SHARE_EXPENSES: RecordTotalLine(
             FLOW_THROUGH_SHARE_EXPENSES, FLOW_THROUGH_SHARE_SLIP_EXPENSES, (), D("0")
+        ),
+        MOVING_EXPENSES_DEDUCTION: RecordTotalLine(
+            MOVING_EXPENSES_DEDUCTION, MOVING_EXPENSES_CLAIM, (), D("0")
         ),
         # T1 line 12600 "Net": the lines 9946 of Return A's one T776 statement, a blank one.
         NET_RENTAL_INCOME: RecordTotalLine(NET_RENTAL_INCOME, NET_RENTAL_INCOME, (D("0"),), D("0")),

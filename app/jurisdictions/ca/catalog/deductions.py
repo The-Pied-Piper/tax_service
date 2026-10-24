@@ -3,7 +3,8 @@
 The split pension, union dues, child care, capital gains deduction, business investment loss,
 support, carrying charges, CPP and other deduction lines, down to net income and the repayment lines
 that follow it, and the lines of Form T2222 (northern residents deductions) with Chart A and Chart B
-of its Step 3, which are record lists.
+of its Step 3, which are record lists, and the moving expenses of Form T1-M (line 21900), a record
+list of the moves with the lines of each move.
 """
 
 from __future__ import annotations
@@ -1947,3 +1948,204 @@ CPP_OVERPAYMENT = CATALOG.declare("cpp_overpayment", Decimal, non_negative=True)
 total of Form RC381 (rc381_cpp_overpayment_on_return, Part 4 line 91 or Part 3a line 74). The
 return carries one of the two forms, so one of the two totals is 0. The return's refund total
 reads it at line 152 "CPP or QPP overpayment" (Form 5006-R, line 152 and line 44800)."""
+
+
+# Form T1-M, Moving Expenses Deduction, one copy for each move (T1 line 21900). The caller's inputs
+# of one move are the fields of the record list `ca/t1_m_moves`, in the form's line order; the
+# computed lines are the form's own lines, and the form exports line 29 and line 30.
+
+MOVING_OLD_HOME_DISTANCE = CATALOG.declare("moving_old_home_distance", Decimal, non_negative=True)
+"""Distance from the old home, Form T1-M Part 2 line 1 "Distance in kilometres between your old home
+and your new work location or educational institution": a starting amount in kilometres."""
+
+MOVING_NEW_HOME_DISTANCE = CATALOG.declare("moving_new_home_distance", Decimal, non_negative=True)
+"""Distance from the new home, Form T1-M Part 2 line 2 "Distance in kilometres between your new home
+and your new work location or educational institution": a starting amount in kilometres."""
+
+MOVING_TRANSPORTATION_AND_STORAGE = CATALOG.declare(
+    "moving_transportation_and_storage", Decimal, non_negative=True
+)
+"""Transportation and storage costs, Form T1-M Part 4 line 4 "Transportation and storage costs for
+household items": a starting amount."""
+
+MOVING_TRAVEL_EXPENSES = CATALOG.declare("moving_travel_expenses", Decimal, non_negative=True)
+"""Travel expenses from the old home to the new home, Form T1-M Part 4 line 5 "Travel expenses":
+a starting amount, as the filer works it out by either method."""
+
+MOVING_ACCOMMODATION_EXPENSES = CATALOG.declare(
+    "moving_accommodation_expenses", Decimal, non_negative=True
+)
+"""Accommodation expenses of the move, Form T1-M Part 4 line 6 "Accommodation expenses": a starting
+amount."""
+
+MOVING_MEAL_EXPENSES = CATALOG.declare("moving_meal_expenses", Decimal, non_negative=True)
+"""Meal expenses of the move, Form T1-M Part 4 line 7 "Meal expenses": a starting amount, as the
+filer works it out by either method."""
+
+MOVING_TEMPORARY_LODGING = CATALOG.declare("moving_temporary_lodging", Decimal, non_negative=True)
+"""Temporary accommodation expenses near the new or old home, Form T1-M Part 4 line 9 "Temporary
+living expenses near new or old home (maximum 15 days)" "Accommodation expenses": a starting
+amount."""
+
+MOVING_TEMPORARY_MEALS = CATALOG.declare("moving_temporary_meals", Decimal, non_negative=True)
+"""Temporary meal expenses near the new or old home, Form T1-M Part 4 line 10 "Temporary living
+expenses near new or old home (maximum 15 days)" "Meal expenses": a starting amount."""
+
+MOVING_LEASE_CANCELLATION = CATALOG.declare("moving_lease_cancellation", Decimal, non_negative=True)
+"""Cost of cancelling the lease for the old home, Form T1-M Part 4 line 12 "Cost of cancelling the
+lease for your old home": a starting amount."""
+
+MOVING_INCIDENTAL_COSTS = CATALOG.declare("moving_incidental_costs", Decimal, non_negative=True)
+"""Incidental costs related to the move, Form T1-M Part 4 line 13 "Incidental costs related to the
+move (specify):": a starting amount."""
+
+MOVING_OLD_HOME_MAINTENANCE = CATALOG.declare(
+    "moving_old_home_maintenance", Decimal, non_negative=True
+)
+"""Costs to maintain the old home when vacant, Form T1-M Part 4 line 14 "Costs to maintain your old
+home when vacant (maximum $5,000)": the costs the caller paid, before the maximum of line 14 (the
+`ca/moving_old_home_maintenance_cap` dataset) is applied."""
+
+MOVING_SELLING_COMMISSION = CATALOG.declare("moving_selling_commission", Decimal, non_negative=True)
+"""Real estate commission on the sale of the old home, Form T1-M Part 4 line 16 "Real estate
+commission": a starting amount."""
+
+MOVING_SELLING_LEGAL_FEES = CATALOG.declare("moving_selling_legal_fees", Decimal, non_negative=True)
+"""Legal or notarial fees on the sale of the old home, Form T1-M Part 4 line 17 "Legal or notarial
+fees": a starting amount."""
+
+MOVING_SELLING_ADVERTISING = CATALOG.declare(
+    "moving_selling_advertising", Decimal, non_negative=True
+)
+"""Advertising on the sale of the old home, Form T1-M Part 4 line 18 "Advertising": a starting
+amount."""
+
+MOVING_SELLING_OTHER_COSTS = CATALOG.declare(
+    "moving_selling_other_costs", Decimal, non_negative=True
+)
+"""Other selling costs of the old home, Form T1-M Part 4 line 19 "Other selling costs (specify):": a
+starting amount."""
+
+MOVING_BUYING_LEGAL_FEES = CATALOG.declare("moving_buying_legal_fees", Decimal, non_negative=True)
+"""Legal or notarial fees on the purchase of the new home, Form T1-M Part 4 line 21 "Legal or
+notarial fees": a starting amount, claimable only when the old home was sold because of the move."""
+
+MOVING_BUYING_TAXES = CATALOG.declare("moving_buying_taxes", Decimal, non_negative=True)
+"""Taxes paid for the registration or transfer of title to the new home, Form T1-M Part 4 line 22
+"Taxes paid for the registration or transfer of title (do not include GST/HST)": a starting
+amount."""
+
+MOVING_REIMBURSEMENT = CATALOG.declare("moving_reimbursement", Decimal, non_negative=True)
+"""Reimbursement or allowance for the moving expenses, Form T1-M Part 4 line 25 "Enter any
+reimbursement or allowance that is not included in your income and that you received for
+moving expenses included in the amount on line 24.": a starting amount."""
+
+MOVING_NET_ELIGIBLE_INCOME = CATALOG.declare(
+    "moving_net_eligible_income", Decimal, non_negative=True
+)
+"""Net eligible income at the new work location, Form T1-M Part 4 line 28 "Net eligible income": the
+employment or self-employment income, or the student's taxable awards, the caller enters as the
+form takes them; a starting amount."""
+
+MOVING_DISTANCE_DIFFERENCE = CATALOG.declare("moving_distance_difference", Decimal)
+"""Distance difference, Form T1-M Part 2 line 3 "Line 1 minus line 2": the old home distance less
+the new one. The form prints no floor, so it may be negative; the 40 kilometre test reads it."""
+
+MOVING_TRAVEL_EXPENSES_SUBTOTAL = CATALOG.declare(
+    "moving_travel_expenses_subtotal", Decimal, non_negative=True
+)
+"""Travel expenses subtotal, Form T1-M Part 4 line 8 "Add lines 5 to 7.": lines 5, 6 and 7."""
+
+MOVING_TEMPORARY_LIVING_SUBTOTAL = CATALOG.declare(
+    "moving_temporary_living_subtotal", Decimal, non_negative=True
+)
+"""Temporary living subtotal, Form T1-M Part 4 line 11 "Line 9 plus line 10": lines 9 and 10."""
+
+MOVING_OLD_HOME_MAINTENANCE_CAPPED = CATALOG.declare(
+    "moving_old_home_maintenance_capped", Decimal, non_negative=True
+)
+"""Costs to maintain the old home when vacant, not above the maximum, Form T1-M Part 4 line 14
+"Costs to maintain your old home when vacant (maximum $5,000)": the caller's costs, at most the
+`ca/moving_old_home_maintenance_cap` dataset's amount."""
+
+MOVING_LEASE_AND_INCIDENTAL_SUBTOTAL = CATALOG.declare(
+    "moving_lease_and_incidental_subtotal", Decimal, non_negative=True
+)
+"""Lease, incidental and old home costs subtotal, Form T1-M Part 4 line 15 "Add lines 12 to 14.":
+lines 12, 13 and 14 (the capped line 14)."""
+
+MOVING_SELLING_SUBTOTAL = CATALOG.declare("moving_selling_subtotal", Decimal, non_negative=True)
+"""Cost of selling the old home subtotal, Form T1-M Part 4 line 20 "Add lines 16 to 19.": lines 16,
+17, 18 and 19."""
+
+MOVING_BUYING_SUBTOTAL = CATALOG.declare("moving_buying_subtotal", Decimal, non_negative=True)
+"""Cost of buying the new home subtotal, Form T1-M Part 4 line 23 "Line 21 plus line 22": lines 21
+and 22."""
+
+MOVING_TOTAL_EXPENSES = CATALOG.declare("moving_total_expenses", Decimal, non_negative=True)
+"""Total moving expenses, Form T1-M Part 4 line 24 "Total moving expenses" "Add lines 4, 8, 11, 15,
+20 and 23.": the transportation and storage, travel, temporary living, lease and incidental, selling
+and buying subtotals."""
+
+MOVING_NET_EXPENSES = CATALOG.declare("moving_net_expenses", Decimal, non_negative=True)
+"""Net moving expenses, Form T1-M Part 4 line 26 "Net moving expenses" "Line 24 minus line 25 (if
+negative, enter "0")": the total less the reimbursement, not below 0."""
+
+MOVING_NET_EXPENSES_CARRIED = CATALOG.declare(
+    "moving_net_expenses_carried", Decimal, non_negative=True
+)
+"""Amount from line 26 of the previous page, Form T1-M Part 4 line 27: the net moving expenses of
+line 26, carried to the second page."""
+
+MOVING_LESSER_OF_EXPENSES_AND_INCOME = CATALOG.declare(
+    "moving_lesser_of_expenses_and_income", Decimal, non_negative=True
+)
+"""Lesser of the net moving expenses and the net eligible income, Form T1-M Part 4 "Enter whichever
+is less: amount from line 27 or line 28." (before line 29): the lesser of lines 27 and 28."""
+
+MOVING_EXPENSES_CLAIM = CATALOG.declare("moving_expenses_claim", Decimal, non_negative=True)
+"""Allowable moving expenses of one move, Form T1-M Part 4 line 29 "Allowable moving expenses"
+"Enter this amount on line 21900 of your return.": the lesser amount of the move, 0 when the
+distance difference of line 3 is under the 40 kilometres of the `ca/moving_distance_threshold`
+dataset (Part 2 "If the amount on line 3 is less than 40 kilometres, you cannot deduct your
+moving expenses.")."""
+
+MOVING_UNUSED_EXPENSES = CATALOG.declare("moving_unused_expenses", Decimal, non_negative=True)
+"""Unused moving expenses available to carry forward, Form T1-M Part 4 line 30 "Line 27 minus
+line 28 (if negative, enter "0")" "Your unused moving expenses available to carry forward to a
+future year": the net moving expenses of line 27 less line 28, not below 0. Nothing on the
+return reads it."""
+
+MOVING_EXPENSES_DEDUCTION = CATALOG.declare("moving_expenses_deduction", Decimal, non_negative=True)
+"""Moving expenses deduction, T1 line 21900 "Moving expenses (complete Form T1-M)": line 29 of each
+move's Form T1-M added over the moves (0 with none). Line 23300 and Form T691 Part 1 line 56 read
+it."""
+
+T1_M_MOVES = RecordListKind.declare(
+    CATALOG,
+    "t1_m_moves",
+    fields=(
+        MOVING_OLD_HOME_DISTANCE,
+        MOVING_NEW_HOME_DISTANCE,
+        MOVING_TRANSPORTATION_AND_STORAGE,
+        MOVING_TRAVEL_EXPENSES,
+        MOVING_ACCOMMODATION_EXPENSES,
+        MOVING_MEAL_EXPENSES,
+        MOVING_TEMPORARY_LODGING,
+        MOVING_TEMPORARY_MEALS,
+        MOVING_LEASE_CANCELLATION,
+        MOVING_INCIDENTAL_COSTS,
+        MOVING_OLD_HOME_MAINTENANCE,
+        MOVING_SELLING_COMMISSION,
+        MOVING_SELLING_LEGAL_FEES,
+        MOVING_SELLING_ADVERTISING,
+        MOVING_SELLING_OTHER_COSTS,
+        MOVING_BUYING_LEGAL_FEES,
+        MOVING_BUYING_TAXES,
+        MOVING_REIMBURSEMENT,
+        MOVING_NET_ELIGIBLE_INCOME,
+    ),
+)
+"""Form T1-M, one record for each move (any number, none included): the 19 caller inputs of the
+move, the lines 1, 2, 4, 5, 6, 7, 9, 10, 12, 13, 14, 16, 17, 18, 19, 21, 22, 25 and 28 of the form,
+in the form's line order. Form T1-M: "Complete a separate form for each move"."""

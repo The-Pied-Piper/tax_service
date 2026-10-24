@@ -102,7 +102,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
-    AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
@@ -193,6 +192,7 @@ from app.jurisdictions.ca.catalog import (
     ITC_RECAPTURE,
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
+    MOVING_EXPENSES_DEDUCTION,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_TAX_CREDITS,
     NORTHERN_RESIDENTS_DEDUCTIONS,
@@ -237,7 +237,6 @@ INPUTS = frozenset(
         "ca/amt_limited_partnership_difference_election",
         "ca/amt_non_capital_losses_difference",
         "ca/amt_net_capital_losses_difference",
-        "ca/amt_moving_expenses_deduction",
         "ca/amt_ppip_premiums_deduction",
         "ca/amt_non_deductible_interest",
         "ca/amt_life_insurance_premiums_as_collateral",
@@ -554,7 +553,8 @@ STEPS = {
     ),
     # Part 1 line 63 "Add lines 54 to 62.", line 53 carried and lines 55 to 62 in line order: the
     # deductions of the return on lines 21500 (the amount computed on Form T929 line 12),
-    # 21900 (a caller's amount), 22200, 22215, 22300 (a caller's amount), 23100, 24400 and 25500.
+    # 21900 (the moving expenses deduction of Form T1-M), 22200, 22215, 22300 (a caller's amount),
+    # 23100, 24400 and 25500.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -562,7 +562,7 @@ STEPS = {
             "parts": (
                 "ca/amt_losses_and_deductions_subtotal",
                 "ca/disability_supports_deduction",
-                "ca/amt_moving_expenses_deduction",
+                "ca/moving_expenses_deduction",
                 "ca/cpp_deduction_on_self_employment_and_other_earnings",
                 "ca/cpp_enhanced_contributions_on_return",
                 "ca/amt_ppip_premiums_deduction",
@@ -1680,7 +1680,7 @@ WIRING = {
             {
                 AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
                 DISABILITY_SUPPORTS_DEDUCTION,
-                AMT_MOVING_EXPENSES_DEDUCTION,
+                MOVING_EXPENSES_DEDUCTION,
                 CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
                 AMT_PPIP_PREMIUMS_DEDUCTION,
