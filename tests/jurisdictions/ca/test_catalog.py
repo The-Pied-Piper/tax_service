@@ -208,6 +208,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_CCA_CLAIM,
     FARM_CCA_CLAIM_LESS_PERSONAL_PART,
     FARM_CCA_CLASSES,
+    FARM_CCA_CLASSES_ADJUSTED,
     FARM_CCA_PERSONAL_PART,
     FARM_CCA_TABLE_CLAIM,
     FARM_CLEARING_LEVELLING_AND_DRAINING,
@@ -2548,7 +2549,7 @@ def test_the_other_forms_class_lists_take_the_remaining_personal_part(
 
 @pytest.mark.parametrize(
     "kind",
-    [RENTAL_CCA_CLASSES, FARM_CCA_CLASSES, FISH_CCA_CLASSES],
+    [RENTAL_CCA_CLASSES, FISH_CCA_CLASSES],
     ids=lambda k: k.identifier,
 )
 def test_each_class_list_ends_with_the_half_year_rule_flag_and_the_rate_election(
@@ -2582,7 +2583,7 @@ def test_a_class_record_must_give_the_half_year_rule_flag(kind: RecordListKind) 
 
 @pytest.mark.parametrize(
     "kind",
-    [RENTAL_CCA_CLASSES, FARM_CCA_CLASSES, FISH_CCA_CLASSES],
+    [RENTAL_CCA_CLASSES, FISH_CCA_CLASSES],
     ids=lambda k: k.identifier,
 )
 def test_each_class_list_ends_with_the_rate_election(kind: RecordListKind) -> None:
@@ -3206,8 +3207,9 @@ def test_the_farm_cca_classes_are_the_area_a_columns_the_caller_enters(
     registry: ArtifactRegistry,
 ) -> None:
     # Area A of the T2042 has the columns of the T2125's, the DIEP columns 4, 6 and 9 among them:
-    # the same eleven field kinds, in the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 21)
-    # and the no-property-left question of endnote 3, one record per class.
+    # the same field kinds, in the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 21), the
+    # no-property-left question of endnote 3, the half-year rule flag of column 18 and the rate
+    # election, one record per class; the vehicle fields of endnote 2 come last.
     assert RECORD_LISTS <= REGISTERED
     assert isinstance(FARM_CCA_CLASSES, RecordListKind)
     assert FARM_CCA_CLASSES.value_type is RecordList
@@ -3226,12 +3228,77 @@ def test_the_farm_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_PERSONAL_PART_REMAINING,
         CCA_HALF_YEAR_RULE_DIFFERS,
         CCA_RATE_ELECTION,
+        CCA_VEHICLE_ACQUIRED_YEAR,
+        CCA_VEHICLE_COST,
+        CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
     )
-    assert len(FARM_CCA_CLASSES.fields) == 14
-    assert FARM_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields[:14]
+    assert len(FARM_CCA_CLASSES.fields) == 17
+    assert FARM_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
     assert FARM_CCA_CLASSES is not BUSINESS_CCA_CLASSES
     assert CCA_PERSONAL_PART_REMAINING in FARM_CCA_CLASSES.fields
     assert registry.get("ca/farm_cca_classes") is FARM_CCA_CLASSES
+
+
+def test_the_farm_class_list_ends_with_the_rate_election_and_the_vehicle_fields() -> None:
+    # T2042 Area A endnote 2: the vehicle's year, actual cost and government assistance are the
+    # last three fields of the T2042 list, after the rate election.
+    assert FARM_CCA_CLASSES.fields[-4:] == (
+        CCA_RATE_ELECTION,
+        CCA_VEHICLE_ACQUIRED_YEAR,
+        CCA_VEHICLE_COST,
+        CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+    )
+    for kind in (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE):
+        assert FARM_CCA_CLASSES.fields.count(kind) == 1
+
+
+@pytest.mark.parametrize(
+    "field",
+    [CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE],
+    ids=lambda f: f.identifier,
+)
+def test_a_farm_class_record_must_give_each_vehicle_field(field: ArtifactKind[Any]) -> None:
+    # Record fields are required: a record without the field is refused, and one with it keeps it.
+    kind = FARM_CCA_CLASSES
+    earlier = tuple(f for f in kind.fields if f is not field)
+    with pytest.raises(InvalidRecordError, match=f"item 1: missing field {field.identifier}"):
+        RecordList(kind.fields, [_cca_record(earlier)])
+
+    record = _cca_record(kind.fields)
+    record[field] = 2025 if field.value_type is int else Decimal("56500.00")
+    (kept,) = RecordList(kind.fields, [record]).records
+    assert kept[field] == (2025 if field.value_type is int else Decimal("56500.00"))
+
+
+def test_the_farm_cca_classes_adjusted_list_is_the_area_a_list_without_the_vehicle_fields(
+    registry: ArtifactRegistry,
+) -> None:
+    # T2042 Area A endnote 2: the Area A list after the proceeds (columns 5 and 6) are adjusted,
+    # which the CCA table steps read: the same fields in the same order, without the vehicle's
+    # year, actual cost and government assistance that adjusted them.
+    assert isinstance(FARM_CCA_CLASSES_ADJUSTED, RecordListKind)
+    assert FARM_CCA_CLASSES_ADJUSTED.identifier == "ca/farm_cca_classes_adjusted"
+    assert FARM_CCA_CLASSES_ADJUSTED.value_type is RecordList
+    assert FARM_CCA_CLASSES_ADJUSTED.non_negative is False
+    assert FARM_CCA_CLASSES_ADJUSTED.fields == (
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_DIEP_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_DIEP_PROCEEDS,
+        CCA_IMMEDIATE_EXPENSING,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_NO_PROPERTY_LEFT,
+        CCA_PERSONAL_PART_REMAINING,
+        CCA_HALF_YEAR_RULE_DIFFERS,
+        CCA_RATE_ELECTION,
+    )
+    assert FARM_CCA_CLASSES_ADJUSTED.fields == FARM_CCA_CLASSES.fields[:14]
+    assert FARM_CCA_CLASSES_ADJUSTED is not FARM_CCA_CLASSES
+    assert registry.get("ca/farm_cca_classes_adjusted") is FARM_CCA_CLASSES_ADJUSTED
 
 
 @pytest.mark.parametrize(

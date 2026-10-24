@@ -384,6 +384,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/farm_home_cca",
         "ca/farm_home_carried_forward",
         "ca/farm_cca_classes",
+        "ca/farm_cca_classes_adjusted",
         "ca/farm_epop_associated",
         "ca/farm_epop_agreement_filed",
         "ca/farm_epop_percentage",
