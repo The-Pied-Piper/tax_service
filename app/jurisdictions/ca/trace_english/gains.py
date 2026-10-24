@@ -41,6 +41,20 @@ from app.jurisdictions.ca.trace.gains import (
     PrincipalResidenceWorksheetLine24,
     PrincipalResidenceWorksheetLine26,
     PrincipalResidenceWorksheetLine27,
+    PrincipalResidenceWorksheetLine30,
+    PrincipalResidenceWorksheetLine32,
+    PrincipalResidenceWorksheetLine33,
+    PrincipalResidenceWorksheetLine35,
+    PrincipalResidenceWorksheetLine36,
+    PrincipalResidenceWorksheetLine40,
+    PrincipalResidenceWorksheetLine41,
+    PrincipalResidenceWorksheetLine44,
+    PrincipalResidenceWorksheetLine46,
+    PrincipalResidenceWorksheetLine47,
+    PrincipalResidenceWorksheetLine50,
+    PrincipalResidenceWorksheetLine53,
+    PrincipalResidenceWorksheetLine55,
+    PrincipalResidenceWorksheetLine58,
     PrincipalResidenceWorksheetLine59,
     PrincipalResidenceWorksheetLine61,
     PrincipalResidenceWorksheetLine63,
@@ -564,6 +578,271 @@ class PrincipalResidenceWorksheetLine27Renderer:
 
 
 @english_renderer
+class PrincipalResidenceWorksheetLine30Renderer:
+    """English text for PrincipalResidenceWorksheetLine30."""
+
+    line_class = PrincipalResidenceWorksheetLine30
+
+    def render(self, line: PrincipalResidenceWorksheetLine30) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 30",
+            line.result,
+            f"worksheet line 28 {EnglishFigures.money(line.line_28)} less worksheet line 29 "
+            f"{EnglishFigures.money(line.line_29)}",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine32Renderer:
+    """English text for PrincipalResidenceWorksheetLine32."""
+
+    line_class = PrincipalResidenceWorksheetLine32
+
+    def render(self, line: PrincipalResidenceWorksheetLine32) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 32",
+            line.result,
+            f"worksheet line 2 {line.line_2} plus {line.plus_one}",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine33Renderer:
+    """English text for PrincipalResidenceWorksheetLine33."""
+
+    line_class = PrincipalResidenceWorksheetLine33
+
+    def render(self, line: PrincipalResidenceWorksheetLine33) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 33",
+            line.result,
+            f"worksheet line 31 {EnglishFigures.money(line.line_31)} times worksheet line 32 "
+            f"{line.line_32}",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine35Renderer:
+    """English text for PrincipalResidenceWorksheetLine35."""
+
+    line_class = PrincipalResidenceWorksheetLine35
+
+    def render(self, line: PrincipalResidenceWorksheetLine35) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 35",
+            line.result,
+            f"worksheet line 33 {EnglishFigures.money(line.line_33)} divided by worksheet "
+            f"line 34 {line.line_34} ({EnglishFigures.rounding(line.rounding)})",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine36Renderer:
+    """English text for PrincipalResidenceWorksheetLine36."""
+
+    line_class = PrincipalResidenceWorksheetLine36
+
+    def render(self, line: PrincipalResidenceWorksheetLine36) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 36",
+            line.result,
+            f"worksheet line 30 {EnglishFigures.money(line.line_30)} less worksheet line 35 "
+            f"{EnglishFigures.money(line.line_35)}, not below 0",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine40Renderer:
+    """English text for PrincipalResidenceWorksheetLine40."""
+
+    line_class = PrincipalResidenceWorksheetLine40
+
+    def render(self, line: PrincipalResidenceWorksheetLine40) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 40",
+            line.result,
+            f"worksheet line 38 {EnglishFigures.money(line.line_38)} plus worksheet line 39 "
+            f"{EnglishFigures.money(line.line_39)}",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine41Renderer:
+    """English text for PrincipalResidenceWorksheetLine41."""
+
+    line_class = PrincipalResidenceWorksheetLine41
+
+    def render(self, line: PrincipalResidenceWorksheetLine41) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 41",
+            line.result,
+            f"worksheet line 37 {EnglishFigures.money(line.line_37)} less worksheet line 40 "
+            f"{EnglishFigures.money(line.line_40)}",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine44Renderer:
+    """English text for PrincipalResidenceWorksheetLine44."""
+
+    line_class = PrincipalResidenceWorksheetLine44
+
+    def render(self, line: PrincipalResidenceWorksheetLine44) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 44",
+            line.result,
+            f"worksheet line 42 {EnglishFigures.money(line.line_42)} times worksheet line 43 "
+            f"{line.line_43}",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine46Renderer:
+    """English text for PrincipalResidenceWorksheetLine46."""
+
+    line_class = PrincipalResidenceWorksheetLine46
+
+    def render(self, line: PrincipalResidenceWorksheetLine46) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 46",
+            line.result,
+            f"worksheet line 44 {EnglishFigures.money(line.line_44)} divided by worksheet "
+            f"line 45 {line.line_45} ({EnglishFigures.rounding(line.rounding)})",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine47Renderer:
+    """English text for PrincipalResidenceWorksheetLine47."""
+
+    line_class = PrincipalResidenceWorksheetLine47
+
+    def render(self, line: PrincipalResidenceWorksheetLine47) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 47",
+            line.result,
+            f"worksheet line 41 {EnglishFigures.money(line.line_41)} less worksheet line 46 "
+            f"{EnglishFigures.money(line.line_46)}, not below 0",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine50Renderer:
+    """English text for PrincipalResidenceWorksheetLine50."""
+
+    line_class = PrincipalResidenceWorksheetLine50
+
+    def render(self, line: PrincipalResidenceWorksheetLine50) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 50",
+            line.result,
+            f"worksheet line 48 {EnglishFigures.money(line.line_48)} less worksheet line 49 "
+            f"{EnglishFigures.money(line.line_49)}, not below 0",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine53Renderer:
+    """English text for PrincipalResidenceWorksheetLine53."""
+
+    line_class = PrincipalResidenceWorksheetLine53
+
+    def render(self, line: PrincipalResidenceWorksheetLine53) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 53",
+            line.result,
+            f"worksheet line 51 {EnglishFigures.money(line.line_51)} plus worksheet line 52 "
+            f"{EnglishFigures.money(line.line_52)}",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine55Renderer:
+    """English text for PrincipalResidenceWorksheetLine55."""
+
+    line_class = PrincipalResidenceWorksheetLine55
+
+    def render(self, line: PrincipalResidenceWorksheetLine55) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 55",
+            line.result,
+            f"worksheet line 53 {EnglishFigures.money(line.line_53)} less worksheet line 54 "
+            f"{EnglishFigures.money(line.line_54)}, not below 0",
+            line.completed,
+        )
+
+
+@english_renderer
+class PrincipalResidenceWorksheetLine58Renderer:
+    """English text for PrincipalResidenceWorksheetLine58."""
+
+    line_class = PrincipalResidenceWorksheetLine58
+
+    def render(self, line: PrincipalResidenceWorksheetLine58) -> str:
+        """The English sentence for `line`."""
+        return _worksheet_step(
+            line.output,
+            line.position,
+            "worksheet line 58",
+            line.result,
+            f"lesser of worksheet line 56 {EnglishFigures.money(line.line_56)} and worksheet "
+            f"line 57 {EnglishFigures.money(line.line_57)}",
+            line.completed,
+        )
+
+
+@english_renderer
 class PrincipalResidenceWorksheetLine59Renderer:
     """English text for PrincipalResidenceWorksheetLine59."""
 
@@ -571,13 +850,12 @@ class PrincipalResidenceWorksheetLine59Renderer:
 
     def render(self, line: PrincipalResidenceWorksheetLine59) -> str:
         """The English sentence for `line`."""
+        if line.part_2_completed:
+            body = f"worksheet line 58 {EnglishFigures.money(line.line_58)} (Part 2 completed)"
+        else:
+            body = f"worksheet line 27 {EnglishFigures.money(line.line_27)}"
         return _worksheet_step(
-            line.output,
-            line.position,
-            "worksheet line 59",
-            line.result,
-            f"worksheet line 27 {EnglishFigures.money(line.line_27)}",
-            line.completed,
+            line.output, line.position, "worksheet line 59", line.result, body, line.completed
         )
 
 

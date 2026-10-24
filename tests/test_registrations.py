@@ -119,7 +119,11 @@ def test_the_principal_residence_rows_base_is_not_registered() -> None:
         CapabilityRegistry.shared().get("ca/principal_residence_rows")
 
 
-@pytest.mark.parametrize("line", [3, 6, 16, 17, 18, 19, 21, 23, 24, 26, 27, 59, 61, 63, 64, 66])
+@pytest.mark.parametrize(
+    "line",
+    [3, 6, 16, 17, 18, 19, 21, 23, 24, 26, 27, 30, 32, 33, 35, 36, 40, 41, 44, 46, 47]
+    + [50, 53, 55, 58, 59, 61, 63, 64, 66],
+)
 def test_importing_the_federal_package_registers_the_worksheet_lines(line: int) -> None:
     registered = CapabilityRegistry.shared().get(f"ca/principal_residence_worksheet_line_{line}")
 

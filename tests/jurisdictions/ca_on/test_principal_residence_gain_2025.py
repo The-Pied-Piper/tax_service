@@ -44,6 +44,7 @@ from app.jurisdictions.ca.catalog import (
     RESIDENCE_PROCEEDS,
     RESIDENCE_T664_FILED,
     RESIDENCE_WS_ADJUSTED_COST_BASE_FEB_22_1994,
+    RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994,
     RESIDENCE_WS_DESIGNATED_PROCEEDS,
     RESIDENCE_WS_ELECTED_CAPITAL_GAIN,
     RESIDENCE_WS_FMV_FEB_22_1994,
@@ -134,6 +135,7 @@ def properties(*rows: tuple[int, int, str, str, str, int]) -> Artifact[RecordLis
             RESIDENCE_WS_ELECTED_CAPITAL_GAIN: D("0"),
             RESIDENCE_WS_MONTHS_OWNED_AFTER_FEB_1992: 0,
             RESIDENCE_WS_MONTHS_OWNED_AFTER_1971: 0,
+            RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994: Decimal("0"),
         }
         for designated, owned, proceeds, outlays, cost_base, plus_one in rows
     ]

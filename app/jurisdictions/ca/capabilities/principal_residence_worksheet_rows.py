@@ -7,14 +7,15 @@ Part 4 of Form T2091(IND) applies to a property for which Form T664 or T664(Seni
 reduction (line 56) of the total capital gain (line 55, line 54 of Part 3), floored at 0 (line
 57). Each property is worked on its own, as in `PrincipalResidenceRows`, which supplies its Part
 1 and Part 2 lines. A property not filed has every worksheet line 0 and not completed, and its
-line 57 is its line 54. Worksheet Part 2 (lines 28 to 58) is not built: a property filed with
-Part 2 applying is refused with a ValidationError.
+line 57 is its line 54. Worksheet Part 2 (lines 28 to 58) is worked for a property filed with Part 2
+of Form T2091(IND) applying, and Part 3 line 59 is then its line 58, else its line 27. The row
+dataclass is `PrincipalResidenceWorksheetRow`.
 
 Line 16 multiplies line 14 by the printed factor of the `chart_1_factor` dataset and rounds it
-with that dataset's rule; lines 26 and 63 divide and round with the `rounding` dataset's rule. A
-filed property whose years owned before 1995 (lines 4 and 5, so line 6) are 0, or whose months
-owned after 1971 (line 62) are 0, is refused, as the quotient would have no divisor. Every other
-line is exact.
+with that dataset's rule; lines 26, 35, 46 and 63 divide and round with the `rounding` dataset's
+rule. A filed property whose years owned before 1995 (lines 4 and 5, so line 6) are 0, or whose
+months owned after 1971 (line 62) are 0, is refused, as the quotient would have no divisor. Every
+other line is exact.
 """
 
 from __future__ import annotations
@@ -40,6 +41,7 @@ from app.jurisdictions.ca.capabilities.principal_residence_rows import (
 from app.jurisdictions.ca.catalog import (
     RESIDENCE_T664_FILED,
     RESIDENCE_WS_ADJUSTED_COST_BASE_FEB_22_1994,
+    RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994,
     RESIDENCE_WS_DESIGNATED_PROCEEDS,
     RESIDENCE_WS_ELECTED_CAPITAL_GAIN,
     RESIDENCE_WS_FMV_FEB_22_1994,
@@ -60,8 +62,12 @@ class PrincipalResidenceWorksheetRow:
     worksheet's number. Copies of earlier figures are kept where a trace line reads them: `line_2`
     and `line_5` are the form's lines 2 and 6, `line_15` is line 7, `line_20` is line 8, and
     `line_54` is the property's total capital gain (Part 3 line 54, which is line 55 of Part 4).
-    `factor` is the printed 1.1, `rounding` the worksheet's rule for lines 26 and 63, and
-    `chart_rounding` the rule of line 16.
+    Lines 28 to 58 are Part 2 (`part_2_completed` when the election was filed and Part 2 of Form
+    T2091(IND) applies; `pre_1982_completed`, `post_1981_completed` and `post_1981_loss_completed`
+    for areas A, B and C); its lines 56 and 57 are `part_2_line_56` and `part_2_line_57`, as
+    `line_56` and `line_57` are those of Part 4. `line_59` is line 58 when Part 2 is completed,
+    else line 27. `factor` is the printed 1.1, `rounding` the worksheet's rule for
+    lines 26, 35, 46 and 63, and `chart_rounding` the rule of line 16.
     """
 
     position: int
@@ -92,6 +98,41 @@ class PrincipalResidenceWorksheetRow:
     line_26: Decimal
     line_27: Decimal
     line_54: Decimal
+    part_2_completed: bool
+    pre_1982_completed: bool
+    post_1981_completed: bool
+    post_1981_loss_completed: bool
+    line_28: Decimal
+    line_29: Decimal
+    line_30: Decimal
+    line_31: Decimal
+    line_32: int
+    line_33: Decimal
+    line_34: int
+    line_35: Decimal
+    line_36: Decimal
+    line_37: Decimal
+    line_38: Decimal
+    line_39: Decimal
+    line_40: Decimal
+    line_41: Decimal
+    line_42: Decimal
+    line_43: int
+    line_44: Decimal
+    line_45: int
+    line_46: Decimal
+    line_47: Decimal
+    line_48: Decimal
+    line_49: Decimal
+    line_50: Decimal
+    line_51: Decimal
+    line_52: Decimal
+    line_53: Decimal
+    part_2_line_54: Decimal
+    line_55: Decimal
+    part_2_line_56: Decimal
+    part_2_line_57: Decimal
+    line_58: Decimal
     line_56: Decimal
     line_57: Decimal
     line_59: Decimal
@@ -144,11 +185,6 @@ class PrincipalResidenceWorksheetRows(PrincipalResidenceRows):
         rule = self._rounding.rounding
         if record[RESIDENCE_T664_FILED] != 1:
             return self._not_filed(base, factor, chart_rounding, rule)
-        if base.applies:
-            raise ValidationError(
-                f"property {base.position}: Part 2 of Form T2091(IND)-WS (lines 28 to 58) is not "
-                "built, so a property with Form T664 filed and Part 2 applying cannot be worked"
-            )
         zero = Decimal(0)
         line_1 = record[RESIDENCE_WS_YEARS_DESIGNATED_AFTER_1981]
         line_4 = record[RESIDENCE_WS_YEARS_OWNED_AFTER_1981]
@@ -184,8 +220,50 @@ class PrincipalResidenceWorksheetRows(PrincipalResidenceRows):
         line_24 = line_22 * line_23 + zero
         line_26 = ApplyRatio.ratio_of(line_24, Decimal(1), Decimal(line_6), rule)
         line_27 = line_21 - line_26
+        # Part 2 of the worksheet, completed when Part 2 of Form T2091(IND) applies. Area A is
+        # skipped when every year owned before 1982 was designated, area B when every year owned
+        # after 1981 was designated or line 11 is more than line 19, and area C as area B's years.
+        part_2 = base.applies
+        area_a = part_2 and base.designated_before < base.owned_before
+        area_b = part_2 and line_1 < line_4 and base.fmv_1981 <= line_19
+        area_c = part_2 and line_1 < line_4
+        line_28 = base.fmv_1981 if area_a else zero
+        line_29 = base.cost_base_1981 if area_a else zero
+        line_30 = line_28 - line_29
+        line_31 = line_30
+        line_32 = base.designated_before + base.plus_one if area_a else 0
+        line_33 = line_31 * line_32 + zero
+        line_34 = base.owned_before if area_a else 0
+        line_35 = (
+            ApplyRatio.ratio_of(line_33, Decimal(1), Decimal(line_34), rule) if area_a else zero
+        )
+        line_36 = max(zero, line_30 - line_35)
+        line_37 = line_19 if area_b else zero
+        line_38 = base.fmv_1981 if area_b else zero
+        line_39 = record[RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994] if area_b else zero
+        line_40 = line_38 + line_39
+        line_41 = line_37 - line_40
+        line_42 = line_41
+        line_43 = line_1 if area_b else 0
+        line_44 = line_42 * line_43 + zero
+        line_45 = line_4 if area_b else 0
+        line_46 = (
+            ApplyRatio.ratio_of(line_44, Decimal(1), Decimal(line_45), rule) if area_b else zero
+        )
+        line_47 = max(zero, line_41 - line_46)
+        line_48 = base.fmv_1981 if area_c else zero
+        line_49 = line_19 if area_c else zero
+        line_50 = max(zero, line_48 - line_49)
+        line_51 = line_36
+        line_52 = line_47
+        line_53 = line_51 + line_52
+        part_2_line_54 = line_50
+        line_55 = max(zero, line_53 - part_2_line_54) if part_2 else zero
+        part_2_line_56 = line_27 if part_2 else zero
+        part_2_line_57 = line_55
+        line_58 = min(part_2_line_56, part_2_line_57)
         # Part 3 of the worksheet.
-        line_59 = line_27
+        line_59 = line_58 if part_2 else line_27
         line_60 = record[RESIDENCE_WS_MONTHS_OWNED_AFTER_FEB_1992]
         line_61 = line_59 * line_60 + zero
         line_63 = ApplyRatio.ratio_of(line_61, Decimal(1), Decimal(line_62), rule)
@@ -224,6 +302,41 @@ class PrincipalResidenceWorksheetRows(PrincipalResidenceRows):
             line_26=line_26,
             line_27=line_27,
             line_54=base.line_54,
+            part_2_completed=part_2,
+            pre_1982_completed=area_a,
+            post_1981_completed=area_b,
+            post_1981_loss_completed=area_c,
+            line_28=line_28,
+            line_29=line_29,
+            line_30=line_30,
+            line_31=line_31,
+            line_32=line_32,
+            line_33=line_33,
+            line_34=line_34,
+            line_35=line_35,
+            line_36=line_36,
+            line_37=line_37,
+            line_38=line_38,
+            line_39=line_39,
+            line_40=line_40,
+            line_41=line_41,
+            line_42=line_42,
+            line_43=line_43,
+            line_44=line_44,
+            line_45=line_45,
+            line_46=line_46,
+            line_47=line_47,
+            line_48=line_48,
+            line_49=line_49,
+            line_50=line_50,
+            line_51=line_51,
+            line_52=line_52,
+            line_53=line_53,
+            part_2_line_54=part_2_line_54,
+            line_55=line_55,
+            part_2_line_56=part_2_line_56,
+            part_2_line_57=part_2_line_57,
+            line_58=line_58,
             line_56=line_56,
             line_57=line_57,
             line_59=line_59,
@@ -275,6 +388,41 @@ class PrincipalResidenceWorksheetRows(PrincipalResidenceRows):
             line_26=zero,
             line_27=zero,
             line_54=base.line_54,
+            part_2_completed=False,
+            pre_1982_completed=False,
+            post_1981_completed=False,
+            post_1981_loss_completed=False,
+            line_28=zero,
+            line_29=zero,
+            line_30=zero,
+            line_31=zero,
+            line_32=0,
+            line_33=zero,
+            line_34=0,
+            line_35=zero,
+            line_36=zero,
+            line_37=zero,
+            line_38=zero,
+            line_39=zero,
+            line_40=zero,
+            line_41=zero,
+            line_42=zero,
+            line_43=0,
+            line_44=zero,
+            line_45=0,
+            line_46=zero,
+            line_47=zero,
+            line_48=zero,
+            line_49=zero,
+            line_50=zero,
+            line_51=zero,
+            line_52=zero,
+            line_53=zero,
+            part_2_line_54=zero,
+            line_55=zero,
+            part_2_line_56=zero,
+            part_2_line_57=zero,
+            line_58=zero,
             line_56=zero,
             line_57=base.line_54,
             line_59=zero,

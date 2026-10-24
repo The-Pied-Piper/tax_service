@@ -17,6 +17,10 @@ cost base at the end of February 22, 1994 (line 8), the fair market value at tha
 the elected capital gain (line 13), the months owned after February 1992 and before March 1994 (line
 60) and the months owned after 1971 and before March 1994 (line 62). A property given with twelve or
 eight figures has those nine as 0, and "0.00" for the money.
+
+A property given with twenty-two figures also has the worksheet's line 12, the adjustments made to
+the cost base after 1981 and before February 23, 1994, as its last figure; given with twenty-one, it
+is "0.00".
 """
 
 from __future__ import annotations
@@ -42,6 +46,7 @@ from app.jurisdictions.ca.catalog import (
     RESIDENCE_PROCEEDS,
     RESIDENCE_T664_FILED,
     RESIDENCE_WS_ADJUSTED_COST_BASE_FEB_22_1994,
+    RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994,
     RESIDENCE_WS_DESIGNATED_PROCEEDS,
     RESIDENCE_WS_ELECTED_CAPITAL_GAIN,
     RESIDENCE_WS_FMV_FEB_22_1994,
@@ -95,6 +100,59 @@ WorksheetFigures = tuple[
 """A property with its worksheet figures: the twelve of `Part2Figures`, whether T664 was filed, then
 worksheet lines 1, 4, 7, 8, 10 and 13 and lines 60 and 62."""
 
+WorksheetFiguresWithAdjustments = tuple[
+    int,
+    int,
+    int,
+    int,
+    str,
+    str,
+    str,
+    int,
+    int,
+    str,
+    str,
+    str,
+    int,
+    int,
+    int,
+    str,
+    str,
+    str,
+    str,
+    int,
+    int,
+    str,
+]
+"""A property with its worksheet figures and worksheet line 12 (the adjustments made to the cost
+base after 1981 and before February 23, 1994), which is last: the twenty-one, then line 12."""
+
+WORKSHEET_FIELDS = (
+    "designated_after",
+    "designated_before",
+    "owned_after",
+    "owned_before",
+    "proceeds",
+    "outlays",
+    "cost_base",
+    "plus_one",
+    "part_2_applies",
+    "cost_base_1981",
+    "fmv_1981",
+    "adjustments",
+    "t664_filed",
+    "ws_years_designated_after_1981",
+    "ws_years_owned_after_1981",
+    "ws_designated_proceeds",
+    "ws_cost_base_feb_22_1994",
+    "ws_fmv_feb_22_1994",
+    "ws_elected_capital_gain",
+    "ws_months_owned_after_feb_1992",
+    "ws_months_owned_after_1971",
+    "ws_cost_base_adjustments_to_feb_1994",
+)
+"""The names of the figures of `WorksheetFiguresWithAdjustments`, in order."""
+
 
 def part_2_figures(figures: Figures | Part2Figures) -> Part2Figures:
     """`figures` with the Part 2 figures added as 0 when it has only the first eight."""
@@ -103,16 +161,33 @@ def part_2_figures(figures: Figures | Part2Figures) -> Part2Figures:
     return figures
 
 
-def worksheet_figures(figures: Figures | Part2Figures | WorksheetFigures) -> WorksheetFigures:
-    """`figures` with the worksheet figures added as 0 (and "0.00") when it has fewer than 21."""
+def worksheet_figures(
+    figures: Figures | Part2Figures | WorksheetFigures | WorksheetFiguresWithAdjustments,
+) -> WorksheetFiguresWithAdjustments:
+    """`figures` with the worksheet figures added as 0 (and "0.00") when it has fewer than 21, and
+    worksheet line 12 added as "0.00" when it has twenty-one."""
+    if len(figures) == 22:
+        return cast(WorksheetFiguresWithAdjustments, figures)
     if len(figures) == 21:
-        return cast(WorksheetFigures, figures)
+        return cast(WorksheetFiguresWithAdjustments, (*figures, "0.00"))
     twelve = part_2_figures(cast(Figures | Part2Figures, figures))
-    return (*twelve, 0, 0, 0, "0.00", "0.00", "0.00", "0.00", 0, 0)
+    return (*twelve, 0, 0, 0, "0.00", "0.00", "0.00", "0.00", 0, 0, "0.00")
+
+
+def part_2_worksheet(
+    base: WorksheetFiguresWithAdjustments | None = None, **changes: int | str
+) -> WorksheetFiguresWithAdjustments:
+    """`base` (by default `PART_2_WORKSHEET_PROPERTY_1`) with the figures named in `changes`
+    replaced, by the names of `WORKSHEET_FIELDS`."""
+    values: dict[str, int | str] = dict(
+        zip(WORKSHEET_FIELDS, base or PART_2_WORKSHEET_PROPERTY_1, strict=True)
+    )
+    values.update(changes)
+    return cast(WorksheetFiguresWithAdjustments, tuple(values[name] for name in WORKSHEET_FIELDS))
 
 
 def property_record(
-    figures: Figures | Part2Figures | WorksheetFigures,
+    figures: Figures | Part2Figures | WorksheetFigures | WorksheetFiguresWithAdjustments,
 ) -> dict[ArtifactKind[Any], object]:
     """One property's record, with every field of `PRINCIPAL_RESIDENCE_PROPERTIES`."""
     (
@@ -137,6 +212,7 @@ def property_record(
         elected_gain,
         months_after_feb_1992,
         months_after_1971,
+        ws_adjustments_to_feb_1994,
     ) = worksheet_figures(figures)
     return {
         RESIDENCE_YEARS_DESIGNATED_AFTER_1981: designated_after,
@@ -160,10 +236,13 @@ def property_record(
         RESIDENCE_WS_ELECTED_CAPITAL_GAIN: D(elected_gain),
         RESIDENCE_WS_MONTHS_OWNED_AFTER_FEB_1992: months_after_feb_1992,
         RESIDENCE_WS_MONTHS_OWNED_AFTER_1971: months_after_1971,
+        RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994: D(ws_adjustments_to_feb_1994),
     }
 
 
-def properties(*given: Figures | Part2Figures | WorksheetFigures) -> Artifact[Any]:
+def properties(
+    *given: Figures | Part2Figures | WorksheetFigures | WorksheetFiguresWithAdjustments,
+) -> Artifact[Any]:
     """A `ca/principal_residence_properties` artifact of one record per property, in the order
     given."""
     records = [property_record(figures) for figures in given]
@@ -385,6 +464,92 @@ PART_2_NO_YEARS_OWNED: Part2Figures = (
     "40000.00",
     "90000.00",
     "10000.00",
+)
+
+# --- The Part 2 worksheet properties (T664 filed and Part 2 applies), worked by hand --------------
+
+# Property 1: designated 20 years after 1981 and 1 before 1982, owned 44 years after 1981 and 4
+# before (48 in all); designated 4 years after 1981 and before 1995 and owned 13 in that period.
+# Proceeds 700,000.00, outlays 20,000.00, adjusted cost base 200,000.00, the "plus one" applies.
+# Part 2 applies: the cost base on December 31, 1981 is 120,000.00, the fair market value 240,000.00
+# and the adjustments after 1981 10,000.00. Part 1 of the worksheet: line 1 4, line 2 1, line 3 5;
+# line 4 13, line 5 4, line 6 17; line 7 (280,000.00) is not more than line 10 (300,000.00), so no
+# Chart 1 and line 19 = 300,000.00; line 8 210,000.00; line 21 = 90,000.00; line 23 = 6; line 24 =
+# 540,000.00; line 26 = 540,000.00 / 17 = 31,764.71; line 27 = 58,235.29. Part 2: area A (line 2 is
+# less than line 5): line 30 = 240,000.00 - 120,000.00 = 120,000.00; line 33 = 120,000.00 x 2 =
+# 240,000.00; line 35 = 240,000.00 / 4 = 60,000.00; line 36 = 60,000.00. Area B (line 1 is less
+# than line 4, and line 11 is not more than line 19): line 12 is 6,000.00, so line 40 =
+# 240,000.00 + 6,000.00 = 246,000.00; line 41 = 300,000.00 - 246,000.00 = 54,000.00; line 44 =
+# 54,000.00 x 4 = 216,000.00; line 46 = 216,000.00 / 13 = 16,615.38; line 47 = 54,000.00 -
+# 16,615.38 = 37,384.62. Area C (line 1 is less than line 4): line 50 = 0, as 240,000.00 is less
+# than 300,000.00. Area D: line 53 = 60,000.00 + 37,384.62 = 97,384.62; line 55 = 97,384.62. Area
+# E: line 56 = 58,235.29, line 57 = 97,384.62, so line 58 = 58,235.29, which is line 59. Part 3:
+# line 61 = 58,235.29 x 24 = 1,397,646.96; line 63 = 1,397,646.96 / 150 = 9,317.65; line 64 =
+# 48,917.64; line 66 = 48,917.64, the lesser of it and 150,000.00.
+PART_2_WORKSHEET_PROPERTY_1: WorksheetFiguresWithAdjustments = (
+    20,
+    1,
+    44,
+    4,
+    "700000.00",
+    "20000.00",
+    "200000.00",
+    1,
+    1,
+    "120000.00",
+    "240000.00",
+    "10000.00",
+    1,
+    4,
+    13,
+    "280000.00",
+    "210000.00",
+    "300000.00",
+    "150000.00",
+    24,
+    150,
+    "6000.00",
+)
+
+# Property 2: designated 10 years after 1981 and none before 1982, owned 30 years after 1981 and 2
+# before (32 in all); designated 3 years after 1981 and before 1995 and owned 13 in that period.
+# Proceeds 500,000.00, outlays 5,000.00, adjusted cost base 175,000.00, the "plus one" applies.
+# Part 2 applies: the cost base on December 31, 1981 is 200,000.00, the fair market value
+# 360,000.00 and the adjustments after 1981 20,000.00. Part 1 of the worksheet: line 1 3, line 2 0,
+# line 3 3; line 4 13, line 5 2, line 6 15; line 7 (340,000.00) is more than line 10 (300,000.00),
+# so Chart 1 applies: line 16 = 330,000.00, line 17 = 10,000.00, line 18 = 290,000.00 and line 19 =
+# 290,000.00; line 8 180,000.00; line 21 = 110,000.00; line 23 = 4; line 24 = 440,000.00; line 26 =
+# 440,000.00 / 15 = 29,333.33; line 27 = 80,666.67. Part 2: area A (line 2 is less than line 5):
+# line 30 = 360,000.00 - 200,000.00 = 160,000.00; line 33 = 160,000.00 x 1 = 160,000.00; line 35 =
+# 160,000.00 / 2 = 80,000.00; line 36 = 80,000.00. Area B is skipped, as line 11 (360,000.00) is
+# more than line 19 (290,000.00), so lines 40 to 47 are 0. Area C (line 1 is less than line 4):
+# line 50 = 360,000.00 - 290,000.00 = 70,000.00. Area D: line 53 = 80,000.00 + 0 = 80,000.00; line
+# 55 = 80,000.00 - 70,000.00 = 10,000.00. Area E: line 56 = 80,666.67, line 57 = 10,000.00, so line
+# 58 = 10,000.00, which is line 59. Part 3: line 61 = 10,000.00 x 20 = 200,000.00; line 63 =
+# 200,000.00 / 150 = 1,333.33; line 64 = 8,666.67; line 66 = 8,666.67.
+PART_2_WORKSHEET_PROPERTY_2: WorksheetFiguresWithAdjustments = (
+    10,
+    0,
+    30,
+    2,
+    "500000.00",
+    "5000.00",
+    "175000.00",
+    1,
+    1,
+    "200000.00",
+    "360000.00",
+    "20000.00",
+    1,
+    3,
+    13,
+    "340000.00",
+    "180000.00",
+    "300000.00",
+    "60000.00",
+    20,
+    150,
+    "4000.00",
 )
 
 # --- The worksheet properties, worked by hand in the tests that use them -----------------------
@@ -613,7 +778,7 @@ WORKSHEET_REDUCTION_EXCEEDS_GAIN: WorksheetFigures = (
     74,
 )
 
-# T664 filed and Part 2 applies: refused, as the worksheet's Part 2 (lines 28 to 58) is not built.
+# T664 filed and Part 2 applies: worksheet Part 2 (lines 28 to 58) is worked for it, not refused.
 WORKSHEET_FILED_WITH_PART_2: WorksheetFigures = (
     6,
     1,

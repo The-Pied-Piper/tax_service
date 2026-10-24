@@ -68,6 +68,48 @@ from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_26 imp
 from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_27 import (
     PrincipalResidenceWorksheetLine27Capability,
 )
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_30 import (
+    PrincipalResidenceWorksheetLine30Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_32 import (
+    PrincipalResidenceWorksheetLine32Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_33 import (
+    PrincipalResidenceWorksheetLine33Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_35 import (
+    PrincipalResidenceWorksheetLine35Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_36 import (
+    PrincipalResidenceWorksheetLine36Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_40 import (
+    PrincipalResidenceWorksheetLine40Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_41 import (
+    PrincipalResidenceWorksheetLine41Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_44 import (
+    PrincipalResidenceWorksheetLine44Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_46 import (
+    PrincipalResidenceWorksheetLine46Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_47 import (
+    PrincipalResidenceWorksheetLine47Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_50 import (
+    PrincipalResidenceWorksheetLine50Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_53 import (
+    PrincipalResidenceWorksheetLine53Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_55 import (
+    PrincipalResidenceWorksheetLine55Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_58 import (
+    PrincipalResidenceWorksheetLine58Capability,
+)
 from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_59 import (
     PrincipalResidenceWorksheetLine59Capability,
 )
@@ -100,6 +142,20 @@ from app.jurisdictions.ca.catalog import (
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_24,
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_26,
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_27,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_30,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_32,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_33,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_35,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_36,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_40,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_41,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_44,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_46,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_47,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_50,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_53,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_55,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_58,
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_59,
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_61,
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_63,
@@ -118,6 +174,20 @@ from app.jurisdictions.ca.trace import (
     PrincipalResidenceWorksheetLine24,
     PrincipalResidenceWorksheetLine26,
     PrincipalResidenceWorksheetLine27,
+    PrincipalResidenceWorksheetLine30,
+    PrincipalResidenceWorksheetLine32,
+    PrincipalResidenceWorksheetLine33,
+    PrincipalResidenceWorksheetLine35,
+    PrincipalResidenceWorksheetLine36,
+    PrincipalResidenceWorksheetLine40,
+    PrincipalResidenceWorksheetLine41,
+    PrincipalResidenceWorksheetLine44,
+    PrincipalResidenceWorksheetLine46,
+    PrincipalResidenceWorksheetLine47,
+    PrincipalResidenceWorksheetLine50,
+    PrincipalResidenceWorksheetLine53,
+    PrincipalResidenceWorksheetLine55,
+    PrincipalResidenceWorksheetLine58,
     PrincipalResidenceWorksheetLine59,
     PrincipalResidenceWorksheetLine61,
     PrincipalResidenceWorksheetLine63,
@@ -164,6 +234,20 @@ WORKSHEET_LINES: dict[int, Any] = {
     63: PrincipalResidenceWorksheetLine63Capability,
     64: PrincipalResidenceWorksheetLine64Capability,
     66: PrincipalResidenceWorksheetLine66Capability,
+    30: PrincipalResidenceWorksheetLine30Capability,
+    32: PrincipalResidenceWorksheetLine32Capability,
+    33: PrincipalResidenceWorksheetLine33Capability,
+    35: PrincipalResidenceWorksheetLine35Capability,
+    36: PrincipalResidenceWorksheetLine36Capability,
+    40: PrincipalResidenceWorksheetLine40Capability,
+    41: PrincipalResidenceWorksheetLine41Capability,
+    44: PrincipalResidenceWorksheetLine44Capability,
+    46: PrincipalResidenceWorksheetLine46Capability,
+    47: PrincipalResidenceWorksheetLine47Capability,
+    50: PrincipalResidenceWorksheetLine50Capability,
+    53: PrincipalResidenceWorksheetLine53Capability,
+    55: PrincipalResidenceWorksheetLine55Capability,
+    58: PrincipalResidenceWorksheetLine58Capability,
 }
 
 KINDS: dict[int, ArtifactKind[Decimal]] = {
@@ -183,6 +267,20 @@ KINDS: dict[int, ArtifactKind[Decimal]] = {
     63: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_63,
     64: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_64,
     66: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_66,
+    30: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_30,
+    32: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_32,
+    33: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_33,
+    35: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_35,
+    36: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_36,
+    40: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_40,
+    41: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_41,
+    44: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_44,
+    46: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_46,
+    47: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_47,
+    50: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_50,
+    53: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_53,
+    55: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_55,
+    58: PRINCIPAL_RESIDENCE_WORKSHEET_LINE_58,
 }
 
 TRACE_LINES: dict[int, type[TraceLine]] = {
@@ -202,9 +300,28 @@ TRACE_LINES: dict[int, type[TraceLine]] = {
     63: PrincipalResidenceWorksheetLine63,
     64: PrincipalResidenceWorksheetLine64,
     66: PrincipalResidenceWorksheetLine66,
+    30: PrincipalResidenceWorksheetLine30,
+    32: PrincipalResidenceWorksheetLine32,
+    33: PrincipalResidenceWorksheetLine33,
+    35: PrincipalResidenceWorksheetLine35,
+    36: PrincipalResidenceWorksheetLine36,
+    40: PrincipalResidenceWorksheetLine40,
+    41: PrincipalResidenceWorksheetLine41,
+    44: PrincipalResidenceWorksheetLine44,
+    46: PrincipalResidenceWorksheetLine46,
+    47: PrincipalResidenceWorksheetLine47,
+    50: PrincipalResidenceWorksheetLine50,
+    53: PrincipalResidenceWorksheetLine53,
+    55: PrincipalResidenceWorksheetLine55,
+    58: PrincipalResidenceWorksheetLine58,
 }
 
 LINE_NUMBERS = list(WORKSHEET_LINES)
+
+# The lines of Part 2 (lines 28 to 58): completed only when Part 2 of Form T2091(IND) applies, which
+# it does not in the worked example or the Chart 1 example, so they are 0 there. Their figures are
+# pinned in test_principal_residence_part_2_worksheet_lines.py.
+PART_2_LINES = {30, 32, 33, 35, 36, 40, 41, 44, 46, 47, 50, 53, 55, 58}
 
 # The lines of Chart 1: completed only when line 7 is more than line 10.
 CHART_LINES = {16, 17, 18}
@@ -227,6 +344,20 @@ VALUES_WORKED: dict[int, str] = {
     63: "16216.22",
     64: "33783.78",
     66: "33783.78",
+    30: "0",
+    32: "0",
+    33: "0",
+    35: "0",
+    36: "0",
+    40: "0",
+    41: "0",
+    44: "0",
+    46: "0",
+    47: "0",
+    50: "0",
+    53: "0",
+    55: "0",
+    58: "0",
 }
 
 # Chart 1 (WORKSHEET_CHART_1): line 7 230,000.00 is more than line 10 200,000.00.
@@ -247,6 +378,20 @@ VALUES_CHART_1: dict[int, str] = {
     63: "14594.59",
     64: "30405.41",
     66: "30405.41",
+    30: "0",
+    32: "0",
+    33: "0",
+    35: "0",
+    36: "0",
+    40: "0",
+    41: "0",
+    44: "0",
+    46: "0",
+    47: "0",
+    50: "0",
+    53: "0",
+    55: "0",
+    58: "0",
 }
 
 # T664 not filed (WORKSHEET_NOT_FILED): every worksheet line is not completed, and 0.
@@ -558,16 +703,16 @@ def test_compute_is_repeatable() -> None:
 
 
 @pytest.mark.parametrize("line", LINE_NUMBERS)
-def test_a_filed_property_with_part_2_is_refused_as_the_worksheet_part_2_is_not_built(
-    line: int,
-) -> None:
-    with pytest.raises(ValidationError, match=r"property 1.*lines 28 to 58"):
-        value_of(line, WORKSHEET_FILED_WITH_PART_2)
+def test_a_filed_property_with_part_2_applying_is_worked_not_refused(line: int) -> None:
+    # Part 2 of the worksheet (lines 28 to 58) is worked for it, so the line is a decimal; the
+    # figures of Part 2 are pinned in test_principal_residence_part_2_worksheet_lines.py.
+    assert isinstance(value_of(line, WORKSHEET_FILED_WITH_PART_2), Decimal)
 
 
-def test_the_part_2_refusal_names_the_property_by_its_position() -> None:
-    with pytest.raises(ValidationError, match=r"property 2.*lines 28 to 58"):
-        value_of(27, WORKSHEET_WORKED, WORKSHEET_FILED_WITH_PART_2)
+def test_a_filed_property_with_part_2_is_worked_beside_the_others() -> None:
+    # Line 27 of the worked example stays 50,000.00 beside a property with Part 2 applying.
+    assert isinstance(value_of(27, WORKSHEET_WORKED, WORKSHEET_FILED_WITH_PART_2), Decimal)
+    assert value_of(27, WORKSHEET_WORKED) == D("50000.00")
 
 
 @pytest.mark.parametrize("line", LINE_NUMBERS)
@@ -651,11 +796,11 @@ def test_the_last_trace_line_amount_is_the_output(line: int) -> None:
 
 @pytest.mark.parametrize("line", LINE_NUMBERS)
 def test_traces_whether_the_step_is_completed_on_a_filed_property(line: int) -> None:
-    # Lines 16 to 18 are completed only when Chart 1 applies; every other line is completed when the
-    # election was filed.
+    # Lines 16 to 18 are completed only when Chart 1 applies, and lines 28 to 58 only when Part 2
+    # applies; every other line is completed when the election was filed.
     (item, _total) = capability(line).compute((properties(WORKSHEET_WORKED),)).trace
 
-    assert cast(Any, item).completed is (line not in CHART_LINES)
+    assert cast(Any, item).completed is (line not in CHART_LINES | PART_2_LINES)
 
 
 @pytest.mark.parametrize("line", LINE_NUMBERS)

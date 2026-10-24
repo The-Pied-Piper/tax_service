@@ -588,6 +588,7 @@ from app.jurisdictions.ca.catalog import (
     RESIDENCE_PROCEEDS,
     RESIDENCE_T664_FILED,
     RESIDENCE_WS_ADJUSTED_COST_BASE_FEB_22_1994,
+    RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994,
     RESIDENCE_WS_DESIGNATED_PROCEEDS,
     RESIDENCE_WS_ELECTED_CAPITAL_GAIN,
     RESIDENCE_WS_FMV_FEB_22_1994,
@@ -1817,6 +1818,7 @@ ResidenceProperty = (
         str,
         int,
         int,
+        str,
     ]
 )
 """One Form T2091(IND) property: the years designated after 1981 and from 1972 to 1981 (lines 1
@@ -1832,8 +1834,10 @@ years designated after 1981 and before 1995 (worksheet line 1), the years owned 
 (line 4), the designated proceeds of disposition (line 7), the adjusted cost base at the end of
 February 22, 1994 (line 8), the fair market value at that date (line 10), the elected capital gain
 (line 13), and the months owned after February 1992 and before March 1994 (line 60) and after 1971
-and before March 1994 (line 62), both not counting the months designated. A row of twelve or eight
-has these at 0."""
+and before March 1994 (line 62), both not counting the months designated. A row of twenty-two adds
+the worksheet's line 12, the adjustments made to the cost base after 1981 and before February 23,
+1994, as its last figure; a row of twenty-one has it at "0.00", and a row of twelve or eight has
+these at 0."""
 
 
 def principal_residence_properties(*rows: ResidenceProperty) -> Artifact[RecordList]:
@@ -1868,7 +1872,9 @@ def _residence_record(row: ResidenceProperty) -> dict[ArtifactKind[Any], object]
         ws_elected_capital_gain,
         ws_months_after_feb_1992,
         ws_months_after_1971,
-    ) = row[12:] or (0, 0, 0, "0", "0", "0", "0", 0, 0)
+    ) = row[12:21] or (0, 0, 0, "0", "0", "0", "0", 0, 0)
+    row_figures: tuple[object, ...] = tuple(row)
+    ws_adjustments = str(row_figures[21]) if len(row_figures) == 22 else "0.00"
     return {
         RESIDENCE_YEARS_DESIGNATED_AFTER_1981: designated_after,
         RESIDENCE_YEARS_DESIGNATED_1972_TO_1981: designated_before,
@@ -1891,6 +1897,7 @@ def _residence_record(row: ResidenceProperty) -> dict[ArtifactKind[Any], object]
         RESIDENCE_WS_ELECTED_CAPITAL_GAIN: D(ws_elected_capital_gain),
         RESIDENCE_WS_MONTHS_OWNED_AFTER_FEB_1992: ws_months_after_feb_1992,
         RESIDENCE_WS_MONTHS_OWNED_AFTER_1971: ws_months_after_1971,
+        RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994: D(ws_adjustments),
     }
 
 

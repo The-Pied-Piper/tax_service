@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1039
+        == 1053
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1039
+        == 1053
     )
 
 
@@ -1535,6 +1535,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/residence_ws_elected_capital_gain",
         "ca/residence_ws_months_owned_after_feb_1992",
         "ca/residence_ws_months_owned_after_1971",
+        "ca/residence_ws_cost_base_adjustments_to_feb_1994",
         "ca/principal_residence_properties",
         "ca/principal_residence_gain",
         "ca/principal_residence_line_27",
@@ -1566,6 +1567,20 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/principal_residence_worksheet_line_63",
         "ca/principal_residence_worksheet_line_64",
         "ca/principal_residence_worksheet_line_66",
+        "ca/principal_residence_worksheet_line_30",
+        "ca/principal_residence_worksheet_line_32",
+        "ca/principal_residence_worksheet_line_33",
+        "ca/principal_residence_worksheet_line_35",
+        "ca/principal_residence_worksheet_line_36",
+        "ca/principal_residence_worksheet_line_40",
+        "ca/principal_residence_worksheet_line_41",
+        "ca/principal_residence_worksheet_line_44",
+        "ca/principal_residence_worksheet_line_46",
+        "ca/principal_residence_worksheet_line_47",
+        "ca/principal_residence_worksheet_line_50",
+        "ca/principal_residence_worksheet_line_53",
+        "ca/principal_residence_worksheet_line_55",
+        "ca/principal_residence_worksheet_line_58",
         "ca/principal_residence_line_56",
         "ca/principal_residence_line_57",
         "ca/cca_class_number",
@@ -2456,7 +2471,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1039
+        == 1053
     )
     assert (
         len(
@@ -2464,7 +2479,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1039
+        == 1053
     )
 
 
@@ -2477,7 +2492,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1039
+        == 1053
     )
     assert (
         len(
@@ -2485,7 +2500,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1039
+        == 1053
     )
 
 
