@@ -99,6 +99,7 @@ from app.jurisdictions.ca.catalog import (
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
+    INVESTMENT_TAX_CREDIT_REFUND,
     ITC_AGRICULTURAL_SRED_CONTRIBUTIONS,
     ITC_AGRICULTURAL_SRED_CREDIT,
     ITC_APPRENTICESHIP_CREDIT,
@@ -107,6 +108,7 @@ from app.jurisdictions.ca.catalog import (
     ITC_CRITICAL_MINERAL_EXPENDITURES,
     ITC_MINERAL_EXPLORATION_CREDIT,
     ITC_MINERAL_EXPLORATION_EXPENDITURES,
+    ITC_PART_E_AMOUNT_17,
     ITC_QUALIFIED_PROPERTY,
     ITC_QUALIFIED_PROPERTY_CREDIT,
     ITC_RECAPTURE_AT_15_PERCENT,
@@ -491,6 +493,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.10")),
             CENT,
             D("0"),
+        ),
+        # Form T2038(IND) Part E amount O, line 45400: no refund designated, so nothing is refunded.
+        INVESTMENT_TAX_CREDIT_REFUND: RateAppliedLine(
+            INVESTMENT_TAX_CREDIT_REFUND,
+            ITC_PART_E_AMOUNT_17,
+            D("0"),
+            Rate(D("0.40")),
+            CENT,
+            D("0.00"),
         ),
         # Form T2038(IND) Parts A and B, rate 0.15: nothing entered.
         ITC_MINERAL_EXPLORATION_CREDIT: RateAppliedLine(
