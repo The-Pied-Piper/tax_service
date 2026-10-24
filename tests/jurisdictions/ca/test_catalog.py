@@ -552,6 +552,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_CCA_CLAIM_LESS_PERSONAL_PART,
     RENTAL_CCA_CLAIM_SHARE,
     RENTAL_CCA_CLASSES,
+    RENTAL_CCA_CLASSES_ADJUSTED,
     RENTAL_CCA_LIMIT,
     RENTAL_CCA_PERSONAL_PART,
     RENTAL_CCA_TABLE_CLAIM,
@@ -642,6 +643,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_UTILITIES,
     RENTAL_UTILITIES_PERSONAL_PORTION,
     RENTAL_UTILITIES_SHORT_TERM_PORTION,
+    RENTAL_VEHICLE_SALES_TAX_RATE,
     RESIDENCE_ADJUSTED_COST_BASE,
     RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981,
     RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981,
@@ -2502,9 +2504,74 @@ def test_the_rental_cca_classes_are_a_record_list_of_the_area_a_columns(
         CCA_PERSONAL_PART_REMAINING,
         CCA_HALF_YEAR_RULE_DIFFERS,
         CCA_RATE_ELECTION,
+        CCA_VEHICLE_ACQUIRED_YEAR,
+        CCA_VEHICLE_COST,
+        CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
     )
-    assert len(RENTAL_CCA_CLASSES.fields) == 14
+    assert len(RENTAL_CCA_CLASSES.fields) == 17
     assert registry.get("ca/rental_cca_classes") is RENTAL_CCA_CLASSES
+
+
+def test_the_rental_class_list_ends_with_the_rate_election_and_the_vehicle_fields() -> None:
+    # T776 Area A Note 2: the vehicle's year, actual cost and government assistance are the
+    # last three fields of the T776 list, after the rate election.
+    assert RENTAL_CCA_CLASSES.fields[-4:] == (
+        CCA_RATE_ELECTION,
+        CCA_VEHICLE_ACQUIRED_YEAR,
+        CCA_VEHICLE_COST,
+        CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+    )
+    for kind in (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE):
+        assert RENTAL_CCA_CLASSES.fields.count(kind) == 1
+
+
+@pytest.mark.parametrize(
+    "field",
+    [CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE],
+    ids=lambda f: f.identifier,
+)
+def test_a_rental_class_record_must_give_each_vehicle_field(field: ArtifactKind[Any]) -> None:
+    # Record fields are required: a record without the field is refused, and one with it keeps it.
+    kind = RENTAL_CCA_CLASSES
+    earlier = tuple(f for f in kind.fields if f is not field)
+    with pytest.raises(InvalidRecordError, match=f"item 1: missing field {field.identifier}"):
+        RecordList(kind.fields, [_cca_record(earlier)])
+
+    record = _cca_record(kind.fields)
+    record[field] = 2025 if field.value_type is int else Decimal("56500.00")
+    (kept,) = RecordList(kind.fields, [record]).records
+    assert kept[field] == (2025 if field.value_type is int else Decimal("56500.00"))
+
+
+def test_the_rental_cca_classes_adjusted_list_is_the_area_a_list_without_the_vehicle_fields(
+    registry: ArtifactRegistry,
+) -> None:
+    # T776 Area A Note 2: the Area A list after the proceeds (columns 5 and 6) are adjusted,
+    # which the CCA table steps read: the same fields in the same order, without the vehicle's
+    # year, actual cost and government assistance that adjusted them.
+    assert isinstance(RENTAL_CCA_CLASSES_ADJUSTED, RecordListKind)
+    assert RENTAL_CCA_CLASSES_ADJUSTED.identifier == "ca/rental_cca_classes_adjusted"
+    assert RENTAL_CCA_CLASSES_ADJUSTED.value_type is RecordList
+    assert RENTAL_CCA_CLASSES_ADJUSTED.non_negative is False
+    assert RENTAL_CCA_CLASSES_ADJUSTED.fields == (
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_DIEP_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_DIEP_PROCEEDS,
+        CCA_IMMEDIATE_EXPENSING,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_NO_PROPERTY_LEFT,
+        CCA_PERSONAL_PART_REMAINING,
+        CCA_HALF_YEAR_RULE_DIFFERS,
+        CCA_RATE_ELECTION,
+    )
+    assert RENTAL_CCA_CLASSES_ADJUSTED.fields == RENTAL_CCA_CLASSES.fields[:14]
+    assert RENTAL_CCA_CLASSES_ADJUSTED is not RENTAL_CCA_CLASSES
+    assert registry.get("ca/rental_cca_classes_adjusted") is RENTAL_CCA_CLASSES_ADJUSTED
 
 
 def _cca_record(
@@ -2550,20 +2617,6 @@ def test_the_other_forms_class_lists_take_the_remaining_personal_part(
 
 @pytest.mark.parametrize(
     "kind",
-    [RENTAL_CCA_CLASSES],
-    ids=lambda k: k.identifier,
-)
-def test_each_class_list_ends_with_the_half_year_rule_flag_and_the_rate_election(
-    kind: RecordListKind,
-) -> None:
-    # Column 18: a row's additions treated the opposite way from their class, a field of each
-    # record, in each of the four lists, followed only by the rate election.
-    assert kind.fields[-2] is CCA_HALF_YEAR_RULE_DIFFERS
-    assert kind.fields.count(CCA_HALF_YEAR_RULE_DIFFERS) == 1
-
-
-@pytest.mark.parametrize(
-    "kind",
     [RENTAL_CCA_CLASSES, BUSINESS_CCA_CLASSES, FARM_CCA_CLASSES, FISH_CCA_CLASSES],
     ids=lambda k: k.identifier,
 )
@@ -2580,18 +2633,6 @@ def test_a_class_record_must_give_the_half_year_rule_flag(kind: RecordListKind) 
     record[CCA_HALF_YEAR_RULE_DIFFERS] = 1
     (kept,) = RecordList(kind.fields, [record]).records
     assert kept[CCA_HALF_YEAR_RULE_DIFFERS] == 1
-
-
-@pytest.mark.parametrize(
-    "kind",
-    [RENTAL_CCA_CLASSES],
-    ids=lambda k: k.identifier,
-)
-def test_each_class_list_ends_with_the_rate_election(kind: RecordListKind) -> None:
-    # Guide T4036 2025, "Class 1 (4%)": a row's CCA rate by election, last in each of the four
-    # lists, after the half-year rule flag.
-    assert kind.fields[-1] is CCA_RATE_ELECTION
-    assert kind.fields.count(CCA_RATE_ELECTION) == 1
 
 
 @pytest.mark.parametrize(
@@ -2672,6 +2713,22 @@ def test_the_business_cca_classes_adjusted_list_is_the_area_a_list_without_the_v
     assert BUSINESS_CCA_CLASSES_ADJUSTED.fields == BUSINESS_CCA_CLASSES.fields[:14]
     assert BUSINESS_CCA_CLASSES_ADJUSTED is not BUSINESS_CCA_CLASSES
     assert registry.get("ca/business_cca_classes_adjusted") is BUSINESS_CCA_CLASSES_ADJUSTED
+
+
+def test_the_rental_vehicle_sales_tax_rate_is_a_percentage_before_the_area_a_list(
+    registry: ArtifactRegistry,
+) -> None:
+    # T776 Note 2 and the Guide T4036 Note: "Use the GST rate of 5% and the appropriate PST rate
+    # for your province or territory. If your province is a participating province, use the
+    # appropriate HST rate.": the rate in percent, a starting amount of the statement, read
+    # before the Area A list, which the vehicle's adjustment uses.
+    assert RENTAL_VEHICLE_SALES_TAX_RATE.identifier == "ca/rental_vehicle_sales_tax_rate"
+    assert RENTAL_VEHICLE_SALES_TAX_RATE.value_type is Decimal
+    assert RENTAL_VEHICLE_SALES_TAX_RATE.non_negative is True
+    assert registry.get("ca/rental_vehicle_sales_tax_rate") is RENTAL_VEHICLE_SALES_TAX_RATE
+    fields = T776_STATEMENTS.fields
+    assert fields[fields.index(RENTAL_CCA_CLASSES) - 1] is RENTAL_VEHICLE_SALES_TAX_RATE
+    assert RENTAL_VEHICLE_SALES_TAX_RATE in fields
 
 
 def test_the_t776_statements_list_the_area_g_and_note_5_inputs_after_the_partner_lines() -> None:
@@ -2913,9 +2970,8 @@ def test_the_business_cca_classes_are_the_area_a_columns_the_caller_enters(
     )
     assert len(BUSINESS_CCA_CLASSES.fields) == 17
     # Note 9 is printed on the T776 and, as endnote 9, on the T2125: the rental list is the
-    # business list, before the three fields of endnote 2's vehicle adjustment, which the
-    # business list holds last.
-    assert RENTAL_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields[:14]
+    # business list, the three fields of Note 2's vehicle adjustment included.
+    assert RENTAL_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
     assert CCA_PERSONAL_PART_REMAINING in BUSINESS_CCA_CLASSES.fields
     assert BUSINESS_CCA_CLASSES is not RENTAL_CCA_CLASSES
     assert registry.get("ca/business_cca_classes") is BUSINESS_CCA_CLASSES

@@ -578,6 +578,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_UTILITIES,
     RENTAL_UTILITIES_PERSONAL_PORTION,
     RENTAL_UTILITIES_SHORT_TERM_PORTION,
+    RENTAL_VEHICLE_SALES_TAX_RATE,
     RESIDENCE_ADJUSTED_COST_BASE,
     RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981,
     RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981,
@@ -953,6 +954,7 @@ def rental_properties_list(*rows: tuple[int, str, str]) -> Artifact[RecordList]:
 RentalCcaRow = (
     tuple[str, str, str, str, str, str, str, int, str, str, str, str]
     | tuple[str, str, str, str, str, str, str, int, str, str, str, str, int]
+    | tuple[str, str, str, str, str, str, str, int, str, str, str, str, int, int, str, str]
 )
 
 
@@ -964,9 +966,28 @@ def rental_cca_classes(*rows: RentalCcaRow) -> Artifact[RecordList]:
     when the class has no DIEP, and Note 9's remaining personal part of the property's cost
     (subtracted from column 24), "0" when there is none; and, as a thirteenth value when the row
     has one, its CCA rate election code (0 none, 1 purpose-built rental, 2 or 3 separate class),
-    else 0."""
-    records: list[dict[ArtifactKind[Any], object]] = [
-        {
+    else 0; and, as a fourteenth, fifteenth and sixteenth, the year a Class 10.1 vehicle was
+    acquired (0 for no adjustment of the proceeds), its actual cost and the government assistance
+    received less repaid, as decimal text, else 0, "0" and "0"."""
+    kind = RENTAL_CCA_CLASSES
+    by_identifier = {field.identifier: field for field in kind.fields}
+    records: list[dict[ArtifactKind[Any], object]] = []
+    for (
+        class_number,
+        ucc_at_start,
+        additions,
+        proceeds,
+        aiip_additions,
+        riip_additions,
+        claimed,
+        no_property_left,
+        diep_additions,
+        diep_proceeds,
+        immediate_expensing,
+        personal_part_remaining,
+        *election,
+    ) in rows:
+        record: dict[ArtifactKind[Any], object] = {
             CCA_CLASS_NUMBER: D(class_number),
             CCA_UCC_AT_START: D(ucc_at_start),
             CCA_ADDITIONS: D(additions),
@@ -980,26 +1001,27 @@ def rental_cca_classes(*rows: RentalCcaRow) -> Artifact[RecordList]:
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
             CCA_PERSONAL_PART_REMAINING: D(personal_part_remaining),
             CCA_HALF_YEAR_RULE_DIFFERS: 0,
-            CCA_RATE_ELECTION: rate_election,
+            CCA_RATE_ELECTION: election[0] if election else 0,
         }
-        for (
-            class_number,
-            ucc_at_start,
-            additions,
-            proceeds,
-            aiip_additions,
-            riip_additions,
-            claimed,
-            no_property_left,
-            diep_additions,
-            diep_proceeds,
-            immediate_expensing,
-            personal_part_remaining,
-            *election,
-        ) in rows
-        for rate_election in (election[0] if election else 0,)
-    ]
-    return Artifact(RENTAL_CCA_CLASSES, RecordList(RENTAL_CCA_CLASSES.fields, records))
+        # The vehicle's year, actual cost and government assistance, by identifier; each other
+        # field of the kind that the row does not give is 0.
+        vehicle: dict[str, int | Decimal] = (
+            {
+                "ca/cca_vehicle_acquired_year": int(str(election[1])),
+                "ca/cca_vehicle_cost": D(str(election[2])),
+                "ca/cca_vehicle_government_assistance": D(str(election[3])),
+            }
+            if len(election) > 1
+            else {}
+        )
+        assert vehicle.keys() <= by_identifier.keys()
+        for field in kind.fields:
+            if field not in record:
+                record[field] = vehicle.get(
+                    field.identifier, 0 if field.value_type is int else D(0)
+                )
+        records.append(record)
+    return Artifact(kind, RecordList(kind.fields, records))
 
 
 def short_term_rental_units(*rows: tuple[str, int, int]) -> Artifact[RecordList]:
@@ -1122,6 +1144,7 @@ def t776_statement(
     rental_coowner_share: str = "0",
     rental_coowner_other_expenses: str = "0",
     rental_cca_classes_rows: tuple[RentalCcaRow, ...] = (),
+    rental_vehicle_sales_tax_rate: str = "0",
     rental_coowner_recaptured_cca: str = "0",
     rental_coowner_terminal_loss: str = "0",
     rental_coowner_cca_claim: str = "0",
@@ -1148,6 +1171,7 @@ def t776_statement(
         Artifact(RENTAL_COOWNER, rental_coowner),
         Artifact(RENTAL_COOWNER_SHARE, D(rental_coowner_share)),
         Artifact(RENTAL_COOWNER_OTHER_EXPENSES, D(rental_coowner_other_expenses)),
+        Artifact(RENTAL_VEHICLE_SALES_TAX_RATE, D(rental_vehicle_sales_tax_rate)),
         rental_cca_classes(*rental_cca_classes_rows),
         Artifact(RENTAL_COOWNER_RECAPTURED_CCA, D(rental_coowner_recaptured_cca)),
         Artifact(RENTAL_COOWNER_TERMINAL_LOSS, D(rental_coowner_terminal_loss)),

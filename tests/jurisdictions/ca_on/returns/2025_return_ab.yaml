@@ -1104,6 +1104,7 @@ inputs:
       ca/rental_coowner: "0"
       ca/rental_coowner_share: "0"
       ca/rental_coowner_other_expenses: "0"
+      ca/rental_vehicle_sales_tax_rate: "0"
       ca/rental_cca_classes: []
       ca/rental_coowner_recaptured_cca: "0"
       ca/rental_coowner_terminal_loss: "0"

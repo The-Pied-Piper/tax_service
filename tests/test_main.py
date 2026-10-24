@@ -1454,6 +1454,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rental_net_income_after_terminal_loss",
         "ca/rental_cca_claim",
         "ca/rental_cca_classes",
+        "ca/rental_cca_classes_adjusted",
+        "ca/rental_vehicle_sales_tax_rate",
         "ca/rental_cca_table_recapture",
         "ca/rental_cca_table_terminal_loss",
         "ca/rental_cca_table_claim",
