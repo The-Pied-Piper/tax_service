@@ -1271,6 +1271,15 @@ plus line 9974 minus line 9943. Enter this amount on line 12600 of your income t
 return", T1 line 13 and line 12600 "Net": amount 6, or for a partner the partnership figure;
 signed, a loss is negative."""
 
+RENTAL_VEHICLE_SALES_TAX_RATE = CATALOG.declare(
+    "rental_vehicle_sales_tax_rate", Decimal, non_negative=True
+)
+"""GST, PST or HST rate on a passenger vehicle, Form T776 Column 5 Note 2 and Guide T4036 "Class
+10.1 (30%)" (the prescribed amounts are each "plus the GST/HST or PST"), and the Guide T4036 note
+"Use the GST rate of 5% and the appropriate PST rate for your province or territory. If your
+province is a participating province, use the appropriate HST rate.": the rate in percent, so 13
+is 13%, a starting amount."""
+
 RENTAL_CCA_CLASSES = RecordListKind.declare(
     CATALOG,
     "rental_cca_classes",
@@ -1289,6 +1298,9 @@ RENTAL_CCA_CLASSES = RecordListKind.declare(
         CCA_PERSONAL_PART_REMAINING,
         CCA_HALF_YEAR_RULE_DIFFERS,
         CCA_RATE_ELECTION,
+        CCA_VEHICLE_ACQUIRED_YEAR,
+        CCA_VEHICLE_COST,
+        CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
     ),
 )
 """Rental classes, Form T776 Area A "Calculation of capital cost allowance (CCA) claim": a
@@ -1299,7 +1311,25 @@ CCA claimed), whether any property is left in the class, the remaining personal 
 property used for both personal and rental use (Note 9), and whether the
 additions are treated the opposite way from their class for the half-year rule (column 18), and the
 CCA rate the caller elects for it (a purpose-built rental or a building in a separate class),
-last."""
+then the year the vehicle was acquired, its actual cost and the government assistance for it
+(Note 2), last."""
+
+RENTAL_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
+    CATALOG,
+    "rental_cca_classes_adjusted",
+    fields=tuple(
+        field
+        for field in RENTAL_CCA_CLASSES.fields
+        if field
+        not in (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE)
+    ),
+)
+"""Rental classes with the proceeds adjusted, Form T776 Area A Column 5 Note 2: "The proceeds of
+disposition of [...] a passenger vehicle bought after April 18, 2021, that has been included in
+Class 10.1, and whose cost is more than the prescribed amount will be adjusted based on a factor
+equal to its prescribed amount as a proportion of the actual cost of the vehicle". The list of
+rental classes without the year the vehicle was acquired, its cost and the government
+assistance, with columns 5 and 6 (the proceeds and the proceeds of DIEPs) adjusted."""
 
 RENTAL_CLOSING_UCC = RecordListKind.declare(
     CATALOG, "rental_closing_ucc", fields=(CCA_CLASS_NUMBER, CCA_UCC_AT_END)
@@ -1407,6 +1437,7 @@ T776_STATEMENTS = RecordListKind.declare(
         RENTAL_COOWNER,
         RENTAL_COOWNER_SHARE,
         RENTAL_COOWNER_OTHER_EXPENSES,
+        RENTAL_VEHICLE_SALES_TAX_RATE,
         RENTAL_CCA_CLASSES,
         RENTAL_COOWNER_RECAPTURED_CCA,
         RENTAL_COOWNER_TERMINAL_LOSS,
