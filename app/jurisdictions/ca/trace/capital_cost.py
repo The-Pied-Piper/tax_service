@@ -48,12 +48,11 @@ class CcaClaimLine(TraceLine):
     if no property is left, else 0). Columns 15, 17 and 18 and the maximum are each rounded once
     with `rounding`; the claim is the caller's, at most the maximum plus `column_9` (the immediate
     expensing amount, 0 unless the class has a DIEP) and at least `column_9`. Under the
-    `half_year_rule_on_sale` (Class 10.1, column 2 and column 7 above 0, no property left) column 19
-    is one half of column 2, the positive-column-7 zero for no property left does not apply and the
-    maximum is at most column 7. A `fiscal_period_days` below `full_year_days` (the
-    dataset's days of a full fiscal period, 365 by default) prorates the maximum (Guide T4002: the
-    CCA "based on the number of days in your fiscal period compared to 365 days"); equal to it
-    is no proration.
+    `half_year_rule_on_sale` (Class 10.1, column 2 above 0, no property left) column 19
+    is one half of column 2 and the zero for no property left or a negative column 7 does not apply.
+    A `fiscal_period_days` below `full_year_days` (the dataset's days of a full fiscal period, 365
+    by default) prorates the maximum (Guide T4002: the CCA "based on the number of days in your
+    fiscal period compared to 365 days"); equal to it is no proration.
 
     Its own class, not a `CappedAmountLine`: the amount is worked on for one class, named by
     position, in many columns that the English rendering shows one by one.
@@ -117,7 +116,7 @@ class TerminalLossLine(TraceLine):
     which Note 3 excepts. `column_7_positive` records whether column 7 is above 0, so a row with
     property left reads apart from one with nothing to lose. `column_9` is the amount the class
     expensed, which is not deducted as CCA and so is not a terminal loss. A row that used the
-    `half_year_rule_on_sale` has property left for the claim and no terminal loss.
+    `half_year_rule_on_sale` has no terminal loss.
     """
 
     output: Money
@@ -145,7 +144,7 @@ class ClosingUccLine(TraceLine):
     0 for the `zero_reason` it records when column 7 is negative or is positive with
     `no_property_left` (1 if no property is left in the class `class_rate`, else 0). The `claim`
     includes `column_9`, the immediate expensing amount of the class (0 unless it has a DIEP). A
-    row that used the `half_year_rule_on_sale` does not close at 0 for no property left. A
+    row that used the `half_year_rule_on_sale` closes at 0: the rest is not deductible later. A
     `fiscal_period_days` below `full_year_days` (365 by default) says the claim was prorated. The
     `personal_part_remaining` (T776 Area A Note 9, 0 unless the list lists it) is subtracted from
     column 7 less the claim after it.

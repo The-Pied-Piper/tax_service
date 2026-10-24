@@ -57,7 +57,7 @@ class CcaClaimRenderer:
                 (19, column_19, on_sale),
             )
         )
-        if zero_reason is CcaZeroReason.COLUMN_7_NEGATIVE:
+        if zero_reason is CcaZeroReason.COLUMN_7_NEGATIVE and not line.half_year_rule_on_sale:
             available = "maximum 0 as column 7 is negative"
         elif zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
             available = "maximum 0 as no property is left in the class"
@@ -67,8 +67,8 @@ class CcaClaimRenderer:
             days = line.fiscal_period_days
             full_year = line.full_year_days
             reached = maximum
-            if line.half_year_rule_on_sale or days != full_year:
-                # The rate of column 19 as worked, before the sale's cap at column 7.
+            if days != full_year:
+                # The rate of column 19 as worked, before the proration.
                 reached = rule.apply(rate_of_column_19)
             available = (
                 f"maximum {percent}% of column 19 = {EnglishFigures.money(reached)} "
@@ -77,9 +77,6 @@ class CcaClaimRenderer:
             if days != full_year:
                 reached = rule.apply(ExactFraction(rate_of_column_19) * days / full_year)
                 available += f", prorated {days}/{full_year} = {EnglishFigures.money(reached)}"
-            if line.half_year_rule_on_sale and reached > maximum:
-                # That is more than column 7 and the UCC cannot go below 0.
-                available += f", limited to column 7 = {EnglishFigures.money(maximum)}"
         return (
             f"{EnglishFigures.cca_class(output.label, position, class_rate)}: {columns}, "
             f"{available}, claim {EnglishFigures.money(claim)}"
@@ -180,7 +177,12 @@ class ClosingUccRenderer:
         result = line.result
         column_9 = line.column_9
         on_sale = " (half-year rule on sale)" if line.half_year_rule_on_sale else ""
-        if zero_reason is CcaZeroReason.COLUMN_7_NEGATIVE:
+        if line.half_year_rule_on_sale:
+            found = (
+                f"column 7 {EnglishFigures.money(column_7)} less claim "
+                f"{EnglishFigures.money(claim)}{on_sale}, the rest is not deductible later:"
+            )
+        elif zero_reason is CcaZeroReason.COLUMN_7_NEGATIVE:
             found = f"column 7 {EnglishFigures.money(column_7)} is negative:"
         elif zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
             found = f"column 7 {EnglishFigures.money(column_7)} with no property left:"

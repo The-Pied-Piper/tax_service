@@ -445,11 +445,11 @@ def sale_claim_total(count: int, claimed: str) -> Decimal:
     return output.value
 
 
-def test_a_sale_rows_prorated_maximum_is_still_capped_at_column_7() -> None:
-    # 1,500.00 x 214 / 365 = 879.45 is above column 7 (10.00): the maximum is 10.00.
-    assert sale_claim_total(214, "10.00") == D("10.00")
-    with pytest.raises(InputAboveBoundError, match=r"above the maximum 10.00"):
-        sale_claim_total(214, "10.01")
+def test_a_sale_rows_prorated_maximum_is_not_limited_to_column_7() -> None:
+    # 1,500.00 x 214 / 365 = 879.45 is above column 7 (10.00) and is the maximum.
+    assert sale_claim_total(214, "879.45") == D("879.45")
+    with pytest.raises(InputAboveBoundError, match=r"above the maximum 879.45"):
+        sale_claim_total(214, "879.46")
 
 
 def test_a_sale_rows_prorated_maximum_below_column_7_is_the_maximum() -> None:

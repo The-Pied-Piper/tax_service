@@ -7,7 +7,8 @@ either case, enter "0" in column 24". Each class of the consumed record list is 
 table, worked on its own as `CcaTable` works it, its claim refused above its maximum as
 `ca/cca_claim` refuses it. The output is a record list of the class number and the UCC at the end
 of the year, one record per class in the caller's order: column 7 less the claim, or 0 when column
-7 is negative or is positive with no property left.
+7 is negative or is positive with no property left, or when the row used the half-year rule on
+sale (Regulation 1100(2.5) allows no deduction in a later year; the rest is nil).
 
 T776 Area A Note 9: "If, in the year, you disposed of a property that you used for both personal
 and rental use, and your rental use of that property changed from year to year, you must subtract
@@ -62,7 +63,9 @@ class ClosingUcc(CcaTable):
         records: list[dict[ArtifactKind[Any], Decimal]] = []
         for row in self._rows(inputs):
             self._columns(row)
-            closes_at_zero = row.zero_reason is not CcaZeroReason.NONE
+            # A sold Class 10.1 vehicle that used the half-year rule on sale closes at nil: the
+            # rest of its UCC is not deductible later (Folio S3-F4-C1 paragraph 1.106).
+            closes_at_zero = row.zero_reason is not CcaZeroReason.NONE or row.half_year_rule_on_sale
             part = row.personal_part_remaining
             if not closes_at_zero and part > row.column_7 - row.claimed:
                 raise InvalidRecordError(

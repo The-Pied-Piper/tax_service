@@ -125,19 +125,20 @@ def test_return_cds_class_10_1_works_column_19_as_half_of_column_2() -> None:
     assert statement.get(BUSINESS_CCA_TABLE_CLAIM).value == D("3000.00")
 
 
-def test_return_cds_closing_ucc_is_5000_not_zero() -> None:
-    # Column 22 is column 7 less column 21: 8000.00 - 3000.00 = 5000.00, next year's column 2 (the
-    # positive column 7 with no property left does not close the class at 0 under the rule).
+def test_return_cds_closing_ucc_is_zero_as_the_rest_is_not_deductible_later() -> None:
+    # Column 7 less column 21 is 8000.00 - 3000.00 = 5000.00, but Regulation 1100(2.5) allows no
+    # deduction in a later year and Folio S3-F4-C1 paragraph 1.106 reduces it to nil: column 22
+    # is 0.
     statement = statement_cd()
 
     records = statement.get(BUSINESS_CLOSING_UCC).value.records
     assert [(record[CCA_CLASS_NUMBER], record[CCA_UCC_AT_END]) for record in records] == [
-        (D("10.1"), D("5000.00")),
+        (D("10.1"), D("0")),
     ]
     rendered = EnglishTraceRenderer().render_all(statement.trace)
     assert (
         "business_closing_ucc: item 1 class 10.1: column 7 8000 less claim 3000 "
-        "(half-year rule on sale) = 5000"
+        "(half-year rule on sale), the rest is not deductible later: 0"
     ) in rendered
 
 
@@ -200,14 +201,14 @@ def test_return_cds_figures_that_depend_on_income_are_return_bbs() -> None:
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("3182.57")
 
 
-def test_a_claim_below_the_maximum_leaves_the_rest_in_the_closing_ucc() -> None:
+def test_a_claim_below_the_maximum_still_closes_the_class_at_zero() -> None:
     # A claim of 2000.00: line 9936 is 2000.00, line 9368 is 7000 + 2000.00 = 9000.00, line 9369
-    # is 40000 - 9000.00 = 31000.00; column 22 is 8000.00 - 2000.00 = 6000.00.
+    # is 40000 - 9000.00 = 31000.00; column 22 is 0 (the 6000.00 left is lost).
     statement = statement_cd({"business_cca_classes_rows": (sold_vehicle("2000.00"),)})
 
     assert statement.get(BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("31000.00")
     records = statement.get(BUSINESS_CLOSING_UCC).value.records
-    assert [record[CCA_UCC_AT_END] for record in records] == [D("6000.00")]
+    assert [record[CCA_UCC_AT_END] for record in records] == [D("0")]
 
 
 def test_a_class_10_1_claim_above_3000_is_refused() -> None:
@@ -222,15 +223,14 @@ def test_a_class_10_1_claim_above_3000_is_refused() -> None:
 
 def test_an_odd_cent_in_column_2_is_halved_and_rounded_once() -> None:
     # Column 2 20001.01: column 19 is 20001.01 / 2 = 10000.505, rounded half-up to 10000.51; the
-    # maximum is 10000.51 x 30% = 3000.153, rounded half-up to 3000.15. Column 7 is 8001.01 and
-    # column 22 with the full claim is 8001.01 - 3000.15 = 5000.86.
+    # maximum is 10000.51 x 30% = 3000.153, rounded half-up to 3000.15. Column 22 is 0.
     statement = statement_cd(
         {"business_cca_classes_rows": (sold_vehicle("3000.15", column_2="20001.01"),)}
     )
 
     assert statement.get(BUSINESS_CCA_TABLE_CLAIM).value == D("3000.15")
     records = statement.get(BUSINESS_CLOSING_UCC).value.records
-    assert [record[CCA_UCC_AT_END] for record in records] == [D("5000.86")]
+    assert [record[CCA_UCC_AT_END] for record in records] == [D("0")]
     with pytest.raises(InputAboveBoundError) as raised:
         run_cd({"business_cca_classes_rows": (sold_vehicle("3000.16", column_2="20001.01"),)})
     assert str(raised.value) == (

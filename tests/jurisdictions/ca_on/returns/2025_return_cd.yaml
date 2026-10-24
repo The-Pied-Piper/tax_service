@@ -9,8 +9,10 @@
 # (column 3), proceeds of dispositions of $12,000.00 (column 5) and no property left in the
 # class, so column 7 is $20,000.00 + $0 - $12,000.00 = $8,000.00. By the half-year rule on sale
 # column 19 is 50% of column 2, $10,000.00 (not column 13 plus columns 15 and 17 minus column
-# 18), the maximum is $10,000.00 x 30% = $3,000.00 and column 21 is that, claimed in full, so
-# column 22 is $8,000.00 - $3,000.00 = $5,000.00, not $0. Recapture and a terminal loss do not
+# 18), the maximum is $10,000.00 x 30% = $3,000.00 and column 21 is that, claimed in full. The
+# law works that claim as if the vehicle had not been sold (Income Tax Regulations 1100(2.5)) and
+# allows nothing in a later year, so the $5,000.00 left (column 7 less column 21) is reduced to nil
+# (Folio S3-F4-C1, paragraph 1.106): column 22 is $0. Recapture and a terminal loss do not
 # apply to Class 10.1, so there is none. Line ii, and so line 9936, is $3,000.00, so line
 # 9368 is $7,000 + $3,000.00 = $10,000.00 and line 9369 is $40,000 - $10,000.00 = $30,000.00,
 # which, with no business-use-of-home expenses, is line 9946 and T1 line 13500, the whole of
@@ -31,9 +33,9 @@ description: >-
   $20,000.00, the proceeds of dispositions (column 5) are $12,000.00, so column 7 is
   $8,000.00. The half-year rule on sale makes column 19 50% of column 2, $10,000.00, so the
   maximum, and column 21, is $10,000.00 x 30% = $3,000.00, claimed in full, and the UCC at the
-  end of the year (column 22) is $8,000.00 - $3,000.00 = $5,000.00. There is no immediate
-  expensing (line i is $0), no recapture and no terminal loss. The business is not associated
-  with any other EPOP, so the immediate expensing limit is $1.5 million (Area G is not
+  end of the year (column 22) is $0, the $5,000.00 left being not deductible later. There is
+  no immediate expensing (line i is $0), no recapture and no terminal loss. The business is not
+  associated with any other EPOP, so the immediate expensing limit is $1.5 million (Area G is not
   answered). The income before CCA (endnote 5) is $33,000.00, line 9369 plus line 9936. The net
   self-employment income (T1 line 27, "Add lines 22 to 26") is 30,000 + 0 + 0 + 0 + 0 =
   $30,000; line 28 is line 21 (0) plus line 27 and total income (line 15000) adds line 27 to
@@ -109,11 +111,19 @@ sources:
     8,000.00, positive; columns 4, 6, 8, 9, 10, 11 and 12 are 0. Column 19 is 50% of column 2,
     20,000.00 / 2 = 10,000.00 (the half-year rule on sale, the vehicle having been owned at
     the end of 2024: column 2 is above 0); column 21 is 10,000.00 x 30% = 3,000.00, a chosen
-    claim, the most; column 22 is 8,000.00 - 3,000.00 = 5,000.00. A claim above 3,000.00 is
-    refused. The columns the form computes (19 and the maximum) are dollars-and-cents boxes,
-    rounded half-up to the cent, which changes neither here. Not modelled: Part 2 (the
-    Internet business activities), Part 8 (the other partners), Part 9 (the equity) and Areas
-    B to G (Area G is not answered: the business is not associated with another EPOP).
+    claim, the most; column 22 is 0, as Regulation 1100(2.5) (Income Tax Regulations,
+    https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._945/section-1100.html) determines
+    the deduction "as if the property had not been disposed of" and allows none in a later year,
+    and Folio S3-F4-C1 paragraph 1.106 reduces the rest to nil (this displaces the general rule
+    of Guide T4002, "Column 22 - UCC at the end of the year", that column 22 is column 7 minus
+    column 21 and is next year's column 2, which excepts only recapture and a terminal loss: the
+    Column 19 text of Guides T4002 and T4036 and the T2125 form,
+    docs/cra-forms-2025/t4002-25e.pdf, t4036-25e.pdf and t2125-25e.pdf, says nothing on column
+    22 for the half-year rule on sale). A claim above 3,000.00 is refused. The columns the form
+    computes (19 and the maximum) are dollars-and-cents boxes, rounded half-up to the cent,
+    which changes neither here. Not modelled: Part 2 (the Internet business activities), Part 8
+    (the other partners), Part 9 (the equity) and Areas B to G (Area G is not answered: the
+    business is not associated with another EPOP).
     Endnote 5 "$1.5 million, if you are not associated with any other eligible person or
     partnership (EPOP) in the tax year" gives the immediate expensing limit 1,500,000; the
     income before CCA is a chosen reading, to be confirmed: line 9369 plus line 9936, 30,000.00
@@ -293,7 +303,7 @@ expected:
       ca/business_home_expenses: "0"
       ca/business_closing_ucc:
         - ca/cca_class_number: "10.1"
-          ca/cca_ucc_at_end: "5000.00"
+          ca/cca_ucc_at_end: "0"
       ca/business_home_carry_forward: "0"
   ca-on/return:
     - ca/business_income: "30000.00"
