@@ -13,7 +13,8 @@ jurisdiction: CA-ON
 tax_year: 2025
 description: >-
   A single filer, a 2025 Ontario resident, with employment income of 60000.00, a chosen
-  figure, and no other income, deduction or credit claimed. The filer has 12 months of CPP
+  figure, and 200.00 of other income (line 13000, a chosen figure) offset by the 200.00 moving
+  expenses deduction below; no other income, deduction or credit is claimed. The filer has 12 months of CPP
   contributions, a chosen figure (cpp_months 12). Schedule 8 line 28 enters the deduction
   for CPP enhanced contributions on line 22215: the first additional contribution of
   565.00 (1% of 60000.00 less the 3500.00 basic exemption, under its maximum of 678.00).
