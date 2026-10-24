@@ -1296,6 +1296,7 @@ BusinessCcaRow = (
     tuple[str, str, str, str, str, str, str, int, str, str, str]
     | tuple[str, str, str, str, str, str, str, int, str, str, str, int]
     | tuple[str, str, str, str, str, str, str, int, str, str, str, int, str]
+    | tuple[str, str, str, str, str, str, str, int, str, str, str, int, str, int, str, str]
 )
 
 
@@ -1307,11 +1308,29 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
     dispositions of DIEP) and column 9 (the immediate expensing amount), each "0" when the class
     has no DIEP; and, as a twelfth value when the row has one, 1 if the half-year rule treats the
     row's additions the other way from their class, else 0, and, as a thirteenth, endnote 9's
-    remaining personal part of the property's cost as decimal text, else "0"."""
+    remaining personal part of the property's cost as decimal text, else "0", and, as a
+    fourteenth, fifteenth and sixteenth, the year a Class 10.1 vehicle was acquired (0 for no
+    adjustment of the proceeds), its actual cost and the government assistance received less
+    repaid, as decimal text, else 0, "0" and "0"."""
     kind = BUSINESS_CCA_CLASSES
     assert isinstance(kind, RecordListKind)
-    records: list[dict[ArtifactKind[Any], object]] = [
-        {
+    by_identifier = {field.identifier: field for field in kind.fields}
+    records: list[dict[ArtifactKind[Any], object]] = []
+    for (
+        class_number,
+        ucc_at_start,
+        additions,
+        proceeds,
+        aiip_additions,
+        riip_additions,
+        claimed,
+        no_property_left,
+        diep_additions,
+        diep_proceeds,
+        immediate_expensing,
+        *extras,
+    ) in rows:
+        record: dict[ArtifactKind[Any], object] = {
             CCA_CLASS_NUMBER: D(class_number),
             CCA_UCC_AT_START: D(ucc_at_start),
             CCA_ADDITIONS: D(additions),
@@ -1323,28 +1342,28 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
             CCA_DIEP_ADDITIONS: D(diep_additions),
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
-            CCA_PERSONAL_PART_REMAINING: personal_part_remaining,
-            CCA_HALF_YEAR_RULE_DIFFERS: half_year_rule_differs,
+            CCA_PERSONAL_PART_REMAINING: D(str(extras[1])) if len(extras) > 1 else D(0),
+            CCA_HALF_YEAR_RULE_DIFFERS: extras[0] if extras else 0,
             CCA_RATE_ELECTION: 0,
         }
-        for (
-            class_number,
-            ucc_at_start,
-            additions,
-            proceeds,
-            aiip_additions,
-            riip_additions,
-            claimed,
-            no_property_left,
-            diep_additions,
-            diep_proceeds,
-            immediate_expensing,
-            *extras,
-        ) in rows
-        for half_year_rule_differs, personal_part_remaining in (
-            (extras[0] if extras else 0, D(str(extras[1])) if len(extras) > 1 else D(0)),
+        # The vehicle's year, actual cost and government assistance, by identifier; each other
+        # field of the kind that the row does not give is 0.
+        vehicle: dict[str, int | Decimal] = (
+            {
+                "ca/cca_vehicle_acquired_year": int(str(extras[2])),
+                "ca/cca_vehicle_cost": D(str(extras[3])),
+                "ca/cca_vehicle_government_assistance": D(str(extras[4])),
+            }
+            if len(extras) > 2
+            else {}
         )
-    ]
+        assert vehicle.keys() <= by_identifier.keys()
+        for field in kind.fields:
+            if field not in record:
+                record[field] = vehicle.get(
+                    field.identifier, 0 if field.value_type is int else D(0)
+                )
+        records.append(record)
     return Artifact(kind, RecordList(kind.fields, records))
 
 

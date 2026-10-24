@@ -30,6 +30,9 @@ from app.jurisdictions.ca.catalog import (
     CCA_RIIP_ADDITIONS,
     CCA_UCC_AT_END,
     CCA_UCC_AT_START,
+    CCA_VEHICLE_ACQUIRED_YEAR,
+    CCA_VEHICLE_COST,
+    CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
     DEPENDANT_CARE_EXPENSES,
     DEPENDANT_CREDIT_AMOUNTS,
     DEPENDANT_NET_INCOME,
@@ -238,6 +241,9 @@ def test_the_personal_amounts_kinds_are_the_registered_ones(registry: ArtifactRe
     assert registry.get("ca/cca_personal_part_remaining") is CCA_PERSONAL_PART_REMAINING
     assert registry.get("ca/cca_half_year_rule_differs") is CCA_HALF_YEAR_RULE_DIFFERS
     assert registry.get("ca/cca_rate_election") is CCA_RATE_ELECTION
+    assert registry.get("ca/cca_vehicle_acquired_year") is CCA_VEHICLE_ACQUIRED_YEAR
+    assert registry.get("ca/cca_vehicle_cost") is CCA_VEHICLE_COST
+    assert registry.get("ca/cca_vehicle_government_assistance") is CCA_VEHICLE_GOVERNMENT_ASSISTANCE
     assert registry.get("ca/cca_ucc_at_end") is CCA_UCC_AT_END
     assert registry.get("ca/infirm_children") is INFIRM_CHILDREN
     assert registry.get("ca/infirm_children_amount") is INFIRM_CHILDREN_AMOUNT

@@ -187,6 +187,7 @@ REGISTERED = frozenset(
         "ca/business_partner_share",
         "ca/business_partner",
         "ca/business_cca_classes",
+        "ca/business_cca_classes_adjusted",
         "ca/business_epop_associated",
         "ca/business_epop_agreement_filed",
         "ca/business_epop_percentage",
@@ -1564,6 +1565,9 @@ REGISTERED = frozenset(
         "ca/cca_personal_part_remaining",
         "ca/cca_half_year_rule_differs",
         "ca/cca_rate_election",
+        "ca/cca_vehicle_acquired_year",
+        "ca/cca_vehicle_cost",
+        "ca/cca_vehicle_government_assistance",
         "ca/cca_ucc_at_end",
         "ca/cpp_base_contributions",
         "ca/cpp_base_contributions_on_self_employment",
@@ -2164,6 +2168,7 @@ REGISTERED = frozenset(
 
 SIGNED = frozenset(
     {
+        "ca/cca_vehicle_government_assistance",
         "ca/principal_residence_line_27",
         "ca/principal_residence_line_30",
         "ca/principal_residence_worksheet_line_18",
@@ -2567,6 +2572,7 @@ COUNTS = frozenset(
         "ca/cca_no_property_left",
         "ca/cca_half_year_rule_differs",
         "ca/cca_rate_election",
+        "ca/cca_vehicle_acquired_year",
         "ca/born_in_1960_or_earlier",
         "ca/eligible_for_disability_amount",
         "ca/under_18_on_december_31",
@@ -2685,6 +2691,7 @@ RECORD_LISTS = frozenset(
         "ca/foreign_tax_credit_sheets",
         "ca/itc_apprentices",
         "ca/business_cca_classes",
+        "ca/business_cca_classes_adjusted",
         "ca/business_vehicles",
         "ca/t2125_statements",
         "ca/business_closing_ucc",
