@@ -2,9 +2,9 @@
 
 Form T929 (2024 edition, the latest CRA publishes; `docs/cra-forms-2025/t929-24e.pdf`), Step 2:
 line 9 "Line 8 multiplied by $375" and line 10 "Enter the amount from line 7 or line 9, whichever
-is less. (maximum $15,000)". The 2024 figures are used for 2025 as printed (carried from #175; to be
-confirmed when a 2025 edition is published). Line 9 and line 10 are dollars-and-cents boxes, so each
-is rounded half-up to the cent; the form states no other rounding rule.
+is less. (maximum $15,000)". The 2024 figures are used for 2025 as printed, to be confirmed when a
+2025 edition is published. Line 9 and line 10 are dollars-and-cents boxes, so each is rounded
+half-up to the cent; the form states no other rounding rule.
 """
 
 from __future__ import annotations

@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog.base import CATALOG
 
 RL_10_LABOUR_SPONSORED_FUND_AMOUNT = CATALOG.declare(
@@ -30,12 +29,6 @@ Federal Worksheet "Line 41000 - Federal political contribution tax credit" line 
 The worksheet's eligibility text ("contributions that you or your spouse or common-law partner made
 in the year to a registered federal political party, a registered association, or a candidate in a
 federal election", less any advantage received) is the caller's to apply."""
-
-T929_INSTANCES = RecordListKind.declare(CATALOG, "t929_instances", fields=())
-"""Copies of Form T929, Disability Supports Deduction, one record for each copy of the form the
-return carries (none or one): a record has no fields, because every figure the form takes is a
-manifest input. The form `ca/t929` runs once for each record; the return reads its line 12 through
-a total, which is 0 with no record. A field is not an artifact of the return."""
 
 T929_EXPENSES_PAID = CATALOG.declare("t929_expenses_paid", Decimal, non_negative=True)
 """Amounts paid for disability supports, Form T929 Step 1 line 1 "Enter the total of all amounts in

@@ -51,6 +51,10 @@ from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 def return_ah(employment: str = "4390", union_dues: str = "0", **overrides: Any) -> Worksheet:
     """Return AH's inputs, as in `returns/2025_return_ah.yaml`, over the keyword overrides given.
 
+    The helper supplies one copy of Form T929 (`t929_copies` 1), which the worked return file does
+    not carry; that file has no copy, so its line 21500 is 0, and the tests here measure line 21500
+    with the copy.
+
     Lina, 30, resident in Canada throughout 2025: employment income of 4390 (the working income,
     exactly the $4,390 the supplement asks), other income of 15618.90 so that the net income is
     20000.00 after the enhanced CPP contributions of 8.90, and medical expenses of 6600, of which

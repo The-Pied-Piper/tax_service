@@ -530,6 +530,13 @@ no fields, because every figure the form reads is a starting amount of the retur
 `ca/rc381` runs once for each record; the return reads its results through totals, which are 0
 with no record. The return carries Schedule 8 or Form RC381, not both."""
 
+T929_INSTANCES = RecordListKind.declare(CATALOG, "t929_instances", fields=())
+"""Copies of Form T929, Disability Supports Deduction, one record for each copy of the form the
+return carries (none or one): a record has no fields, because every figure the form takes is a
+manifest input. The form `ca/t929` runs once for each record; the return reads its line 12 through
+a total, which is 0 with no record. A field is not an artifact of the return."""
+
+
 CPP_ACTUAL_BASE_CONTRIBUTIONS = CATALOG.declare(
     "cpp_actual_base_contributions", Decimal, non_negative=True
 )

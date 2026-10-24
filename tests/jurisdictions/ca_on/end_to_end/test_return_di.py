@@ -10,6 +10,9 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
+from app.domain.errors import CapabilityContractError
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     DEDUCTIONS_FROM_TOTAL_INCOME,
@@ -149,3 +152,18 @@ def test_with_no_copy_of_the_form_line_21500_is_zero_and_nothing_else_changes() 
     ):
         assert without_return.get(kind) == with_return.get(kind), kind.identifier
     assert without_return.get(NET_INCOME).value == D("20000.00")
+
+
+def test_reimbursement_above_the_expenses_refuses_the_return() -> None:
+    # Line 3 is the expenses less the reimbursement, 1000.00 - 3000.00 = -2000.00. Line 3 is not
+    # floored as printed, so line 12 (the lesser of line 3 and line 11) is -2000.00, and the
+    # disability supports deduction cannot be negative: the copy's capability breaks its contract
+    # and the return is refused, naming the copy and the deduction.
+    with pytest.raises(
+        CapabilityContractError,
+        match=(
+            r"ca/t929, instance 1: LesserOf produced ca/disability_supports_deduction -2000, "
+            r"which cannot be negative"
+        ),
+    ):
+        run_di(t929_expenses_paid="1000", t929_expenses_reimbursed="3000")

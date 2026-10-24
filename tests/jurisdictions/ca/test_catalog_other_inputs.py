@@ -5,7 +5,6 @@ from __future__ import annotations
 from decimal import Decimal
 
 from app.domain.artifact import ArtifactRegistry
-from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog import (
     AGED_18_OR_OLDER_AT_END_OF_2025,
     NET_BUSINESS_INCOME,
@@ -29,7 +28,6 @@ from app.jurisdictions.ca.catalog import (
     T929_EXPENSES_PAID,
     T929_EXPENSES_REIMBURSED,
     T929_INCOME_REPLACEMENT_SUPPORT,
-    T929_INSTANCES,
     T929_NET_RESEARCH_GRANTS,
     T929_WAGE_EARNER_PROTECTION_AMOUNTS,
     T929_WEEKS_ATTENDED,
@@ -108,7 +106,6 @@ T929_MONEY_INPUTS = (
 
 
 def test_the_t929_inputs_are_the_registered_ones(registry: ArtifactRegistry) -> None:
-    assert registry.get("ca/t929_instances") is T929_INSTANCES
     assert registry.get("ca/t929_expenses_paid") is T929_EXPENSES_PAID
     assert registry.get("ca/t929_expenses_reimbursed") is T929_EXPENSES_REIMBURSED
     assert registry.get("ca/t929_weeks_attended") is T929_WEEKS_ATTENDED
@@ -135,8 +132,3 @@ def test_the_t929_money_inputs_are_non_negative_decimals() -> None:
 def test_the_t929_weeks_attended_is_a_non_negative_int_count() -> None:
     assert T929_WEEKS_ATTENDED.value_type is int
     assert T929_WEEKS_ATTENDED.non_negative is True
-
-
-def test_the_t929_instances_is_a_record_list_of_no_fields() -> None:
-    assert isinstance(T929_INSTANCES, RecordListKind)
-    assert T929_INSTANCES.fields == ()

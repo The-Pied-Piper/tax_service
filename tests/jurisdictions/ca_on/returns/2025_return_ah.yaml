@@ -110,10 +110,11 @@
 # it, line 11 the sum of lines 9 (line 21500) and 10 (line 33200), line 13 25% of it, line
 # 14 the lesser of that and $1,504, line 15 5% of line 8 and line 16 line 14 less line 15;
 # line 16 is then passed through only when the working income is $4,390 or more, and through
-# the residence and age counts. Line 21500, lines 22900 and 23100, the five self-employment
-# lines, the wage-loss replacement plan amounts and the whole of the spouse's column are a
-# chosen $0 (the self-employment lines and lines 21500, 22900 and 23100 are not yet computed
-# from their own forms), and the counts of residence in Canada throughout 2025 and of 18
+# the residence and age counts. Lines 22900 and 23100, the five self-employment lines, the
+# wage-loss replacement plan amounts and the whole of the spouse's column are a chosen $0 (the
+# self-employment lines and lines 22900 and 23100 are not yet computed from their own forms).
+# Line 21500 is computed from Form T929, and this return carries no copy of that form, so the
+# line is 0. The counts of residence in Canada throughout 2025 and of 18
 # years of age or older at the end of 2025 are both 1.
 # The Ontario seniors care at home tax credit (ON479 line 13, line 63095) is not claimed (a
 # chosen count of 0): its line 3 is the 6,000.00 of line 58769, line 5 is 25% of it,
@@ -183,7 +184,8 @@ description: >-
   chosen $0), so $4,390, which is "$4,390 or more"; the adjusted family net income (line 6)
   is the net income before adjustments of $20,000.00 (column 1 lines 3 and 5, with the
   repayments and the UCCB and RDSP income $0) and the spouse's column $0, so line 8 is
-  $20,000.00 - $33,294.00, negative, so $0; line 9 (line 21500, a chosen $0) and line 10
+  $20,000.00 - $33,294.00, negative, so $0; line 9 (line 21500, computed on Form T929, which
+  this return does not carry, so $0) and line 10
   (line 33200, $6,000.00) give line 11 of $6,000.00, line 13 is 25% of it, $1,500.00, line
   14 is the lesser of that and $1,504: $1,500.00, line 15 is 5% of $0, $0.00, and line 16 is
   $1,500.00 - $0.00 = $1,500.00. The Canada workers benefit (line 45300, Schedule 6) is 27%
