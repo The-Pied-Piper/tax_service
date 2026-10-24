@@ -90,6 +90,7 @@ from app.jurisdictions.ca.trace import (
     CaregiverClaimLine,
     CcaClaimLine,
     CcaVehicleProceedsLine,
+    CcaZepvProceedsLine,
     CcaZeroReason,
     ClosingUccLine,
     DisabilityTransferLine,
@@ -5253,6 +5254,98 @@ def test_cca_vehicle_proceeds_lines_differ_by_each_field(change: dict[str, Any])
     values.update(change)
 
     assert line != CcaVehicleProceedsLine(**values)
+
+
+def cca_zepv_proceeds_line() -> CcaZepvProceedsLine:
+    # Guide T4036 "Class 54 (30%)": 30,000 x (61,000 / 65,000) is 28,153.85 to the cent; the first
+    # vehicle of the second row, no DIEP proceeds.
+    return CcaZepvProceedsLine(
+        CLOSING_UCC,
+        2,
+        1,
+        True,
+        D("61000.00"),
+        D("65000.00"),
+        D("30000"),
+        D("28153.85"),
+        D("0"),
+        D("0"),
+    )
+
+
+def test_cca_zepv_proceeds_line_fields_in_order() -> None:
+    line = cca_zepv_proceeds_line()
+
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "vehicle",
+        "applied",
+        "prescribed_amount",
+        "actual_cost",
+        "proceeds",
+        "adjusted_proceeds",
+        "diep_proceeds",
+        "adjusted_diep_proceeds",
+    ]
+    assert line == CcaZepvProceedsLine(
+        output=CLOSING_UCC,
+        position=2,
+        vehicle=1,
+        applied=True,
+        prescribed_amount=D("61000.00"),
+        actual_cost=D("65000.00"),
+        proceeds=D("30000"),
+        adjusted_proceeds=D("28153.85"),
+        diep_proceeds=D("0"),
+        adjusted_diep_proceeds=D("0"),
+    )
+    assert line.output is CLOSING_UCC
+    assert line.applied is True
+
+
+def test_a_cca_zepv_proceeds_line_is_a_frozen_trace_line_equal_by_value() -> None:
+    line = cca_zepv_proceeds_line()
+
+    assert isinstance(line, TraceLine)
+    assert type(line).__name__ == "CcaZepvProceedsLine"
+    assert line == cca_zepv_proceeds_line()
+    assert line is not cca_zepv_proceeds_line()
+    assert hash(line) == hash(cca_zepv_proceeds_line())
+    with pytest.raises(FrozenInstanceError):
+        setattr(line, fields(line)[0].name, D(1))
+
+
+def test_a_cca_zepv_proceeds_line_is_not_a_cca_vehicle_proceeds_line() -> None:
+    assert not isinstance(cca_zepv_proceeds_line(), CcaVehicleProceedsLine)
+
+
+def test_a_cca_zepv_proceeds_lines_amount_is_the_adjusted_proceeds() -> None:
+    assert cca_zepv_proceeds_line().amount == D("28153.85")
+    assert "amount" not in [f.name for f in fields(cca_zepv_proceeds_line())]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"output": RecordListKind("ex/other_closing_ucc", fields=(ITEM_AMOUNT,))},
+        {"position": 1},
+        {"vehicle": 2},
+        {"applied": False},
+        {"prescribed_amount": D("61000.01")},
+        {"actual_cost": D("65000.01")},
+        {"proceeds": D("30000.01")},
+        {"adjusted_proceeds": D("28153.86")},
+        {"diep_proceeds": D("100")},
+        {"adjusted_diep_proceeds": D("76")},
+    ],
+)
+def test_cca_zepv_proceeds_lines_differ_by_each_field(change: dict[str, Any]) -> None:
+    line = cca_zepv_proceeds_line()
+    values = {f.name: getattr(line, f.name) for f in fields(line)}
+    values.update(change)
+
+    assert line != CcaZepvProceedsLine(**values)
 
 
 @pytest.mark.parametrize("make", [cca_claim_line, terminal_loss_line, closing_ucc_line])

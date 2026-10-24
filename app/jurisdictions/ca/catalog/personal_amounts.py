@@ -959,21 +959,38 @@ designated for immediate expensing treatment, this special rule does not apply",
 person or partnership with whom you deal at arm's length". The year the vehicle in the row was
 acquired, which picks its prescribed amount, or 0 when the rule does not apply to the row (it is
 not a Class 10.1 vehicle designated for immediate expensing, or it was not sold at arm's length),
-which the caller decides. A field of each record of a list of capital cost allowance classes."""
+which the caller decides. A field of each record of a list of capital cost allowance classes and of
+each record of the vehicles sold from a Class 54 row (Guide T4036 "Class 54 (30%)"), where 0 means
+the rule does not apply to that vehicle."""
 
 CCA_VEHICLE_COST = CATALOG.declare("cca_vehicle_cost", Decimal, non_negative=True)
 """Actual cost of the vehicle, T2125 2025 Area A endnote 2: "whose cost is more than the prescribed
 amount will be adjusted based on a factor equal to its prescribed amount as a proportion of the
 actual cost of the vehicle", and Guide T4036 "Class 10.1 (30%)": the prescribed amounts are each
 "plus the GST/HST or PST". The cost of the vehicle in the row including the GST/HST or PST. A
-field of each record of a list of capital cost allowance classes."""
+field of each record of a list of capital cost allowance classes and of each vehicle sold from a
+Class 54 row."""
 
 CCA_VEHICLE_GOVERNMENT_ASSISTANCE = CATALOG.declare("cca_vehicle_government_assistance", Decimal)
 """Government assistance for the vehicle, T2125 2025 Area A endnote 2: "For dispositions after July
 29, 2019, you will have to adjust the actual cost of the vehicle for any payments or repayments of
 government assistance that you may have received or repaid for the vehicle". The assistance
 received less the assistance repaid, signed: a repayment is negative. A field of each record of a
-list of capital cost allowance classes."""
+list of capital cost allowance classes and of each vehicle sold from a Class 54 row."""
+
+CCA_ZEPV_PROCEEDS = CATALOG.declare("cca_zepv_proceeds", Decimal, non_negative=True)
+"""Proceeds of one sold zero-emission passenger vehicle, Guide T4036 2025 "Class 54 (30%)": "If a
+zero-emission passenger vehicle is disposed of to a person or partnership with whom you deal at
+arm's length, and its cost exceeds the prescribed amount [...], the proceeds of disposition will be
+adjusted based on a factor equal to the prescribed amount as a proportion of the actual cost of the
+vehicle." The proceeds of the vehicle as entered, before the adjustment. A field of each record of
+a Class 54 row's list of sold vehicles."""
+
+CCA_ZEPV_DIEP_PROCEEDS = CATALOG.declare("cca_zepv_diep_proceeds", Decimal, non_negative=True)
+"""DIEP part of the proceeds of one sold zero-emission passenger vehicle, Area A column 6 "Proceeds
+of dispositions of DIEP (enter amount from col. 5 that relates to DIEP from col. 4)": the part of
+the vehicle's proceeds that relates to a DIEP, as entered, before the adjustment. A field of each
+record of a Class 54 row's list of sold vehicles."""
 
 CCA_UCC_AT_END = CATALOG.declare("cca_ucc_at_end", Decimal, non_negative=True)
 """UCC at the end of the year, T776 Area A "Column 24: UCC at the end of the year (column 7 minus

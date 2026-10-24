@@ -22,6 +22,14 @@ and the produced list are the catalog's own `ca/business_cca_classes` and
 the three fields of the adjustment (the year the vehicle was acquired, 0 when the rule does not
 apply to the row, its actual cost and the government assistance received less repaid). The sales
 tax rate is the caller's, in percent, the catalog's `ca/business_vehicle_sales_tax_rate`.
+
+A Class 54 row (Guide T4036 2025, "Class 54 (30%)") also holds a list of its sold zero-emission
+passenger vehicles, the catalog's `ca/cca_sold_zepvs`, each with the year it was acquired, its cost,
+the government assistance for it, its proceeds and the DIEP part of them; the list is the fourth
+field the adjusted list leaves out. The dataset of its prescribed amounts is a made-up
+`example.org` `year_amounts` table of the three amounts of Class 54: $61,000 from 2023, $59,000 for
+2022 and $55,000 from 2019 (a year before 2019 has no row), also with a half-up rounding to the
+cent.
 """
 
 from __future__ import annotations
@@ -59,24 +67,38 @@ from app.jurisdictions.ca.catalog import (
     CCA_PROCEEDS,
     CCA_RATE_ELECTION,
     CCA_RIIP_ADDITIONS,
+    CCA_SOLD_ZEPVS,
     CCA_UCC_AT_START,
     CCA_VEHICLE_ACQUIRED_YEAR,
     CCA_VEHICLE_COST,
     CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+    CCA_ZEPV_DIEP_PROCEEDS,
+    CCA_ZEPV_PROCEEDS,
 )
-from app.jurisdictions.ca.trace import CcaVehicleProceedsLine
+from app.jurisdictions.ca.trace import CcaVehicleProceedsLine, CcaZepvProceedsLine
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
+DOLLAR = RoundTo(D("1"), RoundingMode.HALF_UP)
 SOURCES = ("https://example.org/t4002",)
 FAMILY = "ca/cca_vehicle_prescribed_amounts"
+ZEPV_FAMILY = "ca/cca_zepv_prescribed_amounts"
+
+# A row of the classes: the Area A fields, and the sold vehicles of a Class 54 row.
+CcaRow = dict[ArtifactKind[Any], Decimal | int | RecordList]
 
 CLASSES = BUSINESS_CCA_CLASSES
 ADJUSTED = BUSINESS_CCA_CLASSES_ADJUSTED
 SALES_TAX_RATE = BUSINESS_VEHICLE_SALES_TAX_RATE
 
-# The three fields of the adjustment, the last of the classes and not in the adjusted list.
-VEHICLE_FIELDS = (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE)
+# The four fields of the adjustment, the last of the classes and not in the adjusted list: the
+# three of a Class 10.1 vehicle and the list of a Class 54 row's sold vehicles.
+VEHICLE_FIELDS = (
+    CCA_VEHICLE_ACQUIRED_YEAR,
+    CCA_VEHICLE_COST,
+    CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+    CCA_SOLD_ZEPVS,
+)
 
 # Guide T4002 "Class 10.1 (30%)": 38,000 for 2025, 37,000 for 2024, 36,000 for 2023, 34,000 for
 # 2022 and 30,000 for a vehicle acquired before 2022 (the open-ended row), each plus the tax.
@@ -101,8 +123,39 @@ def prescribed_amounts(
     return ParameterDataset(FAMILY, 2025, YEAR_AMOUNTS, table, rounding, SOURCES)
 
 
-def capability(dataset: ParameterDataset[YearAmounts] | None = None) -> CcaVehicleProceeds:
-    return CcaVehicleProceeds(dataset or prescribed_amounts(), CLASSES, SALES_TAX_RATE, ADJUSTED)
+# Guide T4036 "Class 54 (30%)": $61,000 for vehicles acquired after December 31, 2022 (2023 and
+# later), $59,000 after December 31, 2021 and before January 1, 2023 (2022), and $55,000 after
+# March 18, 2019 and before January 1, 2022 (2019 to 2021, the oldest row: no row before 2019).
+ZEPV_PRESCRIBED = (
+    (2023, "61000"),
+    (2022, "59000"),
+    (2019, "55000"),
+)
+
+
+def zepv_prescribed_amounts(
+    rounding: RoundingRule = CENT,
+    rows: tuple[tuple[int | None, str], ...] = ZEPV_PRESCRIBED,
+) -> ParameterDataset[YearAmounts]:
+    """The Class 54 prescribed amounts by year acquired, newest first: (from_year or None, the
+    `prescribed_amount`)."""
+    table = YearAmounts(
+        tuple(YearAmountsRow(year, {"prescribed_amount": D(amount)}) for year, amount in rows)
+    )
+    return ParameterDataset(ZEPV_FAMILY, 2025, YEAR_AMOUNTS, table, rounding, SOURCES)
+
+
+def capability(
+    dataset: ParameterDataset[YearAmounts] | None = None,
+    zepv_dataset: ParameterDataset[YearAmounts] | None = None,
+) -> CcaVehicleProceeds:
+    return CcaVehicleProceeds(
+        dataset or prescribed_amounts(),
+        zepv_dataset or zepv_prescribed_amounts(),
+        CLASSES,
+        SALES_TAX_RATE,
+        ADJUSTED,
+    )
 
 
 def row(
@@ -124,9 +177,11 @@ def row(
     rate_election: int = 0,
     aiip_additions: str = "0",
     riip_additions: str = "0",
-) -> dict[ArtifactKind[Any], Decimal | int]:
+    sold: tuple[CcaRow, ...] = (),
+) -> CcaRow:
     """One Area A row of the T2125 list: columns 1, 2, 3, 4, 5, 6, 9, 11, 12 and the claim, the
-    other flags, and the year, actual cost and government assistance of the adjustment."""
+    other flags, the year, actual cost and government assistance of the adjustment, and the
+    vehicles `sold` (none by default; Class 54 only)."""
     return {
         CCA_CLASS_NUMBER: D(number),
         CCA_UCC_AT_START: D(ucc_at_start),
@@ -145,10 +200,30 @@ def row(
         CCA_VEHICLE_ACQUIRED_YEAR: year,
         CCA_VEHICLE_COST: D(cost),
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE: D(assistance),
+        CCA_SOLD_ZEPVS: RecordList(CCA_SOLD_ZEPVS.fields, sold),
     }
 
 
-def classes(*rows: dict[ArtifactKind[Any], Decimal | int]) -> Artifact[Any]:
+def zepv(
+    year: int,
+    cost: str,
+    proceeds: str,
+    diep_proceeds: str = "0",
+    assistance: str = "0",
+) -> CcaRow:
+    """One sold zero-emission passenger vehicle of a Class 54 row: the year it was acquired (0 when
+    the rule does not apply to it), its cost, its proceeds, the DIEP part of them and the
+    government assistance for it."""
+    return {
+        CCA_VEHICLE_ACQUIRED_YEAR: year,
+        CCA_VEHICLE_COST: D(cost),
+        CCA_VEHICLE_GOVERNMENT_ASSISTANCE: D(assistance),
+        CCA_ZEPV_PROCEEDS: D(proceeds),
+        CCA_ZEPV_DIEP_PROCEEDS: D(diep_proceeds),
+    }
+
+
+def classes(*rows: CcaRow) -> Artifact[Any]:
     """A `ca/business_cca_classes` artifact of one record per row, in order."""
     assert isinstance(CLASSES, RecordListKind)
     return Artifact(CLASSES, RecordList(CLASSES.fields, rows))
@@ -172,6 +247,32 @@ def trace_line(
     return CcaVehicleProceedsLine(
         ADJUSTED,
         position,
+        applied,
+        D(prescribed_amount),
+        D(actual_cost),
+        D(proceeds),
+        D(adjusted_proceeds),
+        D(diep_proceeds),
+        D(adjusted_diep_proceeds),
+    )
+
+
+def zepv_line(
+    position: int,
+    vehicle: int,
+    applied: bool,
+    prescribed_amount: str,
+    actual_cost: str,
+    proceeds: str,
+    adjusted_proceeds: str,
+    diep_proceeds: str = "0",
+    adjusted_diep_proceeds: str = "0",
+) -> CcaZepvProceedsLine:
+    """The line of the vehicle `vehicle` of the row `position`, both from 1."""
+    return CcaZepvProceedsLine(
+        ADJUSTED,
+        position,
+        vehicle,
         applied,
         D(prescribed_amount),
         D(actual_cost),
@@ -206,13 +307,13 @@ class _Jurisdictions:
 
 
 class _Parameters:
-    def __init__(self, dataset: ParameterDataset[YearAmounts]) -> None:
-        self._dataset = dataset
+    def __init__(self, *datasets: ParameterDataset[YearAmounts]) -> None:
+        self._datasets = {dataset.family: dataset for dataset in datasets}
 
     def get[T](self, family: str, tax_year: int, kind: ParameterKind[T]) -> ParameterDataset[T]:
-        if (family, tax_year, kind) != (self._dataset.family, 2025, YEAR_AMOUNTS):
+        if tax_year != 2025 or kind != YEAR_AMOUNTS or family not in self._datasets:
             raise NotFoundError(f"no {family} dataset for tax year {tax_year}")
-        return cast(ParameterDataset[T], self._dataset)
+        return cast(ParameterDataset[T], self._datasets[family])
 
 
 def service() -> TaxComputationService:
@@ -220,9 +321,10 @@ def service() -> TaxComputationService:
     tax rate, producing `ca/business_cca_classes_adjusted`, wired as the T2125 manifest does."""
     code = JurisdictionCode("CA-ON")
     dataset = prescribed_amounts()
+    zepv_dataset = zepv_prescribed_amounts()
     selection = CapabilitySelection(
         name="ca/cca_vehicle_proceeds",
-        params={"prescribed_amounts": dataset.family},
+        params={"prescribed_amounts": dataset.family, "zepv_prescribed_amounts": ZEPV_FAMILY},
         consumes={"classes": CLASSES.identifier, "sales_tax_rate": SALES_TAX_RATE.identifier},
         produces={"output": ADJUSTED.identifier},
     )
@@ -245,7 +347,7 @@ def service() -> TaxComputationService:
         artifacts.register(kind.identifier, kind)
     return TaxComputationService(
         _Jurisdictions(Jurisdiction(code=code, manifests=(manifest,))),
-        _Parameters(dataset),
+        _Parameters(dataset, zepv_dataset),
         CapabilityRegistry.shared(),
         artifacts,
     )

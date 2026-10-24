@@ -173,11 +173,14 @@ from app.jurisdictions.ca.catalog import (
     CCA_PROCEEDS,
     CCA_RATE_ELECTION,
     CCA_RIIP_ADDITIONS,
+    CCA_SOLD_ZEPVS,
     CCA_UCC_AT_END,
     CCA_UCC_AT_START,
     CCA_VEHICLE_ACQUIRED_YEAR,
     CCA_VEHICLE_COST,
     CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+    CCA_ZEPV_DIEP_PROCEEDS,
+    CCA_ZEPV_PROCEEDS,
     CLERGY_RESIDENCE_DEDUCTION,
     COMMISSION_INCOME,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
@@ -2259,6 +2262,124 @@ def test_a_negative_vehicle_cost_is_refused() -> None:
         )
 
 
+def test_a_sold_zepvs_proceeds_are_a_non_negative_amount(registry: ArtifactRegistry) -> None:
+    # Guide T4036 2025, "Class 54 (30%)": "If a zero-emission passenger vehicle is disposed of to a
+    # person or partnership with whom you deal at arm's length, and its cost exceeds the prescribed
+    # amount [...], the proceeds of disposition will be adjusted": the proceeds of one vehicle sold
+    # in the year, as entered.
+    assert CCA_ZEPV_PROCEEDS.identifier == "ca/cca_zepv_proceeds"
+    assert CCA_ZEPV_PROCEEDS.value_type is Decimal
+    assert CCA_ZEPV_PROCEEDS.non_negative is True
+    assert registry.kind("ca/cca_zepv_proceeds") is CCA_ZEPV_PROCEEDS
+
+
+def test_a_sold_zepvs_diep_proceeds_are_a_non_negative_amount(registry: ArtifactRegistry) -> None:
+    # Area A column 6 "Proceeds of dispositions of DIEP (enter amount from col. 5 that relates to
+    # DIEP from col. 4)": the part of one vehicle's proceeds that relates to a DIEP.
+    assert CCA_ZEPV_DIEP_PROCEEDS.identifier == "ca/cca_zepv_diep_proceeds"
+    assert CCA_ZEPV_DIEP_PROCEEDS.value_type is Decimal
+    assert CCA_ZEPV_DIEP_PROCEEDS.non_negative is True
+    assert registry.kind("ca/cca_zepv_diep_proceeds") is CCA_ZEPV_DIEP_PROCEEDS
+
+
+@pytest.mark.parametrize(
+    "kind", [CCA_ZEPV_PROCEEDS, CCA_ZEPV_DIEP_PROCEEDS], ids=lambda k: k.identifier
+)
+def test_a_negative_zepv_proceeds_amount_is_refused(kind: ArtifactKind[Any]) -> None:
+    with pytest.raises(NegativeArtifactError, match=f"item 1: {kind.identifier} cannot be neg"):
+        RecordList((kind,), [{kind: Decimal("-1")}])
+
+
+def test_the_sold_zepvs_are_a_record_list_of_the_vehicle_and_its_proceeds(
+    registry: ArtifactRegistry,
+) -> None:
+    # Guide T4036 2025, "Class 54 (30%)": "Class 54 may include both zero-emission passenger
+    # vehicles that do and do not exceed the prescribed threshold. However, unlike Class 10.1,
+    # Class 54 does not establish a separate class for each vehicle whose cost exceeds the
+    # threshold.": a Class 54 row holds one record for each vehicle sold, with the year it was
+    # acquired (0 when the rule does not apply to it), its cost, the government assistance for it,
+    # its proceeds and the DIEP part of them.
+    assert isinstance(CCA_SOLD_ZEPVS, RecordListKind)
+    assert CCA_SOLD_ZEPVS.identifier == "ca/cca_sold_zepvs"
+    assert CCA_SOLD_ZEPVS.value_type is RecordList
+    assert CCA_SOLD_ZEPVS.non_negative is False
+    assert CCA_SOLD_ZEPVS.fields == (
+        CCA_VEHICLE_ACQUIRED_YEAR,
+        CCA_VEHICLE_COST,
+        CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_ZEPV_PROCEEDS,
+        CCA_ZEPV_DIEP_PROCEEDS,
+    )
+    assert registry.get("ca/cca_sold_zepvs") is CCA_SOLD_ZEPVS
+    assert "ca/cca_sold_zepvs" in RECORD_LISTS
+
+
+def test_a_sold_zepv_record_must_give_each_of_its_fields() -> None:
+    whole: dict[ArtifactKind[Any], Decimal | int] = {
+        CCA_VEHICLE_ACQUIRED_YEAR: 2024,
+        CCA_VEHICLE_COST: Decimal("65000"),
+        CCA_VEHICLE_GOVERNMENT_ASSISTANCE: Decimal("-100"),
+        CCA_ZEPV_PROCEEDS: Decimal("30000"),
+        CCA_ZEPV_DIEP_PROCEEDS: Decimal("0"),
+    }
+
+    (kept,) = RecordList(CCA_SOLD_ZEPVS.fields, [whole]).records
+
+    assert kept[CCA_ZEPV_PROCEEDS] == Decimal("30000")
+    for field in CCA_SOLD_ZEPVS.fields:
+        short = {key: value for key, value in whole.items() if key is not field}
+        with pytest.raises(InvalidRecordError, match=f"item 1: missing field {field.identifier}"):
+            RecordList(CCA_SOLD_ZEPVS.fields, [short])
+
+
+@pytest.mark.parametrize(
+    "kind",
+    [RENTAL_CCA_CLASSES, BUSINESS_CCA_CLASSES, FARM_CCA_CLASSES, FISH_CCA_CLASSES],
+    ids=lambda k: k.identifier,
+)
+def test_a_class_record_must_give_the_sold_zepvs_and_keeps_them(kind: RecordListKind) -> None:
+    # Record fields are required (an empty list for a row with no sold vehicle), and a nested list
+    # is kept as given.
+    earlier = tuple(f for f in kind.fields if f is not CCA_SOLD_ZEPVS)
+    with pytest.raises(InvalidRecordError, match="item 1: missing field ca/cca_sold_zepvs"):
+        RecordList(kind.fields, [_cca_record(earlier)])
+
+    sold = RecordList(
+        CCA_SOLD_ZEPVS.fields,
+        [
+            {
+                CCA_VEHICLE_ACQUIRED_YEAR: 2024,
+                CCA_VEHICLE_COST: Decimal("65000"),
+                CCA_VEHICLE_GOVERNMENT_ASSISTANCE: Decimal("0"),
+                CCA_ZEPV_PROCEEDS: Decimal("30000"),
+                CCA_ZEPV_DIEP_PROCEEDS: Decimal("0"),
+            }
+        ],
+    )
+    record = _cca_record(kind.fields)
+    record[CCA_SOLD_ZEPVS] = sold
+    (kept,) = RecordList(kind.fields, [record]).records
+    assert kept[CCA_SOLD_ZEPVS] == sold
+    assert _cca_record(kind.fields)[CCA_SOLD_ZEPVS] == RecordList(CCA_SOLD_ZEPVS.fields, ())
+
+
+@pytest.mark.parametrize(
+    "kind",
+    [
+        RENTAL_CCA_CLASSES_ADJUSTED,
+        BUSINESS_CCA_CLASSES_ADJUSTED,
+        FARM_CCA_CLASSES_ADJUSTED,
+        FISH_CCA_CLASSES_ADJUSTED,
+    ],
+    ids=lambda k: k.identifier,
+)
+def test_the_adjusted_class_lists_leave_out_the_sold_zepvs(kind: RecordListKind) -> None:
+    # The Area A list after the proceeds are adjusted holds the figures the vehicles scaled, not
+    # the vehicles that scaled them, like the vehicle fields of Class 10.1.
+    assert CCA_SOLD_ZEPVS not in kind.fields
+    assert len(kind.fields) == 14
+
+
 def test_the_cca_table_fields_are_kinds_of_their_own() -> None:
     kinds = (
         CCA_CLASS_NUMBER,
@@ -2278,10 +2399,12 @@ def test_the_cca_table_fields_are_kinds_of_their_own() -> None:
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_ZEPV_PROCEEDS,
+        CCA_ZEPV_DIEP_PROCEEDS,
         CCA_UCC_AT_END,
     )
 
-    assert len({kind.identifier for kind in kinds}) == 18
+    assert len({kind.identifier for kind in kinds}) == 20
     assert {kind.identifier for kind in kinds} <= REGISTERED
     assert not {kind.identifier for kind in kinds} & RECORD_LISTS
 
@@ -2525,20 +2648,24 @@ def test_the_rental_cca_classes_are_a_record_list_of_the_area_a_columns(
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_SOLD_ZEPVS,
     )
-    assert len(RENTAL_CCA_CLASSES.fields) == 17
+    assert len(RENTAL_CCA_CLASSES.fields) == 18
     assert registry.get("ca/rental_cca_classes") is RENTAL_CCA_CLASSES
 
 
-def test_the_rental_class_list_ends_with_the_rate_election_and_the_vehicle_fields() -> None:
-    # T776 Area A Note 2: the vehicle's year, actual cost and government assistance are the
-    # last three fields of the T776 list, after the rate election.
-    assert RENTAL_CCA_CLASSES.fields[-4:] == (
+def test_the_rental_class_list_ends_with_the_vehicle_fields_and_the_sold_zepvs() -> None:
+    # T776 Area A Note 2: the vehicle's year, actual cost and government assistance, then the
+    # list of sold zero-emission passenger vehicles of a Class 54 row, are the last four fields
+    # of the T776 list, after the rate election.
+    assert RENTAL_CCA_CLASSES.fields[-5:] == (
         CCA_RATE_ELECTION,
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_SOLD_ZEPVS,
     )
+    assert RENTAL_CCA_CLASSES.fields.count(CCA_SOLD_ZEPVS) == 1
     for kind in (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE):
         assert RENTAL_CCA_CLASSES.fields.count(kind) == 1
 
@@ -2594,9 +2721,18 @@ def test_the_rental_cca_classes_adjusted_list_is_the_area_a_list_without_the_veh
 
 def _cca_record(
     fields: tuple[ArtifactKind[Any], ...],
-) -> dict[ArtifactKind[Any], Decimal | int]:
-    """A record of 0 for each of `fields`."""
-    return {field: 0 if field.value_type is int else Decimal(0) for field in fields}
+) -> dict[ArtifactKind[Any], Decimal | int | RecordList]:
+    """A record of 0 for each of `fields`, and no records for a record-list field."""
+    return {
+        field: (
+            RecordList(field.fields, ())
+            if isinstance(field, RecordListKind)
+            else 0
+            if field.value_type is int
+            else Decimal(0)
+        )
+        for field in fields
+    }
 
 
 def test_a_rental_class_record_must_give_the_remaining_personal_part() -> None:
@@ -2671,15 +2807,18 @@ def test_a_class_record_must_give_the_rate_election(kind: RecordListKind) -> Non
     assert kept[CCA_RATE_ELECTION] == 3
 
 
-def test_the_business_class_list_ends_with_the_rate_election_and_the_vehicle_fields() -> None:
-    # T2125 Area A endnote 2: the vehicle's year, actual cost and government assistance are the
-    # last three fields of the T2125 list, after the rate election.
-    assert BUSINESS_CCA_CLASSES.fields[-4:] == (
+def test_the_business_class_list_ends_with_the_vehicle_fields_and_the_sold_zepvs() -> None:
+    # T2125 Area A Note 2: the vehicle's year, actual cost and government assistance, then the
+    # list of sold zero-emission passenger vehicles of a Class 54 row, are the last four fields
+    # of the T2125 list, after the rate election.
+    assert BUSINESS_CCA_CLASSES.fields[-5:] == (
         CCA_RATE_ELECTION,
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_SOLD_ZEPVS,
     )
+    assert BUSINESS_CCA_CLASSES.fields.count(CCA_SOLD_ZEPVS) == 1
     for kind in (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE):
         assert BUSINESS_CCA_CLASSES.fields.count(kind) == 1
 
@@ -2987,8 +3126,9 @@ def test_the_business_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_SOLD_ZEPVS,
     )
-    assert len(BUSINESS_CCA_CLASSES.fields) == 17
+    assert len(BUSINESS_CCA_CLASSES.fields) == 18
     # Note 9 is printed on the T776 and, as endnote 9, on the T2125: the rental list is the
     # business list, the three fields of Note 2's vehicle adjustment included.
     assert RENTAL_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
@@ -3310,23 +3450,27 @@ def test_the_farm_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_SOLD_ZEPVS,
     )
-    assert len(FARM_CCA_CLASSES.fields) == 17
+    assert len(FARM_CCA_CLASSES.fields) == 18
     assert FARM_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
     assert FARM_CCA_CLASSES is not BUSINESS_CCA_CLASSES
     assert CCA_PERSONAL_PART_REMAINING in FARM_CCA_CLASSES.fields
     assert registry.get("ca/farm_cca_classes") is FARM_CCA_CLASSES
 
 
-def test_the_farm_class_list_ends_with_the_rate_election_and_the_vehicle_fields() -> None:
-    # T2042 Area A endnote 2: the vehicle's year, actual cost and government assistance are the
-    # last three fields of the T2042 list, after the rate election.
-    assert FARM_CCA_CLASSES.fields[-4:] == (
+def test_the_farm_class_list_ends_with_the_vehicle_fields_and_the_sold_zepvs() -> None:
+    # T2042 Area A Note 2: the vehicle's year, actual cost and government assistance, then the
+    # list of sold zero-emission passenger vehicles of a Class 54 row, are the last four fields
+    # of the T2042 list, after the rate election.
+    assert FARM_CCA_CLASSES.fields[-5:] == (
         CCA_RATE_ELECTION,
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_SOLD_ZEPVS,
     )
+    assert FARM_CCA_CLASSES.fields.count(CCA_SOLD_ZEPVS) == 1
     for kind in (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE):
         assert FARM_CCA_CLASSES.fields.count(kind) == 1
 
@@ -3590,23 +3734,27 @@ def test_the_fish_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_SOLD_ZEPVS,
     )
-    assert len(FISH_CCA_CLASSES.fields) == 17
+    assert len(FISH_CCA_CLASSES.fields) == 18
     assert FISH_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
     assert FISH_CCA_CLASSES is not BUSINESS_CCA_CLASSES
     assert CCA_PERSONAL_PART_REMAINING in FISH_CCA_CLASSES.fields
     assert registry.get("ca/fish_cca_classes") is FISH_CCA_CLASSES
 
 
-def test_the_fish_class_list_ends_with_the_rate_election_and_the_vehicle_fields() -> None:
-    # T2121 Area A endnote 2: the vehicle's year, actual cost and government assistance are the
-    # last three fields of the T2121 list, after the rate election.
-    assert FISH_CCA_CLASSES.fields[-4:] == (
+def test_the_fish_class_list_ends_with_the_vehicle_fields_and_the_sold_zepvs() -> None:
+    # T2121 Area A Note 2: the vehicle's year, actual cost and government assistance, then the
+    # list of sold zero-emission passenger vehicles of a Class 54 row, are the last four fields
+    # of the T2121 list, after the rate election.
+    assert FISH_CCA_CLASSES.fields[-5:] == (
         CCA_RATE_ELECTION,
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_SOLD_ZEPVS,
     )
+    assert FISH_CCA_CLASSES.fields.count(CCA_SOLD_ZEPVS) == 1
     for kind in (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE):
         assert FISH_CCA_CLASSES.fields.count(kind) == 1
 

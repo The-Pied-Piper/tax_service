@@ -220,9 +220,19 @@ FORM_STEPS = {
     # be adjusted based on a factor equal to its prescribed amount as a proportion of the actual
     # cost of the vehicle.": the Area A list with columns 5 and 6 of each such row scaled, which
     # the steps below read in place of the caller's list.
+    # Guide T4036 2025, "Class 54 (30%)": "If a zero-emission passenger vehicle is disposed of to a
+    # person or partnership with whom you deal at arm's length, and its cost exceeds the prescribed
+    # amount ($55,000 for vehicles acquired after March 18, 2019, and before January 1, 2022;
+    # $59,000 for vehicles acquired after December 31, 2021, and before January 1, 2023; or $61,000
+    # for vehicles acquired after December 31, 2022), the proceeds of disposition will be adjusted
+    # based on a factor equal to the prescribed amount as a proportion of the actual cost of the
+    # vehicle.": each vehicle sold from a Class 54 row is scaled with the dataset of those amounts.
     CapabilitySelection(
         name="ca/cca_vehicle_proceeds",
-        params={"prescribed_amounts": "ca/cca_vehicle_prescribed_amounts"},
+        params={
+            "prescribed_amounts": "ca/cca_vehicle_prescribed_amounts",
+            "zepv_prescribed_amounts": "ca/cca_zepv_prescribed_amounts",
+        },
         consumes={
             "classes": "ca/fish_cca_classes",
             "sales_tax_rate": "ca/fish_vehicle_sales_tax_rate",

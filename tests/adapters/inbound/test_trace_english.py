@@ -92,6 +92,7 @@ from app.jurisdictions.ca.trace import (
     CaregiverClaimLine,
     CcaClaimLine,
     CcaVehicleProceedsLine,
+    CcaZepvProceedsLine,
     CcaZeroReason,
     ClosingUccLine,
     DisabilityTransferLine,
@@ -3947,6 +3948,58 @@ def test_renders_what_the_vehicle_line_records_without_working_it_out_again() ->
     )
     assert (
         render(unrecorded) == "closing_ucc: item 1: proceeds 1000 and DIEP proceeds 0 not adjusted"
+    )
+
+
+def test_renders_a_sold_zepvs_adjusted_proceeds() -> None:
+    # Guide T4036 "Class 54 (30%)": "the proceeds of disposition will be adjusted based on a factor
+    # equal to the prescribed amount as a proportion of the actual cost of the vehicle":
+    # 30000 x 61000 / 65000 = 28153.85, and a DIEP's part likewise.
+    line = CcaZepvProceedsLine(
+        CLOSING_UCC,
+        2,
+        1,
+        True,
+        D("61000.00"),
+        D("65000.00"),
+        D("30000.00"),
+        D("28153.85"),
+        D("15000.00"),
+        D("14076.92"),
+    )
+
+    assert render(line) == (
+        "closing_ucc: item 2 vehicle 1: proceeds 30000 and DIEP proceeds 15000 adjusted by "
+        "prescribed amount 61000 / actual cost 65000 = proceeds 28153.85 and DIEP proceeds "
+        "14076.92"
+    )
+
+
+def test_renders_a_sold_zepvs_proceeds_that_are_not_adjusted() -> None:
+    line = CcaZepvProceedsLine(
+        CLOSING_UCC, 3, 2, False, D("59000"), D("50000"), D("20000"), D("20000"), D("0"), D("0")
+    )
+
+    assert render(line) == (
+        "closing_ucc: item 3 vehicle 2: proceeds 20000 and DIEP proceeds 0 not adjusted"
+    )
+
+
+def test_renders_what_the_sold_zepv_line_records_without_working_it_out_again() -> None:
+    # The line says whether the proceeds were adjusted; the renderer reads that, not the costs.
+    recorded = CcaZepvProceedsLine(
+        CLOSING_UCC, 1, 1, True, D("61000"), D("61001"), D("1000"), D("999.98"), D("0"), D("0")
+    )
+    unrecorded = CcaZepvProceedsLine(
+        CLOSING_UCC, 1, 1, False, D("61000"), D("65000"), D("1000"), D("1000"), D("0"), D("0")
+    )
+
+    assert render(recorded).endswith(
+        "adjusted by prescribed amount 61000 / actual cost 61001 = proceeds 999.98 and DIEP "
+        "proceeds 0"
+    )
+    assert render(unrecorded) == (
+        "closing_ucc: item 1 vehicle 1: proceeds 1000 and DIEP proceeds 0 not adjusted"
     )
 
 

@@ -1,5 +1,6 @@
 """Unit tests for the CcaVehicleProceeds capability (`ca/cca_vehicle_proceeds`), the adjustment of
-the proceeds of disposition of a Class 10.1 passenger vehicle designated for immediate expensing.
+the proceeds of disposition of a Class 10.1 passenger vehicle designated for immediate expensing,
+and of the zero-emission passenger vehicles sold from a Class 54 row.
 
 Form T2125 (2025), Area A endnote 2 (the T776's Column 5 Note 2, and the T2042's and T2121's
 endnote 2, say the same): "The proceeds of disposition of a zero-emission passenger vehicle
@@ -13,10 +14,36 @@ expensing treatment, this special rule does not apply." Guide T4002 2025, "Class
 prescribed amounts are $30,000 (acquired before 2022), $34,000 (2022), $36,000 (2023), $37,000
 (2024) and $38,000 (2025), each "plus the GST/HST or PST".
 
-Its slots: one parameter slot `prescribed_amounts` (a `year_amounts` dataset with the amount
-`prescribed_amount`), two consumed slots, `classes` (a record list of the Area A rows) and
-`sales_tax_rate` (the caller's GST or HST rate, in percent), and one produced slot `output`, a
-record list kind of the Area A fields without the three of the adjustment. Each row has the year
+Guide T4036 2025, "Class 54 (30%)": "There is a limit of $61,000 (plus federal and provincial
+sales taxes) on the capital cost for each zero-emission passenger vehicle in Class 54. Class 54 may
+include both zero-emission passenger vehicles that do and do not exceed the prescribed threshold.
+However, unlike Class 10.1, Class 54 does not establish a separate class for each vehicle whose
+cost exceeds the threshold." and "If a zero-emission passenger vehicle is disposed of to a person
+or partnership with whom you deal at arm's length, and its cost exceeds the prescribed amount
+($55,000 for vehicles acquired after March 18, 2019, and before January 1, 2022; $59,000 for
+vehicles acquired after December 31, 2021, and before January 1, 2023; or $61,000 for vehicles
+acquired after December 31, 2022), the proceeds of disposition will be adjusted based on a factor
+equal to the prescribed amount as a proportion of the actual cost of the vehicle." Its example:
+"$30,000 × ($61,000 ÷ $65,000) = $28,154" (to the dollar; the capability rounds with its dataset).
+
+A Class 54 row holds the list `ca/cca_sold_zepvs` of its sold vehicles, each with the year it was
+acquired (0 when the rule does not apply to it), its cost, the government assistance for it, its
+proceeds and the DIEP part of them. The list may be non-empty only on a Class 54 row, else the row
+is refused (`InvalidRecordError`, naming the item and the vehicle: "item 2 vehicle 1"). Each
+vehicle of a year is scaled on its own, with the `zepv_prescribed_amounts` dataset (a year before
+its oldest row is refused) and the same rule as a Class 10.1 vehicle, the prescribed amount with
+tax (the year's amount plus the rate), the actual cost (the cost less the assistance), the exact
+factor and the one rounding with that dataset's rule; a vehicle of year 0 is copied as entered.
+Column 5 of the row is the proceeds entered on the row (other sales of the class, not listed) plus
+those of its vehicles, scaled; column 6 likewise. A Class 54 row does not use the scalar vehicle
+fields of Class 10.1 (a year on it is refused as before). Each vehicle gives a `CcaZepvProceedsLine`
+after the row's own `CcaVehicleProceedsLine`, which is as for a row of year 0.
+
+Its slots: two parameter slots, `prescribed_amounts` (a `year_amounts` dataset with the amount
+`prescribed_amount`) and `zepv_prescribed_amounts` (the same, for Class 54), two consumed slots,
+`classes` (a record list of the Area A rows) and `sales_tax_rate` (the caller's GST or HST rate,
+in percent), and one produced slot `output`, a record list kind of the Area A fields without the
+four of the adjustment. Each row has the year
 the vehicle was acquired (0 when the rule does not apply to the row, which the caller decides), its
 actual cost and the government assistance received less repaid. A row of year 0 is copied as it
 is. For a year, the class must be 10.1 and the year 2021 or later (a vehicle bought after April
@@ -65,14 +92,16 @@ from app.jurisdictions.ca.catalog import (
     CCA_RIIP_ADDITIONS,
     CCA_UCC_AT_START,
 )
-from app.jurisdictions.ca.trace import CcaVehicleProceedsLine
+from app.jurisdictions.ca.trace import CcaVehicleProceedsLine, CcaZepvProceedsLine
 from tests.jurisdictions.ca.capabilities.cca_vehicle_proceeds import (
     ADJUSTED,
     CENT,
     CLASSES,
+    DOLLAR,
     SALES_TAX_RATE,
     SOLD,
     VEHICLE_FIELDS,
+    CcaRow,
     capability,
     classes,
     prescribed_amounts,
@@ -80,17 +109,23 @@ from tests.jurisdictions.ca.capabilities.cca_vehicle_proceeds import (
     sales_tax_rate,
     service,
     trace_line,
+    zepv,
+    zepv_line,
+    zepv_prescribed_amounts,
 )
 
 D = Decimal
 
 
 def adjusted(
-    *rows: dict[Any, Decimal | int],
+    *rows: CcaRow,
     rate: str = "13",
     dataset: ParameterDataset[Any] | None = None,
+    zepv_dataset: ParameterDataset[Any] | None = None,
 ) -> RecordList:
-    (output,) = capability(dataset).compute((classes(*rows), sales_tax_rate(rate))).outputs
+    (output,) = (
+        capability(dataset, zepv_dataset).compute((classes(*rows), sales_tax_rate(rate))).outputs
+    )
     assert output.kind is ADJUSTED
     value = output.value
     assert isinstance(value, RecordList)
@@ -98,14 +133,15 @@ def adjusted(
 
 
 def proceeds(
-    *rows: dict[Any, Decimal | int],
+    *rows: CcaRow,
     rate: str = "13",
     dataset: ParameterDataset[Any] | None = None,
+    zepv_dataset: ParameterDataset[Any] | None = None,
 ) -> list[tuple[Decimal, Decimal]]:
     """Columns 5 and 6 of each adjusted record."""
     return [
         (record[CCA_PROCEEDS], record[CCA_DIEP_PROCEEDS])
-        for record in adjusted(*rows, rate=rate, dataset=dataset).records
+        for record in adjusted(*rows, rate=rate, dataset=dataset, zepv_dataset=zepv_dataset).records
     ]
 
 
@@ -115,7 +151,7 @@ def only(
     proceeds_: str,
     diep_proceeds: str = "0",
     assistance: str = "0",
-) -> dict[Any, Decimal | int]:
+) -> CcaRow:
     """A Class 10.1 row sold for `proceeds_`, `diep_proceeds` of it a DIEP's."""
     return row(
         proceeds=proceeds_,
@@ -146,7 +182,11 @@ def test_leaves_its_contract_to_the_base() -> None:
 
 
 def test_declares_its_slots() -> None:
-    assert CcaVehicleProceeds.PARAMETERS == {"prescribed_amounts": YEAR_AMOUNTS}
+    assert CcaVehicleProceeds.PARAMETERS == {
+        "prescribed_amounts": YEAR_AMOUNTS,
+        "zepv_prescribed_amounts": YEAR_AMOUNTS,
+    }
+    assert list(CcaVehicleProceeds.PARAMETERS) == ["prescribed_amounts", "zepv_prescribed_amounts"]
     assert CcaVehicleProceeds.CONSUMES == {"classes": RecordList, "sales_tax_rate": Decimal}
     assert list(CcaVehicleProceeds.CONSUMES) == ["classes", "sales_tax_rate"]
     assert CcaVehicleProceeds.PRODUCES == {"output": RecordList}
@@ -172,6 +212,7 @@ def test_its_slots_are_typed_as_read_only_mappings() -> None:
 def test_is_built_from_its_slot_names_as_keywords() -> None:
     wired = CcaVehicleProceeds(
         prescribed_amounts=prescribed_amounts(),
+        zepv_prescribed_amounts=zepv_prescribed_amounts(),
         classes=CLASSES,
         sales_tax_rate=SALES_TAX_RATE,
         output=ADJUSTED,
@@ -187,7 +228,7 @@ def test_is_built_from_its_slot_names_as_keywords() -> None:
 def test_takes_no_separate_rounding_argument() -> None:
     with pytest.raises(TypeError):
         CcaVehicleProceeds(  # type: ignore[call-arg]
-            prescribed_amounts(), CLASSES, SALES_TAX_RATE, ADJUSTED, CENT
+            prescribed_amounts(), zepv_prescribed_amounts(), CLASSES, SALES_TAX_RATE, ADJUSTED, CENT
         )
 
 
@@ -195,13 +236,24 @@ def test_rejects_a_money_kind_for_its_output() -> None:
     with pytest.raises(InvalidCapabilityError, match="CcaVehicleProceeds.*'output'"):
         CcaVehicleProceeds(
             prescribed_amounts(),
+            zepv_prescribed_amounts(),
             CLASSES,
             SALES_TAX_RATE,
             ArtifactKind("ex/other_amount", Decimal),  # type: ignore[arg-type]
         )
 
 
-def test_its_output_holds_the_area_a_fields_without_the_three_of_the_adjustment() -> None:
+def test_needs_the_zepv_prescribed_amounts() -> None:
+    with pytest.raises(TypeError):
+        CcaVehicleProceeds(  # type: ignore[call-arg]
+            prescribed_amounts=prescribed_amounts(),
+            classes=CLASSES,
+            sales_tax_rate=SALES_TAX_RATE,
+            output=ADJUSTED,
+        )
+
+
+def test_its_output_holds_the_area_a_fields_without_the_four_of_the_adjustment() -> None:
     assert adjusted(SOLD).fields == ADJUSTED.fields
     assert ADJUSTED.fields == tuple(f for f in CLASSES.fields if f not in VEHICLE_FIELDS)
     assert len(ADJUSTED.fields) == 14
@@ -369,8 +421,8 @@ def test_2021_is_allowed() -> None:
 
 @pytest.mark.parametrize("number", ["8", "10", "54", "12"])
 def test_a_class_other_than_10_1_with_a_year_is_refused(number: str) -> None:
-    # Class 54 (zero-emission cars) has the same rule in the form text, but its prescribed amounts
-    # are not modelled: refused, not adjusted.
+    # Class 54 (zero-emission cars) has the same rule in the form text, but its vehicles are in the
+    # row's list of sold vehicles, not in the year of the row: refused, not adjusted.
     with pytest.raises(InvalidRecordError, match=r"^item 2: .*10\.1"):
         adjusted(SOLD, row(number, proceeds="40000", year=2025, cost="56500"))
 
@@ -648,3 +700,389 @@ def test_a_computation_gives_the_adjusted_list() -> None:
 
 def test_the_list_kind_the_computation_gives_is_a_record_list_kind() -> None:
     assert isinstance(ADJUSTED, RecordListKind)
+
+
+# --- Class 54: the sold zero-emission passenger vehicles of a row ---------------------------------
+#
+# Guide T4036 2025, "Class 54 (30%)", with the sales tax rate 0 unless a test says otherwise: the
+# prescribed amount for a vehicle acquired in 2023 or later is $61,000, in 2022 $59,000, from 2019
+# to 2021 $55,000. Car A, acquired in 2024 for 65,000 and sold for 30,000, is over the limit: the
+# factor is 61,000 / 65,000. Car B, acquired in 2022 for 50,000 and sold for 20,000, is under the
+# limit of 59,000 and unchanged.
+
+CAR_A = zepv(2024, "65000", "30000")
+CAR_B = zepv(2022, "50000", "20000")
+
+
+def class_54(*vehicles: CcaRow, **fields: Any) -> CcaRow:
+    """A Class 54 row selling `vehicles`; `fields` are the other arguments of `row`."""
+    return row("54", sold=vehicles, **fields)
+
+
+def totals(
+    *vehicles: CcaRow,
+    rate: str = "0",
+    dataset: ParameterDataset[Any] | None = None,
+    zepv_dataset: ParameterDataset[Any] | None = None,
+    **fields: Any,
+) -> tuple[Decimal, Decimal]:
+    """Columns 5 and 6 of the one Class 54 row selling `vehicles`, after the adjustment."""
+    (found,) = proceeds(
+        class_54(*vehicles, **fields), rate=rate, dataset=dataset, zepv_dataset=zepv_dataset
+    )
+    return found
+
+
+def test_the_two_cars_are_scaled_one_by_one_and_summed_into_column_5() -> None:
+    # Car A: 30,000 x 61,000 / 65,000 = 28,153.846..., 28,153.85 to the cent; car B: unchanged
+    # 20,000; column 5 is 28,153.85 + 20,000 = 48,153.85.
+    assert totals(CAR_A, CAR_B) == (D("48153.85"), D("0"))
+
+
+def test_the_guides_example_is_28154_when_the_dataset_rounds_to_the_dollar() -> None:
+    # The guide's "$30,000 × ($61,000 ÷ $65,000) = $28,154" is to the dollar; the capability
+    # rounds with the dataset's rule, so a dataset of whole dollars gives the guide's figures,
+    # 28,154 + 20,000 = 48,154.
+    dataset = zepv_prescribed_amounts(DOLLAR)
+
+    assert totals(CAR_A, zepv_dataset=dataset) == (D("28154"), D("0"))
+    assert totals(CAR_A, CAR_B, zepv_dataset=dataset) == (D("48154"), D("0"))
+
+
+def test_a_cost_over_the_limit_alone_is_scaled_to_the_cent() -> None:
+    assert totals(CAR_A) == (D("28153.85"), D("0"))
+
+
+def test_a_vehicle_of_year_0_is_copied_as_entered() -> None:
+    # Year 0: the rule does not apply to the vehicle (not sold at arm's length, say), whatever
+    # its cost.
+    assert totals(zepv(0, "65000", "30000", "10000")) == (D("30000"), D("10000"))
+    assert totals(zepv(0, "65000", "30000"), CAR_A) == (D("58153.85"), D("0"))
+
+
+def test_a_vehicle_of_year_0_is_not_refused_for_its_cost() -> None:
+    assert totals(zepv(0, "0", "500")) == (D("500"), D("0"))
+
+
+def test_a_vehicle_at_the_limit_is_unchanged() -> None:
+    # "whose cost is more than the prescribed amount": 61,000 is not more than 61,000.
+    assert totals(zepv(2024, "61000", "1000000")) == (D("1000000"), D("0"))
+
+
+def test_a_vehicle_a_cent_over_the_limit_is_scaled() -> None:
+    # 1,000,000 x 61,000 / 61,000.01 = 999,999.836..., 999,999.84.
+    assert totals(zepv(2024, "61000.01", "1000000")) == (D("999999.84"), D("0"))
+
+
+def test_the_limit_is_the_prescribed_amount_plus_the_sales_tax_rate() -> None:
+    # At 13%: 61,000 + 7,930 = 68,930 for 2024 and 59,000 + 7,670 = 66,670 for 2022, so cars A and
+    # B are both under their limits; 68,930.00 is the limit, a cent more is over it.
+    assert totals(CAR_A, CAR_B, rate="13") == (D("50000"), D("0"))
+    assert totals(zepv(2024, "68930", "1000000"), rate="13") == (D("1000000"), D("0"))
+    assert totals(zepv(2024, "68930.01", "1000000"), rate="13") == (D("999999.85"), D("0"))
+    # 30,000 x 68,930 / 80,000 = 25,848.75.
+    assert totals(zepv(2024, "80000", "30000"), rate="13") == (D("25848.75"), D("0"))
+
+
+def test_the_sales_tax_on_the_prescribed_amount_is_rounded_with_the_zepv_datasets_rule() -> None:
+    # 61,000 x 0.0865% = 52.765, 52.77 half-up: 61,052.77; 40,000 x 61,052.77 / 70,000 = 34,887.30.
+    result = capability().compute(
+        (classes(class_54(zepv(2024, "70000", "40000"))), sales_tax_rate("0.0865"))
+    )
+
+    assert result.trace[1:] == (zepv_line(1, 1, True, "61052.77", "70000", "40000", "34887.30"),)
+
+
+@pytest.mark.parametrize(
+    ("year", "scaled"),
+    [
+        (2030, "30500.00"),
+        (2025, "30500.00"),
+        (2023, "30500.00"),
+        (2022, "29500.00"),
+        (2021, "27500.00"),
+        (2020, "27500.00"),
+        (2019, "27500.00"),
+    ],
+)
+def test_each_year_uses_the_prescribed_amount_printed_for_it_in_class_54(
+    year: int, scaled: str
+) -> None:
+    # At a cost of 100,000 and proceeds of 50,000: 2023 and later 61,000, 2022 59,000, 2019 to
+    # 2021 55,000 (the oldest row); a later year than the newest row uses the newest.
+    assert totals(zepv(year, "100000", "50000")) == (D(scaled), D("0"))
+
+
+def test_a_vehicle_acquired_before_2019_is_refused() -> None:
+    # Class 54 is for vehicles "acquired after March 18, 2019": nothing is printed for 2018.
+    with pytest.raises(InvalidRecordError, match=r"^item 2 vehicle 2: .*2018"):
+        adjusted(row("8"), class_54(CAR_A, zepv(2018, "65000", "30000")))
+
+
+def test_a_vehicle_year_before_2019_is_refused_even_when_the_cost_is_under_the_amount() -> None:
+    with pytest.raises(InvalidRecordError, match=r"^item 1 vehicle 1: .*2018"):
+        adjusted(class_54(zepv(2018, "0", "30000")))
+
+
+@pytest.mark.parametrize("number", ["8", "10", "10.1", "12", "55"])
+def test_sold_vehicles_on_a_row_of_another_class_are_refused(number: str) -> None:
+    # Only a Class 54 row may hold the list, Class 10.1's included.
+    with pytest.raises(InvalidRecordError, match=r"^item 2 vehicle 1: .*54"):
+        adjusted(SOLD, row(number, sold=(CAR_A,)))
+
+
+def test_a_vehicle_of_year_0_on_a_row_of_another_class_is_refused_too() -> None:
+    with pytest.raises(InvalidRecordError, match=r"^item 1 vehicle 1: .*54"):
+        adjusted(row("8", sold=(zepv(0, "0", "100"),)))
+
+
+def test_a_row_of_another_class_without_sold_vehicles_is_unchanged() -> None:
+    assert proceeds(row("8", proceeds="1000", diep_proceeds="10")) == [(D("1000"), D("10"))]
+
+
+def test_the_error_names_the_item_and_the_vehicle_by_position_from_1() -> None:
+    with pytest.raises(InvalidRecordError, match=r"^item 3 vehicle 2: "):
+        adjusted(SOLD, row("8"), class_54(CAR_A, zepv(2018, "1", "1")), class_54(CAR_B, CAR_B))
+
+
+def test_a_year_on_a_class_54_row_is_still_refused_as_a_class_10_1_vehicle() -> None:
+    with pytest.raises(
+        InvalidRecordError,
+        match=r"^item 1: a vehicle year is given but the class is 54, not 10\.1$",
+    ):
+        adjusted(row("54", proceeds="40000", year=2025, cost="56500"))
+
+
+def test_the_proceeds_entered_on_the_row_are_added_to_those_of_the_vehicles() -> None:
+    # Other sales of the class, not listed: 1,000 and 500 of them a DIEP's. Car A: 30,000 x
+    # 61,000 / 65,000 = 28,153.85, 10,000 of it a DIEP's, 9,384.62: column 5 is 1,000 + 28,153.85,
+    # column 6 is 500 + 9,384.62.
+    assert totals(zepv(2024, "65000", "30000", "10000"), proceeds="1000", diep_proceeds="500") == (
+        D("29153.85"),
+        D("9884.62"),
+    )
+
+
+def test_a_row_without_sold_vehicles_keeps_its_entered_proceeds() -> None:
+    assert totals(proceeds="5000", diep_proceeds="100") == (D("5000"), D("100"))
+    assert totals() == (D("0"), D("0"))
+
+
+def test_the_diep_part_of_a_vehicle_is_scaled_by_its_factor() -> None:
+    # 15,000 x 61,000 / 65,000 = 14,076.92.
+    assert totals(zepv(2024, "65000", "30000", "15000")) == (D("28153.85"), D("14076.92"))
+
+
+def test_the_diep_part_of_every_vehicle_is_summed_into_column_6() -> None:
+    # Car B is under its limit: its DIEP part stays 20,000.
+    assert totals(zepv(2024, "65000", "30000", "15000"), zepv(2022, "50000", "20000", "20000")) == (
+        D("48153.85"),
+        D("34076.92"),
+    )
+
+
+def test_assistance_received_reduces_the_actual_cost_of_a_vehicle() -> None:
+    # 70,000 - 5,000 = 65,000, car A's.
+    assert totals(zepv(2024, "70000", "30000", assistance="5000")) == (D("28153.85"), D("0"))
+    # 70,000 - 9,000 = 61,000, at the limit.
+    assert totals(zepv(2024, "70000", "30000", assistance="9000")) == (D("30000"), D("0"))
+
+
+def test_assistance_repaid_increases_the_actual_cost_of_a_vehicle() -> None:
+    # 55,000 - (-10,000) = 65,000, car A's.
+    assert totals(zepv(2024, "55000", "30000", assistance="-10000")) == (D("28153.85"), D("0"))
+
+
+def test_an_actual_cost_of_zero_or_less_leaves_a_vehicle_unchanged() -> None:
+    assert totals(zepv(2024, "0", "30000")) == (D("30000"), D("0"))
+    assert totals(zepv(2024, "10000", "30000", assistance="12000")) == (D("30000"), D("0"))
+
+
+def test_each_vehicle_is_rounded_on_its_own_and_the_roundings_are_summed() -> None:
+    # Two vehicles of 100.01 over a factor of 0.5 are 50.005 each, 50.01 half-up; the column is
+    # 100.02, not the 100.01 of rounding the sum 200.02 x 0.5.
+    car = zepv(2024, "122000", "100.01")
+
+    assert totals(car, car) == (D("100.02"), D("0"))
+
+
+def test_rounds_with_the_zepv_datasets_rule_not_the_class_10_1_datasets() -> None:
+    # The Class 54 dataset rounds half-even at the cent (50.005 is 50.00); the Class 10.1 dataset
+    # keeps its half-up (50.005 is 50.01). At 13%: 61,000 + 7,930 = 68,930 and 137,860 x 0.5 =
+    # 68,930, so the factor of the car is 0.5.
+    zepv_dataset = zepv_prescribed_amounts(RoundTo(D("0.01"), RoundingMode.HALF_EVEN))
+    car = zepv(2024, "137860", "100.01")
+
+    assert proceeds(
+        class_54(car), only(2025, "85880", "100.01"), rate="13", zepv_dataset=zepv_dataset
+    ) == [(D("50.00"), D("0")), (D("50.01"), D("0"))]
+
+
+def test_rounds_to_the_zepv_datasets_increment() -> None:
+    zepv_dataset = zepv_prescribed_amounts(DOLLAR)
+
+    assert totals(zepv(2024, "122000", "100.01"), zepv_dataset=zepv_dataset) == (D("50"), D("0"))
+
+
+def test_the_prescribed_amounts_are_the_zepv_datasets_rows_not_fixed_figures() -> None:
+    dataset = zepv_prescribed_amounts(rows=((2023, "20000"), (2019, "10000")))
+
+    # 30,000 x 20,000 / 40,000 = 15,000; 30,000 x 10,000 / 40,000 = 7,500.
+    assert totals(zepv(2024, "40000", "30000"), zepv_dataset=dataset) == (D("15000.00"), D("0"))
+    assert totals(zepv(2019, "40000", "30000"), zepv_dataset=dataset) == (D("7500.00"), D("0"))
+
+
+def test_a_class_10_1_row_still_uses_the_class_10_1_dataset() -> None:
+    # Swapping the Class 54 dataset changes only Class 54 rows.
+    zepv_dataset = zepv_prescribed_amounts(rows=((2019, "1000"),))
+
+    assert proceeds(SOLD, zepv_dataset=zepv_dataset) == [(D("30400.00"), D("30400.00"))]
+
+
+def test_a_class_54_row_and_a_class_10_1_row_in_one_list() -> None:
+    # The Class 10.1 vehicle at 0%: 40,000 x 38,000 / 56,500 = 26,902.65.
+    assert proceeds(SOLD, class_54(CAR_A, CAR_B), row("8", proceeds="5"), rate="0") == [
+        (D("26902.65"), D("26902.65")),
+        (D("48153.85"), D("0")),
+        (D("5"), D("0")),
+    ]
+
+
+def test_the_class_54_output_record_has_the_summed_proceeds_and_keeps_the_other_fields() -> None:
+    full = class_54(
+        CAR_A,
+        CAR_B,
+        ucc_at_start="100000",
+        additions="5000",
+        proceeds="1000",
+        diep_proceeds="0",
+        claimed="15000.00",
+        no_property_left=1,
+        personal_part_remaining="75.25",
+        half_year_rule_differs=1,
+        rate_election=2,
+    )
+
+    (record,) = adjusted(full, rate="0").records
+
+    assert record == {
+        CCA_CLASS_NUMBER: D("54"),
+        CCA_UCC_AT_START: D("100000"),
+        CCA_ADDITIONS: D("5000"),
+        CCA_DIEP_ADDITIONS: D("0"),
+        CCA_PROCEEDS: D("49153.85"),
+        CCA_DIEP_PROCEEDS: D("0"),
+        CCA_IMMEDIATE_EXPENSING: D("0"),
+        CCA_AIIP_ADDITIONS: D("0"),
+        CCA_RIIP_ADDITIONS: D("0"),
+        CCA_CLAIMED: D("15000.00"),
+        CCA_NO_PROPERTY_LEFT: 1,
+        CCA_PERSONAL_PART_REMAINING: D("75.25"),
+        CCA_HALF_YEAR_RULE_DIFFERS: 1,
+        CCA_RATE_ELECTION: 2,
+    }
+    for field in VEHICLE_FIELDS:
+        assert field not in record
+
+
+def test_sold_vehicles_do_not_change_the_input() -> None:
+    held = classes(class_54(CAR_A, CAR_B))
+    before = [dict(record.items()) for record in held.value.records]
+
+    capability().compute((held, sales_tax_rate("0")))
+
+    assert [dict(record.items()) for record in held.value.records] == before
+
+
+# --- Class 54: trace ---------------------------------------------------------------------------
+
+
+def test_traces_each_vehicle_after_the_line_of_its_row_and_no_total() -> None:
+    # Per row, the row's own line first (a Class 54 row is not adjusted as a whole: its entered
+    # proceeds, no amounts), then one line for each of its vehicles, by position from 1.
+    trace = (
+        capability()
+        .compute(
+            (
+                classes(
+                    row("8", proceeds="1000"),
+                    class_54(CAR_A, CAR_B, zepv(0, "65000", "10000", "4000")),
+                    row("8", proceeds="5"),
+                ),
+                sales_tax_rate("0"),
+            )
+        )
+        .trace
+    )
+
+    assert trace == (
+        trace_line(1, False, "0", "0", "1000", "1000"),
+        trace_line(2, False, "0", "0", "0", "0"),
+        zepv_line(2, 1, True, "61000", "65000", "30000", "28153.85"),
+        zepv_line(2, 2, False, "59000", "50000", "20000", "20000"),
+        zepv_line(2, 3, False, "0", "0", "10000", "10000", "4000", "4000"),
+        trace_line(3, False, "0", "0", "5", "5"),
+    )
+
+
+def test_a_vehicle_over_the_limit_is_traced_with_its_diep_part() -> None:
+    result = capability().compute(
+        (classes(class_54(zepv(2024, "65000", "30000", "15000"))), sales_tax_rate("0"))
+    )
+
+    assert result.trace[1:] == (
+        zepv_line(1, 1, True, "61000", "65000", "30000", "28153.85", "15000", "14076.92"),
+    )
+
+
+def test_the_traced_actual_cost_is_the_cost_less_the_assistance() -> None:
+    result = capability().compute(
+        (
+            classes(class_54(zepv(2024, "70000", "30000", assistance="5000"))),
+            sales_tax_rate("0"),
+        )
+    )
+
+    assert result.trace[1:] == (zepv_line(1, 1, True, "61000", "65000", "30000", "28153.85"),)
+
+
+def test_a_class_54_row_without_sold_vehicles_is_traced_as_its_row_alone() -> None:
+    assert capability().compute((classes(class_54(proceeds="7")), sales_tax_rate())).trace == (
+        trace_line(1, False, "0", "0", "7", "7"),
+    )
+
+
+def test_each_vehicle_lines_amount_is_its_adjusted_proceeds() -> None:
+    trace = capability().compute((classes(class_54(CAR_A, CAR_B)), sales_tax_rate("0"))).trace
+
+    lines = [line for line in trace if isinstance(line, CcaZepvProceedsLine)]
+    assert [line.amount for line in lines] == [D("28153.85"), D("20000")]
+
+
+def test_the_rows_proceeds_and_the_vehicle_lines_add_up_to_the_records_column_5() -> None:
+    result = capability().compute(
+        (classes(class_54(CAR_A, CAR_B, proceeds="1000")), sales_tax_rate("0"))
+    )
+
+    (output,) = result.outputs
+    (record,) = output.value.records
+    vehicles = [line for line in result.trace if isinstance(line, CcaZepvProceedsLine)]
+    assert record[CCA_PROCEEDS] == D("1000") + sum((line.amount for line in vehicles), D(0))
+
+
+# --- Class 54: through TaxComputationService -----------------------------------------------------
+
+
+def test_a_computation_gives_the_summed_class_54_proceeds() -> None:
+    worksheet = service().compute(
+        JurisdictionCode("CA-ON"), 2025, classes(class_54(CAR_A, CAR_B)), sales_tax_rate("0")
+    )["ca-on/return"][0]
+
+    value = worksheet.get(ADJUSTED).value
+    assert isinstance(value, RecordList)
+    assert [
+        (r[CCA_CLASS_NUMBER], r[CCA_PROCEEDS], r[CCA_DIEP_PROCEEDS]) for r in value.records
+    ] == [
+        (D("54"), D("48153.85"), D("0")),
+    ]
+    assert isinstance(worksheet.producer_of(ADJUSTED), CcaVehicleProceeds)

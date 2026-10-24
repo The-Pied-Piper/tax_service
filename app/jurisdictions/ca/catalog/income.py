@@ -29,6 +29,8 @@ from app.jurisdictions.ca.catalog.personal_amounts import (
     CCA_VEHICLE_ACQUIRED_YEAR,
     CCA_VEHICLE_COST,
     CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+    CCA_ZEPV_DIEP_PROCEEDS,
+    CCA_ZEPV_PROCEEDS,
 )
 
 EMPLOYMENT_INCOME = CATALOG.declare("employment_income", Decimal, non_negative=True)
@@ -1353,6 +1355,28 @@ claim." Guide T4036 prints no formula, so the Guide T4002 2025 "You were asking?
 "base your CCA claim on the number of days in your fiscal period compared to 365 days" (the
 Guide's example: "your fiscal period is 214 days")."""
 
+CCA_SOLD_ZEPVS = RecordListKind.declare(
+    CATALOG,
+    "cca_sold_zepvs",
+    fields=(
+        CCA_VEHICLE_ACQUIRED_YEAR,
+        CCA_VEHICLE_COST,
+        CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_ZEPV_PROCEEDS,
+        CCA_ZEPV_DIEP_PROCEEDS,
+    ),
+)
+"""Sold zero-emission passenger vehicles of a Class 54 row, Guide T4036 2025 "Class 54 (30%)":
+"Class 54 may include both zero-emission passenger vehicles that do and do not exceed the
+prescribed threshold. However, unlike Class 10.1, Class 54 does not establish a separate class for
+each vehicle whose cost exceeds the threshold", and "If a zero-emission passenger vehicle is
+disposed of to a person or partnership with whom you deal at arm's length, and its cost exceeds the
+prescribed amount [...], the proceeds of disposition will be adjusted based on a factor equal to the
+prescribed amount as a proportion of the actual cost of the vehicle." One record for each vehicle
+sold from the row: the year it was acquired (0 when the rule does not apply to it), its cost, the
+government assistance for it, its proceeds and the DIEP part of them. A field of each record of a
+list of capital cost allowance classes."""
+
 RENTAL_CCA_CLASSES = RecordListKind.declare(
     CATALOG,
     "rental_cca_classes",
@@ -1374,6 +1398,7 @@ RENTAL_CCA_CLASSES = RecordListKind.declare(
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_SOLD_ZEPVS,
     ),
 )
 """Rental classes, Form T776 Area A "Calculation of capital cost allowance (CCA) claim": a
@@ -1385,7 +1410,7 @@ property used for both personal and rental use (Note 9), and whether the
 additions are treated the opposite way from their class for the half-year rule (column 18), and the
 CCA rate the caller elects for it (a purpose-built rental or a building in a separate class),
 then the year the vehicle was acquired, its actual cost and the government assistance for it
-(Note 2), last."""
+(Note 2), then the vehicles sold from a Class 54 row, last."""
 
 RENTAL_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
     CATALOG,
@@ -1394,15 +1419,21 @@ RENTAL_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
         field
         for field in RENTAL_CCA_CLASSES.fields
         if field
-        not in (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE)
+        not in (
+            CCA_VEHICLE_ACQUIRED_YEAR,
+            CCA_VEHICLE_COST,
+            CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+            CCA_SOLD_ZEPVS,
+        )
     ),
 )
 """Rental classes with the proceeds adjusted, Form T776 Area A Column 5 Note 2: "The proceeds of
 disposition of [...] a passenger vehicle bought after April 18, 2021, that has been included in
 Class 10.1, and whose cost is more than the prescribed amount will be adjusted based on a factor
 equal to its prescribed amount as a proportion of the actual cost of the vehicle". The list of
-rental classes without the year the vehicle was acquired, its cost and the government
-assistance, with columns 5 and 6 (the proceeds and the proceeds of DIEPs) adjusted."""
+rental classes without the year the vehicle was acquired, its cost, the government
+assistance and the vehicles sold from a Class 54 row, with columns 5 and 6 (the proceeds and the
+proceeds of DIEPs) adjusted."""
 
 RENTAL_CLOSING_UCC = RecordListKind.declare(
     CATALOG, "rental_closing_ucc", fields=(CCA_CLASS_NUMBER, CCA_UCC_AT_END)
@@ -1966,6 +1997,7 @@ BUSINESS_CCA_CLASSES = RecordListKind.declare(
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_SOLD_ZEPVS,
     ),
 )
 """Business classes, Form T2125 Area A "Calculation of capital cost allowance (CCA) claim": a
@@ -1976,7 +2008,8 @@ CCA claimed), whether any property is left in the class, the remaining personal 
 property used for both personal and business use (endnote 9), whether the additions are treated the
 opposite way from their class for the half-year rule (column 18), and the CCA rate the
 caller elects for it (a purpose-built rental or a building in a separate class), then the year the
-vehicle was acquired, its actual cost and the government assistance for it (endnote 2), last."""
+vehicle was acquired, its actual cost and the government assistance for it (endnote 2),
+then the vehicles sold from a Class 54 row, last."""
 
 BUSINESS_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
     CATALOG,
@@ -1985,15 +2018,21 @@ BUSINESS_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
         field
         for field in BUSINESS_CCA_CLASSES.fields
         if field
-        not in (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE)
+        not in (
+            CCA_VEHICLE_ACQUIRED_YEAR,
+            CCA_VEHICLE_COST,
+            CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+            CCA_SOLD_ZEPVS,
+        )
     ),
 )
 """Business classes with the proceeds adjusted, Form T2125 Area A endnote 2: "The proceeds of
 disposition of [...] a passenger vehicle bought after April 18, 2021, that has been included in
 Class 10.1, and whose cost is more than the prescribed amount will be adjusted based on a factor
 equal to its prescribed amount as a proportion of the actual cost of the vehicle". The list of
-business classes without the year the vehicle was acquired, its cost and the government
-assistance, with columns 5 and 6 (the proceeds and the proceeds of DIEPs) adjusted."""
+business classes without the year the vehicle was acquired, its cost, the government
+assistance and the vehicles sold from a Class 54 row, with columns 5 and 6 (the proceeds and the
+proceeds of DIEPs) adjusted."""
 
 BUSINESS_EPOP_ASSOCIATED = CATALOG.declare("business_epop_associated", int, non_negative=True)
 """Whether the filer is associated with an EPOP, Form T2125 Area A endnote 5 "$1.5 million, if you
@@ -2980,6 +3019,7 @@ FARM_CCA_CLASSES = RecordListKind.declare(
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_SOLD_ZEPVS,
     ),
 )
 """Farming classes, Form T2042 Area A "Calculation of capital cost allowance (CCA) claim": a
@@ -2990,7 +3030,8 @@ CCA claimed), whether any property is left in the class, the remaining personal 
 property used for both personal and business use (endnote 9), whether the additions are treated the
 opposite way from their class for the half-year rule (column 18), the CCA rate the
 caller elects for it (a purpose-built rental or a building in a separate class), then the year the
-vehicle was acquired, its actual cost and the government assistance for it (endnote 2), last."""
+vehicle was acquired, its actual cost and the government assistance for it (endnote 2),
+then the vehicles sold from a Class 54 row, last."""
 
 FARM_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
     CATALOG,
@@ -2999,15 +3040,21 @@ FARM_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
         field
         for field in FARM_CCA_CLASSES.fields
         if field
-        not in (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE)
+        not in (
+            CCA_VEHICLE_ACQUIRED_YEAR,
+            CCA_VEHICLE_COST,
+            CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+            CCA_SOLD_ZEPVS,
+        )
     ),
 )
 """Farming classes with the proceeds adjusted, Form T2042 Area A endnote 2: "The proceeds of
 disposition of [...] a passenger vehicle bought after April 18, 2021, that has been included in
 Class 10.1, and whose cost is more than the prescribed amount will be adjusted based on a factor
 equal to its prescribed amount as a proportion of the actual cost of the vehicle". The list of
-farming classes without the year the vehicle was acquired, its cost and the government
-assistance, with columns 5 and 6 (the proceeds and the proceeds of DIEPs) adjusted."""
+farming classes without the year the vehicle was acquired, its cost, the government
+assistance and the vehicles sold from a Class 54 row, with columns 5 and 6 (the proceeds and the
+proceeds of DIEPs) adjusted."""
 
 FARM_EPOP_ASSOCIATED = CATALOG.declare("farm_epop_associated", int, non_negative=True)
 """Whether the filer is associated with an EPOP, Form T2042 Area A endnote 5 "$1.5 million, if you
@@ -3450,6 +3497,7 @@ FISH_CCA_CLASSES = RecordListKind.declare(
         CCA_VEHICLE_ACQUIRED_YEAR,
         CCA_VEHICLE_COST,
         CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+        CCA_SOLD_ZEPVS,
     ),
 )
 """Fishing classes, Form T2121 Area A "Calculation of capital cost allowance (CCA) claim": a
@@ -3461,7 +3509,7 @@ property used for both personal and business use (endnote 9), whether the additi
 opposite way from their class for the half-year rule (column 18), and the CCA rate the
 caller elects for it (a purpose-built rental or a building in a separate class), then
 the year the vehicle was acquired, its actual cost and the government assistance for it
-(endnote 2), last."""
+(endnote 2), then the vehicles sold from a Class 54 row, last."""
 
 FISH_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
     CATALOG,
@@ -3470,15 +3518,21 @@ FISH_CCA_CLASSES_ADJUSTED = RecordListKind.declare(
         field
         for field in FISH_CCA_CLASSES.fields
         if field
-        not in (CCA_VEHICLE_ACQUIRED_YEAR, CCA_VEHICLE_COST, CCA_VEHICLE_GOVERNMENT_ASSISTANCE)
+        not in (
+            CCA_VEHICLE_ACQUIRED_YEAR,
+            CCA_VEHICLE_COST,
+            CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
+            CCA_SOLD_ZEPVS,
+        )
     ),
 )
 """Fishing classes with the proceeds adjusted, Form T2121 Area A endnote 2: "The proceeds of
 disposition of [...] a passenger vehicle bought after April 18, 2021, that has been included in
 Class 10.1, and whose cost is more than the prescribed amount will be adjusted based on a factor
 equal to its prescribed amount as a proportion of the actual cost of the vehicle". The list of
-fishing classes without the year the vehicle was acquired, its cost and the government
-assistance, with columns 5 and 6 (the proceeds and the proceeds of DIEPs) adjusted."""
+fishing classes without the year the vehicle was acquired, its cost, the government
+assistance and the vehicles sold from a Class 54 row, with columns 5 and 6 (the proceeds and the
+proceeds of DIEPs) adjusted."""
 
 FISH_PARTNER = CATALOG.declare("fish_partner", int, non_negative=True)
 """Whether the filer is a partner in the fishing business, Form T2121 amount 5A "Your share of line

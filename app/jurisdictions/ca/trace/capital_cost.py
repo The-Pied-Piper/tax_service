@@ -20,6 +20,7 @@ __all__ = [
     "RecapturedCcaLine",
     "TerminalLossLine",
     "CcaVehicleProceedsLine",
+    "CcaZepvProceedsLine",
     "ClosingUccLine",
     "ImmediateExpensingLine",
     "ImmediateExpensingAgreedLimitLine",
@@ -168,6 +169,38 @@ class CcaVehicleProceedsLine(TraceLine):
     @property
     def amount(self) -> Decimal:
         """The class's proceeds after the adjustment."""
+        return self.adjusted_proceeds
+
+
+@dataclass(frozen=True)
+class CcaZepvProceedsLine(TraceLine):
+    """The proceeds of one zero-emission passenger vehicle sold from a Class 54 row, by `position`
+    of the row and `vehicle` (both from 1), of the list `output`: when `applied`, the `proceeds` and
+    the `diep_proceeds` become the `adjusted_proceeds` and the `adjusted_diep_proceeds`, scaled by
+    the `prescribed_amount` (with tax) as a proportion of the `actual_cost` of the vehicle (its cost
+    less the government assistance), because the cost is more than the prescribed amount (Guide
+    T4036 "Class 54 (30%)"). When not `applied`, the adjusted figures are the ones entered: the
+    vehicle has no year, or its actual cost is not more than the prescribed amount. The
+    `prescribed_amount` and the `actual_cost` are 0 for a vehicle with no year.
+
+    Its own class, not a `RecordTotalLine`: each vehicle gives a part of a record of a list, not a
+    part of a total.
+    """
+
+    output: ArtifactKind[RecordList]
+    position: int
+    vehicle: int
+    applied: bool
+    prescribed_amount: Decimal
+    actual_cost: Decimal
+    proceeds: Decimal
+    adjusted_proceeds: Decimal
+    diep_proceeds: Decimal
+    adjusted_diep_proceeds: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The vehicle's proceeds after the adjustment."""
         return self.adjusted_proceeds
 
 
