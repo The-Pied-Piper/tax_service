@@ -169,6 +169,7 @@ from app.jurisdictions.ca.trace import (
     TerminalLossLine,
 )
 from app.jurisdictions.ca_on.trace import (
+    CappedRecordLine,
     CaregiverClaimLessClaimedLine,
     PlacementCreditLine,
     ProvincialForeignTaxCreditLine,
@@ -230,6 +231,7 @@ BAND_RATE = ArtifactKind("ex/band_rate", Rate)
 CARE_EXPENSES = ArtifactKind("ex/care_expenses", Decimal)
 CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 CAREGIVER_AMOUNT = ArtifactKind("ex/caregiver_amount", Decimal)
+ADOPTION_CREDIT = ArtifactKind("ex/adoption_credit", Decimal)
 DEPENDANTS_MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
 LIMITED_AMOUNT = ArtifactKind("ex/limited_amount", Decimal)
 DIVIDED_AMOUNT = ArtifactKind("ex/divided_amount", Decimal)
@@ -1851,6 +1853,78 @@ def test_renders_the_caregiver_amount_total_of_two_dependants() -> None:
     line = ItemsTotalLine(CAREGIVER_AMOUNT, ((1, D("8601.00")), (2, D("3798.00"))), D("12399.00"))
 
     assert render(line) == "caregiver_amount: item 1 8601 + item 2 3798 = 12399"
+
+
+# --- a child's adoption expenses, each capped at the maximum for one child ----------------------
+#
+# One sentence: the output's label, then "item <position>: <amount>, at most <cap> = <result>",
+# then the rounding rule in brackets. Every money figure prints without trailing zeros.
+
+
+def capped_child(
+    position: int,
+    amount: str,
+    cap: str,
+    result: str,
+    rounding: RoundingRule = CENT,
+) -> CappedRecordLine:
+    return CappedRecordLine(
+        ADOPTION_CREDIT, position, D(amount), Amount(D(cap)), rounding, D(result)
+    )
+
+
+def test_renders_a_child_under_the_cap() -> None:
+    assert render(capped_child(1, "8000", "15551", "8000")) == (
+        "adoption_credit: item 1: 8000, at most 15551 = 8000 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_child_capped_at_the_maximum() -> None:
+    assert render(capped_child(2, "20000", "15551", "15551")) == (
+        "adoption_credit: item 2: 20000, at most 15551 = 15551 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_child_without_trailing_zeros() -> None:
+    assert render(capped_child(1, "8000.00", "15551.00", "8000.00")) == (
+        "adoption_credit: item 1: 8000, at most 15551 = 8000 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_child_rounded_to_the_cent() -> None:
+    assert render(capped_child(1, "8000.005", "15551", "8000.01")) == (
+        "adoption_credit: item 1: 8000.005, at most 15551 = 8000.01 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_child_without_rounding() -> None:
+    assert render(capped_child(1, "8000.005", "15551", "8000.005", NO_ROUNDING)) == (
+        "adoption_credit: item 1: 8000.005, at most 15551 = 8000.005 (no rounding)"
+    )
+
+
+def test_renders_the_items_total_of_two_capped_children() -> None:
+    line = ItemsTotalLine(ADOPTION_CREDIT, ((1, D("8000.00")), (2, D("15551.00"))), D("23551.00"))
+
+    assert render(line) == "adoption_credit: item 1 8000 + item 2 15551 = 23551"
+
+
+def test_renders_the_capped_children_then_the_total_in_order() -> None:
+    lines = (
+        capped_child(1, "8000", "15551", "8000"),
+        capped_child(2, "20000", "15551", "15551"),
+        ItemsTotalLine(ADOPTION_CREDIT, ((1, D("8000")), (2, D("15551"))), D("23551")),
+    )
+
+    assert EnglishTraceRenderer().render_all(lines) == (
+        "adoption_credit: item 1: 8000, at most 15551 = 8000 (half-up to 0.01)",
+        "adoption_credit: item 2: 20000, at most 15551 = 15551 (half-up to 0.01)",
+        "adoption_credit: item 1 8000 + item 2 15551 = 23551",
+    )
+
+
+def test_renders_the_items_total_of_no_children() -> None:
+    assert render(ItemsTotalLine(ADOPTION_CREDIT, (), D("0"))) == ("adoption_credit: no items = 0")
 
 
 # --- an apprentice's salary and wages, the lesser of them and the maximum ----------------------

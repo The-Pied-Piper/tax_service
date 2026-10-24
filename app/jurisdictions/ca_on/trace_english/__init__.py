@@ -6,6 +6,11 @@ registering its renderers with `@english_renderer`; this package imports every o
 
 from __future__ import annotations
 
-from app.jurisdictions.ca_on.trace_english import dependants, foreign_tax, placement_credit
+from app.jurisdictions.ca_on.trace_english import (
+    capped_records,
+    dependants,
+    foreign_tax,
+    placement_credit,
+)
 
-__all__ = ["dependants", "foreign_tax", "placement_credit"]
+__all__ = ["capped_records", "dependants", "foreign_tax", "placement_credit"]

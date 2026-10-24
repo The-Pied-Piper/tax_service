@@ -127,8 +127,8 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
         "+ cpp_base_contributions_on_return 2796.75 + "
         "cpp_base_contributions_on_self_employment_and_other_earnings 0 "
         "+ ei_premiums 984 + ei_premiums_on_self_employment 0 "
-        "+ disability_amount_for_self 0 "
-        "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
+        "+ adoption_credit 0 + pension_income_credit 0 + disability_amount_for_self 0 "
+        "+ disability_transferred_amount 0 + student_loan_interest 0 + unused_tuition_claimed 0 "
         "+ amounts_transferred_from_spouse 0 + medical_claim 0 = 27350.75"
     ) in rendered
 

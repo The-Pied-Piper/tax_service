@@ -185,6 +185,25 @@ capabilities:
       eligible_dependant_amount: ca-on/eligible_dependant_amount
     produces:
       output: ca-on/caregiver_amount
+  # ON428 line 23 and line 58330 "Adoption expenses", each child capped at $15,551 (T2203 note
+  # (5)), the filer's share of the expenses. Each child's eligible expenses are a record of the
+  # same list the federal line 31300 reads, capped one by one and then added up.
+  - name: ca-on/capped_record_total
+    params:
+      cap: ca-on/adoption_expenses_maximum
+    consumes:
+      records: ca/adoption_expense_children
+    produces:
+      output: ca-on/adoption_credit
+  # ON428 line 27 and line 58360 "Pension income amount (maximum $1,762)": the lesser of $1,762
+  # and the amount on line 31400 (CRA's line 31400 web page, a listed check).
+  - name: core/capped_amount
+    params:
+      cap: ca-on/pension_income_maximum
+    consumes:
+      base: ca/pension_income_credit
+    produces:
+      output: ca-on/pension_income_credit
   # ON428 line 29 and line 58440 "Disability amount for self (claim $10,298 or, if you were under
   # 18 years of age, use Worksheet ON428)", Worksheet ON428 "Line 58440 - Disability amount for
   # self": line 1 "Base amount 10,298.00", the dataset as an artifact of the same name.
@@ -282,9 +301,10 @@ capabilities:
       output: ca-on/unused_tuition_income_cap
   # ON428 line 31 "Line 31: Add lines 28 to 30. =": the credit amounts the form totals before
   # medical expenses, as its lines 1 to 25 carry them (the basic personal amount, the age, spouse,
-  # eligible dependant and caregiver amounts, the CPP and EI contributions), line 29 (the
-  # disability amount for self) and line 30 (the disability amount transferred from a dependant).
-  # The pension amount (line 27) and the student loan interest (line 32) are not yet wired into it.
+  # eligible dependant and caregiver amounts, the CPP and EI contributions), and line 30 (the
+  # disability amount transferred from a dependant). The adoption and pension amounts (lines 23
+  # and 27) and the disability amount for self (line 29) are in it too; the student loan interest
+  # (line 32) is not, as it comes after line 31.
   - name: core/sum
     consumes:
       parts:
@@ -297,6 +317,8 @@ capabilities:
         - ca/cpp_base_contributions_on_self_employment_and_other_earnings
         - ca/ei_premiums
         - ca/ei_premiums_on_self_employment
+        - ca-on/adoption_credit
+        - ca-on/pension_income_credit
         - ca-on/disability_amount_for_self
         - ca-on/disability_transferred_amount
     produces:

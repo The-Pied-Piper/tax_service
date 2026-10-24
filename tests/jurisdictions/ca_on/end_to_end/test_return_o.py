@@ -124,21 +124,22 @@ def test_return_os_taxes_follow_from_its_taxable_income_of_45500() -> None:
     # Taxable income 45500.00: 14.5% federally, 6597.50, less 14.5% of 18129.00, the basic personal
     # amount 16129.00 plus the pension income amount 2000.00 (line 31400: 60000 of other pensions
     # on line 11500, capped at 2000), 2628.71 (the Canada employment amount is 0 with no employment
-    # income): 3968.79. Ontario: 5.05% of 45500.00 is 2297.75, less 5.05% of 12747.00, 643.72:
-    # 1654.03, no surtax, no tax reduction, no LIFT credit; the health premium on taxable income of
-    # more than 38500 but not more than 48000 is 450, so the Ontario tax is 2104.03 and the total
-    # payable 3968.79 + 2104.03 = 6072.82. The income tax deducted of 6000 leaves a balance owing
-    # of 72.82.
+    # income): 3968.79. Ontario: 5.05% of 45500.00 is 2297.75, less 5.05% of 14509.00, the basic
+    # personal amount 12747.00 plus the pension income amount 1762.00 (ON428 line 27: the lesser of
+    # 1762 and line 31400), 732.70: 1565.05, no surtax, no tax reduction, no LIFT credit; the health
+    # premium on taxable income of more than 38500 but not more than 48000 is 450, so the Ontario
+    # tax is 2015.05 and the total payable 3968.79 + 2015.05 = 5983.84. The income tax deducted of
+    # 6000 leaves a refund of 16.16.
     worksheet = return_o()
 
     assert worksheet.get(FEDERAL_BASIC_TAX).value == D("6597.50")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3968.79")
-    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1654.03")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1565.05")
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("450")
-    assert worksheet.get(ONTARIO_TAX).value == D("2104.03")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("6072.82")
+    assert worksheet.get(ONTARIO_TAX).value == D("2015.05")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("5983.84")
     assert worksheet.get(TOTAL_CREDITS).value == D("6000")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("72.82")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-16.16")
 
 
 @pytest.mark.parametrize(

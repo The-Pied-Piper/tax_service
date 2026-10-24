@@ -157,6 +157,16 @@ ON428)": Worksheet ON428 line 6 "Add the amounts from line 5 of columns 1, 2, an
 any)", each line 5 "Allowable amount for this dependant: line 3 minus line 4 (if negative, enter
 "0")", a part of the total of the Ontario credit amounts."""
 
+ADOPTION_CREDIT = CATALOG.declare("adoption_credit", Decimal, non_negative=True)
+"""Ontario adoption expenses, ON428 line 23 and line 58330 "Adoption expenses": the total of each
+child's eligible expenses, each capped at the Ontario maximum for one child, a part of the total of
+the Ontario credit amounts."""
+
+PENSION_INCOME_CREDIT = CATALOG.declare("pension_income_credit", Decimal, non_negative=True)
+"""Ontario pension income amount, ON428 line 27 and line 58360 "Pension income amount (maximum
+$1,762)": the lesser of that maximum and the federal line 31400 amount, a part of the total of the
+Ontario credit amounts."""
+
 DEPENDANT_ON428_LINE_28 = CATALOG.declare("dependant_on428_line_28", Decimal, non_negative=True)
 """Amount from line 28 of the dependant's Form ON428, Worksheet ON428 "Line 58480 - Disability
 amount transferred from a dependant", line 8 "Enter the amount from line 28 of the dependant's

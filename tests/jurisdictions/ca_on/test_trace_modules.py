@@ -21,6 +21,7 @@ PACKAGE = "app.jurisdictions.ca_on.trace"
 RENDERERS = "app.jurisdictions.ca_on.trace_english"
 
 HOMES: dict[str, tuple[str, ...]] = {
+    "capped_records": ("CappedRecordLine",),
     "dependants": ("CaregiverClaimLessClaimedLine",),
     "foreign_tax": ("ProvincialForeignTaxCreditLine",),
     "placement_credit": ("PlacementCreditLine",),

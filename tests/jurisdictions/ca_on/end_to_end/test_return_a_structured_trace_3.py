@@ -3464,6 +3464,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("0.00"),
         ),
+        # ON428 line 27 (line 58360) "Pension income amount (maximum $1,762)": the amount on line
+        # 31400, 0, within the maximum.
+        ontario.PENSION_INCOME_CREDIT: CappedAmountLine(
+            ontario.PENSION_INCOME_CREDIT,
+            PENSION_INCOME_CREDIT,
+            D("0"),
+            Amount(D("1762")),
+            CENT,
+            D("0.00"),
+        ),
         CANADA_EMPLOYMENT_AMOUNT: CappedAmountLine(
             CANADA_EMPLOYMENT_AMOUNT,
             EMPLOYMENT_INCOME,

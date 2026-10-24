@@ -125,8 +125,8 @@ def test_return_ws_trace_names_each_ontario_dependant_and_totals_the_credit_amou
         "+ cpp_base_contributions_on_return 2202.75 + "
         "cpp_base_contributions_on_self_employment_and_other_earnings 0 "
         "+ ei_premiums 787.2 + ei_premiums_on_self_employment 0 "
-        "+ disability_amount_for_self 0 "
-        "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
+        "+ adoption_credit 0 + pension_income_credit 0 + disability_amount_for_self 0 "
+        "+ disability_transferred_amount 0 + student_loan_interest 0 + unused_tuition_claimed 0 "
         "+ amounts_transferred_from_spouse 0 + medical_claim 0 = 23306.95"
     ) in rendered
 
@@ -225,8 +225,8 @@ def test_the_dependant_claimed_on_line_58160_takes_it_off_line_58185() -> None:
         "+ cpp_base_contributions_on_return 2202.75 + "
         "cpp_base_contributions_on_self_employment_and_other_earnings 0 "
         "+ ei_premiums 787.2 + ei_premiums_on_self_employment 0 "
-        "+ disability_amount_for_self 0 "
-        "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
+        "+ adoption_credit 0 + pension_income_credit 0 + disability_amount_for_self 0 "
+        "+ disability_transferred_amount 0 + student_loan_interest 0 + unused_tuition_claimed 0 "
         "+ amounts_transferred_from_spouse 0 + medical_claim 0 = 23306.95"
     ) in rendered
 

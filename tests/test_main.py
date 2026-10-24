@@ -2455,6 +2455,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/claimed_as_eligible_dependant",
         "ca-on/caregiver_dependants",
         "ca-on/caregiver_amount",
+        "ca-on/adoption_credit",
+        "ca-on/pension_income_credit",
         "ca-on/dependant_on428_line_28",
         "ca-on/disability_dependants",
         "ca-on/disability_transferred_amount",

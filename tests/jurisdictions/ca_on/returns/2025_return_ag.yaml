@@ -103,7 +103,8 @@ description: >-
   of $2,885 and it, $900.00, line 41 is $4,000.00, line 42 (line 58729) is $0 and line 43
   (line 58769) is $4,000.00. The non-refundable credit amounts are the basic personal amount
   (federal line 30000 $16,129, since net income is $177,882 or less; Ontario ON428 line
-  58040 $12,747), the age amount, the spouse amount and the allowable medical expenses. The
+  58040 $12,747), the age amount, the spouse amount, the pension income amount and the
+  allowable medical expenses. The
   age amount (line 30100) is $9,028.00: the Federal Worksheet's line 4, the net income of
   $30,000.00 less the line 3 income threshold of $45,522.00, is negative, so $0.00, line 6,
   that at the line 5 rate of 15%, is $0.00, and line 1 $9,028.00 less it is line 7; it is
@@ -121,20 +122,23 @@ description: >-
   of $0, the lesser of $1,471 and employment income. Line 33500 is $37,286.00 (16,129 +
   9,028.00 + 6,129.00 + 4,000.00 + 2,000.00 (the pension income amount, line 31400, see below)
   and $0 for each of the others) and ON428 line 58800 is
-  $24,875.00 (12,747 + 6,223.00 + 1,905.00 + 4,000.00 and $0 for each of the others). At
+  $26,637.00 (12,747 + 6,223.00 + 1,905.00 + 1,762.00 + 4,000.00 and $0 for each of the
+  others), where the Ontario pension income amount (ON428 line 27, line 58360) is the lesser
+  of $1,762 and the $2,000.00 of line 31400, $1,762.00, and there are no adoption expenses
+  (line 58330) and no student loan interest (line 58520). At
   14.5% federally (line 33800) and 5.05% for Ontario (ON428 line 58840), each product
   rounded half-up to the cent is its form's non-refundable tax credits: federal $5,406.47
-  (line 35000) and Ontario $1,256.19 (ON428 line 61500), each taken off its form's basic tax
-  ($4,350.00 federally, $1,515.00 for Ontario), not below zero: $0 and $258.81. The Ontario
+  (line 35000) and Ontario $1,345.17 (ON428 line 61500), each taken off its form's basic tax
+  ($4,350.00 federally, $1,515.00 for Ontario), not below zero: $0 and $169.83. The Ontario
   surtax (ON428 line 68) is $0, as the Ontario tax after credits is below $5,710, so the
-  Ontario tax with surtax (line 69) is that same $258.81. With no dividends, Worksheet
+  Ontario tax with surtax (line 69) is that same $169.83. With no dividends, Worksheet
   ON428's lines A and B (lines 12000 and 12010) are $0, so the Ontario dividend tax credit
   (ON428 line 57, line 61520) and line 70 are $0, and the Ontario tax after the dividend
-  credit (ON428 line 71, which is line 73) is that same $258.81. With no dependent child and
+  credit (ON428 line 71, which is line 73) is that same $169.83. With no dependent child and
   no dependant, the Ontario tax reduction amounts (line 77) are the basic reduction of
   $294.00 (line 74), twice them, $588.00 (line 78), less the Ontario tax after the dividend
-  credit (line 79, from line 73) is $329.19, the Ontario tax reduction (line 80), and the
-  Ontario tax after the reduction (line 81) is $258.81 - $329.19, negative, so $0. The LIFT
+  credit (line 79, from line 73) is $418.17, the Ontario tax reduction (line 80), and the
+  Ontario tax after the reduction (line 81) is $169.83 - $418.17, negative, so $0. The LIFT
   credit (ON428 line 85, Schedule ON428-A) is 5.05% of employment income, $0, at most $875,
   less 5% of net income over $32,500, not below zero (the net income is below it): $0, so
   the Ontario tax after it (line 86) is $0. With chosen qualifying donations of $0, the
@@ -168,8 +172,8 @@ description: >-
   balance owing (line 167) is the total payable less the total credits, $300.00 - $3,750.00
   = -$3,450.00: negative, so a refund (line 48400). Every amount computed from a rate,
   fraction, amount or chart on the forms is rounded half-up to the cent, each line being a
-  dollars-and-cents box; here that changes the Ontario non-refundable tax credits (24,875.00
-  x 5.05% = 1,256.1875) and the lines that follow from them. The lines that only add,
+  dollars-and-cents box; here that changes the Ontario non-refundable tax credits (26,637.00
+  x 5.05% = 1,345.1685) and the lines that follow from them. The lines that only add,
   subtract, compare or choose take amounts already in cents, so the refund or balance owing
   is in cents too.
   No self-employment income: the net business, professional, commission, farming and fishing
@@ -526,8 +530,8 @@ sources:
     "Line 1 is $52,886 or less": line 2 "Amount from line 1"; line 3 "0.00"; line 4 "Line 2
     minus line 3 (cannot be negative)", 30,000.00; line 5 "Rate 5.05%"; line 6 "Line 4
     multiplied by the percentage from line 5", 1,515.00; line 7 "0.00"; line 8 "Line 6 plus
-    line 7 Ontario tax on taxable income", 1,515.00. Less the 1,256.19 of Ontario
-    non-refundable tax credits (ON428 line 61500), not below zero, it is 258.81, the Ontario
+    line 7 Ontario tax on taxable income", 1,515.00. Less the 1,345.17 of Ontario
+    non-refundable tax credits (ON428 line 61500), not below zero, it is 169.83, the Ontario
     tax after credits.
   - >-
     https://www.canada.ca/en/revenue-agency/services/tax/individuals/tax-rates-brackets/last-year.html
@@ -539,7 +543,9 @@ sources:
     https://data.ontario.ca/en/dataset/personal-income-tax-rates-and-credits/resource/60f84727-7e12-4fd4-ba06-30955d31b2ae
   - >-
     CRA, the 2025 ON428 (form 5006-C): line 9 (line 58040) "Basic personal amount Claim
-    $12,747"; line 44 (line 58800) "Line 35 plus line 43"; line 45 "Ontario non-refundable
+    $12,747"; line 23 (line 58330) "Adoption expenses"; line 27 (line 58360) "Pension income
+    amount (maximum $1,762)"; line 32 (line 58520) "Interest paid on your student loans
+    (amount from line 31900 of your return)"; line 44 (line 58800) "Line 35 plus line 43"; line 45 "Ontario non-refundable
     tax credit rate 5.05%"; line 46 (line 58840) "Line 44 multiplied by the percentage from
     line 45"; line 47 "Amount from line 13 of your federal Schedule 9" "multiplied by
     5.05%"; line 48 "Amount from line 14 of your federal Schedule 9" "multiplied by 11.16%";
@@ -548,16 +554,20 @@ sources:
     minus line 52 (if negative, enter "0")"; line 66 "(Line 65 minus $5,710) multiplied by
     20% (if negative, enter "0")"; line 67 "(Line 65 minus $7,307) multiplied by 36% (if
     negative, enter "0")"; line 68 "Line 66 plus line 67"; line 69 "Line 62 plus line 68".
-    Line 58800, which takes amounts already in cents, is 12,747 + 6,223.00 + 1,905.00 + 0 +
-    0 + 0 + 0 + 4,000.00 = 24,875.00 (the basic personal amount, the age amount, the spouse
-    amount, no eligible dependant, no Ontario caregiver amount, no base CPP contributions or
-    EI premiums and the allowable medical expenses of line 58769) and line 58840 is
-    24,875.00 x 5.05% = 1,256.1875, rounded half-up to the cent: 1,256.19; line 49 (line
+    Line 58360 (line 27, "Pension income amount (maximum $1,762)") is the lesser of 1,762
+    and line 31400, 2,000.00, so 1,762.00; line 58330 (line 23, "Adoption expenses") and
+    line 58520 (line 32, "Interest paid on your student loans (amount from line 31900 of
+    your return)") are 0. Line 58800, which takes amounts already in cents, is 12,747 +
+    6,223.00 + 1,905.00 + 0 + 0 + 0 + 0 + 1,762.00 + 4,000.00 = 26,637.00 (the basic
+    personal amount, the age amount, the spouse amount, no eligible dependant, no Ontario
+    caregiver amount, no base CPP contributions or EI premiums, the pension income amount
+    and the allowable medical expenses of line 58769) and line 58840 is
+    26,637.00 x 5.05% = 1,345.1685, rounded half-up to the cent: 1,345.17; line 49 (line
     58969) is computed, and is 0 here because this return's Schedule 9 inputs are all $0 (a
-    chosen figure, caller inputs), so line 61500 is 1,256.19 + 0 = 1,256.19. Line 53 is
-    1,515.00 - 1,256.19 = 258.81; tax on split income and the minimum tax carryover are not
+    chosen figure, caller inputs), so line 61500 is 1,345.17 + 0 = 1,345.17. Line 53 is
+    1,515.00 - 1,345.17 = 169.83; tax on split income and the minimum tax carryover are not
     modelled, so lines 61 to 65 carry it. It is below 5,710 and 7,307, so lines 66 and 67
-    are negative and enter 0; the surtax, line 68, is 0, and line 69 is 258.81 + 0 = 258.81.
+    are negative and enter 0; the surtax, line 68, is 0, and line 69 is 169.83 + 0 = 169.83.
   - >-
     https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
@@ -591,8 +601,8 @@ sources:
     line 89 "Ontario health premium (complete the chart below)"; line 90 "Line 88 plus line
     89 Enter this amount on line 42800 of your return. Ontario tax". There are no dependent
     children or dependants, so line 75 is 0 x 544 = 0 and line 76 is 0 x 544 = 0, and line
-    77 is 294.00 + 0 + 0 = 294.00; line 78 is 588.00; line 79 is 258.81; line 80 is 588.00 -
-    258.81 = 329.19, the Ontario tax reduction; line 81 is 258.81 - 329.19, negative, so 0.
+    77 is 294.00 + 0 + 0 = 294.00; line 78 is 588.00; line 79 is 169.83; line 80 is 588.00 -
+    169.83 = 418.17, the Ontario tax reduction; line 81 is 169.83 - 418.17, negative, so 0.
     Line 82 is not triggered. Schedule ON428-A (form 5006-A): line 1 "Amount from line 10100
     of your return"; line 2 "Amount from line 10400 of your return"; line 3 "Line 1 plus
     line 2"; line 4 "Applicable rate 5.05%"; line 5 "Line 3 multiplied by the percentage
@@ -609,10 +619,10 @@ sources:
     income from line 26000 of your return", 30,000.00, "Row 3: Taxable Income more than
     $25,000 but not more than $36,000 Ontario health premium: $300", so line 89 is 300; line
     90 is 0 + 300 = 300; lines 86 and 90 take amounts already in cents. With no dividends,
-    line 57 is 0 (Worksheet ON428 above), so line 56, which is line 53, 258.81, and line 58,
-    258.81 - 0 = 258.81, are the same; line 70 is 0 and line 71 is 258.81 - 0 = 258.81,
+    line 57 is 0 (Worksheet ON428 above), so line 56, which is line 53, 169.83, and line 58,
+    169.83 - 0 = 169.83, are the same; line 70 is 0 and line 71 is 169.83 - 0 = 169.83,
     which takes amounts already in cents; the minimum tax (line 72) is not triggered, so
-    line 73 is line 71, 258.81.
+    line 73 is line 71, 169.83.
   - >-
     https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
@@ -901,26 +911,26 @@ expected:
       ca-on/medical_expenses_over_threshold: "4000.00"
       ca-on/other_dependants_medical: "0"
       ca-on/medical_claim: "4000.00"
-      ca-on/non_refundable_credit_amounts: "24875.00"
-      ca-on/non_refundable_tax_credits: "1256.19"
-      ca-on/ontario_tax_after_credits: "258.81"
+      ca-on/non_refundable_credit_amounts: "26637.00"
+      ca-on/non_refundable_tax_credits: "1345.17"
+      ca-on/ontario_tax_after_credits: "169.83"
       ca-on/ontario_surtax: "0.00"
-      ca-on/ontario_tax_with_surtax: "258.81"
+      ca-on/ontario_tax_with_surtax: "169.83"
       ca-on/dividends_amount_a: "0.00"
       ca-on/dividends_amount_b: "0.00"
       ca-on/other_dividends_credit: "0.00"
       ca-on/dividends_amount_a_less_b: "0.00"
       ca-on/eligible_dividends_credit: "0.00"
       ca-on/dividend_tax_credit: "0.00"
-      ca-on/ontario_tax_before_dividend_credit: "258.81"
-      ca-on/ontario_tax_less_dividend_credit: "258.81"
+      ca-on/ontario_tax_before_dividend_credit: "169.83"
+      ca-on/ontario_tax_less_dividend_credit: "169.83"
       ca-on/dividend_credit_from_line_57: "0.00"
-      ca-on/ontario_tax_after_dividend_credit: "258.81"
+      ca-on/ontario_tax_after_dividend_credit: "169.83"
       ca-on/tax_reduction_basic: "294.00"
       ca-on/tax_reduction_for_children: "0.00"
       ca-on/tax_reduction_for_dependants: "0.00"
       ca-on/tax_reduction_amounts: "294.00"
-      ca-on/ontario_tax_reduction: "329.19"
+      ca-on/ontario_tax_reduction: "418.17"
       ca-on/ontario_tax_after_reduction: "0"
       ca-on/lift_credit_before_maximum: "0.00"
       ca-on/lift_maximum_credit: "0.00"

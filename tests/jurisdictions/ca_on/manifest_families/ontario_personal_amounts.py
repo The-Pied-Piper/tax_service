@@ -16,6 +16,7 @@ from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.amount_or_divided_by_rate import AmountOrDividedByRate
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
 from app.jurisdictions.ca.catalog import (
+    ADOPTION_EXPENSE_CHILDREN,
     BORN_IN_1960_OR_EARLIER,
     CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
@@ -28,6 +29,7 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_EXPENSES,
     NET_INCOME,
     OTHER_DEPENDANTS,
+    PENSION_INCOME_CREDIT,
     SPOUSE_NET_INCOME,
     SPOUSE_NOT_SEPARATED_90_DAYS,
     SPOUSE_RETURN_TAXABLE_INCOME,
@@ -37,6 +39,7 @@ from app.jurisdictions.ca.catalog import (
     UNDER_18_ON_DECEMBER_31,
 )
 from app.jurisdictions.ca_on import catalog as ontario
+from app.jurisdictions.ca_on.capabilities.capped_record_total import OntarioCappedRecordTotal
 from app.jurisdictions.ca_on.capabilities.caregiver_amount import OntarioCaregiverAmount
 from app.jurisdictions.ca_on.capabilities.disability_transfer_amount import (
     OntarioDisabilityTransferAmount,
@@ -281,6 +284,23 @@ STEPS = {
         },
         produces={"output": "ca-on/caregiver_amount"},
     ),
+    # ON428 line 23 and line 58330 "Adoption expenses", each child capped at $15,551 (T2203 note
+    # (5)), the filer's share of the expenses. Each child's eligible expenses are a record of the
+    # same list the federal line 31300 reads, capped one by one and then added up.
+    CapabilitySelection(
+        name="ca-on/capped_record_total",
+        params={"cap": "ca-on/adoption_expenses_maximum"},
+        consumes={"records": "ca/adoption_expense_children"},
+        produces={"output": "ca-on/adoption_credit"},
+    ),
+    # ON428 line 27 and line 58360 "Pension income amount (maximum $1,762)": the lesser of $1,762
+    # and the amount on line 31400 (CRA's line 31400 web page, a listed check).
+    CapabilitySelection(
+        name="core/capped_amount",
+        params={"cap": "ca-on/pension_income_maximum"},
+        consumes={"base": "ca/pension_income_credit"},
+        produces={"output": "ca-on/pension_income_credit"},
+    ),
     # ON428 line 29 and line 58440 "Disability amount for self (claim $10,298 or, if you were under
     # 18 years of age, use Worksheet ON428)", Worksheet ON428 "Line 58440 - Disability amount for
     # self": line 1 "Base amount 10,298.00", the dataset as an artifact of the same name.
@@ -400,8 +420,9 @@ STEPS = {
     # ON428 line 31 "Line 31: Add lines 28 to 30. =": the credit amounts the form totals before
     # medical expenses, as its lines 1 to 25 carry them (the basic personal amount, the age, spouse,
     # eligible dependant and caregiver amounts, the CPP and EI contributions), and line 30 (the
-    # disability amount transferred from a dependant). The pension amount (line 27), the disability
-    # amount for self (line 29) and the student loan interest (line 32) are not yet wired into it.
+    # disability amount transferred from a dependant). The adoption and pension amounts (lines 23
+    # and 27) and the disability amount for self (line 29) are in it too; the student loan interest
+    # (line 32) is not, as it comes after line 31.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -416,6 +437,8 @@ STEPS = {
                 "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
+                "ca-on/adoption_credit",
+                "ca-on/pension_income_credit",
                 "ca-on/disability_amount_for_self",
                 "ca-on/disability_transferred_amount",
             )
@@ -625,6 +648,16 @@ WIRING = {
         frozenset({CAREGIVER_DEPENDANTS, ontario.ELIGIBLE_DEPENDANT_AMOUNT}),
         frozenset({ontario.CAREGIVER_AMOUNT}),
     ),
+    (
+        OntarioCappedRecordTotal,
+        frozenset({ADOPTION_EXPENSE_CHILDREN}),
+        frozenset({ontario.ADOPTION_CREDIT}),
+    ),
+    (
+        CappedAmount,
+        frozenset({PENSION_INCOME_CREDIT}),
+        frozenset({ontario.PENSION_INCOME_CREDIT}),
+    ),
     (CreditAmount, frozenset(), frozenset({ontario.DISABILITY_SELF_BASE_AMOUNT})),
     (CreditAmount, frozenset(), frozenset({ontario.DISABILITY_SELF_SUPPLEMENT_MAXIMUM})),
     (CreditAmount, frozenset(), frozenset({ontario.DISABILITY_SELF_CARE_THRESHOLD})),
@@ -687,6 +720,8 @@ WIRING = {
                 CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+                ontario.ADOPTION_CREDIT,
+                ontario.PENSION_INCOME_CREDIT,
                 ontario.DISABILITY_AMOUNT_FOR_SELF,
                 ontario.DISABILITY_TRANSFERRED_AMOUNT,
             }
