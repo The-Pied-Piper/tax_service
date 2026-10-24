@@ -28,6 +28,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     NET_FEDERAL_TAX,
+    RC359_TAX_TOTAL,
     RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     RESP_AIPS_ADDITIONAL_TAX,
     RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
@@ -70,13 +71,17 @@ STEPS = {
     # the RL-10 amount, the guide's "Report, on line 41800 of your return, the result of the
     # following calculation using your RL-10 slip: Tax Credit for a Labour-Sponsored Fund" whose
     # list the guide's .txt cuts off after "75% of box", so the amount is the caller's until the
-    # rest is quoted (to be confirmed). The tax on excess EPSP amounts (Form RC359 line 9, per
-    # employer) is not yet wired.
+    # rest is quoted (to be confirmed). The tax on excess EPSP amounts, Form RC359 line 9 for each
+    # employer, is the total of the copies' line 9 (`ca/rc359_tax_total`), its last part.
     CapabilitySelection(
         name="core/sum",
         params={},
         consumes={
-            "parts": ("ca/resp_aips_additional_tax", "ca/rl_10_labour_sponsored_fund_amount")
+            "parts": (
+                "ca/resp_aips_additional_tax",
+                "ca/rl_10_labour_sponsored_fund_amount",
+                "ca/rc359_tax_total",
+            )
         },
         produces={"output": "ca/special_taxes"},
     ),
@@ -318,7 +323,7 @@ STEPS = {
 WIRING = {
     (
         Sum,
-        frozenset({RESP_AIPS_ADDITIONAL_TAX, RL_10_LABOUR_SPONSORED_FUND_AMOUNT}),
+        frozenset({RESP_AIPS_ADDITIONAL_TAX, RL_10_LABOUR_SPONSORED_FUND_AMOUNT, RC359_TAX_TOTAL}),
         frozenset({SPECIAL_TAXES}),
     ),
     (

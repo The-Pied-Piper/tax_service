@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1111
+        == 1112
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1111
+        == 1112
     )
 
 
@@ -1858,6 +1858,17 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/resp_aips_part_b_tax",
         "ca/resp_aips_additional_tax",
         "ca/special_taxes",
+        "ca/rc359_employers",
+        "ca/rc359_epsp_contributions",
+        "ca/rc359_employment_income",
+        "ca/rc359_other_employment_income",
+        "ca/rc359_province",
+        "ca/rc359_line_4",
+        "ca/rc359_line_6",
+        "ca/rc359_excess_epsp_amount",
+        "ca/rc359_line_8",
+        "ca/rc359_tax_on_excess_epsp",
+        "ca/rc359_tax_total",
         "ca/split_income_line_10",
         "ca/split_income_line_13",
         "ca/split_income_line_14",
@@ -2587,7 +2598,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1111
+        == 1112
     )
     assert (
         len(
@@ -2595,7 +2606,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1111
+        == 1112
     )
 
 
@@ -2608,7 +2619,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1111
+        == 1112
     )
     assert (
         len(
@@ -2616,7 +2627,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1111
+        == 1112
     )
 
 
