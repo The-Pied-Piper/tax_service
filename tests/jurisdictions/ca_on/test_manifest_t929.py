@@ -4,7 +4,7 @@
 Form T929 (the disability supports deduction, T1 line 21500) is the form `ca/t929`, run once for
 the one copy of the form the return carries (none, with an empty `ca/t929_instances`; at most one).
 Its selections are in the parts `05k_t929.yaml` (the form's header and its 12 own steps,
-`OWN_STEPS`) and `05l_t929_copies_1.yaml` and `05m_t929_copies_2.yaml` (the form only, with 131
+`OWN_STEPS`) and `05l_t929_copies_1.yaml` and `05m_t929_copies_2.yaml` (the form only, with 132
 copies of the return's steps that compute net income, `COPIED_STEPS`). The return keeps the
 originals, and a guard checks that each copy is its original on the return, except the line 23300
 sum, which the return adds the deduction to. The return re-produces the deduction with one
@@ -112,13 +112,13 @@ def test_the_manifest_has_the_form_t929_with_at_most_one_instance() -> None:
     assert found.exclusive_group is None
 
 
-def test_the_form_holds_the_12_own_and_131_copied_selections() -> None:
+def test_the_form_holds_the_12_own_and_132_copied_selections() -> None:
     found = form()
 
     assert len(t929.OWN_STEPS) == 12
-    assert len(t929.COPIED_STEPS) == 131
+    assert len(t929.COPIED_STEPS) == 132
     assert t929.FORM_STEPS == t929.OWN_STEPS | t929.COPIED_STEPS
-    assert len(found.capabilities) == 143
+    assert len(found.capabilities) == 144
     assert set(found.capabilities) == t929.FORM_STEPS
 
 
@@ -167,7 +167,7 @@ def test_guard_each_copied_step_is_wired_as_its_original_on_the_return() -> None
         if not {kind.identifier for kind in wiring[2]} & own_outputs
     }
 
-    assert len(copied_wiring) == 131
+    assert len(copied_wiring) == 132
     missing = copied_wiring - return_wiring()
     # Only the line 23300 sum differs: the return adds the deduction to it.
     (only,) = missing
@@ -262,7 +262,7 @@ def test_the_form_own_selections_are_wired_as_declared() -> None:
         for capability in composed().composition.order
     }
 
-    assert len(composed().composition.order) == 143
+    assert len(composed().composition.order) == 144
     assert t929.FORM_WIRING <= inner
     assert len(t929.FORM_WIRING) == 12
 

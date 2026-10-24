@@ -4,7 +4,7 @@ run once for the one copy of the form the return carries (`ca/t929_instances`, a
 fields with `min_instances` 0 and `max_instances` 1). Its figures are manifest inputs: lines 1 and
 2 (`T929_EXPENSES_PAID`, `T929_EXPENSES_REIMBURSED`), line 8 (`T929_WEEKS_ATTENDED`), and the six
 earned-income items of line 4. Its selections are `FORM_STEPS`: the 12 of its own (`OWN_STEPS`)
-and 131 copies of the return's steps that compute the net income of line 23600, the figure line 5
+and 132 copies of the return's steps that compute the net income of line 23600, the figure line 5
 reads (`COPIED_STEPS`; the return keeps the originals, except the line 23300 sum, which the copies
 leave without line 21500). The form exports its computed lines 3, 4, 7, 9, 10 and 11 and line 12,
 which is the disability supports deduction (`FORM_EXPORTS`); the return re-produces the deduction
@@ -34,6 +34,7 @@ from app.jurisdictions.ca.catalog import (
     EMPLOYMENT_INCOME,
     FARMING_INCOME,
     FISHING_INCOME,
+    MOVING_EXPENSES_CLAIM,
     NET_INCOME,
     OTHER_EMPLOYMENT_INCOME,
     PROFESSIONAL_INCOME,
@@ -65,6 +66,9 @@ from app.jurisdictions.ca.catalog import (
 BUSINESS_INCOME_STATEMENTS = RecordListKind("ca/t2125.business_income", fields=(BUSINESS_INCOME,))
 FARMING_INCOME_STATEMENTS = RecordListKind("ca/t2042.farming_income", fields=(FARMING_INCOME,))
 FISHING_INCOME_STATEMENTS = RecordListKind("ca/t2121.fishing_income", fields=(FISHING_INCOME,))
+MOVING_EXPENSES_CLAIM_PER_MOVE = RecordListKind(
+    "ca/t1_m.moving_expenses_claim", fields=(MOVING_EXPENSES_CLAIM,)
+)
 
 # The manifest inputs of the form: its instances and every figure it takes as entered.
 INPUTS = frozenset(
@@ -88,6 +92,7 @@ IMPORTS = frozenset(
         "ca/t2125.business_income",
         "ca/t2042.farming_income",
         "ca/t2121.fishing_income",
+        "ca/t1_m.moving_expenses_claim",
         "ca/t776.net_rental_income",
         "ca/schedule_8.cpp_part_5_line_88",
         "ca/schedule_8.schedule_8_cpp_enhanced_contributions_on_return",
@@ -461,6 +466,12 @@ COPIED_STEPS = {
         params={},
         consumes={"records": "ca/t2121.fishing_income"},
         produces={"output": "ca/fishing_income"},
+    ),
+    CapabilitySelection(
+        name="core/record_total",
+        params={},
+        consumes={"records": "ca/t1_m.moving_expenses_claim"},
+        produces={"output": "ca/moving_expenses_deduction"},
     ),
     CapabilitySelection(
         name="core/sum",
@@ -1061,6 +1072,7 @@ COPIED_STEPS = {
                 "ca/uccb_repayment",
                 "ca/child_care_expenses",
                 "ca/allowable_business_investment_loss",
+                "ca/moving_expenses_deduction",
                 "ca/support_payments_deduction",
                 "ca/carrying_charges_interest_expenses_and_other_expenses",
                 "ca/cpp_deduction_on_self_employment_and_other_earnings",

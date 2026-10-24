@@ -827,12 +827,13 @@ STEPS = {
         produces={"output": "ca/clergy_residence_deduction"},
     ),
     # T1 line 53 and line 23300 "Add lines 35 to 52.": the deductions wired so far in the form's
-    # line order (20700, 20800, 20805, 21000, 21200, 21300, 21400, 21700, 21900, 22000, 22100,
-    # 22200, 22215, 22400, 23100, 23200), line 21900 being the moving expenses of Form T1-M ("Enter
-    # this amount on line 21900 of your return.", the total over the moves) and line 23200 the
-    # caller's other deductions and then the total split income of Form T1206 Part 1 line 4 ("Enter
-    # this amount on line 23200 of your return."). Not wired yet: 21500 and 22900; lines 20810 and
-    # 21999 have no line among lines 35 to 52 and nothing on this return reads them.
+    # line order (20700, 20800, 20805, 21000, 21200, 21300, 21400, 21500, 21700, 21900, 22000,
+    # 22100, 22200, 22215, 22400, 23100, 23200), line 21900 being the moving expenses of Form
+    # T1-M, line 23100 the clergy residence deduction (Form T1223 Part C, in
+    # 22_clergy_residence_deduction.yaml) and line 23200 the caller's other deductions and then
+    # the total split income of Form T1206 Part 1 line 4 ("Enter this amount on line 23200 of
+    # your return."). Not wired yet: 22900; lines 20810 and 21999 have no line among lines 35 to
+    # 52 and nothing on this return reads them.
     CapabilitySelection(
         name="core/sum",
         params={},
