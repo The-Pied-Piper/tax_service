@@ -233,9 +233,11 @@ def test_return_bys_trace_shows_the_limit_chain() -> None:
         "fish_immediate_expensing_limit_before_minister: "
         "fish_immediate_expensing_associated_limit 600000, chosen as "
         "fish_epop_associated_checked is 1",
-        "fish_immediate_expensing_limit: "
-        "fish_immediate_expensing_limit_before_minister 600000, chosen as "
-        "fish_minister_allocation_given_checked is 0",
+        "fish_immediate_expensing_limit_prorated: "
+        "fish_immediate_expensing_limit_before_minister 600000 × "
+        "fish_fiscal_period_days 365 / 365 = 600000",
+        "fish_immediate_expensing_limit: fish_immediate_expensing_limit_prorated "
+        "600000, chosen as fish_minister_allocation_given_checked is 0",
     ):
         assert line in rendered, line
 
@@ -326,7 +328,8 @@ def test_an_associated_fishing_business_with_no_agreement_filed_has_a_limit_of_z
         run_by({"fish_epop_agreement_filed": 0})
 
     assert str(raised.value) == (
-        "ca/t2121, instance 1: total of column 9 (6000) is above the immediate expensing limit (0)"
+        "ca/t2121, instance 1: total of column 9 (6000) is above the immediate expensing limit "
+        "(0.00)"
     )
 
 
@@ -337,7 +340,8 @@ def test_a_total_of_column_3_above_100_gives_a_limit_of_zero() -> None:
         run_by({"fish_epop_percentage_total": "100.01"})
 
     assert str(raised.value) == (
-        "ca/t2121, instance 1: total of column 9 (6000) is above the immediate expensing limit (0)"
+        "ca/t2121, instance 1: total of column 9 (6000) is above the immediate expensing limit "
+        "(0.00)"
     )
 
 

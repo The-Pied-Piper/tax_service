@@ -155,6 +155,7 @@ from app.jurisdictions.ca.trace import (
     PrincipalResidenceWorksheetLine63,
     PrincipalResidenceWorksheetLine64,
     PrincipalResidenceWorksheetLine66,
+    ProratedByDaysLine,
     RecapturedCcaLine,
     ShortTermRentalNonCompliantCcaByClassLine,
     ShortTermRentalNonCompliantCcaLine,
@@ -5770,3 +5771,40 @@ def test_renders_a_full_year_of_a_366_day_dataset() -> None:
     line = FiscalPeriodDaysLine(FISCAL_PERIOD_DAYS, 0, 366, 366)
 
     assert render(line) == "fiscal_period_days: entered 0, a full year of 366 days"
+
+
+# Guide T4002 and Guide T4036, "Immediate expensing incentive": "The limit is also prorated for tax
+# years shorter than 365 days". `ProratedByDaysLine` prints the amount with its label and value, the
+# days of the fiscal period with their label, the days of a full year and the result.
+UNPRORATED_LIMIT = ArtifactKind("ex/unprorated_limit", Decimal)
+PRORATED_LIMIT = ArtifactKind("ex/prorated_limit", Decimal)
+
+
+def test_renders_an_amount_prorated_by_the_days_of_the_fiscal_period() -> None:
+    line = ProratedByDaysLine(
+        PRORATED_LIMIT, UNPRORATED_LIMIT, D("1500000"), FISCAL_PERIOD_DAYS, 153, 365, D("628767.12")
+    )
+
+    assert render(line) == (
+        "prorated_limit: unprorated_limit 1500000 × fiscal_period_days 153 / 365 = 628767.12"
+    )
+
+
+def test_renders_a_full_year_with_the_whole_amount() -> None:
+    line = ProratedByDaysLine(
+        PRORATED_LIMIT, UNPRORATED_LIMIT, D("600000"), FISCAL_PERIOD_DAYS, 365, 365, D("600000.00")
+    )
+
+    assert render(line) == (
+        "prorated_limit: unprorated_limit 600000 × fiscal_period_days 365 / 365 = 600000"
+    )
+
+
+def test_renders_the_days_of_a_full_year_of_a_366_day_dataset() -> None:
+    line = ProratedByDaysLine(
+        PRORATED_LIMIT, UNPRORATED_LIMIT, D("1500000"), FISCAL_PERIOD_DAYS, 153, 366, D("627049.18")
+    )
+
+    assert render(line) == (
+        "prorated_limit: unprorated_limit 1500000 × fiscal_period_days 153 / 366 = 627049.18"
+    )

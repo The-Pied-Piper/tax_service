@@ -31,6 +31,9 @@ from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
 from app.jurisdictions.ca.capabilities.closing_ucc_prorated import ClosingUccProrated
 from app.jurisdictions.ca.capabilities.fiscal_period_days import FiscalPeriodDays
 from app.jurisdictions.ca.capabilities.immediate_expensing_claim import ImmediateExpensingClaim
+from app.jurisdictions.ca.capabilities.prorated_by_fiscal_period_days import (
+    ProratedByFiscalPeriodDays,
+)
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
 from app.jurisdictions.ca.capabilities.yes_or_no_count import YesOrNoCount
@@ -90,6 +93,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_IMMEDIATE_EXPENSING_CLAIM,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
     BUSINESS_IMMEDIATE_EXPENSING_SHARE,
     BUSINESS_INCOME,
     BUSINESS_INCOME_BEFORE_CCA,
@@ -562,6 +566,25 @@ FORM_STEPS = {
         },
         produces={"output": "ca/business_immediate_expensing_limit_before_minister"},
     ),
+    # T2125 Area A endnote 5 "the immediate expensing limit, which is equal to one of the
+    # following, whichever is applicable", and Guide T4002, "Immediate expensing incentive": "The
+    # deduction is limited to $1.5 million per tax year: ... The limit is also prorated for tax
+    # years shorter than 365 days": the limit above times the days of the fiscal period over the
+    # 365 of a full year, rounded to the cent. The amount allocated by the minister under
+    # subsection 1104(3.4) of the Regulations, below, is not prorated: the guide prorates the
+    # limit, and the minister's amount is the amount allocated for the year.
+    CapabilitySelection(
+        name="ca/prorated_by_fiscal_period_days",
+        params={
+            "rounding": "ca/business_immediate_expensing_rounding",
+            "class_rates": "ca/cca_class_rates",
+        },
+        consumes={
+            "amount": "ca/business_immediate_expensing_limit_before_minister",
+            "fiscal_period_days": "ca/business_fiscal_period_days",
+        },
+        produces={"output": "ca/business_immediate_expensing_limit_prorated"},
+    ),
     # T2125 Area A endnote 5 "any amount allocated by the minister under subsection 1104(3.4) of
     # the Regulations": a count of 1 (a caller's 0 or 1) chooses the amount allocated by the
     # minister, as entered, in place of the limit above; with a count of 0 the limit above stands.
@@ -570,7 +593,7 @@ FORM_STEPS = {
         params={},
         consumes={
             "count": "ca/business_minister_allocation_given_checked",
-            "when_none": "ca/business_immediate_expensing_limit_before_minister",
+            "when_none": "ca/business_immediate_expensing_limit_prorated",
             "when_any": "ca/business_minister_allocation",
         },
         produces={"output": "ca/business_immediate_expensing_limit"},
@@ -1112,11 +1135,18 @@ FORM_WIRING = {
         frozenset({BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER}),
     ),
     (
+        ProratedByFiscalPeriodDays,
+        frozenset(
+            {BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER, BUSINESS_FISCAL_PERIOD_DAYS}
+        ),
+        frozenset({BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED}),
+    ),
+    (
         ChooseByCount,
         frozenset(
             {
                 BUSINESS_MINISTER_ALLOCATION_GIVEN_CHECKED,
-                BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+                BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
                 BUSINESS_MINISTER_ALLOCATION,
             }
         ),

@@ -87,6 +87,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_IMMEDIATE_EXPENSING_CLAIM,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
     BUSINESS_IMMEDIATE_EXPENSING_SHARE,
     BUSINESS_INCOME,
     BUSINESS_INCOME_BEFORE_CCA,
@@ -283,6 +284,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_IMMEDIATE_EXPENSING_CLAIM,
     FARM_IMMEDIATE_EXPENSING_LIMIT,
     FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
     FARM_IMMEDIATE_EXPENSING_SHARE,
     FARM_INCOME_BEFORE_CCA,
     FARM_MOTOR_VEHICLE_EXPENSES,
@@ -342,6 +344,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_IMMEDIATE_EXPENSING_CLAIM,
     FISH_IMMEDIATE_EXPENSING_LIMIT,
     FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
     FISH_IMMEDIATE_EXPENSING_SHARE,
     FISH_INCOME_BEFORE_CCA,
     FISH_MOTOR_VEHICLE_EXPENSES,
@@ -482,6 +485,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_IMMEDIATE_EXPENSING_CLAIM,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
     RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_NET_INCOME_AFTER_CCA,
     RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES,
@@ -2003,12 +2007,14 @@ def test_each_t776_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t776 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t776").composition.order
-    assert len(order) == 45
+    assert len(order) == 46
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # T776 Part 1 "Fiscal period": the days of the fiscal period (the days entered, or a full year)
     # come before the CCA claim and the closing UCC that are prorated by them.
     assert position[RENTAL_FISCAL_PERIOD_DAYS] < position[RENTAL_CCA_TABLE_CLAIM]
     assert position[RENTAL_FISCAL_PERIOD_DAYS] < position[RENTAL_CLOSING_UCC]
+    # Guide T4002 and Guide T4036: the limit is prorated by those days too.
+    assert position[RENTAL_FISCAL_PERIOD_DAYS] < position[RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED]
     # T776 Parts 3 and 4: lines 8140 and 8141 after the rows, line 8299 after line 8141, the three
     # totals after their boxes, line 1 after A, 9949 and 9366, line 9369 after line 8299 and line
     # 1, amounts 2 to 6 in turn, line 9946 after amount 6 and the partnership's amount.
@@ -2043,6 +2049,7 @@ def test_each_t776_capability_runs_after_what_it_consumes() -> None:
         position[RENTAL_IMMEDIATE_EXPENSING_ALLOCATED]
         < position[RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT]
         < position[RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER]
+        < position[RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED]
         < position[RENTAL_IMMEDIATE_EXPENSING_LIMIT]
         < position[RENTAL_IMMEDIATE_EXPENSING_CLAIM]
     )
@@ -2053,12 +2060,17 @@ def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2125 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2125").composition.order
-    assert len(order) == 49
+    assert len(order) == 50
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Guide T4002 "You were asking?": the days of the fiscal period (the days entered, or a full
     # year) come before the CCA claim and the closing UCC that are prorated by them.
     assert position[BUSINESS_FISCAL_PERIOD_DAYS] < position[BUSINESS_CCA_TABLE_CLAIM]
     assert position[BUSINESS_FISCAL_PERIOD_DAYS] < position[BUSINESS_CLOSING_UCC]
+    # Guide T4002 and Guide T4036: the limit is prorated by those days too.
+    assert (
+        position[BUSINESS_FISCAL_PERIOD_DAYS]
+        < position[BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED]
+    )
     # T2125 Parts 3A to 3D: amount 3C after amounts 3A and 3B, line 8000 after 3C and 3F, line
     # 8299 after line 8000 and amount 3O, line 8519 after line 8299 and line 8518, which comes
     # after amount 3V.
@@ -2088,6 +2100,7 @@ def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
         < position[BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED]
         < position[BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT]
         < position[BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER]
+        < position[BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED]
         < position[BUSINESS_IMMEDIATE_EXPENSING_LIMIT]
         < position[BUSINESS_IMMEDIATE_EXPENSING_CLAIM]
     )
@@ -2113,12 +2126,14 @@ def test_each_t2042_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2042 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2042").composition.order
-    assert len(order) == 43
+    assert len(order) == 44
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Guide T4002 "You were asking?": the days of the fiscal period (the days entered, or a full
     # year) come before the CCA claim and the closing UCC that are prorated by them.
     assert position[FARM_FISCAL_PERIOD_DAYS] < position[FARM_CCA_TABLE_CLAIM]
     assert position[FARM_FISCAL_PERIOD_DAYS] < position[FARM_CLOSING_UCC]
+    # Guide T4002 and Guide T4036: the limit is prorated by those days too.
+    assert position[FARM_FISCAL_PERIOD_DAYS] < position[FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED]
     # Part 3: the recapture of Area A before line 9600, which comes before line 9659, which comes
     # before amount 4A.
     assert position[FARM_RECAPTURED_CCA] < position[FARM_OTHER_INCOME_WITH_RECAPTURE]
@@ -2144,6 +2159,7 @@ def test_each_t2042_capability_runs_after_what_it_consumes() -> None:
         < position[FARM_IMMEDIATE_EXPENSING_ALLOCATED]
         < position[FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT]
         < position[FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER]
+        < position[FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED]
         < position[FARM_IMMEDIATE_EXPENSING_LIMIT]
         < position[FARM_IMMEDIATE_EXPENSING_CLAIM]
     )
@@ -2170,12 +2186,14 @@ def test_each_t2121_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2121 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2121").composition.order
-    assert len(order) == 44
+    assert len(order) == 45
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Guide T4002 "You were asking?": the days of the fiscal period (the days entered, or a full
     # year) come before the CCA claim and the closing UCC that are prorated by them.
     assert position[FISH_FISCAL_PERIOD_DAYS] < position[FISH_CCA_TABLE_CLAIM]
     assert position[FISH_FISCAL_PERIOD_DAYS] < position[FISH_CLOSING_UCC]
+    # Guide T4002 and Guide T4036: the limit is prorated by those days too.
+    assert position[FISH_FISCAL_PERIOD_DAYS] < position[FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED]
     # Part 3: the recapture of Area A before line 9600, which comes before line 9659, which comes
     # before amount 4A.
     assert position[FISH_RECAPTURED_CCA] < position[FISH_OTHER_INCOME_WITH_RECAPTURE]
@@ -2201,6 +2219,7 @@ def test_each_t2121_capability_runs_after_what_it_consumes() -> None:
         < position[FISH_IMMEDIATE_EXPENSING_ALLOCATED]
         < position[FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT]
         < position[FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER]
+        < position[FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED]
         < position[FISH_IMMEDIATE_EXPENSING_LIMIT]
         < position[FISH_IMMEDIATE_EXPENSING_CLAIM]
     )
