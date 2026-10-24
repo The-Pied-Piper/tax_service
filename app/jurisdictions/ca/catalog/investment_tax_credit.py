@@ -1,11 +1,13 @@
-"""The federal catalog: investment tax credit, Form T2038(IND) Parts A, B and D.
+"""The federal catalog: investment tax credit, Form T2038(IND) Parts A, B, D and E.
 
 The caller's lines of Parts A, B and D (the SR&ED, agricultural, partnership, qualified property,
 mineral exploration, critical mineral, apprenticeship T3 box 40, repayment, opening balance,
 graduated rate estate and claim figures), the credit each one produces at its rate, the totals of
 Parts A and B that Part D reads, and the amounts of Part D that give line 41200, the investment tax
-credit (`investment_tax_credit`). The apprentices and their total are the kinds of
-`credits_against_federal_tax`.
+credit (`investment_tax_credit`). Part E takes the carryback designations (lines 67200, 67210 and
+67220) and the refund the filer designates (amount 17), and gives the amounts L, M, N and O, the
+refund of investment tax credit on line 45400 (`investment_tax_credit_refund`). The apprentices and
+their total are the kinds of `credits_against_federal_tax`.
 """
 
 from __future__ import annotations
@@ -207,3 +209,90 @@ INVESTMENT_TAX_CREDIT = CATALOG.declare("investment_tax_credit", Decimal, non_ne
 """Investment tax credit, T1 line 136 and line 41200 "Investment tax credit (complete Form
 T2038(IND))": Form T2038(IND) Part D amount 15, "Enter amount 15 on line 41200 of your income tax
 and benefit return", the claim up to the claim limit, refused above it and not capped."""
+
+ITC_CARRYBACK_THIRD_PREVIOUS_YEAR = CATALOG.declare(
+    "itc_carryback_third_previous_year", Decimal, non_negative=True
+)
+"""Carryback to the third previous year, Form T2038(IND) Part E line 67200 "Third previous year":
+the part of amount L the filer carries back to the third previous tax year, the caller's election,
+as entered, never negative."""
+
+ITC_CARRYBACK_SECOND_PREVIOUS_YEAR = CATALOG.declare(
+    "itc_carryback_second_previous_year", Decimal, non_negative=True
+)
+"""Carryback to the second previous year, Form T2038(IND) Part E line 67210 "Second previous
+year": the part of amount L the filer carries back to the second previous tax year, the caller's
+election, as entered, never negative."""
+
+ITC_CARRYBACK_FIRST_PREVIOUS_YEAR = CATALOG.declare(
+    "itc_carryback_first_previous_year", Decimal, non_negative=True
+)
+"""Carryback to the first previous year, Form T2038(IND) Part E line 67220 "First previous year":
+the part of amount L the filer carries back to the first previous tax year, the caller's election,
+as entered, never negative."""
+
+ITC_PART_E_AMOUNT_3 = CATALOG.declare("itc_part_e_amount_3", Decimal)
+"""Amount 3, Form T2038(IND) Part E: "Subtotal (amount 1 minus amount 2)", the total available ITC
+of amount G in Part D less the opening balance. The form prints no floor at 0, so amount 3 is not
+declared non-negative."""
+
+ITC_PART_E_AMOUNT_6 = CATALOG.declare("itc_part_e_amount_6", Decimal, non_negative=True)
+"""Amount 6, Form T2038(IND) Part E: "Subtotal (amount 4 minus amount 5, if negative enter "0")",
+the maximum ITC claimable in Part D (amount I or K) less the opening balance, not below zero."""
+
+ITC_AMOUNT_L = CATALOG.declare("itc_amount_l", Decimal)
+"""Amount L, Form T2038(IND) Part E: "Total credit available for carryback (amount 3 minus amount
+6)", amount 3 less amount 6. The form prints no floor at 0, so amount L is not declared
+non-negative."""
+
+ITC_CARRYBACK_REQUESTED = CATALOG.declare("itc_carryback_requested", Decimal, non_negative=True)
+"""Carryback requested, Form T2038(IND) Part E "Total credit designated for carryback (Add lines
+67200, 67210, and 67220. The total cannot be more than amount L)": lines 67200, 67210 and 67220
+added in line order, before the check against amount L."""
+
+ITC_AMOUNT_M = CATALOG.declare("itc_amount_m", Decimal, non_negative=True)
+"""Amount M, Form T2038(IND) Part E: "Total credit designated for carryback (Add lines 67200,
+67210, and 67220. The total cannot be more than amount L)", the requested carryback total, refused
+above amount L and not capped."""
+
+ITC_PART_E_AMOUNT_9 = CATALOG.declare("itc_part_e_amount_9", Decimal)
+"""Amount 9, Form T2038(IND) Part E: "Total current-year refundable credit available (amount 7 minus
+amount 8)", amount A of Part A less the graduated rate estate adjustment of Part D amount 6. The
+form prints no floor at 0, so amount 9 is not declared non-negative."""
+
+ITC_PART_E_AMOUNT_12 = CATALOG.declare("itc_part_e_amount_12", Decimal)
+"""Amount 12, Form T2038(IND) Part E: "Subtotal (amount 10 minus amount 11)", amount 15 of Part D
+less the opening balance. The form prints no floor at 0, so amount 12 is not declared
+non-negative."""
+
+ITC_PART_E_AMOUNT_14 = CATALOG.declare("itc_part_e_amount_14", Decimal)
+"""Amount 14, Form T2038(IND) Part E: "Subtotal (amount 12 plus amount 13)", amount 12 plus amount
+M, the carryback requested. The form prints no floor at 0, so amount 14 is not declared
+non-negative."""
+
+ITC_PART_E_AMOUNT_16 = CATALOG.declare("itc_part_e_amount_16", Decimal, non_negative=True)
+"""Amount 16, Form T2038(IND) Part E: "Total (amount 14 minus amount 15, if negative, enter "0")",
+amount 14 less amount F of Part B, the current-year non-refundable tax credit, not below zero."""
+
+ITC_AMOUNT_N = CATALOG.declare("itc_amount_n", Decimal)
+"""Amount N, Form T2038(IND) Part E: "Total credit available for refund (amount 9 minus amount
+16)", amount 9 less amount 16. The form prints no floor at 0, so amount N is not declared
+non-negative."""
+
+ITC_REFUND_DESIGNATION = CATALOG.declare("itc_refund_designation", Decimal, non_negative=True)
+"""Amount 17, Form T2038(IND) Part E: "Amount you designate as a refund of ITC (cannot be more than
+amount N)", the refund the filer chooses (an election), as entered, never negative. It is refused
+above amount N and not capped."""
+
+ITC_PART_E_AMOUNT_17 = CATALOG.declare("itc_part_e_amount_17", Decimal, non_negative=True)
+"""Amount 17 of Form T2038(IND) Part E, as the return holds it: the refund designation, refused
+above amount N ("Amount you designate as a refund of ITC (cannot be more than amount N)"), the
+base the refundable rate multiplies."""
+
+INVESTMENT_TAX_CREDIT_REFUND = CATALOG.declare(
+    "investment_tax_credit_refund", Decimal, non_negative=True
+)
+"""Refund of investment tax credit, T1 line 158 and line 45400 "Refund of investment tax credit
+(complete Form T2038(IND))": Form T2038(IND) Part E amount O, "Refund of ITC (multiply amount 17 by
+amount 18)", amount 17 times the refundable rate of 0.40, rounded half-up to the cent. Line 45400
+of the return is amount O, "Enter amount O on line 45400 of your income tax and benefit return"."""

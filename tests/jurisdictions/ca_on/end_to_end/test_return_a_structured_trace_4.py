@@ -639,12 +639,23 @@ from app.jurisdictions.ca.catalog import (
     ITC_AMOUNT_I,
     ITC_AMOUNT_J,
     ITC_AMOUNT_K,
+    ITC_AMOUNT_L,
+    ITC_AMOUNT_M,
+    ITC_AMOUNT_N,
     ITC_AVAILABLE,
+    ITC_CARRYBACK_REQUESTED,
     ITC_CLAIM,
     ITC_CLAIM_LIMIT,
+    ITC_NONREFUNDABLE_CREDITS,
+    ITC_OPENING_BALANCE,
     ITC_PART_D_AMOUNT_9,
     ITC_PART_D_AMOUNT_11_APPLIES,
     ITC_PART_D_AMOUNT_13,
+    ITC_PART_E_AMOUNT_6,
+    ITC_PART_E_AMOUNT_14,
+    ITC_PART_E_AMOUNT_16,
+    ITC_PART_E_AMOUNT_17,
+    ITC_REFUND_DESIGNATION,
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LISTED_PERSONAL_PROPERTY_GAIN_OR_LOSS,
     LISTED_PERSONAL_PROPERTY_NET_GAIN,
@@ -1976,6 +1987,21 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert at_most == {
         # Form T2038(IND) Part D amount 15, the claim (0, the caller's election) at most the claim
         # limit (0.00): 0, entered on line 41200 of the return.
+        # Form T2038(IND) Part E, the carryback and refund of the ITC (Return A: every figure is 0).
+        ITC_AMOUNT_M: AtMostLine(
+            output=ITC_AMOUNT_M,
+            amount_kind=ITC_CARRYBACK_REQUESTED,
+            amount_value=D("0"),
+            bound=ITC_AMOUNT_L,
+            bound_value=D("0"),
+        ),
+        ITC_PART_E_AMOUNT_17: AtMostLine(
+            output=ITC_PART_E_AMOUNT_17,
+            amount_kind=ITC_REFUND_DESIGNATION,
+            amount_value=D("0"),
+            bound=ITC_AMOUNT_N,
+            bound_value=D("0"),
+        ),
         INVESTMENT_TAX_CREDIT: AtMostLine(
             output=INVESTMENT_TAX_CREDIT,
             amount_kind=ITC_CLAIM,
@@ -2382,6 +2408,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=POLITICAL_CREDIT,
             subtrahend_amount=D("0.00"),
             result=D("16951.38"),
+        ),
+        # Form T2038(IND) Part E, the carryback and refund of the ITC (Return A: every figure is 0).
+        ITC_PART_E_AMOUNT_6: SubtractedNotBelowZeroLine(
+            output=ITC_PART_E_AMOUNT_6,
+            minuend=ITC_CLAIM_LIMIT,
+            minuend_amount=D("0"),
+            subtrahend=ITC_OPENING_BALANCE,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        ITC_PART_E_AMOUNT_16: SubtractedNotBelowZeroLine(
+            output=ITC_PART_E_AMOUNT_16,
+            minuend=ITC_PART_E_AMOUNT_14,
+            minuend_amount=D("0"),
+            subtrahend=ITC_NONREFUNDABLE_CREDITS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
         ),
         ITC_AMOUNT_H: SubtractedNotBelowZeroLine(
             output=ITC_AMOUNT_H,

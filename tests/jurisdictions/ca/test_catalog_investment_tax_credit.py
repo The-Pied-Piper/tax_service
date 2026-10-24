@@ -1,9 +1,11 @@
 """Registered and money kinds of the federal catalog family `investment_tax_credit`.
 
-Form T2038(IND) Parts A, B and D: the caller's lines (67120, 67130, 67135, 67140, 67170, 67175, the
-T3 box 40 amount of line 67180, lines 67184 and 67185, and the Part D amounts 1 and 6 and the claim
-on amount 15), the credit each one produces, the totals of Parts A and B that Part D reads, and the
-amounts of Part D that give line 41200. The apprentices and their total are the kinds of
+Form T2038(IND) Parts A, B, D and E: the caller's lines (67120, 67130, 67135, 67140, 67170, 67175,
+the T3 box 40 amount of line 67180, lines 67184 and 67185, and the Part D amounts 1 and 6 and the
+claim on amount 15), the credit each one produces, the totals of Parts A and B that Part D reads,
+the amounts of Part D that give line 41200, and the amounts of Part E that give line 45400: the
+carryback designations (lines 67200, 67210 and 67220), the refund the filer designates (amount 17),
+and the refund itself (amount O). The apprentices and their total are the kinds of
 `credits_against_federal_tax`, which the family reads.
 """
 
@@ -17,16 +19,24 @@ from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
 from app.domain.errors import NegativeArtifactError
 from app.jurisdictions.ca.catalog import (
     INVESTMENT_TAX_CREDIT,
+    INVESTMENT_TAX_CREDIT_REFUND,
     ITC_AGRICULTURAL_SRED_CONTRIBUTIONS,
     ITC_AGRICULTURAL_SRED_CREDIT,
     ITC_AMOUNT_H,
     ITC_AMOUNT_I,
     ITC_AMOUNT_J,
     ITC_AMOUNT_K,
+    ITC_AMOUNT_L,
+    ITC_AMOUNT_M,
+    ITC_AMOUNT_N,
     ITC_APPRENTICESHIP_CREDIT,
     ITC_APPRENTICESHIP_T3_BOX_40,
     ITC_APPRENTICESHIP_WAGES_WITH_T3,
     ITC_AVAILABLE,
+    ITC_CARRYBACK_FIRST_PREVIOUS_YEAR,
+    ITC_CARRYBACK_REQUESTED,
+    ITC_CARRYBACK_SECOND_PREVIOUS_YEAR,
+    ITC_CARRYBACK_THIRD_PREVIOUS_YEAR,
     ITC_CLAIM,
     ITC_CLAIM_LIMIT,
     ITC_CRITICAL_MINERAL_CREDIT,
@@ -41,8 +51,16 @@ from app.jurisdictions.ca.catalog import (
     ITC_PART_D_AMOUNT_11_APPLIES,
     ITC_PART_D_AMOUNT_13,
     ITC_PART_D_SUBTOTAL,
+    ITC_PART_E_AMOUNT_3,
+    ITC_PART_E_AMOUNT_6,
+    ITC_PART_E_AMOUNT_9,
+    ITC_PART_E_AMOUNT_12,
+    ITC_PART_E_AMOUNT_14,
+    ITC_PART_E_AMOUNT_16,
+    ITC_PART_E_AMOUNT_17,
     ITC_QUALIFIED_PROPERTY,
     ITC_QUALIFIED_PROPERTY_CREDIT,
+    ITC_REFUND_DESIGNATION,
     ITC_REFUNDABLE_CREDITS,
     ITC_SRED_CREDIT,
     ITC_SRED_EXPENDITURES,
@@ -244,3 +262,111 @@ def test_a_credit_holds_its_amount_to_the_cent() -> None:
     # Amount 4 of Part A, "ITC for total investments in qualified property" at 10%: 10,000.00 x
     # 0.10 is 1,000.00, and the credit holds that amount.
     assert Artifact(ITC_QUALIFIED_PROPERTY_CREDIT, Decimal("1000.00")).value == Decimal("1000.00")
+
+
+# The Part E caller's lines, as the form takes them: lines 67200, 67210 and 67220, "Third previous
+# year", "Second previous year" and "First previous year", the part of amount L to carry back to
+# each of the three previous years, and amount 17, "Amount you designate as a refund of ITC (cannot
+# be more than amount N)", the refund the filer chooses. They are elections, never negative.
+PART_E_CALLER_LINES: tuple[tuple[str, ArtifactKind[Decimal]], ...] = (
+    ("ca/itc_carryback_third_previous_year", ITC_CARRYBACK_THIRD_PREVIOUS_YEAR),
+    ("ca/itc_carryback_second_previous_year", ITC_CARRYBACK_SECOND_PREVIOUS_YEAR),
+    ("ca/itc_carryback_first_previous_year", ITC_CARRYBACK_FIRST_PREVIOUS_YEAR),
+    ("ca/itc_refund_designation", ITC_REFUND_DESIGNATION),
+)
+
+# The Part E amounts that are never negative: amount 6 "Subtotal (amount 4 minus amount 5, if
+# negative enter "0")", amount M "Total credit designated for carryback" (the requested total, which
+# cannot be more than amount L), amount 16 "Total (amount 14 minus amount 15, if negative, enter
+# "0")", amount 17 (which cannot be more than amount N), and the refund of line 45400, amount O.
+PART_E_AMOUNTS: tuple[tuple[str, ArtifactKind[Decimal]], ...] = (
+    ("ca/itc_part_e_amount_6", ITC_PART_E_AMOUNT_6),
+    ("ca/itc_carryback_requested", ITC_CARRYBACK_REQUESTED),
+    ("ca/itc_amount_m", ITC_AMOUNT_M),
+    ("ca/itc_part_e_amount_16", ITC_PART_E_AMOUNT_16),
+    ("ca/itc_part_e_amount_17", ITC_PART_E_AMOUNT_17),
+    ("ca/investment_tax_credit_refund", INVESTMENT_TAX_CREDIT_REFUND),
+)
+
+# The Part E amounts that take the sign of their inputs. The form prints no floor on amount 3
+# ("Subtotal (amount 1 minus amount 2)"), amount L ("amount 3 minus amount 6"), amount 9 ("amount 7
+# minus amount 8"), amount 12 ("amount 10 minus amount 11"), amount 14 ("amount 12 plus amount 13")
+# and amount N ("amount 9 minus amount 16"); each can be negative when its inputs are.
+PART_E_SIGNED: tuple[tuple[str, ArtifactKind[Decimal]], ...] = (
+    ("ca/itc_part_e_amount_3", ITC_PART_E_AMOUNT_3),
+    ("ca/itc_amount_l", ITC_AMOUNT_L),
+    ("ca/itc_part_e_amount_9", ITC_PART_E_AMOUNT_9),
+    ("ca/itc_part_e_amount_12", ITC_PART_E_AMOUNT_12),
+    ("ca/itc_part_e_amount_14", ITC_PART_E_AMOUNT_14),
+    ("ca/itc_amount_n", ITC_AMOUNT_N),
+)
+
+
+def test_the_part_e_caller_lines_are_the_registered_kinds(registry: ArtifactRegistry) -> None:
+    for identifier, kind in PART_E_CALLER_LINES:
+        assert registry.get(identifier) is kind, identifier
+
+
+def test_the_part_e_amounts_are_the_registered_kinds(registry: ArtifactRegistry) -> None:
+    for identifier, kind in PART_E_AMOUNTS:
+        assert registry.get(identifier) is kind, identifier
+
+
+def test_the_part_e_signed_amounts_are_the_registered_kinds(registry: ArtifactRegistry) -> None:
+    for identifier, kind in PART_E_SIGNED:
+        assert registry.get(identifier) is kind, identifier
+
+
+@pytest.mark.parametrize(
+    ("identifier", "kind"),
+    PART_E_CALLER_LINES + PART_E_AMOUNTS,
+    ids=[identifier for identifier, _ in PART_E_CALLER_LINES + PART_E_AMOUNTS],
+)
+def test_every_part_e_non_negative_kind_is_a_non_negative_money_kind(
+    identifier: str, kind: ArtifactKind[Decimal]
+) -> None:
+    assert kind.identifier == identifier
+    assert kind.value_type is Decimal
+    assert kind.non_negative is True
+
+
+@pytest.mark.parametrize(
+    ("identifier", "kind"),
+    PART_E_SIGNED,
+    ids=[identifier for identifier, _ in PART_E_SIGNED],
+)
+def test_the_signed_part_e_amounts_are_money_not_declared_non_negative(
+    identifier: str, kind: ArtifactKind[Decimal]
+) -> None:
+    assert kind.identifier == identifier
+    assert kind.value_type is Decimal
+    assert kind.non_negative is False
+
+
+def test_the_refund_is_the_line_45400_kind() -> None:
+    # T1 line 45400 "Refund of investment tax credit (complete Form T2038(IND))": amount O of Part
+    # E, "Refund of ITC (multiply amount 17 by amount 18)", is the return's figure on line 45400.
+    assert INVESTMENT_TAX_CREDIT_REFUND.identifier == "ca/investment_tax_credit_refund"
+    assert INVESTMENT_TAX_CREDIT_REFUND.value_type is Decimal
+
+
+def test_a_negative_carryback_designation_is_refused() -> None:
+    # Line 67200, "Third previous year", an amount of the part of amount L to carry back: never
+    # negative, so a negative figure is an input error and not taken as 0.
+    with pytest.raises(
+        NegativeArtifactError, match="ca/itc_carryback_third_previous_year cannot be negative"
+    ):
+        Artifact(ITC_CARRYBACK_THIRD_PREVIOUS_YEAR, Decimal("-1"))
+
+
+def test_a_negative_refund_designation_is_refused() -> None:
+    # Part E amount 17, "Amount you designate as a refund of ITC (cannot be more than amount N)":
+    # an election, never negative.
+    with pytest.raises(NegativeArtifactError, match="ca/itc_refund_designation cannot be negative"):
+        Artifact(ITC_REFUND_DESIGNATION, Decimal("-1"))
+
+
+def test_part_e_amount_3_holds_a_negative_figure_as_the_form_prints_no_floor() -> None:
+    # Amount 3, "Subtotal (amount 1 minus amount 2)": no "if negative, enter 0" is printed, so a
+    # negative figure is held as it is.
+    assert Artifact(ITC_PART_E_AMOUNT_3, Decimal("-1")).value == Decimal("-1")
