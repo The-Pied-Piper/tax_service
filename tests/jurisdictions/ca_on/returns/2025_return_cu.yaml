@@ -1,14 +1,4 @@
-# Return CU: Return CH's T2121 with one change, the remaining personal part of a
-# property used for both personal and fishing use (endnote 9 of the T2121: "If, in the year, you
-# disposed of a property that you used for both personal and business use, and your business use of
-# that property changed from year to year, you must subtract any remaining personal part of this
-# property's cost from the UCC at the end of the year"). Class 8 has a remaining personal part of
-# $5,000.00, so column 22, the UCC at the end of the year, is column 7 less the claim less that part:
-# 34041.10 less $5,000.00 = 29041.10. Only column 22 changes: the claim (column 21), the lines of the form and
-# every figure that depends on income are Return CH's. Return CH, which this return
-# changes in that one figure, is described below as it was written.
-#
-# Return CH: Return BY's single sole proprietor, a 2025 Ontario resident whose only activity is
+# Return CU: Return BY's single sole proprietor, a 2025 Ontario resident whose only activity is
 # a fishing business, one Form T2121 (Statement of Fishing Activities), whose first fiscal
 # period is short: the business started on September 23, 2025, so the fiscal period is from
 # September 23 to December 31, 2025, 100 days (Guide T4002, "You were asking?": "Since your
@@ -22,7 +12,7 @@
 # $35,000.00, the half-year rule makes column 18 $17,500.00 and column 19 $17,500.00. The maximum
 # of a full year is $17,500.00 x 20% = $3,500.00 and, for 100 days, $3,500.00 x 100 / 365 =
 # $350,000 / 365 = $958.9041..., rounded half-up to the cent, $958.90. Column 21 is that, claimed
-# in full, so column 22 is $35,000.00 - $958.90 = $34,041.10. There is no immediate expensing, no
+# in full, so column 22 is $35,000.00 - $958.90 - $5,000.00 (the remaining personal part of the property's cost, endnote 9) = $29,041.10. There is no immediate expensing, no
 # recapture and no terminal loss. Line 9946 and T1 line 14300 are $15,000.00, so every figure that
 # depends on income is Return BY's. Amounts are quoted decimal strings, never floats; counts are
 # quoted digit strings. Every output the CA-ON manifest declares must appear under `expected`, or
@@ -31,9 +21,9 @@
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
-  Return CH with a remaining personal part of $5,000.00 on its one class (endnote 9), so the UCC at
-  the end of the year is 34041.10 less $5,000.00 = 29041.10. Return CH as written:
-  A single Ontario resident for all of 2025 whose only activity is a fishing business that
+  Class has a remaining personal part of $5,000.00 (endnote 9 of the T2121: a property used for both
+  personal and business use, whose business use changed from year to year, was disposed of), which
+  is subtracted from column 22. A single Ontario resident for all of 2025 whose only activity is a fishing business that
   started on September 23, 2025, reported on one Form T2121 for a first fiscal period of 100 days
   (September 23 to December 31, 2025; the caller enters the 100): fish products of $40,958.90
   (amount 3A, a chosen figure, so that line 9946 is Return BY's $15,000.00), so line 8299 and T1 line
@@ -47,7 +37,7 @@ description: >-
   is $35,000.00; by the half-year rule column 18 is $17,500.00 and column 19 is $17,500.00, so the
   maximum of a full year is $17,500.00 x 20% = $3,500.00. The fiscal period is 100 days, less
   than 365, so the maximum is prorated: $3,500.00 x 100 / 365 = $958.90, claimed in full; the UCC
-  at the end of the year (column 22) is $35,000.00 - $958.90 = $34,041.10. A chosen set of
+  at the end of the year (column 22) is $35,000.00 - $958.90 - $5,000.00 (the remaining personal part of the property's cost, endnote 9) = $29,041.10. A chosen set of
   figures. The net self-employment income (T1 line 27, "Add lines 22 to 26") is 0 + 0 + 0 + 0 +
   15,000 = $15,000; line 28 is line 21 (0) plus line 27 and total income (line 15000) adds line
   27 to the other income lines, which are all 0, so total income is $15,000.00. The farming
@@ -115,7 +105,7 @@ sources:
     full year is column 19 x column 20 = 17,500.00 x 20% = 3,500.00; for a fiscal period of 100
     days it is prorated (see the next source): 3,500.00 x 100 / 365 = 350,000 / 365 =
     958.9041..., rounded half-up to the cent, 958.90. Column 21 is that, a chosen claim, the
-    most; column 22 is 35,000 - 958.90 = 34,041.10, no property left being a chosen 0. A claim
+    most; column 22 is 35,000 - 958.90 - 5,000.00 (the remaining personal part of the property's cost, endnote 9) = 29,041.10, no property left being a chosen 0. A claim
     above 958.90 is refused.
   - >-
     CRA, Guide T4002 (2025), Self-employed Business, Professional, Commission, Farming, and

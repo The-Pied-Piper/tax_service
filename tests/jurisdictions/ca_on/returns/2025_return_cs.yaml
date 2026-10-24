@@ -1,14 +1,4 @@
-# Return CS: Return CE's T2125 with one change, the remaining personal part of a
-# property used for both personal and business use (endnote 9 of the T2125: "If, in the year, you
-# disposed of a property that you used for both personal and business use, and your business use of
-# that property changed from year to year, you must subtract any remaining personal part of this
-# property's cost from the UCC at the end of the year"). Class 8 has a remaining personal part of
-# $5,000.00, so column 22, the UCC at the end of the year, is column 7 less the claim less that part:
-# 32947.95 less $5,000.00 = 27947.95. Only column 22 changes: the claim (column 21), the lines of the form and
-# every figure that depends on income are Return CE's. Return CE, which this return
-# changes in that one figure, is described below as it was written.
-#
-# Return CE: Return BB's single sole proprietor, a 2025 Ontario resident whose only activity is
+# Return CS: Return BB's single sole proprietor, a 2025 Ontario resident whose only activity is
 # a business, one Form T2125 (Statement of Business or Professional Activities), whose first
 # fiscal period is short: the business started on June 1, 2025, so the fiscal period is from
 # June 1 to December 31, 2025, 214 days (Guide T4002, "You were asking?": "Since your fiscal
@@ -24,7 +14,7 @@
 # full year is $17,500.00 x 20% = $3,500.00 (the Guide's $3,500) and, for 214 days, $3,500.00 x
 # 214 / 365 = $749,000 / 365 = $2,052.0547..., rounded half-up to the cent, $2,052.05 (the
 # Guide prints $2,052). Column 21 is that, claimed in full, so column 22 is $35,000.00 -
-# $2,052.05 = $32,947.95. There is no immediate expensing, recapture or terminal loss. Line ii,
+# $2,052.05 - $5,000.00 (the remaining personal part of the property's cost, endnote 9) = $27,947.95. There is no immediate expensing, recapture or terminal loss. Line ii,
 # and so line 9936, is $2,052.05, so line 9368 is $7,000 + $2,052.05 = $9,052.05 and line 9369
 # is $39,052.05 - $9,052.05 = $30,000.00, which, with no business-use-of-home expenses, is line
 # 9946 and T1 line 13500, the whole of total income (line 15000), Return BB's $30,000.00, so
@@ -34,9 +24,9 @@
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
-  Return CE with a remaining personal part of $5,000.00 on its one class (endnote 9), so the UCC at
-  the end of the year is 32947.95 less $5,000.00 = 27947.95. Return CE as written:
-  A single Ontario resident for all of 2025 whose only activity is a business that started on
+  Class has a remaining personal part of $5,000.00 (endnote 9 of the T2125: a property used for both
+  personal and business use, whose business use changed from year to year, was disposed of), which
+  is subtracted from column 22. A single Ontario resident for all of 2025 whose only activity is a business that started on
   June 1, 2025, reported on one Form T2125 for a first fiscal period of 214 days (June 1 to
   December 31, 2025; the caller enters the 214): gross sales of $39,052.05 (amount 3A, a chosen
   figure), expenses of $7,000 on three lines and capital cost allowance of $2,052.05 on Class 8
@@ -47,7 +37,7 @@ description: >-
   19 is $17,500.00, so the maximum of a full year is $17,500.00 x 20% = $3,500.00. The fiscal
   period is 214 days, less than 365, so the maximum is prorated: $3,500.00 x 214 / 365 =
   $2,052.05 (the Guide's $2,052), claimed in full; the UCC at the end of the year (column 22) is
-  $35,000.00 - $2,052.05 = $32,947.95. There is no immediate expensing (line i is $0), no
+  $35,000.00 - $2,052.05 - $5,000.00 (the remaining personal part of the property's cost, endnote 9) = $27,947.95. There is no immediate expensing (line i is $0), no
   recapture and no terminal loss. The business is not associated with any other EPOP, so the
   immediate expensing limit is $1.5 million (Area G is not answered). The income before CCA
   (endnote 5) is $32,052.05, line 9369 plus line 9936. The net self-employment income (T1 line
@@ -130,7 +120,7 @@ sources:
     214 days (June 1 to December 31, 2025: 30 + 31 + 31 + 30 + 31 + 30 + 31 = 214), a chosen
     count the caller enters, so the maximum is 3,500.00 x 214 / 365 = 749,000 / 365 =
     2,052.0547..., rounded half-up to the cent, 2,052.05 (the Guide prints $2,052); column 21
-    is a chosen claim of that, the most; column 22 is 35,000.00 - 2,052.05 = 32,947.95. A claim
+    is a chosen claim of that, the most; column 22 is 35,000.00 - 2,052.05 - 5,000.00 (the remaining personal part of the property's cost, endnote 9) = 27,947.95. A claim
     above 2,052.05 is refused, and so are more than 365 days. The columns the form computes (18,
     19 and the maximum) are dollars-and-cents boxes, rounded half-up to the cent. Not modelled:
     Part 1 (the fiscal period dates, of which only the number of days is entered), Part 2 (the

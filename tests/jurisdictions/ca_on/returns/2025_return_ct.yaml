@@ -1,14 +1,4 @@
-# Return CT: Return CF's T2042 with one change, the remaining personal part of a
-# property used for both personal and farming use (endnote 9 of the T2042: "If, in the year, you
-# disposed of a property that you used for both personal and business use, and your business use of
-# that property changed from year to year, you must subtract any remaining personal part of this
-# property's cost from the UCC at the end of the year"). Class 10 has a remaining personal part of
-# $5,000.00, so column 22, the UCC at the end of the year, is column 7 less the claim less that part:
-# 32799.32 less $5,000.00 = 27799.32. Only column 22 changes: the claim (column 21), the lines of the form and
-# every figure that depends on income are Return CF's. Return CF, which this return
-# changes in that one figure, is described below as it was written.
-#
-# Return CF: Return BC's single sole proprietor, a 2025 Ontario resident whose only activity is
+# Return CT: Return BC's single sole proprietor, a 2025 Ontario resident whose only activity is
 # a farming business, one Form T2042 (Statement of Farming Activities), whose first fiscal
 # period is short: the business started on August 1, 2025, so the fiscal period is from August 1
 # to December 31, 2025, 153 days (Guide T4002, "You were asking?": "Since your fiscal period is
@@ -22,7 +12,7 @@
 # are $35,000.00, the half-year rule makes column 18 $17,500.00 and column 19 $17,500.00. The
 # maximum of a full year is $17,500.00 x 30% = $5,250.00 and, for 153 days, $5,250.00 x 153 / 365
 # = $803,250 / 365 = $2,200.6849..., rounded half-up to the cent, $2,200.68. Column 21 is that,
-# claimed in full, so column 22 is $35,000.00 - $2,200.68 = $32,799.32. There is no recapture or
+# claimed in full, so column 22 is $35,000.00 - $2,200.68 - $5,000.00 (the remaining personal part of the property's cost, endnote 9) = $27,799.32. There is no recapture or
 # terminal loss. Line 9946 and T1 line 14100 are $30,000.00, so every figure that depends on
 # income is Return BC's. Amounts are quoted decimal strings, never floats; counts are quoted
 # digit strings. Every output the CA-ON manifest declares must appear under `expected`, or be
@@ -30,9 +20,9 @@
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
-  Return CF with a remaining personal part of $5,000.00 on its one class (endnote 9), so the UCC at
-  the end of the year is 32799.32 less $5,000.00 = 27799.32. Return CF as written:
-  A single Ontario resident for all of 2025 whose only activity is a farming business that
+  Class has a remaining personal part of $5,000.00 (endnote 9 of the T2042: a property used for both
+  personal and business use, whose business use changed from year to year, was disposed of), which
+  is subtracted from column 22. A single Ontario resident for all of 2025 whose only activity is a farming business that
   started on August 1, 2025, reported on one Form T2042 for a first fiscal period of 153 days
   (August 1 to December 31, 2025; the caller enters the 153): income lines of $82,200.68 (wheat,
   line 9371, $52,200.68, and cattle, line 9471, $30,000, chosen figures), so line 9659 and T1
@@ -44,7 +34,7 @@ description: >-
   is $35,000.00; by the half-year rule column 18 is $17,500.00 and column 19 is $17,500.00, so the
   maximum of a full year is $17,500.00 x 30% = $5,250.00. The fiscal period is 153 days, less than
   365, so the maximum is prorated: $5,250.00 x 153 / 365 = $2,200.68, claimed in full; the UCC at
-  the end of the year (column 22) is $35,000.00 - $2,200.68 = $32,799.32. The motor vehicle
+  the end of the year (column 22) is $35,000.00 - $2,200.68 - $5,000.00 (the remaining personal part of the property's cost, endnote 9) = $27,799.32. The motor vehicle
   expenses (line 9819) are Charts A to C for a leased passenger vehicle used for no farming
   (business kilometres 0), so line 9819 is $0 and changes no total. A chosen set of figures. The
   net self-employment income (T1 line 27, "Add lines 22 to 26") is 0 + 0 + 0 + 30,000 + 0 =
@@ -100,7 +90,7 @@ sources:
     17,500.00 x 30% = 5,250.00. The fiscal period is a chosen 153 days (August 1 to December 31,
     2025: 31 + 30 + 31 + 30 + 31 = 153), a count the caller enters, so the maximum is 5,250.00 x
     153 / 365 = 803,250 / 365 = 2,200.6849..., rounded half-up to the cent, 2,200.68; column 21 is
-    a chosen claim of that, the most; column 22 is 35,000.00 - 2,200.68 = 32,799.32. A claim above
+    a chosen claim of that, the most; column 22 is 35,000.00 - 2,200.68 - 5,000.00 (the remaining personal part of the property's cost, endnote 9) = 27,799.32. A claim above
     2,200.68 is refused. The columns the form computes (18, 19 and the maximum) are
     dollars-and-cents boxes, rounded half-up to the cent.
   - >-

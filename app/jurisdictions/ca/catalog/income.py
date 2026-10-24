@@ -2804,7 +2804,7 @@ starting list with one record for each class, holding the columns the filer ente
 number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
 proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
 CCA claimed), whether any property is left in the class, the remaining personal part of a
-property used for both personal and farming use (endnote 9), whether the additions are treated the
+property used for both personal and business use (endnote 9), whether the additions are treated the
 opposite way from their class for the half-year rule (column 18), and the CCA rate the
 caller elects for it (a purpose-built rental or a building in a separate class), last."""
 
@@ -3202,7 +3202,7 @@ starting list with one record for each class, holding the columns the filer ente
 number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
 proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
 CCA claimed), whether any property is left in the class, the remaining personal part of a
-property used for both personal and fishing use (endnote 9), whether the additions are treated the
+property used for both personal and business use (endnote 9), whether the additions are treated the
 opposite way from their class for the half-year rule (column 18), and the CCA rate the
 caller elects for it (a purpose-built rental or a building in a separate class), last."""
 
