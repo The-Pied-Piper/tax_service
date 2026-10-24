@@ -146,6 +146,9 @@ sources:
     "Line 46 and line 58840: Line 44 multiplied by the percentage from line 45".
 inputs:
   ca/employment_income: "40000"
+  # T4 boxes 24 (= 14) and 18: the required premium, Form T2204 line 16 (T1 line 31200).
+  ca/t2204_insurable_earnings: "40000"
+  ca/t2204_premiums_deducted: "656.00"
   ca/cpp_months: "12"
   ca/qpp_months: "12"
   ca/cpp_t4_base_and_first_additional_contributions: "2171.75"

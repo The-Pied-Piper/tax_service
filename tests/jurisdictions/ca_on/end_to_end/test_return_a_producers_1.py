@@ -1769,7 +1769,8 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         )
     }
     assert len(tiers) == 3
-    assert isinstance(worksheet.producer_of(EI_PREMIUMS), TieredContribution)
+    # T1 line 31200 is Form T2204 line 16, carried over one part.
+    assert isinstance(worksheet.producer_of(EI_PREMIUMS), Sum)
     assert worksheet.producer_of(EI_PREMIUMS) not in tiers
     assert isinstance(schedule_8.producer_of(CPP_ENHANCED_CONTRIBUTIONS), Sum)
     # Schedule 8 Parts 3a and 3b: the counts, the "whichever is less" candidates, the chosen lines

@@ -114,8 +114,7 @@ def test_the_trace_explains_the_computation() -> None:
         "1074.00",
     )
     ei = position(
-        "ei_premiums: 1.64% of employment_income between 0 and 65700 (65700), "
-        "at most 1077.48 (half-up to 0.01)",
+        "ei_premiums: t2204_line_16 1077.48 = 1077.48",
         "1077.48",
     )
     rrsp_available = position(

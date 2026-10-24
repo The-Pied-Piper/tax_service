@@ -131,8 +131,7 @@ capabilities:
       count: ca/t2204_line_15_count
     produces:
       output: ca/ei_overpayment
-  # T2204 line 16 "Enter whichever amount is the least: line 7, line 9 or line 12." On the worked
-  # return it equals T1 line 31200, and nothing reads it.
+  # T2204 line 16 "Enter whichever amount is the least: line 7, line 9 or line 12."
   - name: core/lesser_of
     consumes:
       amounts:
@@ -141,3 +140,12 @@ capabilities:
         - ca/t2204_line_12
     produces:
       output: ca/t2204_line_16
+  # T2204 line 16 "Enter this amount on line 31200 of your return": T1 line 31200 "through
+  # employment (boxes 18 and 55 of all T4 slips) (maximum $1,077.48)" is that amount, carried over
+  # one part.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/t2204_line_16
+    produces:
+      output: ca/ei_premiums
