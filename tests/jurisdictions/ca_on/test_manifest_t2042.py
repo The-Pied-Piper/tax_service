@@ -83,7 +83,7 @@ def test_the_form_holds_the_40_t2042_selections() -> None:
     # step over the statement's vehicles, the form's only selection for them.
     found = form()
 
-    assert len(found.capabilities) == 40
+    assert len(found.capabilities) == 44
     assert set(found.capabilities) == t2042.FORM_STEPS
 
 

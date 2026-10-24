@@ -1,6 +1,6 @@
 """The CA-ON manifest entries of Form T776 (see `test_manifest.py` and `test_manifest_t776.py`).
 
-T776 is a form of the manifest: its 41 selections belong to the form `ca/t776` (`FORM_STEPS`), run
+T776 is a form of the manifest: its 46 selections belong to the form `ca/t776` (`FORM_STEPS`), run
 once for each statement of `ca/t776_statements`, whose fields are the T776 inputs (`FORM_INPUTS`).
 The form exports seven artifacts, each readable by the other forms as `ca/t776.<export>`
 (`FORM_EXPORTS`); the return reads one and declares no output for the six nothing reads (`OUTPUTS`
@@ -21,10 +21,15 @@ from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
-from app.jurisdictions.ca.capabilities.cca_claim_after_column_22 import CcaClaimAfterColumn22
+from app.jurisdictions.ca.capabilities.cca_claim_after_column_22_prorated import (
+    CcaClaimAfterColumn22Prorated,
+)
 from app.jurisdictions.ca.capabilities.cca_vehicle_proceeds import CcaVehicleProceeds
 from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
-from app.jurisdictions.ca.capabilities.closing_ucc_after_column_22 import ClosingUccAfterColumn22
+from app.jurisdictions.ca.capabilities.closing_ucc_after_column_22_prorated import (
+    ClosingUccAfterColumn22Prorated,
+)
+from app.jurisdictions.ca.capabilities.fiscal_period_days import FiscalPeriodDays
 from app.jurisdictions.ca.capabilities.immediate_expensing_claim import ImmediateExpensingClaim
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
@@ -41,6 +46,7 @@ from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_expenses 
     ShortTermRentalNonCompliantExpenses,
 )
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
+from app.jurisdictions.ca.capabilities.yes_or_no_count import YesOrNoCount
 from app.jurisdictions.ca.catalog import (
     GROSS_RENTAL_INCOME,
     NET_RENTAL_INCOME,
@@ -68,12 +74,17 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_COOWNER_TERMINAL_LOSS,
     RENTAL_DEDUCTIBLE_EXPENSES,
     RENTAL_EPOP_AGREEMENT_FILED,
+    RENTAL_EPOP_AGREEMENT_FILED_CHECKED,
     RENTAL_EPOP_ASSOCIATED,
+    RENTAL_EPOP_ASSOCIATED_CHECKED,
     RENTAL_EPOP_PERCENTAGE,
+    RENTAL_EPOP_PERCENTAGE_CHECKED,
     RENTAL_EPOP_PERCENTAGE_MAXIMUM,
     RENTAL_EPOP_PERCENTAGE_ROOM,
     RENTAL_EPOP_PERCENTAGE_TOTAL,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
+    RENTAL_FISCAL_PERIOD_DAYS,
+    RENTAL_FISCAL_PERIOD_DAYS_ENTERED,
     RENTAL_GROSS_RENTS,
     RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
     RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
@@ -93,6 +104,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION,
     RENTAL_MINISTER_ALLOCATION,
     RENTAL_MINISTER_ALLOCATION_GIVEN,
+    RENTAL_MINISTER_ALLOCATION_GIVEN_CHECKED,
     RENTAL_MOTOR_VEHICLE_EXPENSES,
     RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION,
     RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION,
@@ -221,6 +233,7 @@ FORM_INPUTS = frozenset(
         "ca/rental_coowner_other_expenses",
         "ca/rental_cca_classes",
         "ca/rental_vehicle_sales_tax_rate",
+        "ca/rental_fiscal_period_days_entered",
         "ca/rental_coowner_recaptured_cca",
         "ca/rental_coowner_terminal_loss",
         "ca/rental_coowner_cca_claim",
@@ -510,15 +523,28 @@ FORM_STEPS = {
         },
         produces={"output": "ca/rental_net_income_after_terminal_loss"},
     ),
+    # T776 Part 1 "Fiscal period from Date (Year/Month/Day) to (Year/12/31)", the days of the
+    # rental's fiscal period (Guide T4036, Area A "Column 23 – CCA claim for the year": "In your
+    # first year of rental activities, you may have to prorate your CCA claim."; Guide T4002 "You
+    # were asking?": "base your CCA claim on the number of days in your fiscal period compared to
+    # 365 days."): the days the caller enters, or the 365 of a full year when none are.
+    CapabilitySelection(
+        name="ca/fiscal_period_days",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={"entered": "ca/rental_fiscal_period_days_entered"},
+        produces={"output": "ca/rental_fiscal_period_days"},
+    ),
     # T776 Area A "Line ii: Total CCA claim for the year *: Total of column 23": the CCA claimed
     # on each class of the Area A list, at most its maximum (column 19 multiplied by column 20)
-    # less its column 22 (the Chart B total of the class), totalled.
+    # less its column 22 (the Chart B total of the class), totalled, each maximum prorated by the
+    # days of the fiscal period.
     CapabilitySelection(
-        name="ca/cca_claim_after_column_22",
+        name="ca/cca_claim_after_column_22_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
             "classes": "ca/rental_cca_classes_adjusted",
             "non_compliant": "ca/short_term_rental_non_compliant_cca_by_class",
+            "fiscal_period_days": "ca/rental_fiscal_period_days",
         },
         produces={"output": "ca/rental_cca_table_claim"},
     ),
@@ -584,11 +610,12 @@ FORM_STEPS = {
     # number and column 24 of each class of the Area A list, a product of the return for next
     # year's column 2.
     CapabilitySelection(
-        name="ca/closing_ucc_after_column_22",
+        name="ca/closing_ucc_after_column_22_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
             "classes": "ca/rental_cca_classes_adjusted",
             "non_compliant": "ca/short_term_rental_non_compliant_cca_by_class",
+            "fiscal_period_days": "ca/rental_fiscal_period_days",
         },
         produces={"output": "ca/rental_closing_ucc"},
     ),
@@ -621,7 +648,7 @@ FORM_STEPS = {
         params={"rounding": "ca/rental_immediate_expensing_rounding"},
         consumes={
             "amount": "ca/rental_immediate_expensing_cap",
-            "percentage": "ca/rental_epop_percentage",
+            "percentage": "ca/rental_epop_percentage_checked",
         },
         produces={"output": "ca/rental_immediate_expensing_share"},
     ),
@@ -664,7 +691,7 @@ FORM_STEPS = {
         params={},
         consumes={
             "amount": "ca/rental_immediate_expensing_allocated",
-            "count": "ca/rental_epop_agreement_filed",
+            "count": "ca/rental_epop_agreement_filed_checked",
         },
         produces={"output": "ca/rental_immediate_expensing_associated_limit"},
     ),
@@ -677,7 +704,7 @@ FORM_STEPS = {
         name="core/choose_by_count",
         params={},
         consumes={
-            "count": "ca/rental_epop_associated",
+            "count": "ca/rental_epop_associated_checked",
             "when_none": "ca/rental_immediate_expensing_cap",
             "when_any": "ca/rental_immediate_expensing_associated_limit",
         },
@@ -690,7 +717,7 @@ FORM_STEPS = {
         name="core/choose_by_count",
         params={},
         consumes={
-            "count": "ca/rental_minister_allocation_given",
+            "count": "ca/rental_minister_allocation_given_checked",
             "when_none": "ca/rental_immediate_expensing_limit_before_minister",
             "when_any": "ca/rental_minister_allocation",
         },
@@ -764,6 +791,38 @@ FORM_STEPS = {
             "when_any": "ca/rental_partnership_net_income",
         },
         produces={"output": "ca/net_rental_income"},
+    ),
+    # Area A endnote 5 answers, taken as a count of 0 or 1: each is checked to be 0 or 1 before
+    # the step that reads it. A caller's 2 is refused, naming the kind.
+    CapabilitySelection(
+        name="ca/yes_or_no_count",
+        params={},
+        consumes={"count": "ca/rental_epop_associated"},
+        produces={"output": "ca/rental_epop_associated_checked"},
+    ),
+    CapabilitySelection(
+        name="ca/yes_or_no_count",
+        params={},
+        consumes={"count": "ca/rental_epop_agreement_filed"},
+        produces={"output": "ca/rental_epop_agreement_filed_checked"},
+    ),
+    CapabilitySelection(
+        name="ca/yes_or_no_count",
+        params={},
+        consumes={"count": "ca/rental_minister_allocation_given"},
+        produces={"output": "ca/rental_minister_allocation_given_checked"},
+    ),
+    # Area G "Total of percentage assigned: Total of column 3": the forms are silent on a
+    # percentage assigned to the business above that total. It is refused, not capped: a choice,
+    # not a form rule. The checked percentage is the one the next step applies.
+    CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={
+            "amount": "ca/rental_epop_percentage",
+            "bound": "ca/rental_epop_percentage_total",
+        },
+        produces={"output": "ca/rental_epop_percentage_checked"},
     ),
 }
 
@@ -908,8 +967,19 @@ FORM_WIRING = {
         frozenset({RENTAL_TERMINAL_LOSS}),
     ),
     (
-        CcaClaimAfterColumn22,
-        frozenset({RENTAL_CCA_CLASSES_ADJUSTED, SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS}),
+        FiscalPeriodDays,
+        frozenset({RENTAL_FISCAL_PERIOD_DAYS_ENTERED}),
+        frozenset({RENTAL_FISCAL_PERIOD_DAYS}),
+    ),
+    (
+        CcaClaimAfterColumn22Prorated,
+        frozenset(
+            {
+                RENTAL_CCA_CLASSES_ADJUSTED,
+                SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
+                RENTAL_FISCAL_PERIOD_DAYS,
+            }
+        ),
         frozenset({RENTAL_CCA_TABLE_CLAIM}),
     ),
     (
@@ -938,8 +1008,14 @@ FORM_WIRING = {
         frozenset({RENTAL_CCA_CLAIM}),
     ),
     (
-        ClosingUccAfterColumn22,
-        frozenset({RENTAL_CCA_CLASSES_ADJUSTED, SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS}),
+        ClosingUccAfterColumn22Prorated,
+        frozenset(
+            {
+                RENTAL_CCA_CLASSES_ADJUSTED,
+                SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
+                RENTAL_FISCAL_PERIOD_DAYS,
+            }
+        ),
         frozenset({RENTAL_CLOSING_UCC}),
     ),
     (
@@ -956,7 +1032,7 @@ FORM_WIRING = {
     (CreditAmount, frozenset(), frozenset({RENTAL_EPOP_PERCENTAGE_MAXIMUM})),
     (
         ApplyPercentage,
-        frozenset({RENTAL_IMMEDIATE_EXPENSING_CAP, RENTAL_EPOP_PERCENTAGE}),
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_CAP, RENTAL_EPOP_PERCENTAGE_CHECKED}),
         frozenset({RENTAL_IMMEDIATE_EXPENSING_SHARE}),
     ),
     (
@@ -971,14 +1047,14 @@ FORM_WIRING = {
     ),
     (
         TimesCount,
-        frozenset({RENTAL_IMMEDIATE_EXPENSING_ALLOCATED, RENTAL_EPOP_AGREEMENT_FILED}),
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_ALLOCATED, RENTAL_EPOP_AGREEMENT_FILED_CHECKED}),
         frozenset({RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT}),
     ),
     (
         ChooseByCount,
         frozenset(
             {
-                RENTAL_EPOP_ASSOCIATED,
+                RENTAL_EPOP_ASSOCIATED_CHECKED,
                 RENTAL_IMMEDIATE_EXPENSING_CAP,
                 RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
             }
@@ -989,7 +1065,7 @@ FORM_WIRING = {
         ChooseByCount,
         frozenset(
             {
-                RENTAL_MINISTER_ALLOCATION_GIVEN,
+                RENTAL_MINISTER_ALLOCATION_GIVEN_CHECKED,
                 RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
                 RENTAL_MINISTER_ALLOCATION,
             }
@@ -1022,6 +1098,26 @@ FORM_WIRING = {
         ChooseByCount,
         frozenset({RENTAL_PARTNER, RENTAL_NET_INCOME_AFTER_CCA, RENTAL_PARTNERSHIP_NET_INCOME}),
         frozenset({NET_RENTAL_INCOME}),
+    ),
+    (
+        YesOrNoCount,
+        frozenset({RENTAL_EPOP_ASSOCIATED}),
+        frozenset({RENTAL_EPOP_ASSOCIATED_CHECKED}),
+    ),
+    (
+        YesOrNoCount,
+        frozenset({RENTAL_EPOP_AGREEMENT_FILED}),
+        frozenset({RENTAL_EPOP_AGREEMENT_FILED_CHECKED}),
+    ),
+    (
+        YesOrNoCount,
+        frozenset({RENTAL_MINISTER_ALLOCATION_GIVEN}),
+        frozenset({RENTAL_MINISTER_ALLOCATION_GIVEN_CHECKED}),
+    ),
+    (
+        AtMost,
+        frozenset({RENTAL_EPOP_PERCENTAGE, RENTAL_EPOP_PERCENTAGE_TOTAL}),
+        frozenset({RENTAL_EPOP_PERCENTAGE_CHECKED}),
     ),
 }
 

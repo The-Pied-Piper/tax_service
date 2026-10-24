@@ -228,20 +228,20 @@ def test_return_bts_trace_shows_the_limit_chain() -> None:
     for line in (
         "business_immediate_expensing_cap: credit amount 1500000 (half-up to 0.01)",
         "business_epop_percentage_maximum: credit amount 100 (half-up to 0.01)",
-        "business_immediate_expensing_share: business_epop_percentage 40% of "
+        "business_immediate_expensing_share: business_epop_percentage_checked 40% of "
         "business_immediate_expensing_cap 1500000 = 600000 (half-up to 0.01)",
         "business_epop_percentage_room: business_epop_percentage_maximum 100 less "
         "business_epop_percentage_total 100 = 0",
         "business_immediate_expensing_allocated: business_immediate_expensing_share 600000, "
         "chosen as business_epop_percentage_room 0 is zero",
         "business_immediate_expensing_associated_limit: business_immediate_expensing_allocated "
-        "600000 for each of 1 business_epop_agreement_filed = 600000",
+        "600000 for each of 1 business_epop_agreement_filed_checked = 600000",
         "business_immediate_expensing_limit_before_minister: "
         "business_immediate_expensing_associated_limit 600000, chosen as "
-        "business_epop_associated is 1",
+        "business_epop_associated_checked is 1",
         "business_immediate_expensing_limit: "
         "business_immediate_expensing_limit_before_minister 600000, chosen as "
-        "business_minister_allocation_given is 0",
+        "business_minister_allocation_given_checked is 0",
     ):
         assert line in rendered, line
 
@@ -484,3 +484,36 @@ def test_a_return_with_no_diep_has_a_line_i_of_zero() -> None:
 
     assert statement.get(BUSINESS_IMMEDIATE_EXPENSING_CLAIM).value == D("0")
     assert statement.get(BUSINESS_CCA_TABLE_CLAIM).value == D("2500.00")
+
+
+# --- the yes or no answers and the percentage are checked before the limit ---------------
+#
+# The endnote 5 answers are yes or no, taken as a count of 0 or 1: a 2 is refused, naming the kind
+# (`ca/yes_or_no_count`). A percentage assigned to the business above the total of column 3 is
+# refused too, since the forms are silent on it (a choice, not a form rule).
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"business_epop_associated": 2},
+        {"business_epop_agreement_filed": 2},
+        {"business_minister_allocation_given": 2, "business_minister_allocation": "5000"},
+    ],
+    ids=["associated", "agreement_filed", "minister_allocation_given"],
+)
+def test_a_yes_or_no_answer_of_2_is_refused_naming_its_kind(changes: Mapping[str, Any]) -> None:
+    (kind,) = [key for key in changes if key != "business_minister_allocation"]
+
+    with pytest.raises(InputAboveBoundError, match=rf"ca/{kind} 2 "):
+        run_bt(changes)
+
+
+def test_a_business_percentage_above_the_total_of_column_3_is_refused() -> None:
+    # Column 3 is 150% of the 100% total: refused as an input, not capped to 100% and not allowed
+    # to give 2250000 of amount iii.
+    with pytest.raises(
+        InputAboveBoundError,
+        match=r"ca/business_epop_percentage 150 is above ca/business_epop_percentage_total 100",
+    ):
+        run_bt({"business_epop_percentage": "150"})

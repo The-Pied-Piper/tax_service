@@ -1156,11 +1156,28 @@ iii of Area G, if you are associated with one or more EPOPs in the tax year": 1 
 associated with one or more EPOPs in the tax year, 0 if not, a starting count. It is Note 5's
 association, whether or not an agreement was filed; Area G is filled in when one was."""
 
+RENTAL_EPOP_ASSOCIATED_CHECKED = CATALOG.declare(
+    "rental_epop_associated_checked", int, non_negative=True
+)
+"""Whether the filer is associated with an EPOP, Form T776 Area A Note 5 "$1.5 million, if you
+are not associated with any other eligible person or partnership (EPOP) in the tax year": the
+answer of `ca/rental_epop_associated` after the check that it is 0 or 1
+(`ca/yes_or_no_count`), a count of 1 or 0. A count of 2 or more is refused, not capped."""
+
 RENTAL_EPOP_AGREEMENT_FILED = CATALOG.declare("rental_epop_agreement_filed", int, non_negative=True)
 """Whether the agreement was filed, Form T776 Area A Note 5 "zero, if you are associated with one
 or more EPOPs and an agreement that assigns a percentage to one or more of the associated EPOPs
 was not filed with the minister in a prescribed form": 1 if the agreement was filed, 0 if it was
 not, a starting count."""
+
+RENTAL_EPOP_AGREEMENT_FILED_CHECKED = CATALOG.declare(
+    "rental_epop_agreement_filed_checked", int, non_negative=True
+)
+"""Whether the agreement was filed, Form T776 Area A Note 5 "zero, if you are associated with
+one or more EPOPs and an agreement that assigns a percentage to one or more of the associated
+EPOPs was not filed with the minister in a prescribed form": the answer of
+`ca/rental_epop_agreement_filed` after the check that it is 0 or 1 (`ca/yes_or_no_count`), a
+count of 1 or 0. A count of 2 or more is refused, not capped."""
 
 RENTAL_EPOP_PERCENTAGE = CATALOG.declare("rental_epop_percentage", Decimal, non_negative=True)
 """Percentage assigned to the filer, Form T776 Area G "Column 3: Percentage assigned under the
@@ -1173,12 +1190,28 @@ RENTAL_EPOP_PERCENTAGE_TOTAL = CATALOG.declare(
 """Total of the percentages assigned, Form T776 Area G "Total of percentage assigned: Total of
 column 3", entered as the form prints it: a starting amount."""
 
+RENTAL_EPOP_PERCENTAGE_CHECKED = CATALOG.declare(
+    "rental_epop_percentage_checked", Decimal, non_negative=True
+)
+"""Percentage assigned to the filer, Form T776 Area G "Column 3: Percentage assigned under the
+agreement": the percentage of `ca/rental_epop_percentage` after the check that it is not more than
+`ca/rental_epop_percentage_total` (`core/at_most`), entered as the form prints it. The form is
+silent on that check; the refusal is a choice, not a form rule."""
+
 RENTAL_MINISTER_ALLOCATION_GIVEN = CATALOG.declare(
     "rental_minister_allocation_given", int, non_negative=True
 )
 """Whether the minister allocated an amount, Form T776 Area A Note 5 "any amount allocated by the
 minister under subsection 1104(3.4) of the Regulations": 1 if an amount was allocated, 0
 otherwise, a starting count."""
+
+RENTAL_MINISTER_ALLOCATION_GIVEN_CHECKED = CATALOG.declare(
+    "rental_minister_allocation_given_checked", int, non_negative=True
+)
+"""Whether the minister allocated an amount, Form T776 Area A Note 5 "any amount allocated by
+the minister under subsection 1104(3.4) of the Regulations": the answer of
+`ca/rental_minister_allocation_given` after the check that it is 0 or 1
+(`ca/yes_or_no_count`), a count of 1 or 0. A count of 2 or more is refused, not capped."""
 
 RENTAL_MINISTER_ALLOCATION = CATALOG.declare(
     "rental_minister_allocation", Decimal, non_negative=True
@@ -1279,6 +1312,28 @@ RENTAL_VEHICLE_SALES_TAX_RATE = CATALOG.declare(
 "Use the GST rate of 5% and the appropriate PST rate for your province or territory. If your
 province is a participating province, use the appropriate HST rate.": the rate in percent, so 13
 is 13%, a starting amount."""
+
+RENTAL_FISCAL_PERIOD_DAYS_ENTERED = CATALOG.declare(
+    "rental_fiscal_period_days_entered", int, non_negative=True
+)
+"""Days of the fiscal period of Form T776, the days the filer enters when the fiscal period is
+shorter than a full year, 0 when none are entered (a full year). Form T776 Part 1 "Fiscal period
+from Date (Year/Month/Day) to (Year/12/31)" and Guide T4036 2025 "Fiscal period": "If this is the
+first year of operation, enter the year, month, and day you began your rental operation.
+Otherwise, enter January 1 of the current year." Guide T4036 2025 Area A "Column 23 – CCA claim
+for the year": "In your first year of rental activities, you may have to prorate your CCA claim."
+Guide T4036 prints no formula, so the Guide T4002 2025 "You were asking?" rule applies: "Since your
+fiscal period is less than 365 days, you have to prorate your CCA claim. ... base your CCA claim on
+the number of days in your fiscal period compared to 365 days. In this case, your fiscal period is
+214 days." A starting count."""
+
+RENTAL_FISCAL_PERIOD_DAYS = CATALOG.declare("rental_fiscal_period_days", int, non_negative=True)
+"""Days of the fiscal period of Form T776 that the CCA claim and closing UCC are prorated by: the
+days entered when above 0, else the days in a full year. Guide T4036 2025 Area A "Column 23 – CCA
+claim for the year": "In your first year of rental activities, you may have to prorate your CCA
+claim." Guide T4036 prints no formula, so the Guide T4002 2025 "You were asking?" rule applies:
+"base your CCA claim on the number of days in your fiscal period compared to 365 days" (the
+Guide's example: "your fiscal period is 214 days")."""
 
 RENTAL_CCA_CLASSES = RecordListKind.declare(
     CATALOG,
@@ -1437,6 +1492,7 @@ T776_STATEMENTS = RecordListKind.declare(
         RENTAL_COOWNER,
         RENTAL_COOWNER_SHARE,
         RENTAL_COOWNER_OTHER_EXPENSES,
+        RENTAL_FISCAL_PERIOD_DAYS_ENTERED,
         RENTAL_VEHICLE_SALES_TAX_RATE,
         RENTAL_CCA_CLASSES,
         RENTAL_COOWNER_RECAPTURED_CCA,
@@ -1929,6 +1985,14 @@ filer is associated with one or more EPOPs in the tax year, 0 if not, a starting
 endnote 5's association, whether or not an agreement was filed; Area G is filled in when one
 was."""
 
+BUSINESS_EPOP_ASSOCIATED_CHECKED = CATALOG.declare(
+    "business_epop_associated_checked", int, non_negative=True
+)
+"""Whether the filer is associated with an EPOP, Form T2125 Area A endnote 5 "$1.5 million, if
+you are not associated with any other eligible person or partnership (EPOP) in the tax year":
+the answer of `ca/business_epop_associated` after the check that it is 0 or 1
+(`ca/yes_or_no_count`), a count of 1 or 0. A count of 2 or more is refused, not capped."""
+
 BUSINESS_EPOP_AGREEMENT_FILED = CATALOG.declare(
     "business_epop_agreement_filed", int, non_negative=True
 )
@@ -1936,6 +2000,15 @@ BUSINESS_EPOP_AGREEMENT_FILED = CATALOG.declare(
 one or more EPOPs and an agreement that assigns a percentage to one or more of the associated
 EPOPs was not filed with the minister in a prescribed form": 1 if the agreement was filed, 0 if
 it was not, a starting count."""
+
+BUSINESS_EPOP_AGREEMENT_FILED_CHECKED = CATALOG.declare(
+    "business_epop_agreement_filed_checked", int, non_negative=True
+)
+"""Whether the agreement was filed, Form T2125 Area A endnote 5 "zero, if you are associated with
+one or more EPOPs and an agreement that assigns a percentage to one or more of the associated
+EPOPs was not filed with the minister in a prescribed form": the answer of
+`ca/business_epop_agreement_filed` after the check that it is 0 or 1 (`ca/yes_or_no_count`), a
+count of 1 or 0. A count of 2 or more is refused, not capped."""
 
 BUSINESS_EPOP_PERCENTAGE = CATALOG.declare("business_epop_percentage", Decimal, non_negative=True)
 """Percentage assigned to the business, Form T2125 Area G "Column 3: Percentage assigned under the
@@ -1948,12 +2021,28 @@ BUSINESS_EPOP_PERCENTAGE_TOTAL = CATALOG.declare(
 """Total of the percentages assigned, Form T2125 Area G "Total of percentage assigned: Total of
 column 3", entered as the form prints it: a starting amount."""
 
+BUSINESS_EPOP_PERCENTAGE_CHECKED = CATALOG.declare(
+    "business_epop_percentage_checked", Decimal, non_negative=True
+)
+"""Percentage assigned to the filer, Form T2125 Area G "Column 3: Percentage assigned under the
+agreement": the percentage of `ca/business_epop_percentage` after the check that it is not more than
+`ca/business_epop_percentage_total` (`core/at_most`), entered as the form prints it. The form is
+silent on that check; the refusal is a choice, not a form rule."""
+
 BUSINESS_MINISTER_ALLOCATION_GIVEN = CATALOG.declare(
     "business_minister_allocation_given", int, non_negative=True
 )
 """Whether the minister allocated an amount, Form T2125 Area A endnote 5 "any amount allocated by
 the minister under subsection 1104(3.4) of the Regulations": 1 if an amount was allocated, 0
 otherwise, a starting count."""
+
+BUSINESS_MINISTER_ALLOCATION_GIVEN_CHECKED = CATALOG.declare(
+    "business_minister_allocation_given_checked", int, non_negative=True
+)
+"""Whether the minister allocated an amount, Form T2125 Area A endnote 5 "any amount allocated by
+the minister under subsection 1104(3.4) of the Regulations": the answer of
+`ca/business_minister_allocation_given` after the check that it is 0 or 1
+(`ca/yes_or_no_count`), a count of 1 or 0. A count of 2 or more is refused, not capped."""
 
 BUSINESS_MINISTER_ALLOCATION = CATALOG.declare(
     "business_minister_allocation", Decimal, non_negative=True
@@ -2892,11 +2981,28 @@ filer is associated with one or more EPOPs in the tax year, 0 if not, a starting
 endnote 5's association, whether or not an agreement was filed; Area G is filled in when one
 was."""
 
+FARM_EPOP_ASSOCIATED_CHECKED = CATALOG.declare(
+    "farm_epop_associated_checked", int, non_negative=True
+)
+"""Whether the filer is associated with an EPOP, Form T2042 Area A endnote 5 "$1.5 million, if
+you are not associated with any other eligible person or partnership (EPOP) in the tax year":
+the answer of `ca/farm_epop_associated` after the check that it is 0 or 1
+(`ca/yes_or_no_count`), a count of 1 or 0. A count of 2 or more is refused, not capped."""
+
 FARM_EPOP_AGREEMENT_FILED = CATALOG.declare("farm_epop_agreement_filed", int, non_negative=True)
 """Whether the agreement was filed, Form T2042 Area A endnote 5 "zero, if you are associated with
 one or more EPOPs and an agreement that assigns a percentage to one or more of the associated
 EPOPs was not filed with the minister in a prescribed form": 1 if the agreement was filed, 0 if
 it was not, a starting count."""
+
+FARM_EPOP_AGREEMENT_FILED_CHECKED = CATALOG.declare(
+    "farm_epop_agreement_filed_checked", int, non_negative=True
+)
+"""Whether the agreement was filed, Form T2042 Area A endnote 5 "zero, if you are associated with
+one or more EPOPs and an agreement that assigns a percentage to one or more of the associated
+EPOPs was not filed with the minister in a prescribed form": the answer of
+`ca/farm_epop_agreement_filed` after the check that it is 0 or 1 (`ca/yes_or_no_count`), a
+count of 1 or 0. A count of 2 or more is refused, not capped."""
 
 FARM_EPOP_PERCENTAGE = CATALOG.declare("farm_epop_percentage", Decimal, non_negative=True)
 """Percentage assigned to the farm, Form T2042 Area G "Column 3: Percentage assigned under the
@@ -2909,12 +3015,28 @@ FARM_EPOP_PERCENTAGE_TOTAL = CATALOG.declare(
 """Total of the percentages assigned, Form T2042 Area G "Total of percentage assigned: Total of
 column 3", entered as the form prints it: a starting amount."""
 
+FARM_EPOP_PERCENTAGE_CHECKED = CATALOG.declare(
+    "farm_epop_percentage_checked", Decimal, non_negative=True
+)
+"""Percentage assigned to the filer, Form T2042 Area G "Column 3: Percentage assigned under the
+agreement": the percentage of `ca/farm_epop_percentage` after the check that it is not more than
+`ca/farm_epop_percentage_total` (`core/at_most`), entered as the form prints it. The form is silent
+on that check; the refusal is a choice, not a form rule."""
+
 FARM_MINISTER_ALLOCATION_GIVEN = CATALOG.declare(
     "farm_minister_allocation_given", int, non_negative=True
 )
 """Whether the minister allocated an amount, Form T2042 Area A endnote 5 "any amount allocated by
 the minister under subsection 1104(3.4) of the Regulations": 1 if an amount was allocated, 0
 otherwise, a starting count."""
+
+FARM_MINISTER_ALLOCATION_GIVEN_CHECKED = CATALOG.declare(
+    "farm_minister_allocation_given_checked", int, non_negative=True
+)
+"""Whether the minister allocated an amount, Form T2042 Area A endnote 5 "any amount allocated by
+the minister under subsection 1104(3.4) of the Regulations": the answer of
+`ca/farm_minister_allocation_given` after the check that it is 0 or 1 (`ca/yes_or_no_count`),
+a count of 1 or 0. A count of 2 or more is refused, not capped."""
 
 FARM_MINISTER_ALLOCATION = CATALOG.declare("farm_minister_allocation", Decimal, non_negative=True)
 """Amount allocated by the minister, Form T2042 Area A endnote 5 "any amount allocated by the
@@ -3534,11 +3656,28 @@ filer is associated with one or more EPOPs in the tax year, 0 if not, a starting
 endnote 5's association, whether or not an agreement was filed; Area G is filled in when one
 was."""
 
+FISH_EPOP_ASSOCIATED_CHECKED = CATALOG.declare(
+    "fish_epop_associated_checked", int, non_negative=True
+)
+"""Whether the filer is associated with an EPOP, Form T2121 Area A endnote 5 "$1.5 million, if
+you are not associated with any other eligible person or partnership (EPOP) in the tax year":
+the answer of `ca/fish_epop_associated` after the check that it is 0 or 1
+(`ca/yes_or_no_count`), a count of 1 or 0. A count of 2 or more is refused, not capped."""
+
 FISH_EPOP_AGREEMENT_FILED = CATALOG.declare("fish_epop_agreement_filed", int, non_negative=True)
 """Whether the agreement was filed, Form T2121 Area A endnote 5 "zero, if you are associated with
 one or more EPOPs and an agreement that assigns a percentage to one or more of the associated
 EPOPs was not filed with the minister in a prescribed form": 1 if the agreement was filed, 0 if
 it was not, a starting count."""
+
+FISH_EPOP_AGREEMENT_FILED_CHECKED = CATALOG.declare(
+    "fish_epop_agreement_filed_checked", int, non_negative=True
+)
+"""Whether the agreement was filed, Form T2121 Area A endnote 5 "zero, if you are associated with
+one or more EPOPs and an agreement that assigns a percentage to one or more of the associated
+EPOPs was not filed with the minister in a prescribed form": the answer of
+`ca/fish_epop_agreement_filed` after the check that it is 0 or 1 (`ca/yes_or_no_count`), a
+count of 1 or 0. A count of 2 or more is refused, not capped."""
 
 FISH_EPOP_PERCENTAGE = CATALOG.declare("fish_epop_percentage", Decimal, non_negative=True)
 """Percentage assigned to the fishing business, Form T2121 Area G "Percentage assigned under the
@@ -3551,12 +3690,28 @@ FISH_EPOP_PERCENTAGE_TOTAL = CATALOG.declare(
 """Total of the percentages assigned, Form T2121 Area G "Total of percentage assigned: Total of
 column 3", entered as the form prints it: a starting amount."""
 
+FISH_EPOP_PERCENTAGE_CHECKED = CATALOG.declare(
+    "fish_epop_percentage_checked", Decimal, non_negative=True
+)
+"""Percentage assigned to the filer, Form T2121 Area G "Column 3: Percentage assigned under the
+agreement": the percentage of `ca/fish_epop_percentage` after the check that it is not more than
+`ca/fish_epop_percentage_total` (`core/at_most`), entered as the form prints it. The form is silent
+on that check; the refusal is a choice, not a form rule."""
+
 FISH_MINISTER_ALLOCATION_GIVEN = CATALOG.declare(
     "fish_minister_allocation_given", int, non_negative=True
 )
 """Whether the minister allocated an amount, Form T2121 Area A endnote 5 "any amount allocated by
 the minister under subsection 1104(3.4) of the Regulations": 1 if an amount was allocated, 0
 otherwise, a starting count."""
+
+FISH_MINISTER_ALLOCATION_GIVEN_CHECKED = CATALOG.declare(
+    "fish_minister_allocation_given_checked", int, non_negative=True
+)
+"""Whether the minister allocated an amount, Form T2121 Area A endnote 5 "any amount allocated by
+the minister under subsection 1104(3.4) of the Regulations": the answer of
+`ca/fish_minister_allocation_given` after the check that it is 0 or 1 (`ca/yes_or_no_count`),
+a count of 1 or 0. A count of 2 or more is refused, not capped."""
 
 FISH_MINISTER_ALLOCATION = CATALOG.declare("fish_minister_allocation", Decimal, non_negative=True)
 """Amount allocated by the minister, Form T2121 Area A endnote 5 "any amount allocated by the

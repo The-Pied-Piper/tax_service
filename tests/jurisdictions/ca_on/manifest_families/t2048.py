@@ -1,13 +1,22 @@
 """The CA-ON manifest entries of Form T2048 (line 25395), Parts 2 to 5 and Chart A (see
 `test_manifest.py` and `test_manifest_t2048.py`).
 
-T2048 is the form `ca/t2048`, run once for each disposition of `ca/t2048_dispositions`, whose fields
-are the T2048 inputs (`FORM_INPUTS`). Its selections are `FORM_STEPS`: the 34 of Parts 2 to 5 and
-Chart A, and 54 copies of the return's steps that compute the 11 figures the form reads (the
-return keeps its own). The form exports the nine artifacts the return reads or outputs
-(`FORM_EXPORTS`), and the return re-produces each of them with `core/record_total` over the form's
-derived kind `ca/t2048.<name>` (`STEPS`). `IMPORTS` are the other forms' exports the copies read.
-Line 25395 is added to line 25700 in the `taxable_income` family.
+T2048 is the form `ca/t2048`, run once for each disposition of `ca/t2048_dispositions` (any number,
+none included), whose fields are the T2048 inputs (`FORM_INPUTS`). Its selections are `FORM_STEPS`:
+the 41 of Parts 2 to 5 and Chart A (`OWN_STEPS`), and 54 copies of the return's steps that compute
+the 11 figures the form reads (the return keeps its own). The form exports the nine artifacts the
+return reads or outputs and a tenth, the order check's (`FORM_EXPORTS`), and the return re-produces
+each of the nine with `core/record_total` over the form's derived kind `ca/t2048.<name>`
+(`STEPS`). `IMPORTS` are the other forms' exports the copies read. Line 25395 is added to line
+25700 in the `taxable_income` family.
+
+With more than one disposition, a run reads the earlier runs through the form's own derived kinds
+(`EARLIER`, design.md section 6 "Earlier runs"): notes (1) to (3) of the form total the earlier
+runs' line 32, line 41 and line 42 with `core/record_total`, and subtract the total from line 8
+and line 23 (as printed, no floor) and from Chart A line 20 (floored at 0, as the printed line 20
+is); every step of the form that read the
+return's line 12700, line 21700 or Chart A line 20 reads the corrected figure. The order check
+(`ca/qbt_before_qcc`) refuses a QBT listed after a QCC. With no earlier run every correction is 0.
 """
 
 from __future__ import annotations
@@ -33,6 +42,7 @@ from app.jurisdictions.ca.capabilities.lesser_of_with_maximum import LesserOfWit
 from app.jurisdictions.ca.capabilities.principal_residence_line_57 import (
     PrincipalResidencePart4Line57,
 )
+from app.jurisdictions.ca.capabilities.qbt_before_qcc import QbtBeforeQcc
 from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
@@ -124,20 +134,26 @@ from app.jurisdictions.ca.catalog import (
     QBT_ABIL_REDUCTION,
     QBT_ALLOCATION_LIMIT,
     QBT_ALLOCATION_TOTAL,
+    QBT_ALLOWABLE_BUSINESS_INVESTMENT_LOSS_AFTER_EARLIER,
     QBT_AMOUNT_ALLOCATED,
     QBT_CAPITAL_GAINS,
     QBT_CAPITAL_GAINS_DEDUCTION,
     QBT_CAPITAL_GAINS_WITH_2024_RESERVE,
     QBT_CHART_A_NET_CAPITAL_LOSSES_USED,
     QBT_CHART_A_NET_INVESTMENT_LOSS,
+    QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER,
     QBT_DEDUCTION_AVAILABLE,
     QBT_DEDUCTION_BASE,
     QBT_DEDUCTION_CLAIMED,
     QBT_DEDUCTION_LIMIT,
     QBT_DIVIDENDS_AND_INVESTMENT_INCOME,
+    QBT_EARLIER_ABIL_REDUCTION_TOTAL,
+    QBT_EARLIER_ALLOCATION_TOTAL,
+    QBT_EARLIER_NET_INVESTMENT_LOSS_REDUCTION_TOTAL,
     QBT_ELECTION_DEDUCTION,
     QBT_ELECTION_ELIGIBLE_AMOUNT,
     QBT_ELECTION_IS_QBT,
+    QBT_ELECTION_IS_QBT_IN_ORDER,
     QBT_EXPLORATION_EXPENSES_AT_HALF,
     QBT_GAINS_ARE_QSBCS_OR_QFFP,
     QBT_HAS_INVESTMENT_EXPENSES,
@@ -159,6 +175,7 @@ from app.jurisdictions.ca.catalog import (
     QBT_REDUCTIONS_FROM_LOSSES,
     QBT_TAXABLE_AMOUNT_ALLOCATED,
     QBT_TAXABLE_CAPITAL_GAINS,
+    QBT_TAXABLE_CAPITAL_GAINS_AFTER_EARLIER,
     QBT_TAXABLE_GAINS_LIMIT,
     QBT_TAXABLE_GAINS_NOT_LIMITED,
     QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
@@ -233,6 +250,11 @@ NET_INVESTMENT_LOSS_REDUCTION_PER_DISPOSITION = RecordListKind(
 )
 CAPITAL_GAINS_DEDUCTION_PER_DISPOSITION = RecordListKind(
     "ca/t2048.qbt_capital_gains_deduction", fields=(QBT_CAPITAL_GAINS_DEDUCTION,)
+)
+# The tenth export: each run's election answer, once it has passed the order check. The return does
+# not read it; the check of the next run does (`ca/qbt_before_qcc`).
+ELECTION_IS_QBT_IN_ORDER_PER_DISPOSITION = RecordListKind(
+    "ca/t2048.qbt_election_is_qbt_in_order", fields=(QBT_ELECTION_IS_QBT_IN_ORDER,)
 )
 
 FORM_INPUTS = frozenset(
@@ -329,13 +351,14 @@ OWN_STEPS = {
         },
         produces={"output": "ca/qbt_taxable_capital_gains"},
     ),
-    # Part 3 line 17 "Enter whichever is less: amount from line 8 or line 16."
+    # Part 3 line 17 "Enter whichever is less: amount from line 8 or line 16." (line 8 after note
+    # (1), `ca/qbt_taxable_capital_gains_after_earlier`).
     CapabilitySelection(
         name="core/lesser_of",
         params={},
         consumes={
             "amounts": (
-                "ca/taxable_capital_gains",
+                "ca/qbt_taxable_capital_gains_after_earlier",
                 "ca/qbt_taxable_capital_gains",
             ),
         },
@@ -348,7 +371,7 @@ OWN_STEPS = {
         name="core/subtract_not_below_zero",
         params={},
         consumes={
-            "amount": "ca/taxable_capital_gains",
+            "amount": "ca/qbt_taxable_capital_gains_after_earlier",
             "less": "ca/qbt_taxable_gains_limit",
         },
         produces={"output": "ca/qbt_taxable_gains_not_limited"},
@@ -366,14 +389,14 @@ OWN_STEPS = {
     ),
     # Part 3 line 24 "Net investment loss for the year: If you have investment expenses in 2025,
     # complete Chart A on page 4 and enter the amount from line 20 of Chart A. Otherwise, enter
-    # "0"." The yes/no answer is a 0 or 1 input; the loss times that count is the loss or 0. Line 23
-    # "Allowable business investment loss (ABIL) for the year (line 21700 of your return)" is the
-    # artifact ca/allowable_business_investment_loss, read directly.
+    # "0"." The yes/no answer is a 0 or 1 input; the loss times that count is the loss or 0 (Chart A
+    # line 20 after note (3)). Line 23 "Allowable business investment loss (ABIL) for the year (line
+    # 21700 of your return)" after note (2) is the artifact of the step below the Chart A steps.
     CapabilitySelection(
         name="core/times_count",
         params={},
         consumes={
-            "amount": "ca/qbt_chart_a_net_investment_loss",
+            "amount": "ca/qbt_chart_a_net_investment_loss_after_earlier",
             "count": "ca/qbt_has_investment_expenses",
         },
         produces={"output": "ca/qbt_net_investment_loss"},
@@ -385,7 +408,7 @@ OWN_STEPS = {
         consumes={
             "parts": (
                 "ca/qbt_net_capital_losses_remaining",
-                "ca/allowable_business_investment_loss",
+                "ca/qbt_allowable_business_investment_loss_after_earlier",
                 "ca/qbt_net_investment_loss",
             ),
         },
@@ -469,7 +492,7 @@ OWN_STEPS = {
         params={},
         consumes={
             "parts": (
-                "ca/allowable_business_investment_loss",
+                "ca/qbt_allowable_business_investment_loss_after_earlier",
                 "ca/qbt_net_investment_loss",
             ),
         },
@@ -496,7 +519,7 @@ OWN_STEPS = {
         name="ca/apply_ratio_or_zero",
         params={"rounding": "ca/qbt_abil_reduction_rounding"},
         consumes={
-            "amount": "ca/allowable_business_investment_loss",
+            "amount": "ca/qbt_allowable_business_investment_loss_after_earlier",
             "numerator": "ca/qbt_allocation_limit",
             "denominator": "ca/qbt_abil_and_net_investment_loss",
         },
@@ -674,6 +697,81 @@ OWN_STEPS = {
             "less": "ca/qbt_investment_income",
         },
         produces={"output": "ca/qbt_chart_a_net_investment_loss"},
+    ),
+    # Note (1) of Part 3 line 8 "If you have more than one QBT or QCC, subtract the sum of all
+    # previous amounts from line 32 of the next page.": the sum of all previous amounts is the total
+    # of the earlier runs' line 32 (the form's own derived kind `ca/t2048.qbt_allocation_total`);
+    # with no earlier run it is 0.
+    CapabilitySelection(
+        name="core/record_total",
+        params={},
+        consumes={"records": "ca/t2048.qbt_allocation_total"},
+        produces={"output": "ca/qbt_earlier_allocation_total"},
+    ),
+    # Part 3 line 8 "Taxable capital gains from line 12700 of your return" less that sum (note
+    # (1)). The form prints no floor.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/taxable_capital_gains",
+            "less": "ca/qbt_earlier_allocation_total",
+        },
+        produces={"output": "ca/qbt_taxable_capital_gains_after_earlier"},
+    ),
+    # Note (2) of Part 3 line 23 "If you have more than one QBT or QCC, subtract the sum of all
+    # previous amounts from line 41 above.": the total of the earlier runs' line 41 (the form's own
+    # derived kind `ca/t2048.qbt_abil_reduction`).
+    CapabilitySelection(
+        name="core/record_total",
+        params={},
+        consumes={"records": "ca/t2048.qbt_abil_reduction"},
+        produces={"output": "ca/qbt_earlier_abil_reduction_total"},
+    ),
+    # Part 3 line 23 "Allowable business investment loss (ABIL) for the year (line 21700 of your
+    # return)" less that sum (note (2)). The form prints no floor.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/allowable_business_investment_loss",
+            "less": "ca/qbt_earlier_abil_reduction_total",
+        },
+        produces={"output": "ca/qbt_allowable_business_investment_loss_after_earlier"},
+    ),
+    # Note (3) of Chart A line 20 "If you have more than one QBT or QCC, subtract the sum of all
+    # previous amounts from line 42 of Part 4.": the total of the earlier runs' line 42 (the form's
+    # own derived kind `ca/t2048.qbt_net_investment_loss_reduction`).
+    CapabilitySelection(
+        name="core/record_total",
+        params={},
+        consumes={"records": "ca/t2048.qbt_net_investment_loss_reduction"},
+        produces={"output": "ca/qbt_earlier_net_investment_loss_reduction_total"},
+    ),
+    # Chart A line 20 "Line 10 minus line 19 (if negative enter "0") (3)" less that sum (note (3),
+    # printed on line 20 itself): the floor printed on the line applies to the result, so it is
+    # floored at 0.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/qbt_chart_a_net_investment_loss",
+            "less": "ca/qbt_earlier_net_investment_loss_reduction_total",
+        },
+        produces={"output": "ca/qbt_chart_a_net_investment_loss_after_earlier"},
+    ),
+    # "You must claim any deduction under a QBT before any deduction under a QCC.": the run's
+    # answer to Part 5's "if the election is for a QBT" (1) after a QCC (0) among the earlier runs'
+    # answers (the form's own derived kind `ca/t2048.qbt_election_is_qbt_in_order`) is an input
+    # error, a ValidationError; otherwise the answer passes on as the tenth export.
+    CapabilitySelection(
+        name="ca/qbt_before_qcc",
+        params={},
+        consumes={
+            "is_qbt": "ca/qbt_election_is_qbt",
+            "earlier": "ca/t2048.qbt_election_is_qbt_in_order",
+        },
+        produces={"output": "ca/qbt_election_is_qbt_in_order"},
     ),
 }
 
@@ -1173,7 +1271,8 @@ FORM_STEPS = OWN_STEPS | COPIED_STEPS
 
 
 # The form exports the eight artifacts of the 02_outputs block and line 25395's claim, which the
-# return reads (06_taxable_income, 08a_foreign_tax_credit and 20_alternative_minimum_tax).
+# return reads (06_taxable_income, 08a_foreign_tax_credit and 20_alternative_minimum_tax), and the
+# election answer once it has passed the order check, which only the form reads.
 FORM_EXPORTS = (
     "ca/qbt_allocation_total",
     "ca/qcc_election_deduction",
@@ -1184,6 +1283,19 @@ FORM_EXPORTS = (
     "ca/qbt_abil_reduction",
     "ca/qbt_net_investment_loss_reduction",
     "ca/qbt_capital_gains_deduction",
+    "ca/qbt_election_is_qbt_in_order",
+)
+# The nine the return totals over the dispositions (`STEPS`); the tenth is read by the form only.
+TOTALED_EXPORTS = FORM_EXPORTS[:9]
+
+# The form's own derived kinds that its selections read: each run gets the earlier runs' values.
+EARLIER = frozenset(
+    {
+        "ca/t2048.qbt_allocation_total",
+        "ca/t2048.qbt_abil_reduction",
+        "ca/t2048.qbt_net_investment_loss_reduction",
+        "ca/t2048.qbt_election_is_qbt_in_order",
+    }
 )
 
 # The return's own artifacts that the form's selections read (the form starts from them, as the
@@ -1300,12 +1412,12 @@ FORM_WIRING = {
     ),
     (
         LesserOf,
-        frozenset({TAXABLE_CAPITAL_GAINS, QBT_TAXABLE_CAPITAL_GAINS}),
+        frozenset({QBT_TAXABLE_CAPITAL_GAINS_AFTER_EARLIER, QBT_TAXABLE_CAPITAL_GAINS}),
         frozenset({QBT_TAXABLE_GAINS_LIMIT}),
     ),
     (
         SubtractNotBelowZero,
-        frozenset({TAXABLE_CAPITAL_GAINS, QBT_TAXABLE_GAINS_LIMIT}),
+        frozenset({QBT_TAXABLE_CAPITAL_GAINS_AFTER_EARLIER, QBT_TAXABLE_GAINS_LIMIT}),
         frozenset({QBT_TAXABLE_GAINS_NOT_LIMITED}),
     ),
     (
@@ -1315,7 +1427,7 @@ FORM_WIRING = {
     ),
     (
         TimesCount,
-        frozenset({QBT_CHART_A_NET_INVESTMENT_LOSS, QBT_HAS_INVESTMENT_EXPENSES}),
+        frozenset({QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER, QBT_HAS_INVESTMENT_EXPENSES}),
         frozenset({QBT_NET_INVESTMENT_LOSS}),
     ),
     (
@@ -1323,7 +1435,7 @@ FORM_WIRING = {
         frozenset(
             {
                 QBT_NET_CAPITAL_LOSSES_REMAINING,
-                ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+                QBT_ALLOWABLE_BUSINESS_INVESTMENT_LOSS_AFTER_EARLIER,
                 QBT_NET_INVESTMENT_LOSS,
             }
         ),
@@ -1361,7 +1473,7 @@ FORM_WIRING = {
     ),
     (
         Sum,
-        frozenset({ALLOWABLE_BUSINESS_INVESTMENT_LOSS, QBT_NET_INVESTMENT_LOSS}),
+        frozenset({QBT_ALLOWABLE_BUSINESS_INVESTMENT_LOSS_AFTER_EARLIER, QBT_NET_INVESTMENT_LOSS}),
         frozenset({QBT_ABIL_AND_NET_INVESTMENT_LOSS}),
     ),
     (
@@ -1373,7 +1485,7 @@ FORM_WIRING = {
         ApplyRatioOrZero,
         frozenset(
             {
-                ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+                QBT_ALLOWABLE_BUSINESS_INVESTMENT_LOSS_AFTER_EARLIER,
                 QBT_ALLOCATION_LIMIT,
                 QBT_ABIL_AND_NET_INVESTMENT_LOSS,
             }
@@ -1801,6 +1913,45 @@ FORM_WIRING = {
             }
         ),
         frozenset({ADJUSTED_GROSS_CAPITAL_LOSSES_2000}),
+    ),
+    # Notes (1) to (3): the sum of all previous amounts, and the line as corrected.
+    (
+        RecordTotal,
+        frozenset({ALLOCATION_TOTAL_PER_DISPOSITION}),
+        frozenset({QBT_EARLIER_ALLOCATION_TOTAL}),
+    ),
+    (
+        Subtract,
+        frozenset({TAXABLE_CAPITAL_GAINS, QBT_EARLIER_ALLOCATION_TOTAL}),
+        frozenset({QBT_TAXABLE_CAPITAL_GAINS_AFTER_EARLIER}),
+    ),
+    (
+        RecordTotal,
+        frozenset({ABIL_REDUCTION_PER_DISPOSITION}),
+        frozenset({QBT_EARLIER_ABIL_REDUCTION_TOTAL}),
+    ),
+    (
+        Subtract,
+        frozenset({ALLOWABLE_BUSINESS_INVESTMENT_LOSS, QBT_EARLIER_ABIL_REDUCTION_TOTAL}),
+        frozenset({QBT_ALLOWABLE_BUSINESS_INVESTMENT_LOSS_AFTER_EARLIER}),
+    ),
+    (
+        RecordTotal,
+        frozenset({NET_INVESTMENT_LOSS_REDUCTION_PER_DISPOSITION}),
+        frozenset({QBT_EARLIER_NET_INVESTMENT_LOSS_REDUCTION_TOTAL}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset(
+            {QBT_CHART_A_NET_INVESTMENT_LOSS, QBT_EARLIER_NET_INVESTMENT_LOSS_REDUCTION_TOTAL}
+        ),
+        frozenset({QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER}),
+    ),
+    # The order check: a QBT may not follow a QCC.
+    (
+        QbtBeforeQcc,
+        frozenset({QBT_ELECTION_IS_QBT, ELECTION_IS_QBT_IN_ORDER_PER_DISPOSITION}),
+        frozenset({QBT_ELECTION_IS_QBT_IN_ORDER}),
     ),
 }
 

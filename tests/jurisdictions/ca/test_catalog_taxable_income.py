@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
+import ast
+import re
 from decimal import Decimal
+from pathlib import Path
 
+import pytest
+
+import app.jurisdictions.ca.catalog
 from app.domain.artifact import ArtifactRegistry
 from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog import (
@@ -116,20 +122,26 @@ from app.jurisdictions.ca.catalog import (
     QBT_ABIL_REDUCTION,
     QBT_ALLOCATION_LIMIT,
     QBT_ALLOCATION_TOTAL,
+    QBT_ALLOWABLE_BUSINESS_INVESTMENT_LOSS_AFTER_EARLIER,
     QBT_AMOUNT_ALLOCATED,
     QBT_CAPITAL_GAINS,
     QBT_CAPITAL_GAINS_DEDUCTION,
     QBT_CAPITAL_GAINS_WITH_2024_RESERVE,
     QBT_CHART_A_NET_CAPITAL_LOSSES_USED,
     QBT_CHART_A_NET_INVESTMENT_LOSS,
+    QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER,
     QBT_DEDUCTION_AVAILABLE,
     QBT_DEDUCTION_BASE,
     QBT_DEDUCTION_CLAIMED,
     QBT_DEDUCTION_LIMIT,
     QBT_DIVIDENDS_AND_INVESTMENT_INCOME,
+    QBT_EARLIER_ABIL_REDUCTION_TOTAL,
+    QBT_EARLIER_ALLOCATION_TOTAL,
+    QBT_EARLIER_NET_INVESTMENT_LOSS_REDUCTION_TOTAL,
     QBT_ELECTION_DEDUCTION,
     QBT_ELECTION_ELIGIBLE_AMOUNT,
     QBT_ELECTION_IS_QBT,
+    QBT_ELECTION_IS_QBT_IN_ORDER,
     QBT_EXPLORATION_EXPENSES_AT_HALF,
     QBT_GAINS_ARE_QSBCS_OR_QFFP,
     QBT_HAS_INVESTMENT_EXPENSES,
@@ -151,6 +163,7 @@ from app.jurisdictions.ca.catalog import (
     QBT_REDUCTIONS_FROM_LOSSES,
     QBT_TAXABLE_AMOUNT_ALLOCATED,
     QBT_TAXABLE_CAPITAL_GAINS,
+    QBT_TAXABLE_CAPITAL_GAINS_AFTER_EARLIER,
     QBT_TAXABLE_GAINS_LIMIT,
     QBT_TAXABLE_GAINS_NOT_LIMITED,
     QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
@@ -566,6 +579,22 @@ def test_the_form_t2048_kinds_are_the_registered_ones(registry: ArtifactRegistry
         ("ca/qbt_recovery_of_exploration_expenses", QBT_RECOVERY_OF_EXPLORATION_EXPENSES),
         ("ca/qbt_investment_income", QBT_INVESTMENT_INCOME),
         ("ca/qbt_chart_a_net_investment_loss", QBT_CHART_A_NET_INVESTMENT_LOSS),
+        ("ca/qbt_earlier_allocation_total", QBT_EARLIER_ALLOCATION_TOTAL),
+        ("ca/qbt_taxable_capital_gains_after_earlier", QBT_TAXABLE_CAPITAL_GAINS_AFTER_EARLIER),
+        ("ca/qbt_earlier_abil_reduction_total", QBT_EARLIER_ABIL_REDUCTION_TOTAL),
+        (
+            "ca/qbt_allowable_business_investment_loss_after_earlier",
+            QBT_ALLOWABLE_BUSINESS_INVESTMENT_LOSS_AFTER_EARLIER,
+        ),
+        (
+            "ca/qbt_earlier_net_investment_loss_reduction_total",
+            QBT_EARLIER_NET_INVESTMENT_LOSS_REDUCTION_TOTAL,
+        ),
+        (
+            "ca/qbt_chart_a_net_investment_loss_after_earlier",
+            QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER,
+        ),
+        ("ca/qbt_election_is_qbt_in_order", QBT_ELECTION_IS_QBT_IN_ORDER),
     ):
         assert registry.get(identifier) is kind, identifier
 
@@ -617,6 +646,13 @@ def test_the_form_t2048_kinds_are_money_and_counts() -> None:
         QBT_RECOVERY_OF_EXPLORATION_EXPENSES,
         QBT_INVESTMENT_INCOME,
         QBT_CHART_A_NET_INVESTMENT_LOSS,
+        QBT_EARLIER_ALLOCATION_TOTAL,
+        QBT_TAXABLE_CAPITAL_GAINS_AFTER_EARLIER,
+        QBT_EARLIER_ABIL_REDUCTION_TOTAL,
+        QBT_ALLOWABLE_BUSINESS_INVESTMENT_LOSS_AFTER_EARLIER,
+        QBT_EARLIER_NET_INVESTMENT_LOSS_REDUCTION_TOTAL,
+        # Chart A line 20 after note (3): the floor printed on line 20 applies to the result.
+        QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER,
     ):
         assert kind.value_type is Decimal, kind.identifier
         assert kind.non_negative is True, kind.identifier
@@ -626,8 +662,10 @@ def test_the_form_t2048_kinds_are_money_and_counts() -> None:
         QBT_HAS_INVESTMENT_EXPENSES,
         QBT_ELECTION_IS_QBT,
         QBT_GAINS_ARE_QSBCS_OR_QFFP,
+        QBT_ELECTION_IS_QBT_IN_ORDER,
     ):
         assert count.value_type is int, count.identifier
+        assert count.non_negative is True, count.identifier
 
 
 def test_the_t2048_dispositions_kind_is_a_record_list_of_the_thirteen_inputs(
@@ -895,3 +933,93 @@ def test_chart_1_is_a_record_list_of_one_record_for_each_year_row(
         T657_CHART_1_COLUMN_C,
         T657_CHART_1_COLUMN_D,
     )
+
+
+# --- more than one disposition: notes (1) to (3) and the order of the claims ---------------------
+#
+# The kinds are the sums of the earlier runs and the lines as corrected, each with a docstring that
+# quotes the form's own words (`docs/cra-forms-2025/t2048-25e.pdf`).
+
+EARLIER_RUNS_QUOTES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "qbt_earlier_allocation_total",
+        ("T2048", "subtract the sum of all previous amounts from line 32 of the next page"),
+    ),
+    (
+        "qbt_taxable_capital_gains_after_earlier",
+        (
+            "T2048",
+            "Taxable capital gains from line 12700 of your return",
+            "subtract the sum of all previous amounts from line 32 of the next page",
+        ),
+    ),
+    (
+        "qbt_earlier_abil_reduction_total",
+        ("T2048", "subtract the sum of all previous amounts from line 41 above"),
+    ),
+    (
+        "qbt_allowable_business_investment_loss_after_earlier",
+        (
+            "T2048",
+            "Allowable business investment loss (ABIL) for the year (line 21700 of your return)",
+            "subtract the sum of all previous amounts from line 41 above",
+        ),
+    ),
+    (
+        "qbt_earlier_net_investment_loss_reduction_total",
+        ("T2048", "subtract the sum of all previous amounts from line 42 of Part 4"),
+    ),
+    (
+        "qbt_chart_a_net_investment_loss_after_earlier",
+        (
+            "T2048",
+            'Line 10 minus line 19 (if negative enter "0")',
+            "subtract the sum of all previous amounts from line 42 of Part 4",
+        ),
+    ),
+    (
+        "qbt_election_is_qbt_in_order",
+        (
+            "T2048",
+            "You must claim any deduction under a QBT before any deduction under a QCC",
+        ),
+    ),
+)
+
+
+def squashed(text: str) -> str:
+    """`text` with every run of white space made one blank."""
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def docstring_of(name: str) -> str:
+    """The string right after `NAME = CATALOG.declare("<name>", ...)` in a catalog module."""
+    folder = Path(app.jurisdictions.ca.catalog.__file__).parent
+    for path in sorted(folder.glob("*.py")):
+        body = ast.parse(path.read_text()).body
+        for statement, following in zip(body, body[1:], strict=False):
+            if not (isinstance(statement, ast.Assign) and isinstance(statement.value, ast.Call)):
+                continue
+            arguments = statement.value.args
+            if not (
+                arguments
+                and isinstance(arguments[0], ast.Constant)
+                and arguments[0].value == name
+                and isinstance(following, ast.Expr)
+                and isinstance(following.value, ast.Constant)
+            ):
+                continue
+            return str(following.value.value)
+    raise AssertionError(f"no declaration of {name!r} followed by a docstring")
+
+
+@pytest.mark.parametrize(
+    ("name", "quotes"), EARLIER_RUNS_QUOTES, ids=[name for name, _ in EARLIER_RUNS_QUOTES]
+)
+def test_each_earlier_runs_kind_docstring_quotes_the_form(
+    name: str, quotes: tuple[str, ...]
+) -> None:
+    docstring = squashed(docstring_of(name))
+
+    for quote in quotes:
+        assert squashed(quote) in docstring, quote

@@ -43,6 +43,7 @@ __all__ = [
     "ThresholdGateLine",
     "AmountOrDividedByRateLine",
     "CountAtLeastLine",
+    "YesOrNoCountLine",
     "AmountWhenMoreLine",
     "RatioTruncatedLine",
     "PositivePartOfNegationLine",
@@ -525,6 +526,24 @@ class CountAtLeastLine(TraceLine):
     count: int
     minimum_kind: ArtifactKind[int]
     minimum: int
+
+    @property
+    def amount(self) -> Decimal:
+        """The count, as produced."""
+        return Decimal(self.count)
+
+
+@dataclass(frozen=True)
+class YesOrNoCountLine(TraceLine):
+    """`output` = `count_kind` (worth `count`), unchanged, being a yes or no answer of 0 or 1.
+
+    Its own class, not a `CountAtLeastLine`: there is no minimum, and a count above 1 is an error,
+    so no line is recorded for it.
+    """
+
+    output: ArtifactKind[int]
+    count_kind: ArtifactKind[int]
+    count: int
 
     @property
     def amount(self) -> Decimal:

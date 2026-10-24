@@ -103,6 +103,7 @@ from app.jurisdictions.ca.capabilities import (  # noqa: E402
     principal_residence_worksheet_line_64,
     principal_residence_worksheet_line_66,
     principal_residence_worksheet_rows,
+    qbt_before_qcc,
     ratio_truncated,
     recaptured_cca,
     rental_gross_rents,
@@ -114,6 +115,7 @@ from app.jurisdictions.ca.capabilities import (  # noqa: E402
     sign_chosen_difference,
     terminal_loss,
     threshold_gate,
+    yes_or_no_count,
 )
 
 __all__ = [
@@ -213,6 +215,7 @@ __all__ = [
     "principal_residence_worksheet_line_64",
     "principal_residence_worksheet_line_66",
     "principal_residence_worksheet_rows",
+    "qbt_before_qcc",
     "ratio_truncated",
     "recaptured_cca",
     "rental_gross_rents",
@@ -224,4 +227,5 @@ __all__ = [
     "sign_chosen_difference",
     "terminal_loss",
     "threshold_gate",
+    "yes_or_no_count",
 ]

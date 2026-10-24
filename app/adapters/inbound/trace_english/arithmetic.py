@@ -35,6 +35,7 @@ from app.domain.trace.arithmetic import (
     SumNotBelowZeroLine,
     ThresholdGateLine,
     TimesCountLine,
+    YesOrNoCountLine,
 )
 
 
@@ -506,6 +507,20 @@ class CountAtLeastRenderer:
         return (
             f"{line.output.label}: {line.count_kind.label} {line.count}, "
             f"at least {line.minimum_kind.label} {line.minimum}"
+        )
+
+
+@english_renderer
+class YesOrNoCountRenderer:
+    """English text for YesOrNoCountLine."""
+
+    line_class = YesOrNoCountLine
+
+    def render(self, line: YesOrNoCountLine) -> str:
+        """The English sentence for `line`."""
+        return (
+            f"{line.output.label}: {line.count_kind.label} {line.count}, "
+            "a yes or no answer of 0 or 1"
         )
 
 

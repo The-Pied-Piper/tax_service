@@ -468,10 +468,13 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
     REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
     RENTAL_CCA_LIMIT,
+    RENTAL_CCA_TABLE_CLAIM,
+    RENTAL_CLOSING_UCC,
     RENTAL_DEDUCTIBLE_EXPENSES,
     RENTAL_EPOP_PERCENTAGE_MAXIMUM,
     RENTAL_EPOP_PERCENTAGE_ROOM,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
+    RENTAL_FISCAL_PERIOD_DAYS,
     RENTAL_GROSS_RENTS,
     RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
     RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
@@ -2000,8 +2003,12 @@ def test_each_t776_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t776 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t776").composition.order
-    assert len(order) == 41
+    assert len(order) == 46
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
+    # T776 Part 1 "Fiscal period": the days of the fiscal period (the days entered, or a full year)
+    # come before the CCA claim and the closing UCC that are prorated by them.
+    assert position[RENTAL_FISCAL_PERIOD_DAYS] < position[RENTAL_CCA_TABLE_CLAIM]
+    assert position[RENTAL_FISCAL_PERIOD_DAYS] < position[RENTAL_CLOSING_UCC]
     # T776 Parts 3 and 4: lines 8140 and 8141 after the rows, line 8299 after line 8141, the three
     # totals after their boxes, line 1 after A, 9949 and 9366, line 9369 after line 8299 and line
     # 1, amounts 2 to 6 in turn, line 9946 after amount 6 and the partnership's amount.
@@ -2046,7 +2053,7 @@ def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2125 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2125").composition.order
-    assert len(order) == 46
+    assert len(order) == 50
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Guide T4002 "You were asking?": the days of the fiscal period (the days entered, or a full
     # year) come before the CCA claim and the closing UCC that are prorated by them.
@@ -2106,7 +2113,7 @@ def test_each_t2042_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2042 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2042").composition.order
-    assert len(order) == 40
+    assert len(order) == 44
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Guide T4002 "You were asking?": the days of the fiscal period (the days entered, or a full
     # year) come before the CCA claim and the closing UCC that are prorated by them.
@@ -2163,7 +2170,7 @@ def test_each_t2121_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2121 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2121").composition.order
-    assert len(order) == 41
+    assert len(order) == 45
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Guide T4002 "You were asking?": the days of the fiscal period (the days entered, or a full
     # year) come before the CCA claim and the closing UCC that are prorated by them.

@@ -317,6 +317,7 @@ inputs:
       ca/rental_epop_percentage_total: "0"
       ca/rental_minister_allocation_given: "0"
       ca/rental_minister_allocation: "0"
+      ca/rental_fiscal_period_days_entered: "0"
   ca/taxable_support_payments: "0"
   ca/rrsp_income: "0"
   ca/fhsa_income: "0"

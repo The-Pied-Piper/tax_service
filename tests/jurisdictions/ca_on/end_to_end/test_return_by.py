@@ -222,20 +222,20 @@ def test_return_bys_trace_shows_the_limit_chain() -> None:
     for line in (
         "fish_immediate_expensing_cap: credit amount 1500000 (half-up to 0.01)",
         "fish_epop_percentage_maximum: credit amount 100 (half-up to 0.01)",
-        "fish_immediate_expensing_share: fish_epop_percentage 40% of "
+        "fish_immediate_expensing_share: fish_epop_percentage_checked 40% of "
         "fish_immediate_expensing_cap 1500000 = 600000 (half-up to 0.01)",
         "fish_epop_percentage_room: fish_epop_percentage_maximum 100 less "
         "fish_epop_percentage_total 100 = 0",
         "fish_immediate_expensing_allocated: fish_immediate_expensing_share 600000, "
         "chosen as fish_epop_percentage_room 0 is zero",
         "fish_immediate_expensing_associated_limit: fish_immediate_expensing_allocated "
-        "600000 for each of 1 fish_epop_agreement_filed = 600000",
+        "600000 for each of 1 fish_epop_agreement_filed_checked = 600000",
         "fish_immediate_expensing_limit_before_minister: "
         "fish_immediate_expensing_associated_limit 600000, chosen as "
-        "fish_epop_associated is 1",
+        "fish_epop_associated_checked is 1",
         "fish_immediate_expensing_limit: "
         "fish_immediate_expensing_limit_before_minister 600000, chosen as "
-        "fish_minister_allocation_given is 0",
+        "fish_minister_allocation_given_checked is 0",
     ):
         assert line in rendered, line
 

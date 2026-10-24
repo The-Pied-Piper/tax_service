@@ -83,6 +83,7 @@ from app.domain.trace import (
     ThresholdGateLine,
     TimesCountLine,
     TraceLine,
+    YesOrNoCountLine,
 )
 from app.jurisdictions.ca.catalog import CCA_UCC_AT_END
 from app.jurisdictions.ca.trace import (
@@ -3965,6 +3966,23 @@ def test_renders_a_zero_count_and_a_negative_minimum() -> None:
     line = CountAtLeastLine(PERSONS, CHILDREN, 0, DEPENDANTS, -1)
 
     assert render(line) == "person_count: child_count 0, at least dependant_count -1"
+
+
+# --- yes or no counts ----------------------------------------------
+#
+# "<output>: <count kind> <count>, a yes or no answer of 0 or 1" (`ca/yes_or_no_count`).
+
+
+def test_renders_a_yes_or_no_count_of_1() -> None:
+    line = YesOrNoCountLine(PERSONS, CHILDREN, 1)
+
+    assert render(line) == "person_count: child_count 1, a yes or no answer of 0 or 1"
+
+
+def test_renders_a_yes_or_no_count_of_0() -> None:
+    line = YesOrNoCountLine(PERSONS, CHILDREN, 0)
+
+    assert render(line) == "person_count: child_count 0, a yes or no answer of 0 or 1"
 
 
 # --- ratios, truncated ----------------------------

@@ -72,9 +72,11 @@ def test_the_manifest_has_the_form_t776_beside_the_other_forms() -> None:
 
 
 def test_the_form_holds_the_41_t776_selections() -> None:
+    # The 41 selections of the T776 form and the step of the days of the fiscal period
+    # (`ca/fiscal_period_days`), which the two prorated CCA steps consume.
     found = form()
 
-    assert len(found.capabilities) == 41
+    assert len(found.capabilities) == 46
     assert set(found.capabilities) == t776.FORM_STEPS
 
 
@@ -108,7 +110,7 @@ def test_the_statements_kind_is_a_record_list_of_every_t776_input_in_order() -> 
     assert isinstance(T776_STATEMENTS, RecordListKind)
     assert T776_STATEMENTS.identifier == "ca/t776_statements"
     assert frozenset(field.identifier for field in T776_STATEMENTS.fields) == t776.FORM_INPUTS
-    assert len(T776_STATEMENTS.fields) == len(t776.FORM_INPUTS) == 63
+    assert len(T776_STATEMENTS.fields) == len(t776.FORM_INPUTS) == 64
 
 
 def test_the_lists_of_a_statement_are_nested_record_lists() -> None:

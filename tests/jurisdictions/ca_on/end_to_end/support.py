@@ -531,6 +531,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_EPOP_ASSOCIATED,
     RENTAL_EPOP_PERCENTAGE,
     RENTAL_EPOP_PERCENTAGE_TOTAL,
+    RENTAL_FISCAL_PERIOD_DAYS_ENTERED,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
     RENTAL_INSURANCE_SHORT_TERM_PORTION,
@@ -1160,6 +1161,7 @@ def t776_statement(
     rental_epop_percentage_total: str = "0",
     rental_minister_allocation_given: int = 0,
     rental_minister_allocation: str = "0",
+    rental_fiscal_period_days_entered: int = 0,
 ) -> dict[ArtifactKind[Any], object]:
     """One Form T776 statement, a record of `ca/t776_statements`: the T776 inputs, as given or 0."""
     artifacts: list[Artifact[Any]] = [
@@ -1188,6 +1190,7 @@ def t776_statement(
         Artifact(RENTAL_EPOP_PERCENTAGE_TOTAL, D(rental_epop_percentage_total)),
         Artifact(RENTAL_MINISTER_ALLOCATION_GIVEN, rental_minister_allocation_given),
         Artifact(RENTAL_MINISTER_ALLOCATION, D(rental_minister_allocation)),
+        Artifact(RENTAL_FISCAL_PERIOD_DAYS_ENTERED, rental_fiscal_period_days_entered),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
 
@@ -3539,6 +3542,48 @@ def return_be(**overrides: Any) -> Worksheet:
 def form_be(**overrides: Any) -> Worksheet:
     """The worksheet of Return BE's one Form T2048 disposition, every line of the form."""
     return run_be(**overrides)["ca/t2048"][0]
+
+
+def run_bz(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
+    """Return BZ's inputs, as in `returns/2025_return_bz.yaml`.
+
+    Capital gains of 700000 (taxable capital gains 350000.00), no other income. Two QBTs in this
+    order, no investment expenses: the first with line 1 of 1000000 at 100% (line 7 is 500000.00),
+    gains of 600000, all 300000 of the most that can be claimed claimed; the second with line 1 of
+    400000 at 100% (line 7 is 200000.00), gains of 200000, all 50000 claimed (note (1) takes the
+    300000.00 of the first one's line 32 from its line 8). `t2048_dispositions_rows` replaces the
+    two dispositions.
+    """
+    inputs: dict[str, Any] = {
+        "slip_capital_gains_or_losses": "700000",
+        "t2048_dispositions_rows": (
+            {
+                "qbt_election_eligible_amount": "1000000",
+                "qbt_percentage_allocated": "100",
+                "qbt_capital_gains": "600000",
+                "qbt_election_is_qbt": 1,
+                "qbt_deduction_claimed": "300000",
+            },
+            {
+                "qbt_election_eligible_amount": "400000",
+                "qbt_percentage_allocated": "100",
+                "qbt_capital_gains": "200000",
+                "qbt_election_is_qbt": 1,
+                "qbt_deduction_claimed": "50000",
+            },
+        ),
+    }
+    return run("0", (), "0", "0", "0", "0", "0", **{**inputs, **overrides})
+
+
+def return_bz(**overrides: Any) -> Worksheet:
+    """The return form's worksheet of `run_bz`: T1 lines and the T2048 figures it totals."""
+    return run_bz(**overrides)["ca-on/return"][0]
+
+
+def form_bz(position: int, **overrides: Any) -> Worksheet:
+    """The worksheet of Return BZ's Form T2048 for disposition `position` (from 1)."""
+    return run_bz(**overrides)["ca/t2048"][position - 1]
 
 
 def return_bf(**overrides: Any) -> Worksheet:

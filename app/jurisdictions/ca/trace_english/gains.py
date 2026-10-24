@@ -60,6 +60,7 @@ from app.jurisdictions.ca.trace.gains import (
     PrincipalResidenceWorksheetLine63,
     PrincipalResidenceWorksheetLine64,
     PrincipalResidenceWorksheetLine66,
+    QbtBeforeQccLine,
 )
 
 
@@ -1042,4 +1043,18 @@ class NetCapitalLossesRowRenderer:
             f"column F {money(line.column_f)} = column B {money(line.column_b)} plus column E "
             f"{money(line.column_e)}; column G {money(line.column_g)} = column A "
             f"{money(line.column_a)} less column F {money(line.column_f)}, not below 0"
+        )
+
+
+@english_renderer
+class QbtBeforeQccRenderer:
+    """English text for QbtBeforeQccLine."""
+
+    line_class = QbtBeforeQccLine
+
+    def render(self, line: QbtBeforeQccLine) -> str:
+        """The English sentence for `line`."""
+        return (
+            f"{line.output.label}: {line.is_qbt_kind.label} {line.is_qbt}, "
+            f"after {line.earlier} earlier dispositions, {line.earlier_qbts} of them QBTs"
         )
