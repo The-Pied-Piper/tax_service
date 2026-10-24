@@ -389,9 +389,10 @@ capabilities:
       records: ca/t2048.qbt_net_investment_loss_reduction
     produces:
       output: ca/qbt_earlier_net_investment_loss_reduction_total
-  # Chart A line 20 "Line 10 minus line 19 (if negative enter "0")" less that sum (note (3)). The
-  # form prints no floor.
-  - name: core/subtract
+  # Chart A line 20 "Line 10 minus line 19 (if negative enter "0") (3)" less that sum (note (3)):
+  # the floor printed on the line applies to its result, the note being a footnote to the same
+  # line.
+  - name: core/subtract_not_below_zero
     consumes:
       amount: ca/qbt_chart_a_net_investment_loss
       less: ca/qbt_earlier_net_investment_loss_reduction_total

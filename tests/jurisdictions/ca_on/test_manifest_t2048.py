@@ -527,7 +527,7 @@ def test_a_qbt_listed_after_a_qcc_is_refused_even_with_no_figures() -> None:
         )
 
 
-def test_chart_a_line_20_after_note_3_can_be_below_zero_when_line_24_is_not_asked_for() -> None:
+def test_chart_a_line_20_after_note_3_is_floored_at_0_without_investment_expenses() -> None:
     # Taxable capital gains (line 12700) of 100,000.00 and carrying charges of 10,000.
     # Disposition 1: line 7 is 20,000.00, line 8 is 100,000.00, line 17 is 100,000.00 and Chart
     # A line 20 is 10,000.00 (line 10 less a line 19 of 0), with investment expenses, so line 24
@@ -535,9 +535,9 @@ def test_chart_a_line_20_after_note_3_can_be_below_zero_when_line_24_is_not_aske
     # line 32 is 20,000.00; line 35 is 10,000.00, line 36 is 10,000.00, line 41 is 0.00 and
     # line 42 is 10,000.00. Disposition 2 (no investment expenses): line 8 is 100,000.00 -
     # 20,000.00 = 80,000.00 and line 16 is 0, so line 17 is 0 and Chart A line 18 is 80,000.00;
-    # Chart A line 20 is 10,000.00 - 80,000.00, entered as 0 ("if negative enter 0"). Note (3)
-    # takes the earlier line 42 from it: 0 - 10,000.00 = -10,000.00, with no floor printed; line
-    # 24 is 0 (no investment expenses).
+    # Chart A line 20 is 10,000.00 - 80,000.00, entered as 0 ("if negative enter 0"). Note (3) is
+    # printed on line 20, whose floor applies to the result: 0 - 10,000.00 is entered as 0.00;
+    # line 24 is 0 (no investment expenses).
     first = {
         "qbt_election_eligible_amount": "40000",
         "qbt_percentage_allocated": "100",
@@ -572,7 +572,7 @@ def test_chart_a_line_20_after_note_3_can_be_below_zero_when_line_24_is_not_aske
     assert one.get(QBT_NET_INVESTMENT_LOSS_REDUCTION).value == D("10000.00")
     assert two.get(QBT_EARLIER_NET_INVESTMENT_LOSS_REDUCTION_TOTAL).value == D("10000.00")
     assert two.get(QBT_CHART_A_NET_INVESTMENT_LOSS).value == D("0")
-    assert two.get(QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER).value == D("-10000.00")
+    assert two.get(QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER).value == D("0.00")
     assert two.get(QBT_NET_INVESTMENT_LOSS).value == D("0")
     assert two.get(QBT_MAXIMUM_DEDUCTION).value == D("0")
     assert two.get(QBT_ALLOCATION_TOTAL).value == D("0")
@@ -587,3 +587,53 @@ def test_chart_a_line_20_after_note_3_can_be_below_zero_when_line_24_is_not_aske
     assert worksheet.get(QBT_TAXABLE_CAPITAL_GAINS).value == D("100000.00")
     assert worksheet.get(QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION).value == D("10000.00")
     assert worksheet.get(QBT_CAPITAL_GAINS_DEDUCTION).value == D("0")
+
+
+@pytest.mark.parametrize(
+    ("business_investment_loss", "abil", "line_41", "line_42"),
+    [("0", "0.00", "0.00", "0.00"), ("40000", "6666.67", "0.00", "0.00")],
+)
+def test_a_second_disposition_with_investment_expenses_floors_chart_a_line_20_at_0(
+    business_investment_loss: str, abil: str, line_41: str, line_42: str
+) -> None:
+    # Taxable capital gains of 100,000.00, carrying charges of 10,000 and, in the second case, a
+    # business investment loss of 40,000 (ABIL 20,000.00). Disposition 1 as above (line 24 is
+    # 10,000.00, line 32 is 20,000.00); with the ABIL its line 35 is 30,000.00, line 36 is
+    # 20,000.00, line 41 is 20,000.00 x 20,000.00 / 30,000.00 = 13,333.33 and line 42 is 6,666.67
+    # (0.00 and 10,000.00 without it). Disposition 2, with investment expenses: line 8 is
+    # 80,000.00, line 17 is 0, Chart A line 20 is 10,000.00 - 80,000.00, entered as 0, and note
+    # (3) takes the earlier line 42 from it: still 0, so line 24 is 0. Line 23 is the ABIL less
+    # the earlier line 41: 20,000.00 - 13,333.33 = 6,666.67 in the second case. Line 26 is 0, so
+    # nothing can be claimed; line 28 is 0, so lines 30, 32, 36, 41 and 42 are 0.
+    first = {
+        "qbt_election_eligible_amount": "40000",
+        "qbt_percentage_allocated": "100",
+        "qbt_capital_gains": "200000",
+        "qbt_election_is_qbt": 1,
+        "qbt_has_investment_expenses": 1,
+        "qbt_deduction_claimed": "0",
+    }
+    second = {**first, "qbt_election_eligible_amount": "1000000", "qbt_capital_gains": "0"}
+    runs = run(
+        "0",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        slip_capital_gains_or_losses="200000",
+        total_carrying_charges="10000",
+        business_investment_loss=business_investment_loss,
+        t2048_dispositions_rows=(first, second),
+    )
+    _, two = runs["ca/t2048"]
+
+    assert two.get(QBT_CHART_A_NET_INVESTMENT_LOSS).value == D("0")
+    assert two.get(QBT_CHART_A_NET_INVESTMENT_LOSS_AFTER_EARLIER).value == D("0")
+    assert two.get(QBT_NET_INVESTMENT_LOSS).value == D("0")
+    assert two.get(QBT_ALLOWABLE_BUSINESS_INVESTMENT_LOSS_AFTER_EARLIER).value == D(abil)
+    assert two.get(QBT_MAXIMUM_DEDUCTION).value == D("0")
+    assert two.get(QBT_ALLOCATION_TOTAL).value == D("0")
+    assert two.get(QBT_ABIL_REDUCTION).value == D(line_41)
+    assert two.get(QBT_NET_INVESTMENT_LOSS_REDUCTION).value == D(line_42)

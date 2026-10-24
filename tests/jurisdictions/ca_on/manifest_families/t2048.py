@@ -12,8 +12,9 @@ each of the nine with `core/record_total` over the form's derived kind `ca/t2048
 
 With more than one disposition, a run reads the earlier runs through the form's own derived kinds
 (`EARLIER`, design.md section 6 "Earlier runs"): notes (1) to (3) of the form total the earlier
-runs' line 32, line 41 and line 42 with `core/record_total`, and subtract the total, as printed
-(no floor), from line 8, line 23 and Chart A line 20; every step of the form that read the
+runs' line 32, line 41 and line 42 with `core/record_total`, and subtract the total from line 8
+and line 23 (as printed, no floor) and from Chart A line 20 (floored at 0, as the printed line 20
+is); every step of the form that read the
 return's line 12700, line 21700 or Chart A line 20 reads the corrected figure. The order check
 (`ca/qbt_before_qcc`) refuses a QBT listed after a QCC. With no earlier run every correction is 0.
 """
@@ -747,10 +748,11 @@ OWN_STEPS = {
         consumes={"records": "ca/t2048.qbt_net_investment_loss_reduction"},
         produces={"output": "ca/qbt_earlier_net_investment_loss_reduction_total"},
     ),
-    # Chart A line 20 "Line 10 minus line 19 (if negative enter "0")" less that sum (note (3)). The
-    # form prints no floor.
+    # Chart A line 20 "Line 10 minus line 19 (if negative enter "0") (3)" less that sum (note (3),
+    # printed on line 20 itself): the floor printed on the line applies to the result, so it is
+    # floored at 0.
     CapabilitySelection(
-        name="core/subtract",
+        name="core/subtract_not_below_zero",
         params={},
         consumes={
             "amount": "ca/qbt_chart_a_net_investment_loss",
@@ -1939,7 +1941,7 @@ FORM_WIRING = {
         frozenset({QBT_EARLIER_NET_INVESTMENT_LOSS_REDUCTION_TOTAL}),
     ),
     (
-        Subtract,
+        SubtractNotBelowZero,
         frozenset(
             {QBT_CHART_A_NET_INVESTMENT_LOSS, QBT_EARLIER_NET_INVESTMENT_LOSS_REDUCTION_TOTAL}
         ),
