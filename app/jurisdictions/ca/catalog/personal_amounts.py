@@ -949,6 +949,32 @@ non-residential building, 3 separate class, building used to manufacture or proc
 of each code comes from the class-rates dataset, and a code the row's class does not list is
 refused. A field of each record of a list of capital cost allowance classes."""
 
+CCA_VEHICLE_ACQUIRED_YEAR = CATALOG.declare("cca_vehicle_acquired_year", int, non_negative=True)
+"""Year the vehicle was acquired, T2125 2025 Area A endnote 2 (T776 Column 5 Note 2): "a passenger
+vehicle bought after April 18, 2021, that has been included in Class 10.1, and whose cost is more
+than the prescribed amount will be adjusted based on a factor equal to its prescribed amount as a
+proportion of the actual cost of the vehicle [...] If the passenger vehicle in Class 10.1 is not
+designated for immediate expensing treatment, this special rule does not apply", and Guide T4036
+"Class 10.1 (30%)": "if you dispose of a passenger vehicle acquired after April 18, 2021, to a
+person or partnership with whom you deal at arm's length". The year the vehicle in the row was
+acquired, which picks its prescribed amount, or 0 when the rule does not apply to the row (it is
+not a Class 10.1 vehicle designated for immediate expensing, or it was not sold at arm's length),
+which the caller decides. A field of each record of a list of capital cost allowance classes."""
+
+CCA_VEHICLE_COST = CATALOG.declare("cca_vehicle_cost", Decimal, non_negative=True)
+"""Actual cost of the vehicle, T2125 2025 Area A endnote 2: "whose cost is more than the prescribed
+amount will be adjusted based on a factor equal to its prescribed amount as a proportion of the
+actual cost of the vehicle", and Guide T4036 "Class 10.1 (30%)": the prescribed amounts are each
+"plus the GST/HST or PST". The cost of the vehicle in the row including the GST/HST or PST. A
+field of each record of a list of capital cost allowance classes."""
+
+CCA_VEHICLE_GOVERNMENT_ASSISTANCE = CATALOG.declare("cca_vehicle_government_assistance", Decimal)
+"""Government assistance for the vehicle, T2125 2025 Area A endnote 2: "For dispositions after July
+29, 2019, you will have to adjust the actual cost of the vehicle for any payments or repayments of
+government assistance that you may have received or repaid for the vehicle". The assistance
+received less the assistance repaid, signed: a repayment is negative. A field of each record of a
+list of capital cost allowance classes."""
+
 CCA_UCC_AT_END = CATALOG.declare("cca_ucc_at_end", Decimal, non_negative=True)
 """UCC at the end of the year, T776 Area A "Column 24: UCC at the end of the year (column 7 minus
 column 23)" (T2125 column 22): a field of each record of the closing list of capital cost

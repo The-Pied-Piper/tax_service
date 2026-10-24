@@ -275,6 +275,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_UTILITIES,
     RENTAL_UTILITIES_PERSONAL_PORTION,
     RENTAL_UTILITIES_SHORT_TERM_PORTION,
+    RENTAL_VEHICLE_SALES_TAX_RATE,
     RRSP_INCOME,
     SHARE_DISPOSITIONS,
     SHARE_GAIN_OR_LOSS,
@@ -707,6 +708,7 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     )
     assert registry.get("ca/rental_cca_claim") is RENTAL_CCA_CLAIM
     assert registry.get("ca/rental_cca_classes") is RENTAL_CCA_CLASSES
+    assert registry.get("ca/rental_vehicle_sales_tax_rate") is RENTAL_VEHICLE_SALES_TAX_RATE
     assert registry.get("ca/rental_cca_table_recapture") is RENTAL_CCA_TABLE_RECAPTURE
     assert registry.get("ca/rental_cca_table_terminal_loss") is RENTAL_CCA_TABLE_TERMINAL_LOSS
     assert registry.get("ca/rental_cca_table_claim") is RENTAL_CCA_TABLE_CLAIM

@@ -26,6 +26,7 @@ HOMES: dict[str, tuple[str, ...]] = {
         "CcaClaimLine",
         "RecapturedCcaLine",
         "TerminalLossLine",
+        "CcaVehicleProceedsLine",
         "ClosingUccLine",
         "FiscalPeriodDaysLine",
         "ProratedByDaysLine",

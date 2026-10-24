@@ -1,6 +1,6 @@
 """The CA-ON manifest entries of Form T776 (see `test_manifest.py` and `test_manifest_t776.py`).
 
-T776 is a form of the manifest: its 45 selections belong to the form `ca/t776` (`FORM_STEPS`), run
+T776 is a form of the manifest: its 47 selections belong to the form `ca/t776` (`FORM_STEPS`), run
 once for each statement of `ca/t776_statements`, whose fields are the T776 inputs (`FORM_INPUTS`).
 The form exports seven artifacts, each readable by the other forms as `ca/t776.<export>`
 (`FORM_EXPORTS`); the return reads one and declares no output for the six nothing reads (`OUTPUTS`
@@ -24,6 +24,7 @@ from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.cca_claim_after_column_22_prorated import (
     CcaClaimAfterColumn22Prorated,
 )
+from app.jurisdictions.ca.capabilities.cca_vehicle_proceeds import CcaVehicleProceeds
 from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
 from app.jurisdictions.ca.capabilities.closing_ucc_after_column_22_prorated import (
     ClosingUccAfterColumn22Prorated,
@@ -61,6 +62,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_CCA_CLAIM_LESS_PERSONAL_PART,
     RENTAL_CCA_CLAIM_SHARE,
     RENTAL_CCA_CLASSES,
+    RENTAL_CCA_CLASSES_ADJUSTED,
     RENTAL_CCA_LIMIT,
     RENTAL_CCA_PERSONAL_PART,
     RENTAL_CCA_TABLE_CLAIM,
@@ -155,6 +157,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_UTILITIES,
     RENTAL_UTILITIES_PERSONAL_PORTION,
     RENTAL_UTILITIES_SHORT_TERM_PORTION,
+    RENTAL_VEHICLE_SALES_TAX_RATE,
     SHORT_TERM_RENTAL_CCA_UNITS,
     SHORT_TERM_RENTAL_GROSS_RENTS,
     SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
@@ -233,6 +236,7 @@ FORM_INPUTS = frozenset(
         "ca/rental_coowner_share",
         "ca/rental_coowner_other_expenses",
         "ca/rental_cca_classes",
+        "ca/rental_vehicle_sales_tax_rate",
         "ca/rental_fiscal_period_days_entered",
         "ca/rental_coowner_recaptured_cca",
         "ca/rental_coowner_terminal_loss",
@@ -440,6 +444,21 @@ FORM_STEPS = {
         },
         produces={"output": "ca/rental_net_income_after_coowner_expenses"},
     ),
+    # T776 Area A Note 2 "The proceeds of disposition of a zero-emission passenger vehicle (ZEPV)
+    # that has been included in Class 54, or a passenger vehicle bought after April 18, 2021, that
+    # has been included in Class 10.1, and whose cost is more than the prescribed amount will be
+    # adjusted based on a factor equal to its prescribed amount as a proportion of the actual cost
+    # of the vehicle.": the Area A list with columns 5 and 6 of each such row scaled, which the
+    # steps below read in place of the caller's list.
+    CapabilitySelection(
+        name="ca/cca_vehicle_proceeds",
+        params={"prescribed_amounts": "ca/cca_vehicle_prescribed_amounts"},
+        consumes={
+            "classes": "ca/rental_cca_classes",
+            "sales_tax_rate": "ca/rental_vehicle_sales_tax_rate",
+        },
+        produces={"output": "ca/rental_cca_classes_adjusted"},
+    ),
     # T776 Area A "Line ii: Total CCA claim for the year *: Total of column 23" and Note 3 "If you
     # have a negative amount in column 7, add it to income as a recapture under "Recaptured
     # capital cost allowance" on line 9947": the recapture of each class of the Area A list
@@ -447,7 +466,7 @@ FORM_STEPS = {
     CapabilitySelection(
         name="ca/recaptured_cca",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/rental_cca_classes"},
+        consumes={"classes": "ca/rental_cca_classes_adjusted"},
         produces={"output": "ca/rental_cca_table_recapture"},
     ),
     # T776 "Line 9947: Recaptured capital cost allowance (co-owners: enter your share of the
@@ -482,7 +501,7 @@ FORM_STEPS = {
     CapabilitySelection(
         name="ca/terminal_loss",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/rental_cca_classes"},
+        consumes={"classes": "ca/rental_cca_classes_adjusted"},
         produces={"output": "ca/rental_cca_table_terminal_loss"},
     ),
     # T776 "Line 9948: Terminal loss (co-owners: enter your share of the amount)": a count of 1
@@ -527,7 +546,7 @@ FORM_STEPS = {
         name="ca/cca_claim_after_column_22_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/rental_cca_classes",
+            "classes": "ca/rental_cca_classes_adjusted",
             "non_compliant": "ca/short_term_rental_non_compliant_cca_by_class",
             "fiscal_period_days": "ca/rental_fiscal_period_days",
         },
@@ -598,7 +617,7 @@ FORM_STEPS = {
         name="ca/closing_ucc_after_column_22_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/rental_cca_classes",
+            "classes": "ca/rental_cca_classes_adjusted",
             "non_compliant": "ca/short_term_rental_non_compliant_cca_by_class",
             "fiscal_period_days": "ca/rental_fiscal_period_days",
         },
@@ -737,7 +756,7 @@ FORM_STEPS = {
         name="ca/immediate_expensing_claim",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/rental_cca_classes",
+            "classes": "ca/rental_cca_classes_adjusted",
             "immediate_expensing_limit": "ca/rental_immediate_expensing_limit",
             "income_before_cca": "ca/rental_cca_limit",
         },
@@ -945,13 +964,26 @@ FORM_WIRING = {
         frozenset({RENTAL_NET_INCOME_SHARE, RENTAL_COOWNER_OTHER_EXPENSES}),
         frozenset({RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES}),
     ),
-    (RecapturedCca, frozenset({RENTAL_CCA_CLASSES}), frozenset({RENTAL_CCA_TABLE_RECAPTURE})),
+    (
+        CcaVehicleProceeds,
+        frozenset({RENTAL_CCA_CLASSES, RENTAL_VEHICLE_SALES_TAX_RATE}),
+        frozenset({RENTAL_CCA_CLASSES_ADJUSTED}),
+    ),
+    (
+        RecapturedCca,
+        frozenset({RENTAL_CCA_CLASSES_ADJUSTED}),
+        frozenset({RENTAL_CCA_TABLE_RECAPTURE}),
+    ),
     (
         ChooseByCount,
         frozenset({RENTAL_COOWNER, RENTAL_CCA_TABLE_RECAPTURE, RENTAL_COOWNER_RECAPTURED_CCA}),
         frozenset({RENTAL_RECAPTURED_CCA}),
     ),
-    (TerminalLoss, frozenset({RENTAL_CCA_CLASSES}), frozenset({RENTAL_CCA_TABLE_TERMINAL_LOSS})),
+    (
+        TerminalLoss,
+        frozenset({RENTAL_CCA_CLASSES_ADJUSTED}),
+        frozenset({RENTAL_CCA_TABLE_TERMINAL_LOSS}),
+    ),
     (
         ChooseByCount,
         frozenset({RENTAL_COOWNER, RENTAL_CCA_TABLE_TERMINAL_LOSS, RENTAL_COOWNER_TERMINAL_LOSS}),
@@ -966,7 +998,7 @@ FORM_WIRING = {
         CcaClaimAfterColumn22Prorated,
         frozenset(
             {
-                RENTAL_CCA_CLASSES,
+                RENTAL_CCA_CLASSES_ADJUSTED,
                 SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
                 RENTAL_FISCAL_PERIOD_DAYS,
             }
@@ -1002,7 +1034,7 @@ FORM_WIRING = {
         ClosingUccAfterColumn22Prorated,
         frozenset(
             {
-                RENTAL_CCA_CLASSES,
+                RENTAL_CCA_CLASSES_ADJUSTED,
                 SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
                 RENTAL_FISCAL_PERIOD_DAYS,
             }
@@ -1070,7 +1102,9 @@ FORM_WIRING = {
     ),
     (
         ImmediateExpensingClaim,
-        frozenset({RENTAL_CCA_CLASSES, RENTAL_IMMEDIATE_EXPENSING_LIMIT, RENTAL_CCA_LIMIT}),
+        frozenset(
+            {RENTAL_CCA_CLASSES_ADJUSTED, RENTAL_IMMEDIATE_EXPENSING_LIMIT, RENTAL_CCA_LIMIT}
+        ),
         frozenset({RENTAL_IMMEDIATE_EXPENSING_CLAIM}),
     ),
     (

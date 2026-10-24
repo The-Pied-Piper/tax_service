@@ -233,6 +233,12 @@ def test_importing_the_federal_package_registers_the_business_vehicle_expenses_c
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.business_vehicle_expenses"
 
 
+def test_importing_the_federal_package_registers_the_cca_vehicle_proceeds_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/cca_vehicle_proceeds")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.cca_vehicle_proceeds"
+
+
 def test_importing_the_federal_package_registers_the_terminal_loss_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/terminal_loss")
 

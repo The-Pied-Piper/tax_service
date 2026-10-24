@@ -1,6 +1,6 @@
 """The CA-ON manifest entries of Form T2042 (see `test_manifest.py` and `test_manifest_t2042.py`).
 
-T2042 is a form of the manifest: its 43 selections belong to the form `ca/t2042` (`FORM_STEPS`),
+T2042 is a form of the manifest: its 45 selections belong to the form `ca/t2042` (`FORM_STEPS`),
 run once for each statement of `ca/t2042_statements`, whose fields are the T2042 inputs
 (`FORM_INPUTS`). The form exports four artifacts, each readable by the other forms as
 `ca/t2042.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the three
@@ -26,6 +26,7 @@ from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.business_vehicle_expenses import BusinessVehicleExpenses
 from app.jurisdictions.ca.capabilities.cca_claim_prorated import CcaClaimProrated
+from app.jurisdictions.ca.capabilities.cca_vehicle_proceeds import CcaVehicleProceeds
 from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
 from app.jurisdictions.ca.capabilities.closing_ucc_prorated import ClosingUccProrated
 from app.jurisdictions.ca.capabilities.fiscal_period_days import FiscalPeriodDays
@@ -45,6 +46,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_CCA_CLAIM,
     FARM_CCA_CLAIM_LESS_PERSONAL_PART,
     FARM_CCA_CLASSES,
+    FARM_CCA_CLASSES_ADJUSTED,
     FARM_CCA_PERSONAL_PART,
     FARM_CCA_TABLE_CLAIM,
     FARM_CLEARING_LEVELLING_AND_DRAINING,
@@ -283,6 +285,21 @@ FORM_INPUTS = frozenset(
 )
 
 FORM_STEPS = {
+    # T2042 Area A endnote 2 "The proceeds of disposition of a zero-emission passenger vehicle
+    # (ZEPV) that has been included in Class 54, or a passenger vehicle bought after April 18, 2021,
+    # that has been included in Class 10.1, and whose cost is more than the prescribed amount will
+    # be adjusted based on a factor equal to its prescribed amount as a proportion of the actual
+    # cost of the vehicle.": the Area A list with columns 5 and 6 of each such row scaled, which
+    # the steps below read in place of the caller's list.
+    CapabilitySelection(
+        name="ca/cca_vehicle_proceeds",
+        params={"prescribed_amounts": "ca/cca_vehicle_prescribed_amounts"},
+        consumes={
+            "classes": "ca/farm_cca_classes",
+            "sales_tax_rate": "ca/farm_vehicle_sales_tax_rate",
+        },
+        produces={"output": "ca/farm_cca_classes_adjusted"},
+    ),
     # T2042 Area A endnote 3 "If you have a negative amount in column 7, add it to income as a
     # recapture in Part 3 on line 9600. If no property is left in the class and there is a
     # positive amount in this column, deduct the amount from income as a terminal loss in Part 4
@@ -291,7 +308,7 @@ FORM_STEPS = {
     CapabilitySelection(
         name="ca/recaptured_cca",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/farm_cca_classes"},
+        consumes={"classes": "ca/farm_cca_classes_adjusted"},
         produces={"output": "ca/farm_recaptured_cca"},
     ),
     # T2042 Part 3 line 9600 "Other income (specify):", which takes the recapture of Area A (the
@@ -361,7 +378,7 @@ FORM_STEPS = {
     CapabilitySelection(
         name="ca/terminal_loss",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/farm_cca_classes"},
+        consumes={"classes": "ca/farm_cca_classes_adjusted"},
         produces={"output": "ca/farm_terminal_loss"},
     ),
     # T2042 Part 4 "Other expenses (specify):" and "Total other expenses (see column 7 of Area A on
@@ -451,7 +468,7 @@ FORM_STEPS = {
         name="ca/cca_claim_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/farm_cca_classes",
+            "classes": "ca/farm_cca_classes_adjusted",
             "fiscal_period_days": "ca/farm_fiscal_period_days",
         },
         produces={"output": "ca/farm_cca_table_claim"},
@@ -663,7 +680,7 @@ FORM_STEPS = {
         name="ca/closing_ucc_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/farm_cca_classes",
+            "classes": "ca/farm_cca_classes_adjusted",
             "fiscal_period_days": "ca/farm_fiscal_period_days",
         },
         produces={"output": "ca/farm_closing_ucc"},
@@ -821,7 +838,7 @@ FORM_STEPS = {
         name="ca/immediate_expensing_claim",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/farm_cca_classes",
+            "classes": "ca/farm_cca_classes_adjusted",
             "immediate_expensing_limit": "ca/farm_immediate_expensing_limit",
             "income_before_cca": "ca/farm_income_before_cca",
         },
@@ -884,7 +901,12 @@ STEPS = {
 }
 
 FORM_WIRING = {
-    (RecapturedCca, frozenset({FARM_CCA_CLASSES}), frozenset({FARM_RECAPTURED_CCA})),
+    (
+        CcaVehicleProceeds,
+        frozenset({FARM_CCA_CLASSES, FARM_VEHICLE_SALES_TAX_RATE}),
+        frozenset({FARM_CCA_CLASSES_ADJUSTED}),
+    ),
+    (RecapturedCca, frozenset({FARM_CCA_CLASSES_ADJUSTED}), frozenset({FARM_RECAPTURED_CCA})),
     (
         Sum,
         frozenset({FARM_OTHER_INCOME, FARM_RECAPTURED_CCA}),
@@ -931,7 +953,7 @@ FORM_WIRING = {
         frozenset({FARM_GROSS_INCOME}),
     ),
     (Sum, frozenset({FARM_GROSS_INCOME}), frozenset({FARM_GROSS_INCOME_BEFORE_EXPENSES})),
-    (TerminalLoss, frozenset({FARM_CCA_CLASSES}), frozenset({FARM_TERMINAL_LOSS})),
+    (TerminalLoss, frozenset({FARM_CCA_CLASSES_ADJUSTED}), frozenset({FARM_TERMINAL_LOSS})),
     (
         Sum,
         frozenset({FARM_OTHER_EXPENSES, FARM_TERMINAL_LOSS}),
@@ -980,7 +1002,7 @@ FORM_WIRING = {
     ),
     (
         CcaClaimProrated,
-        frozenset({FARM_CCA_CLASSES, FARM_FISCAL_PERIOD_DAYS}),
+        frozenset({FARM_CCA_CLASSES_ADJUSTED, FARM_FISCAL_PERIOD_DAYS}),
         frozenset({FARM_CCA_TABLE_CLAIM}),
     ),
     (
@@ -1087,7 +1109,7 @@ FORM_WIRING = {
     ),
     (
         ClosingUccProrated,
-        frozenset({FARM_CCA_CLASSES, FARM_FISCAL_PERIOD_DAYS}),
+        frozenset({FARM_CCA_CLASSES_ADJUSTED, FARM_FISCAL_PERIOD_DAYS}),
         frozenset({FARM_CLOSING_UCC}),
     ),
     (CreditAmount, frozenset(), frozenset({FARM_IMMEDIATE_EXPENSING_CAP})),
@@ -1146,7 +1168,9 @@ FORM_WIRING = {
     ),
     (
         ImmediateExpensingClaim,
-        frozenset({FARM_CCA_CLASSES, FARM_IMMEDIATE_EXPENSING_LIMIT, FARM_INCOME_BEFORE_CCA}),
+        frozenset(
+            {FARM_CCA_CLASSES_ADJUSTED, FARM_IMMEDIATE_EXPENSING_LIMIT, FARM_INCOME_BEFORE_CCA}
+        ),
         frozenset({FARM_IMMEDIATE_EXPENSING_CLAIM}),
     ),
     (

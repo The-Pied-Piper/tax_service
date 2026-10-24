@@ -1,6 +1,6 @@
 """The CA-ON manifest entries of Form T2125 (see `test_manifest.py` and `test_manifest_t2125.py`).
 
-T2125 is a form of the manifest: its 49 selections belong to the form `ca/t2125` (`FORM_STEPS`),
+T2125 is a form of the manifest: its 51 selections belong to the form `ca/t2125` (`FORM_STEPS`),
 run once for each statement of `ca/t2125_statements`, whose fields are the T2125 inputs
 (`FORM_INPUTS`). The form exports four artifacts, each readable by the other forms as
 `ca/t2125.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the three
@@ -27,6 +27,7 @@ from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.business_vehicle_expenses import BusinessVehicleExpenses
 from app.jurisdictions.ca.capabilities.cca_claim_prorated import CcaClaimProrated
+from app.jurisdictions.ca.capabilities.cca_vehicle_proceeds import CcaVehicleProceeds
 from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
 from app.jurisdictions.ca.capabilities.closing_ucc_prorated import ClosingUccProrated
 from app.jurisdictions.ca.capabilities.fiscal_period_days import FiscalPeriodDays
@@ -45,6 +46,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_CCA_CLAIM,
     BUSINESS_CCA_CLAIM_LESS_PERSONAL_PART,
     BUSINESS_CCA_CLASSES,
+    BUSINESS_CCA_CLASSES_ADJUSTED,
     BUSINESS_CCA_PERSONAL_PART,
     BUSINESS_CCA_TABLE_CLAIM,
     BUSINESS_CLOSING_INVENTORY,
@@ -272,6 +274,21 @@ FORM_STEPS = {
         },
         produces={"output": "ca/business_adjusted_gross_sales"},
     ),
+    # T2125 Area A endnote 2 "The proceeds of disposition of a zero-emission passenger vehicle
+    # (ZEPV) that has been included in Class 54, or a passenger vehicle bought after April 18, 2021,
+    # that has been included in Class 10.1, and whose cost is more than the prescribed amount will
+    # be adjusted based on a factor equal to its prescribed amount as a proportion of the actual
+    # cost of the vehicle.": the Area A list with columns 5 and 6 of each such row scaled, which
+    # the steps below read in place of the caller's list.
+    CapabilitySelection(
+        name="ca/cca_vehicle_proceeds",
+        params={"prescribed_amounts": "ca/cca_vehicle_prescribed_amounts"},
+        consumes={
+            "classes": "ca/business_cca_classes",
+            "sales_tax_rate": "ca/business_vehicle_sales_tax_rate",
+        },
+        produces={"output": "ca/business_cca_classes_adjusted"},
+    ),
     # T2125 Area A endnote 3 "If you have a negative amount in column 7, add it to income as
     # a recapture in Part 3C on line 8230. ... Recapture and terminal loss do not apply to a
     # Class 10.1 property unless it is a DIEP.": the recapture of each class of the Area A
@@ -280,7 +297,7 @@ FORM_STEPS = {
         name="ca/recaptured_cca",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/business_cca_classes",
+            "classes": "ca/business_cca_classes_adjusted",
         },
         produces={"output": "ca/business_recaptured_cca"},
     ),
@@ -406,7 +423,7 @@ FORM_STEPS = {
         name="ca/cca_claim_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/business_cca_classes",
+            "classes": "ca/business_cca_classes_adjusted",
             "fiscal_period_days": "ca/business_fiscal_period_days",
         },
         produces={"output": "ca/business_cca_table_claim"},
@@ -444,7 +461,7 @@ FORM_STEPS = {
         name="ca/terminal_loss",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/business_cca_classes",
+            "classes": "ca/business_cca_classes_adjusted",
         },
         produces={"output": "ca/business_terminal_loss"},
     ),
@@ -469,7 +486,7 @@ FORM_STEPS = {
         name="ca/closing_ucc_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/business_cca_classes",
+            "classes": "ca/business_cca_classes_adjusted",
             "fiscal_period_days": "ca/business_fiscal_period_days",
         },
         produces={"output": "ca/business_closing_ucc"},
@@ -624,7 +641,7 @@ FORM_STEPS = {
         name="ca/immediate_expensing_claim",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/business_cca_classes",
+            "classes": "ca/business_cca_classes_adjusted",
             "immediate_expensing_limit": "ca/business_immediate_expensing_limit",
             "income_before_cca": "ca/business_income_before_cca",
         },
@@ -958,10 +975,15 @@ FORM_WIRING = {
         frozenset({BUSINESS_ADJUSTED_GROSS_SALES}),
     ),
     (
+        CcaVehicleProceeds,
+        frozenset({BUSINESS_CCA_CLASSES, BUSINESS_VEHICLE_SALES_TAX_RATE}),
+        frozenset({BUSINESS_CCA_CLASSES_ADJUSTED}),
+    ),
+    (
         RecapturedCca,
         frozenset(
             {
-                BUSINESS_CCA_CLASSES,
+                BUSINESS_CCA_CLASSES_ADJUSTED,
             }
         ),
         frozenset({BUSINESS_RECAPTURED_CCA}),
@@ -1054,7 +1076,7 @@ FORM_WIRING = {
     ),
     (
         CcaClaimProrated,
-        frozenset({BUSINESS_CCA_CLASSES, BUSINESS_FISCAL_PERIOD_DAYS}),
+        frozenset({BUSINESS_CCA_CLASSES_ADJUSTED, BUSINESS_FISCAL_PERIOD_DAYS}),
         frozenset({BUSINESS_CCA_TABLE_CLAIM}),
     ),
     (
@@ -1081,7 +1103,7 @@ FORM_WIRING = {
         TerminalLoss,
         frozenset(
             {
-                BUSINESS_CCA_CLASSES,
+                BUSINESS_CCA_CLASSES_ADJUSTED,
             }
         ),
         frozenset({BUSINESS_TERMINAL_LOSS}),
@@ -1098,7 +1120,7 @@ FORM_WIRING = {
     ),
     (
         ClosingUccProrated,
-        frozenset({BUSINESS_CCA_CLASSES, BUSINESS_FISCAL_PERIOD_DAYS}),
+        frozenset({BUSINESS_CCA_CLASSES_ADJUSTED, BUSINESS_FISCAL_PERIOD_DAYS}),
         frozenset({BUSINESS_CLOSING_UCC}),
     ),
     (CreditAmount, frozenset(), frozenset({BUSINESS_IMMEDIATE_EXPENSING_CAP})),
@@ -1160,7 +1182,11 @@ FORM_WIRING = {
     (
         ImmediateExpensingClaim,
         frozenset(
-            {BUSINESS_CCA_CLASSES, BUSINESS_IMMEDIATE_EXPENSING_LIMIT, BUSINESS_INCOME_BEFORE_CCA}
+            {
+                BUSINESS_CCA_CLASSES_ADJUSTED,
+                BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
+                BUSINESS_INCOME_BEFORE_CCA,
+            }
         ),
         frozenset({BUSINESS_IMMEDIATE_EXPENSING_CLAIM}),
     ),

@@ -89,6 +89,7 @@ from app.jurisdictions.ca.trace import (
     BusinessVehicleLine,
     CaregiverClaimLine,
     CcaClaimLine,
+    CcaVehicleProceedsLine,
     CcaZeroReason,
     ClosingUccLine,
     DisabilityTransferLine,
@@ -5168,6 +5169,90 @@ def test_closing_ucc_lines_differ_by_each_field(change: dict[str, Any]) -> None:
     values.update(change)
 
     assert line != ClosingUccLine(**values)
+
+
+def cca_vehicle_proceeds_line() -> CcaVehicleProceedsLine:
+    # Area A endnote 2: proceeds of 40,000 times the prescribed amount 42,940 over the actual cost
+    # 56,500 (a factor of 0.76) are 30,400; no DIEP proceeds.
+    return CcaVehicleProceedsLine(
+        CLOSING_UCC,
+        2,
+        True,
+        D("42940.00"),
+        D("56500.00"),
+        D("40000"),
+        D("30400.00"),
+        D("0"),
+        D("0"),
+    )
+
+
+def test_cca_vehicle_proceeds_line_fields_in_order() -> None:
+    line = cca_vehicle_proceeds_line()
+
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "applied",
+        "prescribed_amount",
+        "actual_cost",
+        "proceeds",
+        "adjusted_proceeds",
+        "diep_proceeds",
+        "adjusted_diep_proceeds",
+    ]
+    assert line == CcaVehicleProceedsLine(
+        output=CLOSING_UCC,
+        position=2,
+        applied=True,
+        prescribed_amount=D("42940.00"),
+        actual_cost=D("56500.00"),
+        proceeds=D("40000"),
+        adjusted_proceeds=D("30400.00"),
+        diep_proceeds=D("0"),
+        adjusted_diep_proceeds=D("0"),
+    )
+    assert line.output is CLOSING_UCC
+    assert line.applied is True
+
+
+def test_a_cca_vehicle_proceeds_line_is_a_frozen_trace_line_equal_by_value() -> None:
+    line = cca_vehicle_proceeds_line()
+
+    assert isinstance(line, TraceLine)
+    assert type(line).__name__ == "CcaVehicleProceedsLine"
+    assert line == cca_vehicle_proceeds_line()
+    assert line is not cca_vehicle_proceeds_line()
+    assert hash(line) == hash(cca_vehicle_proceeds_line())
+    with pytest.raises(FrozenInstanceError):
+        setattr(line, fields(line)[0].name, D(1))
+
+
+def test_a_cca_vehicle_proceeds_lines_amount_is_the_adjusted_proceeds() -> None:
+    assert cca_vehicle_proceeds_line().amount == D("30400.00")
+    assert "amount" not in [f.name for f in fields(cca_vehicle_proceeds_line())]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"output": RecordListKind("ex/other_closing_ucc", fields=(ITEM_AMOUNT,))},
+        {"position": 1},
+        {"applied": False},
+        {"prescribed_amount": D("42940.01")},
+        {"actual_cost": D("56500.01")},
+        {"proceeds": D("40000.01")},
+        {"adjusted_proceeds": D("30399.99")},
+        {"diep_proceeds": D("100")},
+        {"adjusted_diep_proceeds": D("76")},
+    ],
+)
+def test_cca_vehicle_proceeds_lines_differ_by_each_field(change: dict[str, Any]) -> None:
+    line = cca_vehicle_proceeds_line()
+    values = {f.name: getattr(line, f.name) for f in fields(line)}
+    values.update(change)
+
+    assert line != CcaVehicleProceedsLine(**values)
 
 
 @pytest.mark.parametrize("make", [cca_claim_line, terminal_loss_line, closing_ucc_line])

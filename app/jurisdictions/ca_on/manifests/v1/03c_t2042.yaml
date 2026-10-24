@@ -13,6 +13,20 @@ form:
     - ca/farm_home_carry_forward
     - ca/farm_immediate_expensing_claim
 capabilities:
+  # T2042 Area A endnote 2 "The proceeds of disposition of a zero-emission passenger vehicle
+  # (ZEPV) that has been included in Class 54, or a passenger vehicle bought after April 18, 2021,
+  # that has been included in Class 10.1, and whose cost is more than the prescribed amount will
+  # be adjusted based on a factor equal to its prescribed amount as a proportion of the actual
+  # cost of the vehicle.": the Area A list with columns 5 and 6 of each such row scaled, which the
+  # steps below read in place of the caller's list.
+  - name: ca/cca_vehicle_proceeds
+    params:
+      prescribed_amounts: ca/cca_vehicle_prescribed_amounts
+    consumes:
+      classes: ca/farm_cca_classes
+      sales_tax_rate: ca/farm_vehicle_sales_tax_rate
+    produces:
+      output: ca/farm_cca_classes_adjusted
   # T2042 Area A endnote 3 "If you have a negative amount in column 7, add it to income as a
   # recapture in Part 3 on line 9600. If no property is left in the class and there is a
   # positive amount in this column, deduct the amount from income as a terminal loss in Part 4
@@ -22,7 +36,7 @@ capabilities:
     params:
       class_rates: ca/cca_class_rates
     consumes:
-      classes: ca/farm_cca_classes
+      classes: ca/farm_cca_classes_adjusted
     produces:
       output: ca/farm_recaptured_cca
   # T2042 Part 3 line 9600 "Other income (specify):", which takes the recapture of Area A (the
@@ -90,7 +104,7 @@ capabilities:
     params:
       class_rates: ca/cca_class_rates
     consumes:
-      classes: ca/farm_cca_classes
+      classes: ca/farm_cca_classes_adjusted
     produces:
       output: ca/farm_terminal_loss
   # T2042 Part 4 "Other expenses (specify):" and "Total other expenses (see column 7 of Area A on
@@ -176,7 +190,7 @@ capabilities:
     params:
       class_rates: ca/cca_class_rates
     consumes:
-      classes: ca/farm_cca_classes
+      classes: ca/farm_cca_classes_adjusted
       fiscal_period_days: ca/farm_fiscal_period_days
     produces:
       output: ca/farm_cca_table_claim
@@ -357,7 +371,7 @@ capabilities:
     params:
       class_rates: ca/cca_class_rates
     consumes:
-      classes: ca/farm_cca_classes
+      classes: ca/farm_cca_classes_adjusted
       fiscal_period_days: ca/farm_fiscal_period_days
     produces:
       output: ca/farm_closing_ucc
@@ -525,7 +539,7 @@ capabilities:
     params:
       class_rates: ca/cca_class_rates
     consumes:
-      classes: ca/farm_cca_classes
+      classes: ca/farm_cca_classes_adjusted
       immediate_expensing_limit: ca/farm_immediate_expensing_limit
       income_before_cca: ca/farm_income_before_cca
     produces:

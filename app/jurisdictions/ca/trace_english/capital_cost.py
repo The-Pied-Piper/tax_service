@@ -11,6 +11,7 @@ from app.adapters.inbound.trace_english.registry import english_renderer
 from app.domain.parameters.class_rates import RecaptureAndTerminalLoss
 from app.jurisdictions.ca.trace.capital_cost import (
     CcaClaimLine,
+    CcaVehicleProceedsLine,
     CcaZeroReason,
     ClosingUccLine,
     FiscalPeriodDaysLine,
@@ -158,6 +159,30 @@ class TerminalLossRenderer:
         return (
             f"{EnglishFigures.cca_class(output.label, position, class_rate)}: {found}: "
             f"terminal loss {EnglishFigures.money(result)}"
+        )
+
+
+@english_renderer
+class CcaVehicleProceedsRenderer:
+    """English text for CcaVehicleProceedsLine."""
+
+    line_class = CcaVehicleProceedsLine
+
+    def render(self, line: CcaVehicleProceedsLine) -> str:
+        """The English sentence for `line`."""
+        start = f"{line.output.label}: item {line.position}: "
+        proceeds = (
+            f"proceeds {EnglishFigures.money(line.proceeds)} and DIEP proceeds "
+            f"{EnglishFigures.money(line.diep_proceeds)}"
+        )
+        if not line.applied:
+            return f"{start}{proceeds} not adjusted"
+        return (
+            f"{start}{proceeds} adjusted by prescribed amount "
+            f"{EnglishFigures.money(line.prescribed_amount)} / actual cost "
+            f"{EnglishFigures.money(line.actual_cost)} = proceeds "
+            f"{EnglishFigures.money(line.adjusted_proceeds)} and DIEP proceeds "
+            f"{EnglishFigures.money(line.adjusted_diep_proceeds)}"
         )
 
 
