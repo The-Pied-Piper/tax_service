@@ -458,6 +458,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/fish_other_expenses",
         "ca/fish_cca_personal_part",
         "ca/fish_cca_classes",
+        "ca/fish_cca_classes_adjusted",
         "ca/t2121_statements",
         "ca/t2048_dispositions",
         "ca/fish_partner",

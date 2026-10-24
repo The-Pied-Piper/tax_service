@@ -1,6 +1,6 @@
 """The CA-ON manifest entries of Form T2121 (see `test_manifest.py` and `test_manifest_t2121.py`).
 
-T2121 is a form of the manifest: its 40 selections belong to the form `ca/t2121` (`FORM_STEPS`),
+T2121 is a form of the manifest: its 41 selections belong to the form `ca/t2121` (`FORM_STEPS`),
 run once for each statement of `ca/t2121_statements`, whose fields are the T2121 inputs
 (`FORM_INPUTS`). The form exports four artifacts, each readable by the other forms as
 `ca/t2121.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the three
@@ -25,6 +25,7 @@ from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.business_vehicle_expenses import BusinessVehicleExpenses
 from app.jurisdictions.ca.capabilities.cca_claim_prorated import CcaClaimProrated
+from app.jurisdictions.ca.capabilities.cca_vehicle_proceeds import CcaVehicleProceeds
 from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
 from app.jurisdictions.ca.capabilities.closing_ucc_prorated import ClosingUccProrated
 from app.jurisdictions.ca.capabilities.fiscal_period_days import FiscalPeriodDays
@@ -37,6 +38,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_CCA_CLAIM,
     FISH_CCA_CLAIM_LESS_PERSONAL_PART,
     FISH_CCA_CLASSES,
+    FISH_CCA_CLASSES_ADJUSTED,
     FISH_CCA_PERSONAL_PART,
     FISH_CCA_TABLE_CLAIM,
     FISH_CLOSING_UCC,
@@ -197,6 +199,21 @@ FORM_INPUTS = frozenset(
 )
 
 FORM_STEPS = {
+    # T2121 Area A endnote 2 "The proceeds of disposition of a zero-emission passenger vehicle
+    # (ZEPV) that has been included in Class 54, or a passenger vehicle bought after April 18, 2021,
+    # that has been included in Class 10.1, and whose cost is more than the prescribed amount will
+    # be adjusted based on a factor equal to its prescribed amount as a proportion of the actual
+    # cost of the vehicle.": the Area A list with columns 5 and 6 of each such row scaled, which
+    # the steps below read in place of the caller's list.
+    CapabilitySelection(
+        name="ca/cca_vehicle_proceeds",
+        params={"prescribed_amounts": "ca/cca_vehicle_prescribed_amounts"},
+        consumes={
+            "classes": "ca/fish_cca_classes",
+            "sales_tax_rate": "ca/fish_vehicle_sales_tax_rate",
+        },
+        produces={"output": "ca/fish_cca_classes_adjusted"},
+    ),
     # T2121 Area A endnote 3 "If you have a negative amount in column 7, add it to income as a
     # recapture in Part 3 on line 9600. If no property is left in the class and there is a positive
     # amount in this column, deduct the amount from income as a terminal loss in Part 4 on line
@@ -205,7 +222,7 @@ FORM_STEPS = {
     CapabilitySelection(
         name="ca/recaptured_cca",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/fish_cca_classes"},
+        consumes={"classes": "ca/fish_cca_classes_adjusted"},
         produces={"output": "ca/fish_recaptured_cca"},
     ),
     # T2121 Part 3 line 9600 "Other income (specify):", which takes the recapture of Area A (the
@@ -249,7 +266,7 @@ FORM_STEPS = {
     CapabilitySelection(
         name="ca/terminal_loss",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/fish_cca_classes"},
+        consumes={"classes": "ca/fish_cca_classes_adjusted"},
         produces={"output": "ca/fish_terminal_loss"},
     ),
     # T2121 Part 4 "Other expenses (specify): 9270 4P": the other expenses the caller specifies plus
@@ -346,7 +363,7 @@ FORM_STEPS = {
         name="ca/cca_claim_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/fish_cca_classes",
+            "classes": "ca/fish_cca_classes_adjusted",
             "fiscal_period_days": "ca/fish_fiscal_period_days",
         },
         produces={"output": "ca/fish_cca_table_claim"},
@@ -549,7 +566,7 @@ FORM_STEPS = {
         name="ca/closing_ucc_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/fish_cca_classes",
+            "classes": "ca/fish_cca_classes_adjusted",
             "fiscal_period_days": "ca/fish_fiscal_period_days",
         },
         produces={"output": "ca/fish_closing_ucc"},
@@ -685,7 +702,7 @@ FORM_STEPS = {
         name="ca/immediate_expensing_claim",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
-            "classes": "ca/fish_cca_classes",
+            "classes": "ca/fish_cca_classes_adjusted",
             "immediate_expensing_limit": "ca/fish_immediate_expensing_limit",
             "income_before_cca": "ca/fish_income_before_cca",
         },
@@ -719,7 +736,12 @@ STEPS = {
 }
 
 FORM_WIRING = {
-    (RecapturedCca, frozenset({FISH_CCA_CLASSES}), frozenset({FISH_RECAPTURED_CCA})),
+    (
+        CcaVehicleProceeds,
+        frozenset({FISH_CCA_CLASSES, FISH_VEHICLE_SALES_TAX_RATE}),
+        frozenset({FISH_CCA_CLASSES_ADJUSTED}),
+    ),
+    (RecapturedCca, frozenset({FISH_CCA_CLASSES_ADJUSTED}), frozenset({FISH_RECAPTURED_CCA})),
     (
         Sum,
         frozenset({FISH_OTHER_INCOME, FISH_RECAPTURED_CCA}),
@@ -741,7 +763,7 @@ FORM_WIRING = {
         frozenset({FISH_GROSS_INCOME}),
     ),
     (Sum, frozenset({FISH_GROSS_INCOME}), frozenset({FISH_GROSS_INCOME_BEFORE_EXPENSES})),
-    (TerminalLoss, frozenset({FISH_CCA_CLASSES}), frozenset({FISH_TERMINAL_LOSS})),
+    (TerminalLoss, frozenset({FISH_CCA_CLASSES_ADJUSTED}), frozenset({FISH_TERMINAL_LOSS})),
     (
         Sum,
         frozenset({FISH_OTHER_EXPENSES, FISH_TERMINAL_LOSS}),
@@ -793,7 +815,7 @@ FORM_WIRING = {
     ),
     (
         CcaClaimProrated,
-        frozenset({FISH_CCA_CLASSES, FISH_FISCAL_PERIOD_DAYS}),
+        frozenset({FISH_CCA_CLASSES_ADJUSTED, FISH_FISCAL_PERIOD_DAYS}),
         frozenset({FISH_CCA_TABLE_CLAIM}),
     ),
     (
@@ -889,7 +911,7 @@ FORM_WIRING = {
     ),
     (
         ClosingUccProrated,
-        frozenset({FISH_CCA_CLASSES, FISH_FISCAL_PERIOD_DAYS}),
+        frozenset({FISH_CCA_CLASSES_ADJUSTED, FISH_FISCAL_PERIOD_DAYS}),
         frozenset({FISH_CLOSING_UCC}),
     ),
     (CreditAmount, frozenset(), frozenset({FISH_IMMEDIATE_EXPENSING_CAP})),
@@ -943,7 +965,9 @@ FORM_WIRING = {
     ),
     (
         ImmediateExpensingClaim,
-        frozenset({FISH_CCA_CLASSES, FISH_IMMEDIATE_EXPENSING_LIMIT, FISH_INCOME_BEFORE_CCA}),
+        frozenset(
+            {FISH_CCA_CLASSES_ADJUSTED, FISH_IMMEDIATE_EXPENSING_LIMIT, FISH_INCOME_BEFORE_CCA}
+        ),
         frozenset({FISH_IMMEDIATE_EXPENSING_CLAIM}),
     ),
     (
