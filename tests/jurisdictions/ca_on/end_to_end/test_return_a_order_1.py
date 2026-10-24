@@ -116,6 +116,7 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GIFTS_TOTAL,
     CAPITAL_PROPERTY_GIFTS,
     CAREGIVER_AMOUNT,
+    CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT,
     CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
     CHARITABLE_DONATIONS_CLAIMED,
     CHARITABLE_DONATIONS_LIMIT,
@@ -236,6 +237,10 @@ from app.jurisdictions.ca.catalog import (
     CWB_REDUCTION_WITHOUT_DEPENDANT,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    DEPENDANT_CAREGIVER_AMOUNT,
+    DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT,
+    DEPENDANT_CAREGIVER_LIMIT,
+    DEPENDANT_INFIRMITY_SUPPLEMENT,
     DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
     DEPRECIABLE_GIFTS,
     DISABILITY_TRANSFERRED_AMOUNT,
@@ -266,6 +271,7 @@ from app.jurisdictions.ca.catalog import (
     EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
     ELIGIBLE_DEPENDANT_AMOUNT,
+    ELIGIBLE_DEPENDANT_AMOUNT_BASIS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DIVIDENDS_CREDIT,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
@@ -671,7 +677,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1144
+    assert len(order) == 1151
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     # Part 8 line 12: the check is ordered after the cap it is made against. The claim is an input,
@@ -1080,10 +1086,21 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[BASIC_PERSONAL_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[CANADA_EMPLOYMENT_AMOUNT_INCOME] < position[CANADA_EMPLOYMENT_AMOUNT]
     assert position[CANADA_EMPLOYMENT_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    # The eligible dependant basis sums the basic personal amount and the infirmity supplement.
+    assert position[BASIC_PERSONAL_AMOUNT] < position[ELIGIBLE_DEPENDANT_AMOUNT_BASIS]
+    assert position[DEPENDANT_INFIRMITY_SUPPLEMENT] < position[ELIGIBLE_DEPENDANT_AMOUNT_BASIS]
     assert (
-        position[BASIC_PERSONAL_AMOUNT]
+        position[ELIGIBLE_DEPENDANT_AMOUNT_BASIS]
         < position[ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT]
         < position[ELIGIBLE_DEPENDANT_AMOUNT]
+        < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert position[ELIGIBLE_DEPENDANT_AMOUNT] < position[DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT]
+    assert position[DEPENDANT_CAREGIVER_LIMIT] < position[DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT]
+    assert (
+        position[DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT]
+        < position[DEPENDANT_CAREGIVER_AMOUNT]
+        < position[CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT]
         < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     )
     assert position[CAREGIVER_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
@@ -1138,6 +1155,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[SPOUSE_CAREGIVER_LIMIT]
         < position[SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT]
         < position[SPOUSE_CAREGIVER_AMOUNT]
+        < position[CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT]
         < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     )
     assert position[SPOUSE_AMOUNT] < position[SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT]

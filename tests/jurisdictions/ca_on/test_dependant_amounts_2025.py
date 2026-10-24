@@ -9,9 +9,10 @@ eligible for the Canada caregiver amount for your dependant (other than your inf
 years of age), enter $2,687"; line 3 "Line 1 plus line 2"; line 4 (51106) "Dependant's net
 income from line 23600 of their return"; line 5 "Line 3 minus line 4 (if negative, enter "0")
 Enter this amount on line 30400 of your return.". Line 30400 has no dataset of its own: it is the
-filer's line 30000 amount less the dependant's net income (line 2 not triggered), for each
-eligible dependant ("Each household is allowed only one claim for this amount"). The $2,687 of
-line 30500 is a per-unit amount (the `amount` kind).
+filer's line 30000 amount plus line 2's $2,687 for an infirm eligible dependant 18 or older (a
+dataset of its own, `ca/dependant_infirmity_amount`, as line 51100 prints the same figure), less
+the dependant's net income, for each eligible dependant ("Each household is allowed only one claim
+for this amount"). The $2,687 of line 30500 is a per-unit amount (the `amount` kind).
 
 Ontario: 2025 ON428 (form 5006-C) line 14 "Base amount 11,905.00"; line 15 "Your eligible
 dependant's net income from line 23600 of their return"; line 16 (line 58160) "Line 14 minus line
@@ -41,12 +42,16 @@ SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
 INFIRM_CHILD = "ca/infirm_child_amount"
 ONTARIO_BASE = "ca-on/eligible_dependant_base"
 ONTARIO_MAXIMUM = "ca-on/eligible_dependant_maximum"
+DEPENDANT_INFIRMITY = "ca/dependant_infirmity_amount"
 T1_TEXT = "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt"
+S5_TEXT = "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s5/5000-s5-25e.txt"
 ON428_TEXT = "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt"
 
 # Made up for this test and not registered: the number of infirm children and their amount (line
 # 30500), the Ontario base as an artifact (line 14), and the Ontario amount before its maximum
 # and after it (line 16).
+DEPENDANT_ELIGIBLE = ArtifactKind("ex/dependant_caregiver_eligible", int)
+DEPENDANT_SUPPLEMENT = ArtifactKind("ex/dependant_infirmity_supplement", Decimal)
 INFIRM_CHILDREN = ArtifactKind("ex/infirm_children", int)
 INFIRM_AMOUNT = ArtifactKind("ex/infirm_children_amount", Decimal)
 BASE = ArtifactKind("ex/base", Decimal)
@@ -59,6 +64,14 @@ def test_2025_amount_per_infirm_child_is_2687() -> None:
 
     assert data.values == Amount(D("2687"))
     # T1 line 30500, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_2025_amount_for_an_infirm_dependant_18_or_older_is_2687() -> None:
+    data = SOURCE.get(DEPENDANT_INFIRMITY, 2025, AMOUNT)
+
+    assert data.values == Amount(D("2687"))
+    # Schedule 5 line 2 (line 51100), a dollars-and-cents box: half-up to the cent.
     assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
@@ -80,8 +93,22 @@ def test_2025_ontario_maximum_is_10823() -> None:
 
 def test_2025_datasets_cite_only_their_form_text() -> None:
     assert SOURCE.get(INFIRM_CHILD, 2025, AMOUNT).sources == (T1_TEXT,)
+    assert SOURCE.get(DEPENDANT_INFIRMITY, 2025, AMOUNT).sources == (S5_TEXT,)
     assert SOURCE.get(ONTARIO_BASE, 2025, CREDIT).sources == (ON428_TEXT,)
     assert SOURCE.get(ONTARIO_MAXIMUM, 2025, AMOUNT).sources == (ON428_TEXT,)
+
+
+@pytest.mark.parametrize(("eligible", "supplement"), [(0, "0"), (1, "2687.00")])
+def test_the_dependant_supplement_is_2687_once_for_an_infirm_dependant_18_or_older(
+    eligible: int, supplement: str
+) -> None:
+    capability = PerUnitAmount(
+        SOURCE.get(DEPENDANT_INFIRMITY, 2025, AMOUNT), DEPENDANT_ELIGIBLE, DEPENDANT_SUPPLEMENT
+    )
+
+    result = capability.compute((Artifact(DEPENDANT_ELIGIBLE, eligible),))
+
+    assert result.outputs == (Artifact(DEPENDANT_SUPPLEMENT, D(supplement)),)
 
 
 @pytest.mark.parametrize(

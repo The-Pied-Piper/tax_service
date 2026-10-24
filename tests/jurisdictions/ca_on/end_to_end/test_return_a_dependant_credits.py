@@ -124,7 +124,7 @@ def test_the_dependants_net_income_comes_off_both_amounts() -> None:
     assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("26932.75")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "eligible_dependant_amount_before_count: basic_personal_amount 16129 "
+        "eligible_dependant_amount_before_count: eligible_dependant_amount_basis 16129 "
         "less dependant_net_income 1500, not below 0 = 14629"
     ) in rendered
     assert (

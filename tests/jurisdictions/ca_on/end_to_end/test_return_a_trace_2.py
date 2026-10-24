@@ -111,8 +111,13 @@ def test_the_trace_explains_the_computation() -> None:
         "(half-up to 0.01)",
         "1471",
     )
+    position(
+        "eligible_dependant_amount_basis: basic_personal_amount 16129 "
+        "+ dependant_infirmity_supplement 0 = 16129",
+        "16129",
+    )
     federal_dependant = position(
-        "eligible_dependant_amount_before_count: basic_personal_amount 16129 "
+        "eligible_dependant_amount_before_count: eligible_dependant_amount_basis 16129 "
         "less dependant_net_income 0, not below 0 = 16129",
         "16129",
     )
@@ -246,7 +251,8 @@ def test_the_trace_explains_the_computation() -> None:
     federal_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 16129 "
         "+ age_amount 0 + spouse_amount 0 "
-        "+ eligible_dependant_amount 0 + spouse_caregiver_amount 0 + caregiver_amount 0 "
+        "+ eligible_dependant_amount 0 + caregiver_amount_for_spouse_or_dependant 0 "
+        "+ caregiver_amount 0 "
         "+ infirm_children_amount 0 "
         "+ cpp_base_contributions_on_return 3356.1 + "
         "cpp_base_contributions_on_self_employment_and_other_earnings 0 "

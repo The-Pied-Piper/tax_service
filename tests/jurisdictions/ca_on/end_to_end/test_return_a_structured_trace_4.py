@@ -132,7 +132,6 @@ from app.jurisdictions.ca.catalog import (
     ANNUAL_GAINS_LINE_7,
     ANNUAL_GAINS_LINE_12,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT_AND_SURTAX,
-    BASIC_PERSONAL_AMOUNT,
     BUSINESS_CCA_CLAIM,
     BUSINESS_EPOP_ASSOCIATED_CHECKED,
     BUSINESS_EPOP_PERCENTAGE,
@@ -521,6 +520,9 @@ from app.jurisdictions.ca.catalog import (
     CWB_REDUCTION_WITH_DEPENDANT,
     CWB_REDUCTION_WITHOUT_DEPENDANT,
     DEDUCTIONS_FROM_NET_INCOME,
+    DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT,
+    DEPENDANT_CAREGIVER_BEFORE_MAXIMUM,
+    DEPENDANT_CAREGIVER_LIMIT,
     DEPENDANT_NET_INCOME,
     DEPRECIABLE_GIFT_CAPITAL_COST,
     DEPRECIABLE_GIFT_NET_PROCEEDS,
@@ -552,6 +554,8 @@ from app.jurisdictions.ca.catalog import (
     EI_NET_SELF_EMPLOYMENT_INCOME,
     EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
+    ELIGIBLE_DEPENDANT_AMOUNT,
+    ELIGIBLE_DEPENDANT_AMOUNT_BASIS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_TAXABLE_CAPITAL_GAINS_2025,
     EMPLOYMENT_INCOME,
@@ -3595,12 +3599,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("867.62"),
             result=D("7671.98"),
         ),
-        # Schedule 5 line 5 "Line 3 minus line 4 (if negative, enter "0")": line 3 is line 1,
-        # the basic personal amount, as line 2 is not triggered; line 4 the dependant's net
-        # income, entered as 0.
+        # Schedule 5 line 5 "Line 3 minus line 4 (if negative, enter "0")": line 3 is the basis,
+        # the basic personal amount plus line 2 (no infirmity entered, so 0); line 4 the
+        # dependant's net income, entered as 0.
         ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT: SubtractedNotBelowZeroLine(
             output=ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
-            minuend=BASIC_PERSONAL_AMOUNT,
+            minuend=ELIGIBLE_DEPENDANT_AMOUNT_BASIS,
             minuend_amount=D("16129.00"),
             subtrahend=DEPENDANT_NET_INCOME,
             subtrahend_amount=D("0"),
@@ -3683,6 +3687,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=SPOUSE_NET_INCOME,
             subtrahend_amount=D("0"),
             result=D("11905.00"),
+        ),
+        # Schedule 5 line 30425 part, line 3 "Line 1 minus line 2" for a dependant, the
+        # dependant's net income entered as 0: 28798.00 is the base, not below zero.
+        DEPENDANT_CAREGIVER_BEFORE_MAXIMUM: SubtractedNotBelowZeroLine(
+            output=DEPENDANT_CAREGIVER_BEFORE_MAXIMUM,
+            minuend=SPOUSE_CAREGIVER_BASE,
+            minuend_amount=D("28798.00"),
+            subtrahend=DEPENDANT_NET_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("28798.00"),
+        ),
+        # Schedule 5 line 5 of the line 30425 part, "Line 3 minus line 4 (if negative, enter
+        # "0")": the dependant's limit of 8601.00 less the eligible dependant amount, 0.
+        DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT: SubtractedNotBelowZeroLine(
+            output=DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT,
+            minuend=DEPENDANT_CAREGIVER_LIMIT,
+            minuend_amount=D("8601.00"),
+            subtrahend=ELIGIBLE_DEPENDANT_AMOUNT,
+            subtrahend_amount=D("0"),
+            result=D("8601.00"),
         ),
         # ON428 line 16 "Line 14 minus line 15 (if negative, enter "0")", before its maximum.
         ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM: SubtractedNotBelowZeroLine(

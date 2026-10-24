@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1144
+        == 1151
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1144
+        == 1151
     )
 
 
@@ -1416,6 +1416,9 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/spouse_amount",
         "ca/eligible_dependants",
         "ca/dependant_net_income",
+        "ca/dependant_caregiver_eligible",
+        "ca/dependant_infirmity_supplement",
+        "ca/eligible_dependant_amount_basis",
         "ca/eligible_dependant_amount_before_count",
         "ca/eligible_dependant_amount",
         "ca/spouse_caregiver_base",
@@ -1423,6 +1426,11 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/spouse_caregiver_limit",
         "ca/spouse_caregiver_amount_before_count",
         "ca/spouse_caregiver_amount",
+        "ca/dependant_caregiver_before_maximum",
+        "ca/dependant_caregiver_limit",
+        "ca/dependant_caregiver_amount_before_count",
+        "ca/dependant_caregiver_amount",
+        "ca/caregiver_amount_for_spouse_or_dependant",
         "ca/infirm_dependants",
         "ca/caregiver_amount",
         "ca/home_renovations",
@@ -2695,7 +2703,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1144
+        == 1151
     )
     assert (
         len(
@@ -2703,7 +2711,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1144
+        == 1151
     )
 
 
@@ -2716,7 +2724,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1144
+        == 1151
     )
     assert (
         len(
@@ -2724,7 +2732,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1144
+        == 1151
     )
 
 

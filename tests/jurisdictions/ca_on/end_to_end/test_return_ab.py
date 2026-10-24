@@ -150,7 +150,8 @@ def test_return_abs_trace_names_the_dependant_and_totals_the_credit_amounts() ->
     )
     assert (
         "non_refundable_credit_amounts: basic_personal_amount 16129 + age_amount 0 "
-        "+ spouse_amount 0 + eligible_dependant_amount 0 + spouse_caregiver_amount 0 "
+        "+ spouse_amount 0 + eligible_dependant_amount 0 "
+        "+ caregiver_amount_for_spouse_or_dependant 0 "
         "+ caregiver_amount 12399 + infirm_children_amount 0 "
         "+ cpp_base_contributions_on_return 2202.75 "
         "+ cpp_base_contributions_on_self_employment_and_other_earnings 0 + ei_premiums 787.2 "

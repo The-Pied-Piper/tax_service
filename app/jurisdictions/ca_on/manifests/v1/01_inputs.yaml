@@ -300,6 +300,7 @@ inputs:
   - ca/spouse_net_income
   - ca/spouses_claimed
   - ca/spouse_caregiver_eligible
+  - ca/dependant_caregiver_eligible
   - ca/child_care_expenses_paid
   - ca/children_under_seven
   - ca/children_with_disability

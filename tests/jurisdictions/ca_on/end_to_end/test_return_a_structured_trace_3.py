@@ -301,6 +301,12 @@ from app.jurisdictions.ca.catalog import (
     CPP_ZERO,
     CURRENT_YEAR_TUITION_AVAILABLE,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    DEPENDANT_CAREGIVER_AMOUNT,
+    DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT,
+    DEPENDANT_CAREGIVER_BEFORE_MAXIMUM,
+    DEPENDANT_CAREGIVER_ELIGIBLE,
+    DEPENDANT_CAREGIVER_LIMIT,
+    DEPENDANT_INFIRMITY_SUPPLEMENT,
     DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
     DISABILITY_SELF_BASE_AMOUNT,
@@ -2548,6 +2554,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=CENT,
             result=D("0"),
         ),
+        # Schedule 5 line 30400 "enter $2,687" for an infirm eligible dependant: Return A has no
+        # infirm dependant caregiver.
+        DEPENDANT_INFIRMITY_SUPPLEMENT: PerUnitAmountLine(
+            output=DEPENDANT_INFIRMITY_SUPPLEMENT,
+            count_kind=DEPENDANT_CAREGIVER_ELIGIBLE,
+            count=0,
+            per_unit=Amount(D("2687")),
+            rounding=CENT,
+            result=D("0"),
+        ),
         # T1 line 30500 "Number of children you are claiming this amount for Line 30499"
         # "multiplied by $2,687": Return A has no infirm child.
         INFIRM_CHILDREN_AMOUNT: PerUnitAmountLine(
@@ -3265,6 +3281,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             result=D("0"),
         ),
+        # Schedule 5 line 30425 for an eligible dependant: 8601.00 times a count of 0 eligible
+        # dependants claiming the caregiver amount, a plain 0.
+        DEPENDANT_CAREGIVER_AMOUNT: TimesCountLine(
+            output=DEPENDANT_CAREGIVER_AMOUNT,
+            amount_kind=DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT,
+            amount_value=D("8601.00"),
+            count_kind=DEPENDANT_CAREGIVER_ELIGIBLE,
+            count=0,
+            result=D("0"),
+        ),
         # The caller's count "claims the Ontario seniors care at home tax credit" times ON479 line
         # 13: Return A claims none, so a plain 0.
         SENIORS_CARE_CREDIT: TimesCountLine(
@@ -3554,6 +3580,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         SPOUSE_CAREGIVER_LIMIT: CappedAmountLine(
             SPOUSE_CAREGIVER_LIMIT,
             SPOUSE_CAREGIVER_BEFORE_MAXIMUM,
+            D("28798.00"),
+            Amount(D("8601")),
+            CENT,
+            D("8601"),
+        ),
+        # Schedule 5 line 30425 maximum of $8,601: the dependant's 28798.00 is above it.
+        DEPENDANT_CAREGIVER_LIMIT: CappedAmountLine(
+            DEPENDANT_CAREGIVER_LIMIT,
+            DEPENDANT_CAREGIVER_BEFORE_MAXIMUM,
             D("28798.00"),
             Amount(D("8601")),
             CENT,

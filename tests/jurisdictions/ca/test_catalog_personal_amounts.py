@@ -15,6 +15,7 @@ from app.jurisdictions.ca.catalog import (
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
     CAREGIVER_AMOUNT,
+    CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT,
     CCA_ADDITIONS,
     CCA_AIIP_ADDITIONS,
     CCA_CLAIMED,
@@ -34,7 +35,13 @@ from app.jurisdictions.ca.catalog import (
     CCA_VEHICLE_COST,
     CCA_VEHICLE_GOVERNMENT_ASSISTANCE,
     DEPENDANT_CARE_EXPENSES,
+    DEPENDANT_CAREGIVER_AMOUNT,
+    DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT,
+    DEPENDANT_CAREGIVER_BEFORE_MAXIMUM,
+    DEPENDANT_CAREGIVER_ELIGIBLE,
+    DEPENDANT_CAREGIVER_LIMIT,
     DEPENDANT_CREDIT_AMOUNTS,
+    DEPENDANT_INFIRMITY_SUPPLEMENT,
     DEPENDANT_NET_INCOME,
     DEPENDANT_TAXABLE_INCOME,
     DEPENDANT_UNDER_18,
@@ -50,6 +57,7 @@ from app.jurisdictions.ca.catalog import (
     DISABILITY_SELF_WORKSHEET_AMOUNT,
     DISABILITY_TRANSFERRED_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT,
+    ELIGIBLE_DEPENDANT_AMOUNT_BASIS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
     ELIGIBLE_FOR_DISABILITY_AMOUNT,
@@ -183,6 +191,22 @@ def test_the_personal_amounts_kinds_are_the_registered_ones(registry: ArtifactRe
         is SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT
     )
     assert registry.get("ca/spouse_caregiver_amount") is SPOUSE_CAREGIVER_AMOUNT
+    assert registry.get("ca/dependant_caregiver_eligible") is DEPENDANT_CAREGIVER_ELIGIBLE
+    assert registry.get("ca/dependant_infirmity_supplement") is DEPENDANT_INFIRMITY_SUPPLEMENT
+    assert registry.get("ca/eligible_dependant_amount_basis") is ELIGIBLE_DEPENDANT_AMOUNT_BASIS
+    assert (
+        registry.get("ca/dependant_caregiver_before_maximum") is DEPENDANT_CAREGIVER_BEFORE_MAXIMUM
+    )
+    assert registry.get("ca/dependant_caregiver_limit") is DEPENDANT_CAREGIVER_LIMIT
+    assert (
+        registry.get("ca/dependant_caregiver_amount_before_count")
+        is DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT
+    )
+    assert registry.get("ca/dependant_caregiver_amount") is DEPENDANT_CAREGIVER_AMOUNT
+    assert (
+        registry.get("ca/caregiver_amount_for_spouse_or_dependant")
+        is CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT
+    )
     assert registry.get("ca/infirm_dependants") is INFIRM_DEPENDANTS
     assert registry.get("ca/caregiver_amount") is CAREGIVER_AMOUNT
     assert registry.get("ca/other_dependant_medical_expenses") is OTHER_DEPENDANT_MEDICAL_EXPENSES
@@ -290,6 +314,13 @@ def test_the_personal_amounts_kinds_are_money() -> None:
         SPOUSE_CAREGIVER_LIMIT,
         SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT,
         SPOUSE_CAREGIVER_AMOUNT,
+        DEPENDANT_INFIRMITY_SUPPLEMENT,
+        ELIGIBLE_DEPENDANT_AMOUNT_BASIS,
+        DEPENDANT_CAREGIVER_BEFORE_MAXIMUM,
+        DEPENDANT_CAREGIVER_LIMIT,
+        DEPENDANT_CAREGIVER_AMOUNT_BEFORE_COUNT,
+        DEPENDANT_CAREGIVER_AMOUNT,
+        CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT,
         CAREGIVER_AMOUNT,
         OTHER_DEPENDANT_MEDICAL_EXPENSES,
         OTHER_DEPENDANTS_MEDICAL,

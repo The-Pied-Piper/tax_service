@@ -109,7 +109,8 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
     assert (
         "non_refundable_credit_amounts: basic_personal_amount 16129 "
         "+ age_amount 0 + spouse_amount 0 "
-        "+ eligible_dependant_amount 16129 + spouse_caregiver_amount 0 + caregiver_amount 0 "
+        "+ eligible_dependant_amount 16129 "
+        "+ caregiver_amount_for_spouse_or_dependant 0 + caregiver_amount 0 "
         "+ infirm_children_amount 0 "
         "+ cpp_base_contributions_on_return 2796.75 + "
         "cpp_base_contributions_on_self_employment_and_other_earnings 0 "

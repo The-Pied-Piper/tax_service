@@ -144,7 +144,8 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "spouse_caregiver_amount: spouse_caregiver_amount_before_count 1785 "
         "for each of 1 spouse_caregiver_eligible = 1785",
         "non_refundable_credit_amounts: basic_personal_amount 16129 + age_amount 8356.3 "
-        "+ spouse_amount 6816 + eligible_dependant_amount 0 + spouse_caregiver_amount 1785 "
+        "+ spouse_amount 6816 + eligible_dependant_amount 0 "
+        "+ caregiver_amount_for_spouse_or_dependant 1785 "
         "+ caregiver_amount 0 + infirm_children_amount 0 "
         "+ cpp_base_contributions_on_return 2301.75 "
         "+ cpp_base_contributions_on_self_employment_and_other_earnings 0 + ei_premiums 820 "
