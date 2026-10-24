@@ -86,30 +86,6 @@ expense supplement" takes it off the employment income ("minus the amounts from 
 22900, and 23100 of your return"). Only line 45200 reads it until the deductions from total income
 compute it; it does not yet enter net income."""
 
-NET_BUSINESS_INCOME = CATALOG.declare("net_business_income", Decimal, non_negative=True)
-"""Net business income, T1 line 22 and line 13500 "Business income" "Net": a starting amount. The
-Federal Worksheet "Line 45200 - Refundable medical expense supplement" counts "your net
-self-employment income (not including losses)" and notes that where one line reports a profit from
-one business and a loss from another, "use only the profit amounts", and that a loss from only one
-business is not included, so the amount is the line's profits only, the caller's to apply. Only line
-45200 reads it until the self-employment income is computed; it does not yet enter total income."""
-
-NET_PROFESSIONAL_INCOME = CATALOG.declare("net_professional_income", Decimal, non_negative=True)
-"""Net professional income, T1 line 23 and line 13700 "Professional income" "Net": a starting
-amount, the profits only as for `net_business_income`, and read only by line 45200 for now."""
-
-NET_COMMISSION_INCOME = CATALOG.declare("net_commission_income", Decimal, non_negative=True)
-"""Net commission income, T1 line 24 and line 13900 "Commission income" "Net": a starting amount,
-the profits only as for `net_business_income`, and read only by line 45200 for now."""
-
-NET_FARMING_INCOME = CATALOG.declare("net_farming_income", Decimal, non_negative=True)
-"""Net farming income, T1 line 25 and line 14100 "Farming income" "Net": a starting amount, the
-profits only as for `net_business_income`, and read only by line 45200 for now."""
-
-NET_FISHING_INCOME = CATALOG.declare("net_fishing_income", Decimal, non_negative=True)
-"""Net fishing income, T1 line 26 and line 14300 "Fishing income" "Net": a starting amount, the
-profits only as for `net_business_income`, and read only by line 45200 for now."""
-
 WAGE_LOSS_REPLACEMENT_PLAN_INCOME = CATALOG.declare(
     "wage_loss_replacement_plan_income", Decimal, non_negative=True
 )

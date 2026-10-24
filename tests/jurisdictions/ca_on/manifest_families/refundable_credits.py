@@ -5,20 +5,27 @@ from __future__ import annotations
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.credit_amount import CreditAmount
+from app.domain.capabilities.record_positive_total import RecordPositiveTotal
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
+from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.capabilities.threshold_gate import ThresholdGate
 from app.jurisdictions.ca.catalog import (
     AGED_18_OR_OLDER_AT_END_OF_2025,
+    BUSINESS_INCOME,
     CLERGY_RESIDENCE_DEDUCTION,
+    COMMISSION_INCOME,
     DISABILITY_SUPPORTS_DEDUCTION,
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EDUCATOR_SUPPLIES_EXPENSES,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
     EMPLOYMENT_INCOME,
+    FARMING_INCOME,
+    FISHING_INCOME,
     MEDICAL_CLAIM,
     MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
     MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5,
@@ -49,6 +56,7 @@ from app.jurisdictions.ca.catalog import (
     NET_PROFESSIONAL_INCOME,
     OTHER_EMPLOYMENT_EXPENSES,
     OTHER_EMPLOYMENT_INCOME,
+    PROFESSIONAL_INCOME,
     PROVINCIAL_CREDITS,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     RESIDENT_IN_CANADA_THROUGHOUT_2025,
@@ -65,6 +73,12 @@ from app.jurisdictions.ca.catalog import (
     WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
 )
 from app.jurisdictions.ca_on.catalog import ONTARIO_CREDITS
+
+# The statements of T2125, T2042 and T2121 the worksheet reads (the return's record lists, as Form
+# T929 reads them): each a record list of one amount field.
+BUSINESS_INCOME_STATEMENTS = RecordListKind("ca/t2125.business_income", fields=(BUSINESS_INCOME,))
+FARMING_INCOME_STATEMENTS = RecordListKind("ca/t2042.farming_income", fields=(FARMING_INCOME,))
+FISHING_INCOME_STATEMENTS = RecordListKind("ca/t2121.fishing_income", fields=(FISHING_INCOME,))
 
 INPUTS = frozenset(
     {
@@ -106,10 +120,12 @@ STEPS = {
     # T1 line 154 and line 45200 "Refundable medical expense supplement (use Federal
     # Worksheet)"; Federal Worksheet "Line 45200 - Refundable medical expense supplement", one
     # step per printed line, then the conditions it states. The T1 lines it reads that are not
-    # yet computed are caller inputs under their line names: 22900, 23100, and the
-    # self-employment lines 13500, 13700, 13900, 14100 and 14300, each the profits only as the
-    # worksheet's note asks. "In addition, the total of the following two amounts must be $4,390
-    # or more:" "your employment income from lines 10100 and 10400 of your return (other than
+    # yet computed are caller inputs under their line names: 22900, 23100, and the professional
+    # and commission income of lines 13700 and 13900. The self-employment lines 13500, 13700,
+    # 13900, 14100 and 14300 are the profits only, as the worksheet's note asks, computed from the
+    # T2125, T2042 and T2121 statements and those two inputs. "In addition, the total of the
+    # following two amounts must be $4,390 or more:" "your employment income from lines 10100 and
+    # 10400 of your return (other than
     # amounts received from a wage-loss replacement plan) minus the amounts from lines 20700,
     # 21200, 22900, and 23100 of your return (if the result is negative, consider it as "0")":
     # lines 10100 and 10400.
@@ -154,6 +170,45 @@ STEPS = {
             "less": "ca/medical_supplement_employment_deductions",
         },
         produces={"output": "ca/medical_supplement_employment_working_income"},
+    ),
+    # "your net self-employment income (not including losses) from lines 13500, 13700, 13900,
+    # 14100, and 14300 of your return": the positive net income of each Form T2125 statement,
+    # added, so a loss counts 0 (line 13500). The note's "use only the profit amounts" and "If you
+    # are reporting a loss from only one business on one of these lines, do not include that loss"
+    # is that rule.
+    CapabilitySelection(
+        name="core/record_positive_total",
+        params={},
+        consumes={"records": "ca/t2125.business_income"},
+        produces={"output": "ca/net_business_income"},
+    ),
+    # The same rule for professional income (line 13700), not below zero, so a loss counts 0.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={"parts": ("ca/professional_income",)},
+        produces={"output": "ca/net_professional_income"},
+    ),
+    # The same rule for commission income (line 13900), not below zero, so a loss counts 0.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={"parts": ("ca/commission_income",)},
+        produces={"output": "ca/net_commission_income"},
+    ),
+    # The same rule for the statements of Form T2042 (farming, line 14100): a loss counts 0.
+    CapabilitySelection(
+        name="core/record_positive_total",
+        params={},
+        consumes={"records": "ca/t2042.farming_income"},
+        produces={"output": "ca/net_farming_income"},
+    ),
+    # The same rule for the statements of Form T2121 (fishing, line 14300): a loss counts 0.
+    CapabilitySelection(
+        name="core/record_positive_total",
+        params={},
+        consumes={"records": "ca/t2121.fishing_income"},
+        produces={"output": "ca/net_fishing_income"},
     ),
     # "your net self-employment income (not including losses) from lines 13500, 13700, 13900,
     # 14100, and 14300 of your return", in line order.
@@ -396,6 +451,23 @@ WIRING = {
             }
         ),
         frozenset({MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME}),
+    ),
+    (
+        RecordPositiveTotal,
+        frozenset({BUSINESS_INCOME_STATEMENTS}),
+        frozenset({NET_BUSINESS_INCOME}),
+    ),
+    (SumNotBelowZero, frozenset({PROFESSIONAL_INCOME}), frozenset({NET_PROFESSIONAL_INCOME})),
+    (SumNotBelowZero, frozenset({COMMISSION_INCOME}), frozenset({NET_COMMISSION_INCOME})),
+    (
+        RecordPositiveTotal,
+        frozenset({FARMING_INCOME_STATEMENTS}),
+        frozenset({NET_FARMING_INCOME}),
+    ),
+    (
+        RecordPositiveTotal,
+        frozenset({FISHING_INCOME_STATEMENTS}),
+        frozenset({NET_FISHING_INCOME}),
     ),
     (
         Sum,

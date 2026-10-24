@@ -390,6 +390,7 @@ from app.jurisdictions.ca.catalog import (
     CLERGY_RESIDENCE_PART_B_COMPLETED,
     CLERGY_RESIDENCE_TOTAL,
     CLERGY_RESIDENCE_TOTAL_LIMITED,
+    COMMISSION_INCOME,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
@@ -706,10 +707,12 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+    NET_COMMISSION_INCOME,
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_INCOME_SIGNED,
+    NET_PROFESSIONAL_INCOME,
     NET_RENTAL_INCOME,
     OAS_AND_FEDERAL_SUPPLEMENTS,
     OAS_BENEFITS_BASE_AMOUNT,
@@ -735,6 +738,7 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_2,
     POLITICAL_CREDIT_COLUMN_3_LINE_3,
     PRE_1986_CAPITAL_LOSS_BALANCE,
+    PROFESSIONAL_INCOME,
     PROVINCES_LOGGING_TAX_CREDIT,
     QBT_ABIL_REDUCTION,
     QBT_ALLOCATION_TOTAL,
@@ -4473,6 +4477,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         FISH_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
             output=FISH_HOME_INCOME_LIMIT,
             parts=((FISH_NET_INCOME_AFTER_ADJUSTMENTS, D("0")),),
+            total=D("0"),
+        ),
+        # Federal Worksheet "Line 45200" "your net self-employment income (not including losses)":
+        # professional income (line 13700) alone, floored, 0.
+        NET_PROFESSIONAL_INCOME: SumNotBelowZeroLine(
+            output=NET_PROFESSIONAL_INCOME,
+            parts=((PROFESSIONAL_INCOME, D("0")),),
+            total=D("0"),
+        ),
+        # The same, for commission income (line 13900) alone, floored, 0.
+        NET_COMMISSION_INCOME: SumNotBelowZeroLine(
+            output=NET_COMMISSION_INCOME,
+            parts=((COMMISSION_INCOME, D("0")),),
             total=D("0"),
         ),
     }

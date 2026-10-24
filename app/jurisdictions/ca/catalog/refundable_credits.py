@@ -121,6 +121,26 @@ TAX_PAID_BY_INSTALMENTS = CATALOG.declare("tax_paid_by_instalments", Decimal, no
 """Tax paid by instalments, T1 line 164 (47600) "Tax paid by instalments": the instalments paid
 for the year, as entered."""
 
+NET_BUSINESS_INCOME = CATALOG.declare("net_business_income", Decimal, non_negative=True)
+"""Net business income, line 13500 "Business income": the profits only of the Form T2125 statements,
+the positive net income of each statement added, so a loss counts 0."""
+
+NET_PROFESSIONAL_INCOME = CATALOG.declare("net_professional_income", Decimal, non_negative=True)
+"""Net professional income, line 13700 "Professional income": the professional income of T1
+line 13700 not below zero, so a loss counts 0."""
+
+NET_COMMISSION_INCOME = CATALOG.declare("net_commission_income", Decimal, non_negative=True)
+"""Net commission income, line 13900 "Commission income": the commission income of T1 line 13900
+not below zero, so a loss counts 0."""
+
+NET_FARMING_INCOME = CATALOG.declare("net_farming_income", Decimal, non_negative=True)
+"""Net farming income, line 14100 "Farming income": the profits only of the Form T2042 statements,
+the positive net income of each statement added, so a loss counts 0."""
+
+NET_FISHING_INCOME = CATALOG.declare("net_fishing_income", Decimal, non_negative=True)
+"""Net fishing income, line 14300 "Fishing income": the profits only of the Form T2121 statements,
+the positive net income of each statement added, so a loss counts 0."""
+
 MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME = CATALOG.declare(
     "medical_supplement_employment_income", Decimal, non_negative=True
 )
