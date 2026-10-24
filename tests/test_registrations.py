@@ -59,6 +59,7 @@ def test_importing_a_jurisdiction_package_registers_its_capabilities() -> None:
     registry = CapabilityRegistry.shared()
 
     for name in (
+        "capped_record_total",
         "caregiver_amount",
         "choose_by_range",
         "disability_transfer_amount",

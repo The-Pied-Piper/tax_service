@@ -31,6 +31,7 @@ from app.jurisdictions.ca.catalog import (
     DISABILITY_DEPENDANTS as FEDERAL_DISABILITY_DEPENDANTS,
 )
 from app.jurisdictions.ca_on.catalog import (
+    ADOPTION_CREDIT,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
@@ -168,6 +169,7 @@ from app.jurisdictions.ca_on.catalog import (
     OPPORTUNITIES_FUND_DONATION,
     OTHER_DEPENDANTS_MEDICAL,
     OTHER_DIVIDENDS_CREDIT,
+    PENSION_INCOME_CREDIT,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT,
     POLITICAL_CREDIT_BEFORE_MAXIMUM,
@@ -287,6 +289,8 @@ REGISTERED = frozenset(
         "ca-on/claimed_as_eligible_dependant",
         "ca-on/caregiver_dependants",
         "ca-on/caregiver_amount",
+        "ca-on/adoption_credit",
+        "ca-on/pension_income_credit",
         "ca-on/dependant_on428_line_28",
         "ca-on/disability_dependants",
         "ca-on/disability_transferred_amount",
@@ -615,6 +619,8 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/claimed_as_eligible_dependant") is CLAIMED_AS_ELIGIBLE_DEPENDANT
     assert registry.get("ca-on/caregiver_dependants") is CAREGIVER_DEPENDANTS
     assert registry.get("ca-on/caregiver_amount") is CAREGIVER_AMOUNT
+    assert registry.get("ca-on/adoption_credit") is ADOPTION_CREDIT
+    assert registry.get("ca-on/pension_income_credit") is PENSION_INCOME_CREDIT
     assert registry.get("ca-on/dependant_on428_line_28") is DEPENDANT_ON428_LINE_28
     assert registry.get("ca-on/disability_dependants") is DISABILITY_DEPENDANTS
     assert registry.get("ca-on/disability_transferred_amount") is DISABILITY_TRANSFERRED_AMOUNT
@@ -1052,6 +1058,22 @@ def test_the_caregiver_amount_is_a_non_negative_decimal(registry: ArtifactRegist
     assert CAREGIVER_AMOUNT.value_type is Decimal
     assert CAREGIVER_AMOUNT.non_negative is True
     assert registry.kind("ca-on/caregiver_amount") is CAREGIVER_AMOUNT
+
+
+def test_the_adoption_credit_and_pension_income_credit_are_non_negative_amounts(
+    registry: ArtifactRegistry,
+) -> None:
+    # ON428 line 23 and line 58330 "Adoption expenses", the total of each child's capped amount
+    # (the capped record total), and ON428 line 27 and line 58360 "Pension income amount (maximum
+    # $1,762)", the lesser of that maximum and line 31400 of the federal return.
+    for kind, identifier in (
+        (ADOPTION_CREDIT, "ca-on/adoption_credit"),
+        (PENSION_INCOME_CREDIT, "ca-on/pension_income_credit"),
+    ):
+        assert kind.identifier == identifier
+        assert kind.value_type is Decimal
+        assert kind.non_negative is True
+        assert registry.kind(identifier) is kind
 
 
 def test_the_co_operative_education_placements_are_a_record_list_of_the_expenditures(

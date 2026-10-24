@@ -20,6 +20,7 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SPLIT_INCOME_LINE_18,
     SPLIT_INCOME_NON_BUSINESS_FROM_FOREIGN_SOURCES,
+    STUDENT_LOAN_INTEREST,
     TAXABLE_DIVIDENDS,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TOTAL_NON_BUSINESS_INCOME_FROM_FOREIGN_SOURCES,
@@ -51,7 +52,11 @@ STEPS = {
     # common-law partner (attach Schedule ON(S2))", parts of line 35 "Add lines 31 to 34. =". Line
     # 44 (line 58800) "Line 35 plus line 43" adds the medical expenses after them, so the claims
     # sit between the disability amount transferred and the medical claim, in the form's order.
-    # Line 31 (the sum Schedule ON(S11) line 3 reads) does not take lines 33 and 34.
+    # The adoption and pension amounts (lines 23 and 27) are in line 31, so they are in line 35 too.
+    # The student loan interest (line 32, the amount from line 31900 of the federal return) sits
+    # between lines 31 and 33, so it is a part here, after the disability amount transferred and
+    # before the unused tuition claim. Line 31 (the sum Schedule ON(S11) line 3 reads) does not take
+    # lines 32 to 34.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -66,8 +71,11 @@ STEPS = {
                 "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
+                "ca-on/adoption_credit",
+                "ca-on/pension_income_credit",
                 "ca-on/disability_amount_for_self",
                 "ca-on/disability_transferred_amount",
+                "ca/student_loan_interest",
                 "ca-on/unused_tuition_claimed",
                 "ca-on/amounts_transferred_from_spouse",
                 "ca-on/medical_claim",
@@ -385,8 +393,11 @@ WIRING = {
                 CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+                ontario.ADOPTION_CREDIT,
+                ontario.PENSION_INCOME_CREDIT,
                 ontario.DISABILITY_AMOUNT_FOR_SELF,
                 ontario.DISABILITY_TRANSFERRED_AMOUNT,
+                STUDENT_LOAN_INTEREST,
                 ontario.UNUSED_TUITION_CLAIMED,
                 ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE,
                 ontario.MEDICAL_CLAIM,

@@ -468,6 +468,7 @@ from app.jurisdictions.ca.catalog import (
     PENSION_ANNUITY_PAYMENTS,
     PENSION_CHART_LINE_7,
     PENSION_CHART_LINE_8,
+    PENSION_INCOME_CREDIT,
     PENSION_WORKSHEET_AMOUNT,
     POLITICAL_CREDIT,
     POLITICAL_CREDIT_BEFORE_MAXIMUM,
@@ -3461,6 +3462,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             PENSION_CHART_LINE_8,
             D("0"),
             Amount(D("2000")),
+            CENT,
+            D("0.00"),
+        ),
+        # ON428 line 27 (line 58360) "Pension income amount (maximum $1,762)": the amount on line
+        # 31400, 0, within the maximum.
+        ontario.PENSION_INCOME_CREDIT: CappedAmountLine(
+            ontario.PENSION_INCOME_CREDIT,
+            PENSION_INCOME_CREDIT,
+            D("0"),
+            Amount(D("1762")),
             CENT,
             D("0.00"),
         ),

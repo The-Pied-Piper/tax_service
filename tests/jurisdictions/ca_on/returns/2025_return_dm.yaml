@@ -16,8 +16,15 @@ description: >-
   credit (Federal Worksheet "Line 34990 - Top-up tax credit") is (9,806.87 - 8,319.38) x 3.45% =
   51.32 (rounded half-up), so the non-refundable tax credits are 9,806.87 + 51.32 = 9,858.19 and
   the federal tax after credits is Return DG's 11,158.82 plus the 150.00 fall in credits, 11,308.82.
-  The Ontario figures are as in Return DG (the new line does not enter the Ontario credits), so
-  ontario_tax is 9,629.26 and the balance owing is 11,308.82 + 9,629.26 = 20,938.08.
+  The Ontario credit amounts (ON428 line 44, line 58800) are the basic personal amount 12,747 plus
+  the CPP base contributions 3,356.10 and EI premiums 1,077.48, the adoption expenses 8,000.00 (line
+  58330, one child under the 15,551 cap), the pension income amount 1,000.00 (line 58360, the
+  lesser of 1,762 and the 1,000.00 on line 31400) and the student loan interest 600.00 (line 58520),
+  26,780.58, at 5.05% is 1,352.4193, so 1,352.42. The Ontario tax on taxable income is Return DG's
+  8,977.74, less 1,352.42, which is 7,625.32 on ontario_tax_less_dividend_credit. The Ontario surtax
+  is 20% x (7,625.32 - 5,710) + 36% x (7,625.32 - 7,307) = 383.06 + 114.60 = 497.66, so ontario_tax
+  is 7,625.32 + 497.66 + 750.00 (the Ontario health premium, as in Return DG) = 8,872.98, and the
+  balance owing is 11,308.82 + 8,872.98 = 20,181.80.
 sources:
   - >-
     CRA, Federal Worksheet 2025, Line 31400 (https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt,
@@ -74,8 +81,8 @@ expected:
       ca/top_up_tax_credit: "51.32"
       ca/non_refundable_tax_credits: "9858.19"
       ca/federal_tax_after_credits: "11308.82"
-      ca-on/ontario_tax_less_dividend_credit: "8110.12"
+      ca-on/ontario_tax_less_dividend_credit: "7625.32"
       ca/cpp_second_additional_earnings_maximum: "9900.00"
       ca/net_income_before_adjustments: "118926.00"
       ca/other_payments_limit_income: "118926.00"
-      ca/refund_or_balance_owing: "20938.08"
+      ca/refund_or_balance_owing: "20181.80"

@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1130
+        == 1132
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1130
+        == 1132
     )
 
 
@@ -2455,6 +2455,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/claimed_as_eligible_dependant",
         "ca-on/caregiver_dependants",
         "ca-on/caregiver_amount",
+        "ca-on/adoption_credit",
+        "ca-on/pension_income_credit",
         "ca-on/dependant_on428_line_28",
         "ca-on/disability_dependants",
         "ca-on/disability_transferred_amount",
@@ -2684,7 +2686,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1130
+        == 1132
     )
     assert (
         len(
@@ -2692,7 +2694,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1130
+        == 1132
     )
 
 
@@ -2705,7 +2707,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1130
+        == 1132
     )
     assert (
         len(
@@ -2713,7 +2715,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1130
+        == 1132
     )
 
 

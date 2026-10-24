@@ -76,16 +76,18 @@ def test_return_hs_pension_and_benefit_income_is_all_of_its_total_income() -> No
     assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("2628.71")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3664.29")
     assert worksheet.get(ONTARIO_BASIC_TAX).value == D("2191.70")
-    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("643.72")
-    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1547.98")
+    # 5.05% of 14509.00, the basic personal amount 12747.00 plus the pension income amount 1762.00
+    # (line 58360: the lesser of 2000.00 on line 31400 and 1762): 732.7045, down to 732.70.
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("732.70")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1459.00")
     assert worksheet.get(LIFT_REDUCTION).value == D("645.00")
     assert worksheet.get(LIFT_CREDIT).value == D("0")
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("450")
-    assert worksheet.get(ONTARIO_TAX).value == D("1997.98")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("5662.27")
+    assert worksheet.get(ONTARIO_TAX).value == D("1909.00")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("5573.29")
     assert worksheet.get(WORKING_INCOME).value == D("0")
     assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("0")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("2662.27")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("2573.29")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "total_income: employment_income 0 + other_employment_income 0 + old_age_security 8000 "
