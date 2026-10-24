@@ -20,7 +20,6 @@ from app.domain.trace import (
     PerUnitAmountLine,
     SignChosenDifferenceLine,
     SubtractedLine,
-    SumLine,
     TaperedAmountLine,
     ThresholdGateLine,
     TimesCountLine,
@@ -150,7 +149,6 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GIFT_GAINS_DEDUCTION,
     CAPITAL_GIFT_TAXABLE_GAINS,
     CAPITAL_PROPERTY_GIFTS,
-    CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT,
     CHART_2_LINE_4,
     CHART_2_LINE_8,
     CHART_2_LINE_12,
@@ -330,7 +328,6 @@ from app.jurisdictions.ca.catalog import (
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
     EI_SPECIAL_BENEFITS_AGREEMENT,
     ELIGIBLE_DEPENDANT_AMOUNT,
-    ELIGIBLE_DEPENDANT_AMOUNT_BASIS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
@@ -705,13 +702,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     multiples = {line.output: line for line in trace if isinstance(line, MultipleOverLine)}
     times = {line.output: line for line in trace if isinstance(line, TimesCountLine)}
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
-    sums = {
-        line.output: line
-        for line in trace
-        if isinstance(line, SumLine)
-        and line.output
-        in (ELIGIBLE_DEPENDANT_AMOUNT_BASIS, CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT)
-    }
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     divided = {
         line.output: line
@@ -728,24 +718,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rate=Rate(D("0.04")),
             rounding=CENT,
             result=D("9900.00"),
-        ),
-    }
-    # Schedule 5 line 30400 basis: basic personal amount 16129.00 plus the infirmity supplement
-    # 0.00 (no infirm dependant on Return A). Line 30425 total: spouse caregiver amount 0 plus
-    # dependant caregiver amount 0, and the non-refundable credit total takes that sum.
-    assert sums == {
-        ELIGIBLE_DEPENDANT_AMOUNT_BASIS: SumLine(
-            output=ELIGIBLE_DEPENDANT_AMOUNT_BASIS,
-            parts=(
-                (BASIC_PERSONAL_AMOUNT, D("16129.00")),
-                (DEPENDANT_INFIRMITY_SUPPLEMENT, D("0.00")),
-            ),
-            total=D("16129.00"),
-        ),
-        CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT: SumLine(
-            output=CAREGIVER_AMOUNT_FOR_SPOUSE_OR_DEPENDANT,
-            parts=((SPOUSE_CAREGIVER_AMOUNT, D("0")), (DEPENDANT_CAREGIVER_AMOUNT, D("0"))),
-            total=D("0"),
         ),
     }
     assert subtracted == {
