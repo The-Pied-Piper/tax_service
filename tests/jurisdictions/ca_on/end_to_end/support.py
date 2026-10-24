@@ -1323,7 +1323,7 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
             CCA_DIEP_ADDITIONS: D(diep_additions),
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
-            CCA_PERSONAL_PART_REMAINING: D(personal_part_remaining),
+            CCA_PERSONAL_PART_REMAINING: personal_part_remaining,
             CCA_HALF_YEAR_RULE_DIFFERS: half_year_rule_differs,
             CCA_RATE_ELECTION: 0,
         }
@@ -1342,7 +1342,7 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
             *extras,
         ) in rows
         for half_year_rule_differs, personal_part_remaining in (
-            (extras[0] if extras else 0, extras[1] if len(extras) > 1 else "0"),
+            (extras[0] if extras else 0, D(str(extras[1])) if len(extras) > 1 else D(0)),
         )
     ]
     return Artifact(kind, RecordList(kind.fields, records))
