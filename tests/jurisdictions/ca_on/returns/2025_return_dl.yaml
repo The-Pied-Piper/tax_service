@@ -7,7 +7,7 @@ tax_year: 2025
 description: >-
   Return DL: a 2025 Ontario resident in Canada throughout 2025, aged 18 or older, with no
   spouse. Employment income is $100,000 (T1 line 10100, a chosen figure) and other pension
-  income is $1,500 (T1 line 11500, "Other pensions or superannuation", a chosen figure), with
+  income is $1,500 (T1 line 11500, "Other pensions and superannuation", a chosen figure), with
   nothing excluded from the pension and no foreign pension, U.S. IRA or RRIF amounts (all 0,
   chosen). Total income is 101,500.00. The enhanced CPP contributions deduction is 1,074.00
   (678.00 first additional + 396.00 second additional), so net income before adjustments (T1 line

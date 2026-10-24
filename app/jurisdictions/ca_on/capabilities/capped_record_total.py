@@ -64,7 +64,7 @@ class OntarioCappedRecordTotal(Capability):
         cap, rounding = self._cap.values, self._cap.rounding
         lines: list[CappedRecordLine] = []
         for position, record in enumerate(records, start=1):
-            expenditure = Decimal(record[self._field])
+            expenditure = record[self._field]
             result = rounding.apply(min(expenditure, cap.value))
             lines.append(
                 CappedRecordLine(self._output, position, expenditure, cap, rounding, result)

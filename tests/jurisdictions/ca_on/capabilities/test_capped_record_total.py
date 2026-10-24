@@ -329,7 +329,7 @@ def test_the_trace_is_in_the_callers_order() -> None:
     first, second = result.trace[:2]
     assert isinstance(first, CappedRecordLine)
     assert isinstance(second, CappedRecordLine)
-    assert [first.amount, second.amount] == [D("20000"), D("8000")]
+    assert [first.expenditure, second.expenditure] == [D("20000"), D("8000")]
     assert [first.position, second.position] == [1, 2]
 
 

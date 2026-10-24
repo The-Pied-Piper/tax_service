@@ -32,5 +32,5 @@ class CappedRecordLine(TraceLine):
 
     @property
     def amount(self) -> Decimal:
-        """The item's expenditure, before the cap."""
-        return self.expenditure
+        """The item's capped amount."""
+        return self.result
