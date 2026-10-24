@@ -3,9 +3,9 @@
 # earnings $65,700; rate 1.64%; maximum annual employee premium $1,077.48. Line 88
 # (line 31200) "through employment (boxes 18 and 55 of all T4 slips) (maximum
 # $1,077.48)". So the tier is 1.64% of the earnings from 0 to the $65,700 maximum
-# insurable earnings, with no exemption. Employment income is taken as the insurable
-# earnings: boxes 18 and 55 of the slip are not modelled, and the EI overpayment
-# (T1 line 45000) is worked out on Form T2204 from the premiums deducted, not from this tier.
+# insurable earnings, with no exemption. It is the rate of Form T2204 line 10 "Amount from
+# line 1 x 1.64% (maximum $1,077.48)", the premium required on the insurable earnings; line 31200
+# is Form T2204 line 16.
 # Premiums are in dollars and cents, and 1.64% of 65,700 is exactly the printed
 # $1,077.48, so the tier rounds half-up to the cent.
 family: ca/ei_premium

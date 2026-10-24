@@ -543,7 +543,6 @@ from app.jurisdictions.ca.catalog import (
     EI_INSURABLE_EARNINGS_REMAINING,
     EI_MAXIMUM_INSURABLE_EARNINGS,
     EI_NET_SELF_EMPLOYMENT_INCOME,
-    EI_PREMIUMS,
     EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
@@ -1955,19 +1954,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             parts=((FISH_HOME_EXPENSES_AVAILABLE, D("0")), (FISH_HOME_INCOME_LIMIT, D("0"))),
             result=D("0"),
         ),
-        # Form T2204 line 15 "Enter whichever is less: amount from line 9 or line 14.": line 9 (0)
-        # and line 14 (0): 0.
+        # Form T2204 line 15 "Enter whichever is less: amount from line 9 or line 14.": line 9
+        # (1077.48) and line 14 (0): 0.
         T2204_LINE_15: LesserOfLine(
             output=T2204_LINE_15,
-            parts=((T2204_LINE_9, D("0")), (T2204_LINE_14, D("0"))),
+            parts=((T2204_LINE_9, D("1077.48")), (T2204_LINE_14, D("0"))),
             result=D("0"),
         ),
         # Form T2204 line 16 "Enter whichever amount is the least: line 7, line 9 or line 12.":
-        # line 7 (0), line 9 (0) and line 12 (0.00): 0.
+        # line 7 (63700.00), line 9 (1077.48) and line 12 (1077.48): 1077.48, entered on line 31200.
         T2204_LINE_16: LesserOfLine(
             output=T2204_LINE_16,
-            parts=((T2204_LINE_7, D("0")), (T2204_LINE_9, D("0")), (T2204_LINE_12, D("0.00"))),
-            result=D("0"),
+            parts=(
+                (T2204_LINE_7, D("63700.00")),
+                (T2204_LINE_9, D("1077.48")),
+                (T2204_LINE_12, D("1077.48")),
+            ),
+            result=D("1077.48"),
         ),
     }
     assert at_most == {
@@ -2155,15 +2158,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("9900"),
             D("396.00"),
         ),
-        EI_PREMIUMS: ContributionTierLine(
-            EI_PREMIUMS,
-            EMPLOYMENT_INCOME,
-            D("110000"),
-            ContributionTier(Rate(D("0.0164")), D("0"), D("65700"), D("1077.48")),
-            CENT,
-            D("65700"),
-            D("1077.48"),
-        ),
         # Schedule 8 Part 4 lines 10, 11 and 12 on no pensionable earnings: 9.9% and 2% of line 9
         # up to $67,800, 8% of line 6 up to $9,900. Schedule 13 line 9: 1.64% of line 8 up to
         # $65,700.
@@ -2204,15 +2198,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("0"),
         ),
         # Form T2204 line 10 "Residents of other than Quebec Amount from line 1 × 1.64% = (maximum
-        # $1,077.48)": line 1 is 0, so no premium.
+        # $1,077.48)": line 1 is 110000, so the premium is
+        # the maximum.
         T2204_LINE_10: ContributionTierLine(
             output=T2204_LINE_10,
             earnings=T2204_LINE_1,
-            earnings_amount=D("0"),
+            earnings_amount=D("110000"),
             tier=ContributionTier(Rate(D("0.0164")), D("0"), D("65700"), D("1077.48")),
             rounding=CENT,
-            contributory=D("0"),
-            result=D("0.00"),
+            contributory=D("65700"),
+            result=D("1077.48"),
         ),
     }
     assert surcharged == [
@@ -4054,34 +4049,34 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("1597.44"),
             result=D("0"),
         ),
-        # Form T2204 line 7 "Amount from line 3 – $2,000 = (if negative, enter "0")": line 3, 0.00,
-        # less the $2,000 exemption, not below zero: 0.
+        # Form T2204 line 7 "Amount from line 3 – $2,000 = (if negative, enter "0")": line 3,
+        # 65700.00, less the $2,000 exemption, not below zero: 63700.00.
         T2204_LINE_7: SubtractedNotBelowZeroLine(
             output=T2204_LINE_7,
             minuend=T2204_LINE_3,
-            minuend_amount=D("0.00"),
+            minuend_amount=D("65700.00"),
             subtrahend=T2204_EXEMPTION,
             subtrahend_amount=D("2000.00"),
-            result=D("0"),
+            result=D("63700.00"),
         ),
-        # Form T2204 line 8 "Line 6 minus line 7 (if negative, enter "0")": line 6 (0) less line 7
-        # (0): 0.
+        # Form T2204 line 8 "Line 6 minus line 7 (if negative, enter "0")": line 6 (1077.48) less
+        # line 7 (63700.00), not below zero: 0.
         T2204_LINE_8: SubtractedNotBelowZeroLine(
             output=T2204_LINE_8,
             minuend=T2204_LINE_6,
-            minuend_amount=D("0"),
+            minuend_amount=D("1077.48"),
             subtrahend=T2204_LINE_7,
-            subtrahend_amount=D("0"),
+            subtrahend_amount=D("63700.00"),
             result=D("0"),
         ),
-        # Form T2204 line 13 "Line 9 minus line 12 (if negative, enter "0")": line 9 (0) less
-        # line 12 (0.00), not below zero: 0.
+        # Form T2204 line 13 "Line 9 minus line 12 (if negative, enter "0")": line 9 (1077.48)
+        # less line 12 (1077.48), not below zero: 0.
         T2204_LINE_13: SubtractedNotBelowZeroLine(
             output=T2204_LINE_13,
             minuend=T2204_LINE_9,
-            minuend_amount=D("0"),
+            minuend_amount=D("1077.48"),
             subtrahend=T2204_LINE_12,
-            subtrahend_amount=D("0.00"),
+            subtrahend_amount=D("1077.48"),
             result=D("0"),
         ),
     }

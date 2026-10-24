@@ -77,11 +77,11 @@ def test_the_worked_example_gives_line_45000_of_122_52_and_line_16_of_1077_48() 
     assert worksheet.get(T2204_LINE_16).value == D("1077.48")
 
 
-def test_line_16_is_the_employment_insurance_premium_on_line_31200_of_the_worked_return() -> None:
+def test_line_16_is_entered_as_the_employment_insurance_premium_on_line_31200() -> None:
     worksheet = return_dd()
 
-    # Both are 1.64% of the employment income up to the $65,700 maximum, 1077.48. Nothing reads
-    # line 16; the comparison is the check that the two lines agree on this return.
+    # Form T2204 line 16 "Enter this amount on line 31200 of your return": line 31200 is line 16,
+    # 1077.48, the premium required on the insurable earnings, not the 1200.00 deducted.
     assert worksheet.get(EI_PREMIUMS).value == D("1077.48")
     assert worksheet.get(T2204_LINE_16).value == worksheet.get(EI_PREMIUMS).value
 
@@ -102,7 +102,8 @@ def test_note_1_zeroes_line_1_under_2000_so_line_45000_is_all_the_premiums() -> 
 
     # Note (1) applies: line 1 is "0", so line 3 and line 7 are 0 and line 8 is 29.52. Line 10 is
     # 0, line 13 is 29.52 - 0 = 29.52, and line 15 is 29.52, more than $1, so line 45000 is 29.52.
-    # Line 16 is the least of 0, 29.52 and 0, which is 0.
+    # Line 16 is the least of 0, 29.52 and 0, which is 0, so line 31200 is 0 and all the premiums
+    # are refunded on line 45000.
     assert worksheet.get(T2204_LINE_1).value == D("0")
     assert worksheet.get(T2204_LINE_3).value == D("0")
     assert worksheet.get(T2204_LINE_7).value == D("0")
@@ -111,6 +112,7 @@ def test_note_1_zeroes_line_1_under_2000_so_line_45000_is_all_the_premiums() -> 
     assert worksheet.get(T2204_LINE_13).value == D("29.52")
     assert worksheet.get(EI_OVERPAYMENT).value == D("29.52")
     assert worksheet.get(T2204_LINE_16).value == D("0")
+    assert worksheet.get(EI_PREMIUMS).value == D("0")
 
 
 def test_40000_insurable_with_800_of_premiums_gives_line_13_of_144_and_line_16_of_656() -> None:

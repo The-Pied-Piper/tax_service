@@ -3280,14 +3280,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             result=D("0"),
         ),
         # Form T2204 line 1 "Total EI insurable earnings (box 24 or, if blank, box 14 of your T4
-        # slips) (1)": the insurable earnings, 0, times a count of 0, as the note (1) applies.
+        # slips) (1)": the insurable earnings, 110000, times a count of 1, as the note (1)
+        # does not apply (no self-employment earnings, but the earnings are not below $2,000).
         T2204_LINE_1: TimesCountLine(
             output=T2204_LINE_1,
             amount_kind=T2204_INSURABLE_EARNINGS,
-            amount_value=D("0"),
+            amount_value=D("110000"),
             count_kind=T2204_LINE_1_COUNT,
-            count=0,
-            result=D("0"),
+            count=1,
+            result=D("110000"),
         ),
         # T1 line 45000 "Employment insurance (EI) overpayment": Form T2204 line 15, 0, times a
         # count of 0, as line 15 is not more than $1.
@@ -3480,14 +3481,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=CENT,
             result=D("0.00"),
         ),
-        # Form T2204 line 3 "Line 1 plus line 2 (maximum $65,700)": 0.00 is below the maximum.
+        # Form T2204 line 3 "Line 1 plus line 2 (maximum $65,700)": 110000 is capped at the maximum.
         T2204_LINE_3: CappedAmountLine(
             T2204_LINE_3,
             T2204_LINE_1_PLUS_2,
-            D("0"),
+            D("110000"),
             Amount(D("65700.00")),
             CENT,
-            D("0.00"),
+            D("65700.00"),
         ),
     }
 

@@ -925,6 +925,7 @@ from app.jurisdictions.ca.catalog import (
     T2204_LINE_9,
     T2204_LINE_10,
     T2204_LINE_12,
+    T2204_LINE_16,
     T2204_PREMIUMS_DEDUCTED,
     T2204_SELF_EMPLOYMENT_EARNINGS,
     T5013_DIVIDEND_TAX_CREDIT,
@@ -3939,26 +3940,32 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("1597.44"),
         ),
         # Form T2204 line 9 "Total premiums deducted from line 4 above": line 4, the premiums
-        # deducted (0), carried over: 0.
-        T2204_LINE_9: SumLine(T2204_LINE_9, ((T2204_PREMIUMS_DEDUCTED, D("0")),), D("0")),
-        # Form T2204 line 6 "Line 4 plus line 5": line 4, the premiums deducted (0), and line 5, the
-        # Schedule 13 line 9 premiums payable on self-employment earnings (0): 0.
+        # deducted (1077.48, the premium required on the employment income), carried over:
+        # 1077.48.
+        T2204_LINE_9: SumLine(
+            T2204_LINE_9, ((T2204_PREMIUMS_DEDUCTED, D("1077.48")),), D("1077.48")
+        ),
+        # Form T2204 line 6 "Line 4 plus line 5": line 4, the premiums deducted (1077.48), and
+        # line 5, the Schedule 13 line 9 premiums payable on self-employment earnings (0): 1077.48.
         T2204_LINE_6: SumLine(
             T2204_LINE_6,
-            ((T2204_PREMIUMS_DEDUCTED, D("0")), (EI_PAYABLE_ON_SELF_EMPLOYMENT, D("0"))),
-            D("0"),
+            ((T2204_PREMIUMS_DEDUCTED, D("1077.48")), (EI_PAYABLE_ON_SELF_EMPLOYMENT, D("0"))),
+            D("1077.48"),
         ),
         # Form T2204 line 3 "Line 1 plus line 2", before its maximum: line 1, the total EI insurable
-        # earnings after note (1) (0), and line 2, the self-employment earnings eligible under the
-        # agreement (0): 0.
+        # earnings after note (1) (110000), and line 2, the self-employment earnings eligible under
+        # the agreement (0): 110000.
         T2204_LINE_1_PLUS_2: SumLine(
             T2204_LINE_1_PLUS_2,
-            ((T2204_LINE_1, D("0")), (T2204_SELF_EMPLOYMENT_EARNINGS, D("0"))),
-            D("0"),
+            ((T2204_LINE_1, D("110000")), (T2204_SELF_EMPLOYMENT_EARNINGS, D("0"))),
+            D("110000"),
         ),
         # Form T2204 line 12 "Enter the amount from line 10 or line 11, whichever applies.": line
-        # 10, 0.00 (1.64% of line 1, which is 0): 0.00.
-        T2204_LINE_12: SumLine(T2204_LINE_12, ((T2204_LINE_10, D("0.00")),), D("0.00")),
+        # 10, 1077.48 (1.64% of line 1 up to the maximum): 1077.48.
+        T2204_LINE_12: SumLine(T2204_LINE_12, ((T2204_LINE_10, D("1077.48")),), D("1077.48")),
+        # T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips)": Form T2204 line 16
+        # "Enter this amount on line 31200 of your return" (1077.48), carried over: 1077.48.
+        EI_PREMIUMS: SumLine(EI_PREMIUMS, ((T2204_LINE_16, D("1077.48")),), D("1077.48")),
     }
     # Form T1206 Part 1 "(If the TOSI-adjusted net income at line 6 is negative, use the negative
     # value when it is part of an adjusted net income calculation, otherwise use zero.)": the

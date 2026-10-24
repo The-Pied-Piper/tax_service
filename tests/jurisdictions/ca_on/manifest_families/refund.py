@@ -20,6 +20,7 @@ from app.jurisdictions.ca.catalog import (
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EI_OVERPAYMENT,
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
+    EI_PREMIUMS,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     INCOME_TAX_DEDUCTED,
     JOURNALISM_LABOUR_TAX_CREDIT,
@@ -63,9 +64,6 @@ INPUTS = frozenset(
 OUTPUTS = frozenset(
     {
         "ca/refund_or_balance_owing",
-        # Form T2204 line 16, printed and not read by any line: it equals T1 line 31200 on the
-        # worked return (Return DD), and the end-to-end test compares the two there.
-        "ca/t2204_line_16",
     }
 )
 
@@ -199,13 +197,21 @@ STEPS = {
         consumes={"amount": "ca/t2204_line_15", "count": "ca/t2204_line_15_count"},
         produces={"output": "ca/ei_overpayment"},
     ),
-    # T2204 line 16 "Enter whichever amount is the least: line 7, line 9 or line 12." On the
-    # worked return it equals T1 line 31200, and nothing reads it.
+    # T2204 line 16 "Enter whichever amount is the least: line 7, line 9 or line 12."
     CapabilitySelection(
         name="core/lesser_of",
         params={},
         consumes={"amounts": ("ca/t2204_line_7", "ca/t2204_line_9", "ca/t2204_line_12")},
         produces={"output": "ca/t2204_line_16"},
+    ),
+    # T2204 line 16 "Enter this amount on line 31200 of your return": T1 line 31200 "through
+    # employment (boxes 18 and 55 of all T4 slips) (maximum $1,077.48)" is that amount, carried
+    # over one part.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/t2204_line_16",)},
+        produces={"output": "ca/ei_premiums"},
     ),
     # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line 152
     # (44800) "CPP or QPP overpayment" (Schedule 8 line 29, 0 when line 24 is not positive), line
@@ -331,4 +337,5 @@ WIRING = {
         frozenset({T2204_LINE_7, T2204_LINE_9, T2204_LINE_12}),
         frozenset({T2204_LINE_16}),
     ),
+    (Sum, frozenset({T2204_LINE_16}), frozenset({EI_PREMIUMS})),
 }
