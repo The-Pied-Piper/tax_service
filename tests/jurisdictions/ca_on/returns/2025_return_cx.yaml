@@ -1,4 +1,4 @@
-# Return CW: wiring of T1 line 127 (the federal surtax on income earned outside Canada, from
+# Return CX: wiring of T1 line 127 (the federal surtax on income earned outside Canada, from
 # Form T2203 Part 2) and of the limit on Form T2209 line 13, which is line 42900 plus line
 # 127. A filer with other income only, a foreign business credit above line 42900 and a
 # non-zero T2209 line 6 (the surtax on income allocated to "Other (Outside Canada)"), not
@@ -6,7 +6,7 @@
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
-  Return CW: a 2025 Ontario resident in Canada throughout 2025, aged 18 or older, with no
+  Return CX: a 2025 Ontario resident in Canada throughout 2025, aged 18 or older, with no
   spouse and no employment income (so no CPP or EI contributions and no employment amount),
   whose only income is $40,000 of other income (T1 line 13000, a chosen figure). With no
   deductions, net income (line 23600) and taxable income (line 26000) are 40,000.00. The

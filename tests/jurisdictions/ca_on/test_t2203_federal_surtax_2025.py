@@ -122,7 +122,7 @@ def test_2025_line_8_rounding_cites_the_form_it_is_printed_on() -> None:
 @pytest.mark.parametrize(
     ("line_6", "percentage", "result"),
     [
-        # 3461.29 x 25 / 100 = 865.3225, rounded half-up to 865.32 (the worked return CW, line 8).
+        # 3461.29 x 25 / 100 = 865.3225, rounded half-up to 865.32 (the worked return CX, line 8).
         ("3461.29", "25", "865.32"),
         # 2806.31 x 50 / 100 = 1403.155, a tie, rounded half-up to 1403.16.
         ("2806.31", "50", "1403.16"),
@@ -161,7 +161,7 @@ def test_2025_the_federal_surtax_rate_cites_the_form_it_is_printed_on() -> None:
 @pytest.mark.parametrize(
     ("line_8", "result"),
     [
-        # 865.32 x 0.48 = 415.3536, rounded half-up to 415.35 (the worked return CW, line 10).
+        # 865.32 x 0.48 = 415.3536, rounded half-up to 415.35 (the worked return CX, line 10).
         ("865.32", "415.35"),
         # 1.04 x 0.48 = 0.4992, rounded half-up to 0.50.
         ("1.04", "0.50"),

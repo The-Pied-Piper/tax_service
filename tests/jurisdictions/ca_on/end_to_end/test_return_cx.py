@@ -1,4 +1,4 @@
-"""CA-ON 2025 end to end: return cw."""
+"""CA-ON 2025 end to end: return cx."""
 
 from __future__ import annotations
 
@@ -28,8 +28,8 @@ from app.jurisdictions.ca.catalog import (
 from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 
 
-def return_cw(**overrides: Any) -> Worksheet:
-    """Return CW's inputs, as in `returns/2025_return_cw.yaml`, over the keyword overrides given.
+def return_cx(**overrides: Any) -> Worksheet:
+    """Return CX's inputs, as in `returns/2025_return_cx.yaml`, over the keyword overrides given.
 
     A filer with 40000 of other income and no employment income, with 40000 of net foreign
     business income (equal to net income, so not reduced), 3600 of business income tax paid to
@@ -46,7 +46,7 @@ def return_cw(**overrides: Any) -> Worksheet:
 
 
 def test_t2203_part_2_takes_the_basic_federal_tax_and_applies_the_percentage_and_the_rate() -> None:
-    worksheet = return_cw()
+    worksheet = return_cx()
 
     # Line 5 is "0" (no tax on split income), so line 6 is the basic federal tax of 3461.29. Line 8
     # is 3461.29 x 25% = 865.3225, rounded half-up to 865.32, and line 10 is 865.32 x 48% =
@@ -59,7 +59,7 @@ def test_t2203_part_2_takes_the_basic_federal_tax_and_applies_the_percentage_and
 
 
 def test_t1_line_127_is_t2203_line_10_when_not_subject_to_minimum_tax() -> None:
-    worksheet = return_cw()
+    worksheet = return_cx()
 
     # T1 line 127 is line 10 of Part 2 of Form T2203, 415.35. T1 line 128 "Line 126 plus line 127 ="
     # is 3461.29 + 415.35 = 3876.64.
@@ -69,7 +69,7 @@ def test_t1_line_127_is_t2203_line_10_when_not_subject_to_minimum_tax() -> None:
 
 
 def test_the_credit_is_within_line_42900_plus_line_127_so_it_is_not_cut_to_line_42900() -> None:
-    worksheet = return_cw()
+    worksheet = return_cx()
 
     # The credit before the limit is 3600.00, the business tax paid. The limit is line 42900 plus
     # line 127, 3461.29 + 415.35 = 3876.64, so 3600.00 stands and is not cut to 3461.29. T1 line 130
@@ -80,7 +80,7 @@ def test_the_credit_is_within_line_42900_plus_line_127_so_it_is_not_cut_to_line_
 
 
 def test_the_credit_is_capped_at_line_42900_plus_line_127_when_it_is_above_that() -> None:
-    worksheet = return_cw(foreign_tax_countries_rows=(("0", "0", "4000", "0", "40000", "415.35"),))
+    worksheet = return_cx(foreign_tax_countries_rows=(("0", "0", "4000", "0", "40000", "415.35"),))
 
     # Business tax paid of 4000.00 is more than 3876.64, so the credit is 3876.64 and T1 line 130 is
     # 0.00.
@@ -89,7 +89,7 @@ def test_the_credit_is_capped_at_line_42900_plus_line_127_when_it_is_above_that(
 
 
 def test_subject_to_minimum_tax_takes_the_t691_surtax_for_t1_line_127() -> None:
-    worksheet = return_cw(amt_subject_to_minimum_tax=1)
+    worksheet = return_cx(amt_subject_to_minimum_tax=1)
 
     # Subject to minimum tax, Form T2203 Part 2 is not completed and T1 line 127 is Form T691 Part 3
     # line 4: 48% of 3461.29 is 1661.42, times 25% is 415.355, rounded half-up to 415.36. Line 128
@@ -101,7 +101,7 @@ def test_subject_to_minimum_tax_takes_the_t691_surtax_for_t1_line_127() -> None:
 
 
 def test_a_negative_surtax_with_no_positive_line_128_gives_no_credit_and_no_crash() -> None:
-    worksheet = return_cw(
+    worksheet = return_cx(
         other_income="10000",
         amt_subject_to_minimum_tax=1,
         foreign_tax_countries_rows=(("0", "0", "500", "0", "10000", "0"),),
@@ -126,7 +126,7 @@ def test_a_negative_surtax_with_no_positive_line_128_gives_no_credit_and_no_cras
 def test_a_negative_surtax_past_the_dividend_credit_does_not_make_the_abatement_base_negative() -> (
     None
 ):
-    worksheet = return_cw(
+    worksheet = return_cx(
         other_income="0",
         other_dividends_received_without_a_slip="2000",
         amt_subject_to_minimum_tax=1,
@@ -158,7 +158,7 @@ def test_a_negative_surtax_past_the_dividend_credit_does_not_make_the_abatement_
 
 
 def test_a_first_nations_abatement_larger_than_the_basic_tax_gives_0_not_a_negative_base() -> None:
-    worksheet = return_cw(
+    worksheet = return_cx(
         other_income="0", first_nations_abatement="50", foreign_tax_countries_rows=()
     )
 
@@ -170,7 +170,7 @@ def test_a_first_nations_abatement_larger_than_the_basic_tax_gives_0_not_a_negat
 
 
 def test_the_non_business_credit_is_not_cut_to_basic_federal_tax_without_the_surtax() -> None:
-    worksheet = return_cw(foreign_tax_countries_rows=(("3800", "40000", "0", "0", "0", "415.35"),))
+    worksheet = return_cx(foreign_tax_countries_rows=(("3800", "40000", "0", "0", "0", "415.35"),))
 
     # Form T2209 note (4), basic federal tax, takes the surtax on income allocated to "Other
     # (Outside Canada)" as well as line 42900 and the dividend credit: 3461.29 + 415.35 = 3876.64.
@@ -187,7 +187,7 @@ def test_the_non_business_credit_is_not_cut_to_basic_federal_tax_without_the_sur
 def test_the_split_income_branch_takes_line_22_of_form_t1206_when_it_is_more_than_line_42900() -> (
     None
 ):
-    worksheet = return_cw(other_split_income="40000")
+    worksheet = return_cx(other_split_income="40000")
 
     # Split income of 40000 (T1206 line 7) is taxed at 33% on T1206 line 8: 13200.00. Line 22 is
     # line 15 less line 21, with no disability amounts (line 9 is line 41500, the advanced Canada
