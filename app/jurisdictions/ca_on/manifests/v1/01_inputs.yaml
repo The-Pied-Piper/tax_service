@@ -72,6 +72,9 @@ inputs:
   # Form T2121: the statements, one record for each fishing business (any number); the form ca/t2121
   # reads their fields.
   - ca/t2121_statements
+  # Form RC359: the copies of the form, one record for each employer with EPSP contributions
+  # (any number, none included); the form ca/rc359 reads their fields.
+  - ca/rc359_employers
   - ca/taxable_support_payments
   - ca/rrsp_income
   - ca/fhsa_income

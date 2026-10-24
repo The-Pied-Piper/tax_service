@@ -1,15 +1,24 @@
 capabilities:
-  # T1 line 141 and line 41800 "Special taxes": the amount of Form T1172 (line 10 or 13) and
-  # the RL-10 amount, the guide's "Report, on line 41800 of your return, the result of the
+  # Form RC359 line 9 "Tax on excess EPSP amount. Include this amount on line 41800 of your return."
+  # (line 9 "Line 7 multiplied by the percentage from line 8"), for each copy of the form, one for
+  # each employer: the total over the copies, 0 with no employer.
+  - name: core/record_total
+    consumes:
+      records: ca/rc359.rc359_tax_on_excess_epsp
+    produces:
+      output: ca/rc359_tax_total
+  # T1 line 141 and line 41800 "Special taxes": the amount of Form T1172 (line 10 or 13), the
+  # RL-10 amount, the guide's "Report, on line 41800 of your return, the result of the
   # following calculation using your RL-10 slip: Tax Credit for a Labour-Sponsored Fund"
   # whose list the guide's .txt cuts off after "75% of box", so the amount is the caller's
-  # until the rest is quoted (to be confirmed). The tax on excess EPSP amounts (Form RC359
-  # line 9, per employer) is not yet wired.
+  # until the rest is quoted (to be confirmed), and the Form RC359 total (`ca/rc359_tax_total`,
+  # the last part).
   - name: core/sum
     consumes:
       parts:
         - ca/resp_aips_additional_tax
         - ca/rl_10_labour_sponsored_fund_amount
+        - ca/rc359_tax_total
     produces:
       output: ca/special_taxes
   # Form T1206 Part 2 line 10 "Line 8 plus line 9", line 9 being "Amount from line 41500 of your

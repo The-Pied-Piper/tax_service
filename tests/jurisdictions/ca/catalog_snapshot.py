@@ -2275,6 +2275,17 @@ REGISTERED = frozenset(
         "ca/business_epop_percentage_checked",
         "ca/farm_epop_percentage_checked",
         "ca/fish_epop_percentage_checked",
+        "ca/rc359_employers",
+        "ca/rc359_epsp_contributions",
+        "ca/rc359_employment_income",
+        "ca/rc359_other_employment_income",
+        "ca/rc359_province",
+        "ca/rc359_line_4",
+        "ca/rc359_line_6",
+        "ca/rc359_excess_epsp_amount",
+        "ca/rc359_line_8",
+        "ca/rc359_tax_on_excess_epsp",
+        "ca/rc359_tax_total",
     }
 )
 
@@ -2653,6 +2664,11 @@ SIGNED = frozenset(
         "ca/clergy_residence_line_10",
         "ca/clergy_residence_total",
         "ca/clergy_residence_total_limited",
+        # Form RC359 line 4 "Line 2 minus line 3" prints no "(if negative, enter "0")", so it is
+        # signed; line 6 "Line 4 multiplied by the percentage from line 5" takes it, so it is signed
+        # too (an inference to be confirmed by the owner, the design does not settle line 6).
+        "ca/rc359_line_4",
+        "ca/rc359_line_6",
     }
 )
 
@@ -2801,6 +2817,7 @@ COUNTS = frozenset(
         "ca/t2204_line_15_count",
         "ca/clergy_months_in_qualifying_employment",
         "ca/clergy_residence_part_b_completed",
+        "ca/rc359_province",
     }
 )
 
@@ -2855,5 +2872,6 @@ RECORD_LISTS = frozenset(
         "ca/t2121_statements",
         "ca/t2048_dispositions",
         "ca/fish_closing_ucc",
+        "ca/rc359_employers",
     }
 )

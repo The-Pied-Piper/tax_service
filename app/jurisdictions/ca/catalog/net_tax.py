@@ -1,19 +1,96 @@
 """The federal catalog: federal tax payable.
 
-Special taxes, net federal tax, total payable and income tax deducted.
+Special taxes, Form RC359 (tax on excess employees profit sharing plan amounts, one copy for each
+employer), net federal tax, total payable and income tax deducted.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
 
+from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog.base import CATALOG
+
+RC359_EPSP_CONTRIBUTIONS = CATALOG.declare("rc359_epsp_contributions", Decimal, non_negative=True)
+"""Employer contributions to an employees profit sharing plan, Form RC359 line 1 "If you are a
+specified employee, enter the amount of contributions from box 41 of your T4PS slip.": the
+contributions of the employer's T4PS slips, totalled."""
+
+RC359_EMPLOYMENT_INCOME = CATALOG.declare("rc359_employment_income", Decimal, non_negative=True)
+"""Employment income from the employer, Form RC359 line 2 "Enter the employment income reported on
+your T4 slip(s) from the employer who made the EPSP contributions. Also include wage loss
+replacement benefits received related to this employment.": the employment income of the T4 slips
+from the employer, the base of the 20 percent."""
+
+RC359_OTHER_EMPLOYMENT_INCOME = CATALOG.declare(
+    "rc359_other_employment_income", Decimal, non_negative=True
+)
+"""Security options benefits and other employment income, Form RC359 line 3 "Enter the security
+options benefits (boxes 38 and 90 of your T4 slip) and other employment income (box 35 of your T4PS
+slip) related to the employment income reported on line 2.": the security options and other
+employment income that line 4 takes off the employment income."""
+
+RC359_PROVINCE = CATALOG.declare("rc359_province", int, non_negative=True)
+"""Province or territory of residence at the end of the year, Form RC359 line 8 "Enter the rate for
+your province or territory of residence at the end of the year using the charts below. (If you were
+not a resident of a province or territory in Canada, enter the rate for "Other".)": the code of the
+chart, 1 Newfoundland and Labrador to 14 Other (non-resident); a code the chart does not list is
+refused."""
+
+RC359_LINE_4 = CATALOG.declare("rc359_line_4", Decimal)
+"""Employment income less the other employment income, Form RC359 line 4 "Line 2 minus line 3": line
+2 less line 3.
+
+The form prints no "(if negative, enter "0")", so the kind is signed.
+"""
+
+RC359_LINE_6 = CATALOG.declare("rc359_line_6", Decimal)
+"""Employment income at 20 percent, Form RC359 line 6 "Line 4 multiplied by the percentage from line
+5": line 4 at the rate of line 5 "Rate × 20%", rounded half-up to the cent.
+
+The form prints no "(if negative, enter "0")", so the kind is signed, as line 4 is.
+"""
+
+RC359_EXCESS_EPSP_AMOUNT = CATALOG.declare("rc359_excess_epsp_amount", Decimal, non_negative=True)
+"""Excess EPSP amount, Form RC359 line 7 "Line 1 minus line 6 (if negative, enter "0")": the
+contributions less line 6, not below zero, "Excess EPSP amount". Line 22900 of the return reads it
+once it is wired (not here)."""
+
+RC359_LINE_8 = CATALOG.declare("rc359_line_8", Decimal, non_negative=True)
+"""Province percentage, Form RC359 line 8 "Enter the rate for your province or territory of
+residence at the end of the year using the charts below": the printed percentage of the province
+code (`rc359_province`), as a percentage and not a rate."""
+
+RC359_TAX_ON_EXCESS_EPSP = CATALOG.declare("rc359_tax_on_excess_epsp", Decimal, non_negative=True)
+"""Tax on excess EPSP amount, Form RC359 line 9 "Line 7 multiplied by the percentage from line 8.
+Include this amount on line 41800 of your return.": the excess EPSP amount at the province
+percentage, rounded half-up to the cent once, for each copy of the form."""
+
+RC359_EMPLOYERS = RecordListKind.declare(
+    CATALOG,
+    "rc359_employers",
+    fields=(
+        RC359_EPSP_CONTRIBUTIONS,
+        RC359_EMPLOYMENT_INCOME,
+        RC359_OTHER_EMPLOYMENT_INCOME,
+        RC359_PROVINCE,
+    ),
+)
+"""Form RC359, Tax on Excess Employees Profit Sharing Plan Amounts, "If you have EPSPs from
+different employers, complete a separate form for each employer": one record for each employer, in
+the order the filer gives them (any number, none included), holding the inputs of lines 1, 2, 3 and
+8 of its copy."""
 
 SPECIAL_TAXES = CATALOG.declare("special_taxes", Decimal, non_negative=True)
 """Special taxes, T1 line 141 (line 41800) "Special taxes": the additional tax on RESP accumulated
-income payments (`resp_aips_additional_tax`, Form T1172) and the tax for not purchasing replacement
-shares in a Quebec labour-sponsored fund (`rl_10_labour_sponsored_fund_amount`). Not wired: the tax
-on excess employees profit sharing plan amounts (Form RC359)."""
+income payments (`resp_aips_additional_tax`, Form T1172), the tax for not purchasing replacement
+shares in a Quebec labour-sponsored fund (`rl_10_labour_sponsored_fund_amount`) and the tax on
+excess employees profit sharing plan amounts (`rc359_tax_total`, Form RC359 line 9 of each copy)."""
+
+RC359_TAX_TOTAL = CATALOG.declare("rc359_tax_total", Decimal, non_negative=True)
+"""Tax on excess EPSP amounts, T1 line 41800 "Special taxes": the total of Form RC359 line 9 "Tax on
+excess EPSP amount" over the copies of the form, one for each employer (0 with none). Added into
+`special_taxes`."""
 
 SPLIT_INCOME_LINE_10 = CATALOG.declare("split_income_line_10", Decimal, non_negative=True)
 """Tax on split income with the advanced Canada workers benefit, Form T1206 Part 2 line 10 "Line 8

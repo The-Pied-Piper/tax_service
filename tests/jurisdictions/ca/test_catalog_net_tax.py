@@ -5,11 +5,23 @@ from __future__ import annotations
 from decimal import Decimal
 
 from app.domain.artifact import ArtifactRegistry
+from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog import (
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     INCOME_TAX_DEDUCTED,
     NET_FEDERAL_TAX,
+    RC359_EMPLOYERS,
+    RC359_EMPLOYMENT_INCOME,
+    RC359_EPSP_CONTRIBUTIONS,
+    RC359_EXCESS_EPSP_AMOUNT,
+    RC359_LINE_4,
+    RC359_LINE_6,
+    RC359_LINE_8,
+    RC359_OTHER_EMPLOYMENT_INCOME,
+    RC359_PROVINCE,
+    RC359_TAX_ON_EXCESS_EPSP,
+    RC359_TAX_TOTAL,
     SOCIAL_BENEFITS_REPAYMENT_PAYABLE,
     SPECIAL_TAXES,
     SPLIT_INCOME_LINE_10,
@@ -27,7 +39,93 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_30,
     TOTAL_PAYABLE,
 )
-from tests.jurisdictions.ca.catalog_snapshot import SIGNED
+from tests.jurisdictions.ca.catalog_snapshot import COUNTS, SIGNED
+
+# --- Form RC359, Tax on Excess Employees Profit Sharing Plan Amounts (one copy per employer) -----
+
+RC359_KINDS = (
+    RC359_EPSP_CONTRIBUTIONS,
+    RC359_EMPLOYMENT_INCOME,
+    RC359_OTHER_EMPLOYMENT_INCOME,
+    RC359_LINE_4,
+    RC359_LINE_6,
+    RC359_EXCESS_EPSP_AMOUNT,
+    RC359_LINE_8,
+    RC359_TAX_ON_EXCESS_EPSP,
+    RC359_TAX_TOTAL,
+)
+
+
+def test_the_rc359_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert registry.get("ca/rc359_employers") is RC359_EMPLOYERS
+    assert registry.get("ca/rc359_epsp_contributions") is RC359_EPSP_CONTRIBUTIONS
+    assert registry.get("ca/rc359_employment_income") is RC359_EMPLOYMENT_INCOME
+    assert registry.get("ca/rc359_other_employment_income") is RC359_OTHER_EMPLOYMENT_INCOME
+    assert registry.get("ca/rc359_province") is RC359_PROVINCE
+    assert registry.get("ca/rc359_line_4") is RC359_LINE_4
+    assert registry.get("ca/rc359_line_6") is RC359_LINE_6
+    assert registry.get("ca/rc359_excess_epsp_amount") is RC359_EXCESS_EPSP_AMOUNT
+    assert registry.get("ca/rc359_line_8") is RC359_LINE_8
+    assert registry.get("ca/rc359_tax_on_excess_epsp") is RC359_TAX_ON_EXCESS_EPSP
+    assert registry.get("ca/rc359_tax_total") is RC359_TAX_TOTAL
+
+
+def test_the_rc359_employers_is_a_record_list_of_the_four_form_fields_in_line_order() -> None:
+    # Form RC359 lines 1, 2, 3 and 8: the T4PS box 41 contributions, the T4 employment income, the
+    # security options and other employment income, and the province of residence code.
+    assert isinstance(RC359_EMPLOYERS, RecordListKind)
+    assert RC359_EMPLOYERS.fields == (
+        RC359_EPSP_CONTRIBUTIONS,
+        RC359_EMPLOYMENT_INCOME,
+        RC359_OTHER_EMPLOYMENT_INCOME,
+        RC359_PROVINCE,
+    )
+
+
+def test_the_rc359_amounts_are_decimals_and_the_province_is_an_int_code() -> None:
+    for kind in RC359_KINDS:
+        assert kind.value_type is Decimal, kind.identifier
+    assert RC359_PROVINCE.value_type is int
+    assert "ca/rc359_province" in COUNTS
+
+
+def test_the_rc359_inputs_are_non_negative() -> None:
+    # Lines 1, 2 and 3 are amounts the caller enters from the slips, and the province is a code
+    # of 1 to 14 (0 and the codes the chart does not list are refused by the rate table).
+    for kind in (
+        RC359_EPSP_CONTRIBUTIONS,
+        RC359_EMPLOYMENT_INCOME,
+        RC359_OTHER_EMPLOYMENT_INCOME,
+        RC359_PROVINCE,
+    ):
+        assert kind.non_negative is True, kind.identifier
+
+
+def test_rc359_lines_4_and_6_are_signed_because_the_form_prints_no_floor(
+    registry: ArtifactRegistry,
+) -> None:
+    # Line 4 "Line 2 minus line 3" and line 6 "Line 4 multiplied by the percentage from line 5"
+    # print no "(if negative, enter "0")". Line 6 is signed with line 4 (to be confirmed).
+    for kind in (RC359_LINE_4, RC359_LINE_6):
+        assert kind.non_negative is False, kind.identifier
+        assert kind.identifier in SIGNED
+        assert registry.kind(kind.identifier) is kind
+
+
+def test_the_rc359_excess_amount_and_the_tax_lines_are_not_below_zero(
+    registry: ArtifactRegistry,
+) -> None:
+    # Line 7 "Line 1 minus line 6 (if negative, enter "0")" is floored; line 8 is a printed
+    # percentage, not a rate; line 9 is line 7 multiplied by line 8; line 41800 totals line 9.
+    for kind in (
+        RC359_EXCESS_EPSP_AMOUNT,
+        RC359_LINE_8,
+        RC359_TAX_ON_EXCESS_EPSP,
+        RC359_TAX_TOTAL,
+    ):
+        assert kind.non_negative is True, kind.identifier
+        assert kind.identifier not in SIGNED, kind.identifier
+        assert registry.kind(kind.identifier) is kind
 
 
 def test_the_net_tax_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:

@@ -49,6 +49,7 @@ from tests.jurisdictions.ca_on.manifest_families import (
     ontario_tax_reduction,
     other_inputs,
     personal_amounts,
+    rc359,
     rc381_cpp_qpp,
     refund,
     refundable_credits,
@@ -70,6 +71,7 @@ FAMILIES: tuple[ModuleType, ...] = (
     t2042,
     t2121,
     t2125,
+    rc359,
     rrsp_fhsa,
     deductions,
     schedule_8,
@@ -206,14 +208,14 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert set(found.forms[0].exports) == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.forms[0].capabilities) == STEPS
-    assert len(found.forms[0].capabilities) == 1111
+    assert len(found.forms[0].capabilities) == 1112
     # T2125 Area A column 22 "UCC at the end of the year", a record list of each class's closing UCC
     # for next year, and Part 7 line 7O "Business-use-of-home expenses available to carry forward",
     # which nothing else on the return reads.
     assert set(found.forms[0].exports) == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.forms[0].capabilities) == STEPS
-    assert len(found.forms[0].capabilities) == 1111
+    assert len(found.forms[0].capabilities) == 1112
     # Form T691 Part 1 line 12 "Add lines 1, 4, 7, and 11.", the adjusted taxable income subtotal,
     # Part 9 line 6 "Enter this amount on line 14 of Part 1", Part 1 line 20 "Line 15 minus line 19"
     # and Part 1 line 26 "Line 24 minus line 25" times 30%, which nothing else on the return reads
@@ -221,7 +223,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert set(found.forms[0].exports) == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.forms[0].capabilities) == STEPS
-    assert len(found.forms[0].capabilities) == 1111
+    assert len(found.forms[0].capabilities) == 1112
     # Form T691 Part 1 line 27 "Add lines 13, 14, 23, and 26.", which nothing else on the return
     # reads yet (lines 12, 14, 20 and 26 are read by lines 13, 14, 22, 23 and 27, so they are no
     # longer declared outputs).
@@ -236,7 +238,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert set(found.forms[0].exports) == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.forms[0].capabilities) == STEPS
-    assert len(found.forms[0].capabilities) == 1111
+    assert len(found.forms[0].capabilities) == 1112
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -246,6 +248,6 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 1111
-    assert len(composition.order) == 1111
+    assert len(composition.order) == 1112
+    assert len(composition.order) == 1112
     assert wiring == WIRING
