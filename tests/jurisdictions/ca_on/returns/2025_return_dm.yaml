@@ -1,0 +1,81 @@
+# Return DM: T1 line 31400 when the filer elects to split pension income. The same filer as
+# Return DG (employment income, a pension, the volunteer firefighters' amount, the home buyers'
+# amount, home accessibility expenses, one adoption and student loan interest), who elects to split
+# the pension with a spouse or common-law partner, so line 31400 is the Form T1032 amount.
+jurisdiction: CA-ON
+tax_year: 2025
+description: >-
+  Return DM: Return DG with the pension split election. Employment income is $100,000 (T1 line
+  10100, a chosen figure) and other pension income is $20,000 (T1 line 11500, a chosen figure).
+  The Federal Worksheet for line 31400 gives 2,000.00 (line 8 is 20,000.00, the lesser of that and
+  $2,000), as in Return DG, but the filer elects to split the pension (a chosen count of 1) and
+  Form T1032 gives 1,000 (a chosen figure; the engine does not run Form T1032), so line 31400 is
+  the Form T1032 amount, 1,000.00, in place of the worksheet's 2,000.00. Every other line is as in
+  Return DG, so the federal total of credit amounts (line 33500) falls by 1,000.00, from 68,633.58
+  to 67,633.58. At 14.5% that is 9,806.87 (the credit amounts at the credit rate). The top-up tax
+  credit (Federal Worksheet "Line 34990 - Top-up tax credit") is (9,806.87 - 8,319.38) x 3.45% =
+  51.32 (rounded half-up), so the non-refundable tax credits are 9,806.87 + 51.32 = 9,858.19 and
+  the federal tax after credits is Return DG's 11,158.82 plus the 150.00 fall in credits, 11,308.82.
+  The Ontario figures are as in Return DG (the new line does not enter the Ontario credits), so
+  ontario_tax is 9,629.26 and the balance owing is 11,308.82 + 9,629.26 = 20,938.08.
+sources:
+  - >-
+    CRA, Federal Worksheet 2025, Line 31400 (https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt,
+    confirmed text, docs/cra-forms-2025/5000-d1-25e.txt): "Enter on line 31400 of your return
+    whichever amount is less: line 8 or $2,000. However, if you are electing to split your
+    eligible pension with your spouse or common-law partner, complete Form T1032, Joint Election
+    to Split Pension Income, to calculate the amount to enter on line 31400 of your return
+    instead."
+inputs:
+  ca/employment_income: "100000"
+  ca/other_pensions_and_superannuation: "20000"
+  ca/volunteer_firefighters_conditions_met: "1"
+  ca/search_and_rescue_conditions_met: "0"
+  ca/home_buyers_claim: "10000"
+  ca/home_accessibility_expenses: "25000"
+  ca/home_accessibility_claimed_by_others: "0"
+  ca/adoption_expense_children:
+    - ca/adoption_child_expenses: "8000"
+  ca/pension_foreign_income: "0"
+  ca/pension_us_ira_income: "0"
+  ca/pension_rrif_transferred: "0"
+  ca/pension_annuity_payments: "0"
+  ca/pension_annuity_conditions_met: "0"
+  ca/pension_split_election: "1"
+  ca/pension_split_amount: "1000"
+  ca/student_loan_interest: "600"
+  ca/t2204_insurable_earnings: "65700"
+  ca/t2204_premiums_deducted: "1077.48"
+  ca/cpp_months: "12"
+  ca/qpp_months: "12"
+  ca/cpp_t4_base_and_first_additional_contributions: "4034.10"
+  ca/cpp_t4_second_additional_contributions: "396.00"
+  ca/schedule_8_instances:
+    - {}
+expected:
+  ca-on/return:
+    - ca/volunteer_firefighters_credit: "6000.00"
+      ca/volunteer_credits_claimed: "6000.00"
+      ca/volunteer_amount_maximum: "6000.00"
+      ca/volunteer_credits_checked: "6000.00"
+      ca/home_buyers_maximum: "10000.00"
+      ca/home_buyers_credit: "10000.00"
+      ca/home_accessibility_line_2: "20000.00"
+      ca/home_accessibility_credit: "20000.00"
+      ca/adoption_credit: "8000.00"
+      ca/pension_chart_line_5: "0.00"
+      ca/pension_chart_line_6: "20000.00"
+      ca/pension_chart_line_7: "0.00"
+      ca/pension_chart_line_8: "20000.00"
+      ca/pension_worksheet_amount: "2000.00"
+      ca/pension_income_credit: "1000.00"
+      ca/non_refundable_credit_amounts: "67633.58"
+      ca/credit_amounts_at_credit_rate: "9806.87"
+      ca/top_up_tax_credit: "51.32"
+      ca/non_refundable_tax_credits: "9858.19"
+      ca/federal_tax_after_credits: "11308.82"
+      ca-on/ontario_tax_less_dividend_credit: "8110.12"
+      ca/cpp_second_additional_earnings_maximum: "9900.00"
+      ca/net_income_before_adjustments: "118926.00"
+      ca/other_payments_limit_income: "118926.00"
+      ca/refund_or_balance_owing: "20938.08"

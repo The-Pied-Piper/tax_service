@@ -468,7 +468,7 @@ from app.jurisdictions.ca.catalog import (
     PENSION_ANNUITY_PAYMENTS,
     PENSION_CHART_LINE_7,
     PENSION_CHART_LINE_8,
-    PENSION_INCOME_CREDIT,
+    PENSION_WORKSHEET_AMOUNT,
     POLITICAL_CREDIT,
     POLITICAL_CREDIT_BEFORE_MAXIMUM,
     POLITICAL_CREDIT_COLUMN_1_LINE_2,
@@ -3454,10 +3454,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("0.00"),
         ),
-        # T1 line 31400 "Pension income amount (use Federal Worksheet) (maximum $2,000)": line 8 of
-        # the Federal Worksheet, 0, within the maximum.
-        PENSION_INCOME_CREDIT: CappedAmountLine(
-            PENSION_INCOME_CREDIT,
+        # Federal Worksheet for line 31400, the last line "whichever amount is less: line 8 or
+        # $2,000": line 8 of the Federal Worksheet, 0, within the maximum.
+        PENSION_WORKSHEET_AMOUNT: CappedAmountLine(
+            PENSION_WORKSHEET_AMOUNT,
             PENSION_CHART_LINE_8,
             D("0"),
             Amount(D("2000")),

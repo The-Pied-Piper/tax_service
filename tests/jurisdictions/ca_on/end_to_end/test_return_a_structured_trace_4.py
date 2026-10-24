@@ -719,6 +719,9 @@ from app.jurisdictions.ca.catalog import (
     PARTNERSHIP_GAINS_AT_FULL_INCLUSION,
     PENSION_CHART_LINE_5,
     PENSION_CHART_LINE_6,
+    PENSION_INCOME_CREDIT,
+    PENSION_SPLIT_ELECTION,
+    PENSION_WORKSHEET_AMOUNT,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT,
@@ -5327,6 +5330,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert chosen == {
+        # Federal Worksheet for line 31400, last paragraph "if you are electing to split your
+        # eligible pension ... complete Form T1032 ... instead", chosen by the election (0 for
+        # Return A): the count is 0, so the worksheet amount, 0.00, is taken.
+        PENSION_INCOME_CREDIT: ChosenByCountLine(
+            output=PENSION_INCOME_CREDIT,
+            count_kind=PENSION_SPLIT_ELECTION,
+            count=0,
+            chosen_kind=PENSION_WORKSHEET_AMOUNT,
+            chosen_value=D("0.00"),
+        ),
         # T1 line 127 "Federal surtax on income earned outside Canada (complete Form T2203)", chosen
         # by the count of "you are subject to minimum tax" (the input, 0 for Return A): the count is
         # 0, so line 10 of Form T2203 Part 2, 0.00, is taken.

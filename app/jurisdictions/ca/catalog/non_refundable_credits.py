@@ -890,6 +890,18 @@ PENSION_ANNUITY_CONDITIONS_MET = CATALOG.declare(
 years of age or older on December 31, 2025, or you received the payments because of the death of
 your spouse or common-law partner": a caller's 0 or 1 gate on the annuity payments."""
 
+PENSION_SPLIT_ELECTION = CATALOG.declare("pension_split_election", int, non_negative=True)
+"""Pension split election, Federal Worksheet for line 31400, last paragraph "if you are electing to
+split your eligible pension with your spouse or common-law partner, complete Form T1032, Joint
+Election to Split Pension Income, to calculate the amount to enter on line 31400 of your return
+instead": a caller's 0 or 1 count, 1 when the filer elects to split."""
+
+PENSION_SPLIT_AMOUNT = CATALOG.declare("pension_split_amount", Decimal, non_negative=True)
+"""Pension split amount, Federal Worksheet for line 31400, last paragraph "complete Form T1032 ...
+to calculate the amount to enter on line 31400 of your return instead": the amount the filer
+worked out on Form T1032, a caller's amount (the pension split is a spouse-coupled election, so the
+engine does not run Form T1032), used only when the election is 1."""
+
 PENSION_CHART_LINE_5 = CATALOG.declare("pension_chart_line_5", Decimal, non_negative=True)
 """Pension chart line 5, Federal Worksheet for line 31400, line 5 "Add lines 2 to 4.": the foreign
 pension income, the U.S. IRA income and the RRIF or PRPP amounts transferred."""
@@ -906,10 +918,16 @@ PENSION_CHART_LINE_8 = CATALOG.declare("pension_chart_line_8", Decimal, non_nega
 """Pension chart line 8, Federal Worksheet for line 31400, line 8 "Line 6 plus line 7": the sum of
 line 6 and line 7."""
 
+PENSION_WORKSHEET_AMOUNT = CATALOG.declare("pension_worksheet_amount", Decimal, non_negative=True)
+"""Pension income amount by the Federal Worksheet for line 31400, last line "Enter on line 31400 of
+your return whichever amount is less: line 8 or $2,000.": the lesser of line 8 and $2,000, the
+amount for line 31400 when the filer does not elect to split the pension."""
+
 PENSION_INCOME_CREDIT = CATALOG.declare("pension_income_credit", Decimal, non_negative=True)
 """Pension income amount, T1 line 97 (line 31400) "Pension income amount (use Federal Worksheet)
-(maximum $2,000)": the lesser of line 8 of the Federal Worksheet and $2,000, a part of the total of
-the credit amounts on line 33500."""
+(maximum $2,000)": the Form T1032 amount when the filer elects to split the pension, else the
+lesser of line 8 of the Federal Worksheet and $2,000, a part of the total of the credit amounts on
+line 33500."""
 
 STUDENT_LOAN_INTEREST = CATALOG.declare("student_loan_interest", Decimal, non_negative=True)
 """Interest paid on student loans, T1 line 102 (line 31900) "Interest paid on your student loans (go

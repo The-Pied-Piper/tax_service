@@ -506,6 +506,8 @@ from app.jurisdictions.ca.catalog import (
     PENSION_ANNUITY_PAYMENTS,
     PENSION_FOREIGN_INCOME,
     PENSION_RRIF_TRANSFERRED,
+    PENSION_SPLIT_AMOUNT,
+    PENSION_SPLIT_ELECTION,
     PENSION_US_IRA_INCOME,
     PERSONAL_USE_PROPERTY_DISPOSITIONS,
     POLITICAL_CONTRIBUTIONS,
@@ -973,6 +975,7 @@ def blank_other_federal_credit_inputs() -> list[Artifact[Any]]:
         VOLUNTEER_FIREFIGHTERS_CONDITIONS_MET,
         SEARCH_AND_RESCUE_CONDITIONS_MET,
         PENSION_ANNUITY_CONDITIONS_MET,
+        PENSION_SPLIT_ELECTION,
     )
     amounts = (
         HOME_BUYERS_CLAIM,
@@ -982,6 +985,7 @@ def blank_other_federal_credit_inputs() -> list[Artifact[Any]]:
         PENSION_US_IRA_INCOME,
         PENSION_RRIF_TRANSFERRED,
         PENSION_ANNUITY_PAYMENTS,
+        PENSION_SPLIT_AMOUNT,
         STUDENT_LOAN_INTEREST,
     )
     return [
