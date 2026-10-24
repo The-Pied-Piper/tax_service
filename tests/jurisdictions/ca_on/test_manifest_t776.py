@@ -71,13 +71,13 @@ def test_the_manifest_has_the_form_t776_beside_the_other_forms() -> None:
     assert found.exports == t776.FORM_EXPORTS
 
 
-def test_the_form_holds_the_47_t776_selections() -> None:
+def test_the_form_holds_the_48_t776_selections() -> None:
     # The selections of the T776 form, the step of the days of the fiscal period
     # (`ca/fiscal_period_days`), which the two prorated CCA steps consume, and the step that
     # prorates the immediate expensing limit by those days (`ca/prorated_by_fiscal_period_days`).
     found = form()
 
-    assert len(found.capabilities) == 47
+    assert len(found.capabilities) == 48
     assert set(found.capabilities) == t776.FORM_STEPS
 
 
@@ -149,13 +149,14 @@ def test_the_return_declares_no_output_for_the_exports_nothing_reads() -> None:
             "ca/rental_non_compliant_cca",
             "ca/short_term_rental_non_compliant_cca_by_class",
             "ca/rental_immediate_expensing_claim",
+            "ca/rental_immediate_expensing_limit_unprorated",
         }
         & exports
     )
     assert not {export for export in exports if "." in export}
 
 
-def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_seven_kinds() -> None:
+def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_eight_kinds() -> None:
     found = composed()
 
     assert found.instances == T776_STATEMENTS
@@ -168,6 +169,7 @@ def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_seven_kind
         t776.RENTAL_NON_COMPLIANT_CCA_PER_STATEMENT,
         t776.SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS_PER_STATEMENT,
         t776.RENTAL_IMMEDIATE_EXPENSING_CLAIM_PER_STATEMENT,
+        t776.RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED_PER_STATEMENT,
     )
 
 

@@ -625,6 +625,7 @@ inputs:
 expected:
   ca-on/return:
     - ca/taxable_capital_gains: "0.00"
+      ca/immediate_expensing_total_claim: "3000"
       ca/investment_income_before_prior_years: "0"
       ca/interest_and_other_investment_income: "0"
       ca/income_support_benefits: "0"

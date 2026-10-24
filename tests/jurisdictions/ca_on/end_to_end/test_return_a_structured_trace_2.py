@@ -152,6 +152,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_HOME_MORTGAGE_INTEREST,
     BUSINESS_HOME_OTHER_EXPENSES,
     BUSINESS_HOME_PROPERTY_TAXES,
+    BUSINESS_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     BUSINESS_INCOME,
     BUSINESS_INSURANCE,
     BUSINESS_INTEREST_AND_BANK_CHARGES,
@@ -470,6 +471,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_HOME_MORTGAGE_INTEREST,
     FARM_HOME_OTHER_EXPENSES,
     FARM_HOME_PROPERTY_TAXES,
+    FARM_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     FARM_INSURANCE,
     FARM_INSURANCE_PROCEEDS,
     FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,
@@ -595,6 +597,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_HOME_MORTGAGE_INTEREST,
     FISH_HOME_OTHER_EXPENSES,
     FISH_HOME_PROPERTY_TAXES,
+    FISH_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     FISH_INSURANCE,
     FISH_INTEREST_AND_BANK_CHARGES,
     FISH_MEALS_AND_ENTERTAINMENT,
@@ -639,6 +642,7 @@ from app.jurisdictions.ca.catalog import (
     GOVERNMENT_DONATIONS,
     GROSS_RENTAL_INCOME,
     HIGH_INCOME_DONATION_CREDIT,
+    IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
     INCOME_TAX_DEDUCTED,
@@ -786,6 +790,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
     RENTAL_GROSS_RENTS,
+    RENTAL_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
     RENTAL_INSURANCE_SHORT_TERM_PORTION,
@@ -3992,6 +3997,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips)": Form T2204 line 16
         # "Enter this amount on line 31200 of your return" (1077.48), carried over: 1077.48.
         EI_PREMIUMS: SumLine(EI_PREMIUMS, ((T2204_LINE_16, D("1077.48")),), D("1077.48")),
+        # The immediate expensing claims of all statements, added: Return A claims none.
+        IMMEDIATE_EXPENSING_CLAIMS_TOTAL: SumLine(
+            IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
+            (
+                (RENTAL_IMMEDIATE_EXPENSING_CLAIMS_TOTAL, D("0")),
+                (BUSINESS_IMMEDIATE_EXPENSING_CLAIMS_TOTAL, D("0")),
+                (FARM_IMMEDIATE_EXPENSING_CLAIMS_TOTAL, D("0")),
+                (FISH_IMMEDIATE_EXPENSING_CLAIMS_TOTAL, D("0")),
+            ),
+            D("0"),
+        ),
     }
     # Form T1206 Part 1 "(If the TOSI-adjusted net income at line 6 is negative, use the negative
     # value when it is part of an adjusted net income calculation, otherwise use zero.)": the

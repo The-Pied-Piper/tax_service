@@ -77,6 +77,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     BUSINESS_IMMEDIATE_EXPENSING_SHARE,
     BUSINESS_INCOME,
     BUSINESS_INCOME_BEFORE_CCA,
@@ -268,6 +269,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_IMMEDIATE_EXPENSING_LIMIT,
     FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     FARM_IMMEDIATE_EXPENSING_SHARE,
     FARM_INCOME_BEFORE_CCA,
     FARM_INSURANCE,
@@ -414,6 +416,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_IMMEDIATE_EXPENSING_LIMIT,
     FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    FISH_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     FISH_IMMEDIATE_EXPENSING_SHARE,
     FISH_INCOME_BEFORE_CCA,
     FISH_INSURANCE,
@@ -586,6 +589,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_IMMEDIATE_EXPENSING_LIMIT,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
@@ -1482,6 +1486,10 @@ T776_NON_NEGATIVE_LINES = [
         RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
     ),
     ("ca/rental_immediate_expensing_limit", RENTAL_IMMEDIATE_EXPENSING_LIMIT),
+    (
+        "ca/rental_immediate_expensing_limit_unprorated",
+        RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
+    ),
     ("ca/rental_immediate_expensing_claim", RENTAL_IMMEDIATE_EXPENSING_CLAIM),
 ]
 
@@ -2893,6 +2901,7 @@ T2125_KINDS: tuple[ArtifactKind[Any], ...] = (
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,  # immediate_expensing_limit_before_minister
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED,  # immediate_expensing_limit_prorated
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT,  # immediate_expensing_limit
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,  # immediate_expensing_limit_unprorated
     BUSINESS_IMMEDIATE_EXPENSING_CLAIM,  # immediate_expensing_claim
     BUSINESS_INCOME_BEFORE_CCA,  # income_before_cca
 )
@@ -3237,6 +3246,7 @@ FARM_KINDS: tuple[ArtifactKind[Any], ...] = (
     FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,  # immediate_expensing_limit_before_minister
     FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED,  # immediate_expensing_limit_prorated
     FARM_IMMEDIATE_EXPENSING_LIMIT,  # immediate_expensing_limit
+    FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,  # immediate_expensing_limit_unprorated
     FARM_IMMEDIATE_EXPENSING_CLAIM,  # immediate_expensing_claim
     FARM_INCOME_BEFORE_CCA,  # income_before_cca
 )
@@ -3515,6 +3525,7 @@ FISH_KINDS: tuple[ArtifactKind[Any], ...] = (
     FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,  # immediate_expensing_limit_before_minister
     FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED,  # immediate_expensing_limit_prorated
     FISH_IMMEDIATE_EXPENSING_LIMIT,  # immediate_expensing_limit
+    FISH_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,  # immediate_expensing_limit_unprorated
     FISH_IMMEDIATE_EXPENSING_CLAIM,  # immediate_expensing_claim
     FISH_INCOME_BEFORE_CCA,  # income_before_cca
 )

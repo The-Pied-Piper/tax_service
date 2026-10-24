@@ -31,6 +31,7 @@ HOMES: dict[str, tuple[str, ...]] = {
         "FiscalPeriodDaysLine",
         "ProratedByDaysLine",
         "ImmediateExpensingLine",
+        "ImmediateExpensingAgreedLimitLine",
     ),
     "apprenticeship": ("ApprenticeWagesLine",),
     "home_renovation": ("RenovationLine3", "RenovationLine6", "RenovationLine7"),

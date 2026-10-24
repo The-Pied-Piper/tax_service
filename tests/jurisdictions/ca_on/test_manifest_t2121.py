@@ -78,12 +78,12 @@ def test_the_manifest_has_the_form_t2121_beside_the_other_forms() -> None:
     assert found.exports == t2121.FORM_EXPORTS
 
 
-def test_the_form_holds_the_46_t2121_selections() -> None:
+def test_the_form_holds_the_47_t2121_selections() -> None:
     # The selections of Charts A to C of one vehicle and the five printed constants are now one
     # step over the statement's vehicles, the form's only selection for them.
     found = form()
 
-    assert len(found.capabilities) == 46
+    assert len(found.capabilities) == 47
     assert set(found.capabilities) == t2121.FORM_STEPS
 
 
@@ -175,13 +175,14 @@ def test_the_return_declares_no_output_for_the_exports_nothing_reads() -> None:
             "ca/fish_closing_ucc",
             "ca/fish_home_carry_forward",
             "ca/fish_immediate_expensing_claim",
+            "ca/fish_immediate_expensing_limit_unprorated",
         }
         & exports
     )
     assert not {export for export in exports if "." in export}
 
 
-def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_four_kinds() -> None:
+def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_five_kinds() -> None:
     found = composed()
 
     assert found.instances == T2121_STATEMENTS
@@ -191,6 +192,7 @@ def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_four_kinds
         t2121.FISH_CLOSING_UCC_PER_STATEMENT,
         t2121.FISH_HOME_CARRY_FORWARD_PER_STATEMENT,
         t2121.FISH_IMMEDIATE_EXPENSING_CLAIM_PER_STATEMENT,
+        t2121.FISH_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED_PER_STATEMENT,
     )
 
 

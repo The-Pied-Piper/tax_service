@@ -96,6 +96,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_IMMEDIATE_EXPENSING_LIMIT,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
@@ -185,6 +186,10 @@ SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS_PER_STATEMENT = RecordListKind(
 )
 RENTAL_IMMEDIATE_EXPENSING_CLAIM_PER_STATEMENT = RecordListKind(
     "ca/t776.rental_immediate_expensing_claim", fields=(RENTAL_IMMEDIATE_EXPENSING_CLAIM,)
+)
+RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED_PER_STATEMENT = RecordListKind(
+    "ca/t776.rental_immediate_expensing_limit_unprorated",
+    fields=(RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,),
 )
 
 FORM_INPUTS = frozenset(
@@ -746,6 +751,24 @@ FORM_STEPS = {
         },
         produces={"output": "ca/rental_immediate_expensing_limit"},
     ),
+    # T776 Note 5 "the immediate expensing limit, which is equal to one of the following,
+    # whichever is applicable", "any amount allocated by the minister under subsection 1104(3.4)
+    # of the Regulations", and Guide T4036: "The limit is also prorated for tax years shorter than
+    # 365 days". The person's limit before the days scaling, the one limit the statements of the
+    # four forms share: the limit before the minister's amount, unscaled, or the amount allocated
+    # by the minister when there is one, which is already unscaled. The statements are compared on
+    # it because each statement's own fiscal period scales the limit above, and a person's
+    # statements may cover periods of different lengths.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/rental_minister_allocation_given_checked",
+            "when_none": "ca/rental_immediate_expensing_limit_before_minister",
+            "when_any": "ca/rental_minister_allocation",
+        },
+        produces={"output": "ca/rental_immediate_expensing_limit_unprorated"},
+    ),
     # T776 "Line i: Total immediate expensing claim for the year: Total of column 9" and Note 5 "The
     # total immediate expensing amount for the tax year (total of column 9) is limited to the lesser
     # of: the immediate expensing limit"; "the UCC of DIEPs in column 8"; "the amount of income, if
@@ -1101,6 +1124,17 @@ FORM_WIRING = {
         frozenset({RENTAL_IMMEDIATE_EXPENSING_LIMIT}),
     ),
     (
+        ChooseByCount,
+        frozenset(
+            {
+                RENTAL_MINISTER_ALLOCATION_GIVEN_CHECKED,
+                RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+                RENTAL_MINISTER_ALLOCATION,
+            }
+        ),
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED}),
+    ),
+    (
         ImmediateExpensingClaim,
         frozenset(
             {RENTAL_CCA_CLASSES_ADJUSTED, RENTAL_IMMEDIATE_EXPENSING_LIMIT, RENTAL_CCA_LIMIT}
@@ -1159,6 +1193,7 @@ FORM_EXPORTS = (
     "ca/rental_non_compliant_cca",
     "ca/short_term_rental_non_compliant_cca_by_class",
     "ca/rental_immediate_expensing_claim",
+    "ca/rental_immediate_expensing_limit_unprorated",
 )
 
 # The form exports lines nothing on the return reads (line 8140, line 9365, Chart B's line C and

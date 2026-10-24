@@ -108,6 +108,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_IMMEDIATE_EXPENSING_LIMIT,
     FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     FARM_IMMEDIATE_EXPENSING_SHARE,
     FARM_INCOME_BEFORE_CCA,
     FARM_INSURANCE,
@@ -186,6 +187,10 @@ FARM_HOME_CARRY_FORWARD_PER_STATEMENT = RecordListKind(
 
 FARM_IMMEDIATE_EXPENSING_CLAIM_PER_STATEMENT = RecordListKind(
     "ca/t2042.farm_immediate_expensing_claim", fields=(FARM_IMMEDIATE_EXPENSING_CLAIM,)
+)
+FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED_PER_STATEMENT = RecordListKind(
+    "ca/t2042.farm_immediate_expensing_limit_unprorated",
+    fields=(FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,),
 )
 
 FORM_INPUTS = frozenset(
@@ -809,6 +814,24 @@ FORM_STEPS = {
         },
         produces={"output": "ca/farm_immediate_expensing_limit"},
     ),
+    # T2042 Area A endnote 5 "the immediate expensing limit, which is equal to one of the
+    # following, whichever is applicable", "any amount allocated by the minister under subsection
+    # 1104(3.4) of the Regulations", and Guide T4002: "The limit is also prorated for tax years
+    # shorter than 365 days". The person's limit before the days scaling, the one limit the
+    # statements of the four forms share: the limit before the minister's amount, unscaled, or the
+    # amount allocated by the minister when there is one, which is already unscaled. The
+    # statements are compared on it because each statement's own fiscal period scales the limit
+    # above, and a person's statements may cover periods of different lengths.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/farm_minister_allocation_given_checked",
+            "when_none": "ca/farm_immediate_expensing_limit_before_minister",
+            "when_any": "ca/farm_minister_allocation",
+        },
+        produces={"output": "ca/farm_immediate_expensing_limit_unprorated"},
+    ),
     # T2042 Area A endnote 5 "the amount of income, if any, earned from the source of income that
     # is a business (before any CCA deductions) in which the relevant DIEP is used for the tax
     # year": line 9899 "Net income (loss) before inventory adjustments" plus line 9936, the CCA it
@@ -882,6 +905,7 @@ FORM_EXPORTS = (
     "ca/farm_closing_ucc",
     "ca/farm_home_carry_forward",
     "ca/farm_immediate_expensing_claim",
+    "ca/farm_immediate_expensing_limit_unprorated",
 )
 
 # The form exports Area A column 22 "UCC at the end of the year" (for next year), Part 7 line 7O
@@ -1160,6 +1184,17 @@ FORM_WIRING = {
             }
         ),
         frozenset({FARM_IMMEDIATE_EXPENSING_LIMIT}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                FARM_MINISTER_ALLOCATION_GIVEN_CHECKED,
+                FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+                FARM_MINISTER_ALLOCATION,
+            }
+        ),
+        frozenset({FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED}),
     ),
     (
         SumNotBelowZero,

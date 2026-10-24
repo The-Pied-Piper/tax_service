@@ -12,6 +12,7 @@ form:
     - ca/fish_closing_ucc
     - ca/fish_home_carry_forward
     - ca/fish_immediate_expensing_claim
+    - ca/fish_immediate_expensing_limit_unprorated
 capabilities:
   # T2121 Area A endnote 2 "The proceeds of disposition of a zero-emission passenger vehicle
   # (ZEPV) that has been included in Class 54, or a passenger vehicle bought after April 18, 2021,
@@ -476,6 +477,22 @@ capabilities:
       when_any: ca/fish_minister_allocation
     produces:
       output: ca/fish_immediate_expensing_limit
+  # T2121 Area A endnote 5 "the immediate expensing limit, which is equal to one of the following,
+  # whichever is
+  # applicable", "any amount allocated by the minister under subsection 1104(3.4) of the
+  # Regulations", and Guide T4002: "The limit is also prorated for tax years shorter than 365
+  # days". The person's limit before the days scaling, the one limit the statements of the four
+  # forms share: the limit before the minister's amount, unscaled, or the amount allocated by the
+  # minister when there is one, which is already unscaled. The statements are compared on it
+  # because each statement's own fiscal period scales the limit above, and a person's statements
+  # may cover periods of different lengths.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/fish_minister_allocation_given_checked
+      when_none: ca/fish_immediate_expensing_limit_before_minister
+      when_any: ca/fish_minister_allocation
+    produces:
+      output: ca/fish_immediate_expensing_limit_unprorated
   # T2121 Area A endnote 5 (page 7) "the amount of income, if any, earned from the source of income
   # that is a business (before any CCA deductions) in which the relevant DIEP is used for the tax
   # year": line 9369 "Net income (loss) before adjustments" plus line 9936, the CCA it deducted

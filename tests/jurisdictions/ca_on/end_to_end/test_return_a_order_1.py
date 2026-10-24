@@ -89,6 +89,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     BUSINESS_IMMEDIATE_EXPENSING_SHARE,
     BUSINESS_INCOME,
     BUSINESS_INCOME_BEFORE_CCA,
@@ -286,6 +287,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_IMMEDIATE_EXPENSING_LIMIT,
     FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     FARM_IMMEDIATE_EXPENSING_SHARE,
     FARM_INCOME_BEFORE_CCA,
     FARM_MOTOR_VEHICLE_EXPENSES,
@@ -348,6 +350,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_IMMEDIATE_EXPENSING_LIMIT,
     FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    FISH_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     FISH_IMMEDIATE_EXPENSING_SHARE,
     FISH_INCOME_BEFORE_CCA,
     FISH_MOTOR_VEHICLE_EXPENSES,
@@ -489,6 +492,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_IMMEDIATE_EXPENSING_LIMIT,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_NET_INCOME_AFTER_CCA,
     RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES,
@@ -666,7 +670,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1104
+    assert len(order) == 1111
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     # Part 8 line 12: the check is ordered after the cap it is made against. The claim is an input,
@@ -2028,7 +2032,7 @@ def test_each_t776_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t776 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t776").composition.order
-    assert len(order) == 47
+    assert len(order) == 48
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # T776 Part 1 "Fiscal period": the days of the fiscal period (the days entered, or a full year)
     # come before the CCA claim and the closing UCC that are prorated by them.
@@ -2074,6 +2078,10 @@ def test_each_t776_capability_runs_after_what_it_consumes() -> None:
         < position[RENTAL_IMMEDIATE_EXPENSING_LIMIT]
         < position[RENTAL_IMMEDIATE_EXPENSING_CLAIM]
     )
+    assert (
+        position[RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER]
+        < position[RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED]
+    )
     assert position[RENTAL_CCA_LIMIT] < position[RENTAL_IMMEDIATE_EXPENSING_CLAIM]
 
 
@@ -2081,7 +2089,7 @@ def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2125 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2125").composition.order
-    assert len(order) == 51
+    assert len(order) == 52
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Guide T4002 "You were asking?": the days of the fiscal period (the days entered, or a full
     # year) come before the CCA claim and the closing UCC that are prorated by them.
@@ -2125,6 +2133,10 @@ def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
         < position[BUSINESS_IMMEDIATE_EXPENSING_LIMIT]
         < position[BUSINESS_IMMEDIATE_EXPENSING_CLAIM]
     )
+    assert (
+        position[BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER]
+        < position[BUSINESS_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED]
+    )
     assert position[BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS] < position[BUSINESS_INCOME_BEFORE_CCA]
     assert position[BUSINESS_CCA_CLAIM] < position[BUSINESS_INCOME_BEFORE_CCA]
     assert position[BUSINESS_INCOME_BEFORE_CCA] < position[BUSINESS_IMMEDIATE_EXPENSING_CLAIM]
@@ -2147,7 +2159,7 @@ def test_each_t2042_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2042 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2042").composition.order
-    assert len(order) == 45
+    assert len(order) == 46
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Guide T4002 "You were asking?": the days of the fiscal period (the days entered, or a full
     # year) come before the CCA claim and the closing UCC that are prorated by them.
@@ -2184,6 +2196,10 @@ def test_each_t2042_capability_runs_after_what_it_consumes() -> None:
         < position[FARM_IMMEDIATE_EXPENSING_LIMIT]
         < position[FARM_IMMEDIATE_EXPENSING_CLAIM]
     )
+    assert (
+        position[FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER]
+        < position[FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED]
+    )
     assert position[FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS] < position[FARM_INCOME_BEFORE_CCA]
     assert position[FARM_CCA_CLAIM] < position[FARM_INCOME_BEFORE_CCA]
     assert position[FARM_INCOME_BEFORE_CCA] < position[FARM_IMMEDIATE_EXPENSING_CLAIM]
@@ -2207,7 +2223,7 @@ def test_each_t2121_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2121 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2121").composition.order
-    assert len(order) == 46
+    assert len(order) == 47
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Guide T4002 "You were asking?": the days of the fiscal period (the days entered, or a full
     # year) come before the CCA claim and the closing UCC that are prorated by them.
@@ -2243,6 +2259,10 @@ def test_each_t2121_capability_runs_after_what_it_consumes() -> None:
         < position[FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED]
         < position[FISH_IMMEDIATE_EXPENSING_LIMIT]
         < position[FISH_IMMEDIATE_EXPENSING_CLAIM]
+    )
+    assert (
+        position[FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER]
+        < position[FISH_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED]
     )
     assert position[FISH_NET_INCOME_BEFORE_ADJUSTMENTS] < position[FISH_INCOME_BEFORE_CCA]
     assert position[FISH_CCA_CLAIM] < position[FISH_INCOME_BEFORE_CCA]

@@ -456,6 +456,7 @@ expected:
       ca/business_home_carry_forward: "0"
   ca-on/return:
     - ca/business_income: "30000.00"
+      ca/immediate_expensing_total_claim: "3000"
       ca/net_self_employment_income: "30000.00"
       ca/taxable_capital_gains: "0"
       ca/investment_income_before_prior_years: "0"

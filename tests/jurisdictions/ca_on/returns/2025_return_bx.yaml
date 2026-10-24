@@ -439,6 +439,7 @@ expected:
       ca/farm_home_carry_forward: "0"
   ca-on/return:
     - ca/farming_income: "30000"
+      ca/immediate_expensing_total_claim: "3000"
       ca/net_self_employment_income: "30000"
       ca/taxable_capital_gains: "0"
       ca/investment_income_before_prior_years: "0"

@@ -28,9 +28,11 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
     BUSINESS_IMMEDIATE_EXPENSING_CAP,
     BUSINESS_IMMEDIATE_EXPENSING_CLAIM,
+    BUSINESS_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     BUSINESS_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     BUSINESS_IMMEDIATE_EXPENSING_SHARE,
     BUSINESS_INCOME,
     BUSINESS_INCOME_BEFORE_CCA,
@@ -83,9 +85,11 @@ from app.jurisdictions.ca.catalog import (
     FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
     FARM_IMMEDIATE_EXPENSING_CAP,
     FARM_IMMEDIATE_EXPENSING_CLAIM,
+    FARM_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     FARM_IMMEDIATE_EXPENSING_LIMIT,
     FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     FARM_IMMEDIATE_EXPENSING_SHARE,
     FARM_INCOME_BEFORE_CCA,
     FARM_MINISTER_ALLOCATION,
@@ -110,9 +114,11 @@ from app.jurisdictions.ca.catalog import (
     FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
     FISH_IMMEDIATE_EXPENSING_CAP,
     FISH_IMMEDIATE_EXPENSING_CLAIM,
+    FISH_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     FISH_IMMEDIATE_EXPENSING_LIMIT,
     FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    FISH_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     FISH_IMMEDIATE_EXPENSING_SHARE,
     FISH_INCOME_BEFORE_CCA,
     FISH_MINISTER_ALLOCATION,
@@ -123,6 +129,9 @@ from app.jurisdictions.ca.catalog import (
     FISHING_INCOME,
     FOREIGN_INVESTMENT_INCOME,
     GROSS_RENTAL_INCOME,
+    IMMEDIATE_EXPENSING_AGREED_LIMIT,
+    IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
+    IMMEDIATE_EXPENSING_TOTAL_CLAIM,
     INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
     INTEREST_AND_OTHER_INVESTMENT_INCOME,
@@ -208,9 +217,11 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
     RENTAL_IMMEDIATE_EXPENSING_CAP,
     RENTAL_IMMEDIATE_EXPENSING_CLAIM,
+    RENTAL_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED,
     RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
@@ -466,6 +477,10 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
         registry.get("ca/business_immediate_expensing_limit") is BUSINESS_IMMEDIATE_EXPENSING_LIMIT
     )
     assert (
+        registry.get("ca/business_immediate_expensing_limit_unprorated")
+        is BUSINESS_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED
+    )
+    assert (
         registry.get("ca/business_immediate_expensing_claim") is BUSINESS_IMMEDIATE_EXPENSING_CLAIM
     )
     assert registry.get("ca/business_income_before_cca") is BUSINESS_INCOME_BEFORE_CCA
@@ -507,6 +522,10 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
         is FARM_IMMEDIATE_EXPENSING_LIMIT_PRORATED
     )
     assert registry.get("ca/farm_immediate_expensing_limit") is FARM_IMMEDIATE_EXPENSING_LIMIT
+    assert (
+        registry.get("ca/farm_immediate_expensing_limit_unprorated")
+        is FARM_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED
+    )
     assert registry.get("ca/farm_immediate_expensing_claim") is FARM_IMMEDIATE_EXPENSING_CLAIM
     assert registry.get("ca/farm_income_before_cca") is FARM_INCOME_BEFORE_CCA
     assert registry.get("ca/fish_epop_associated") is FISH_EPOP_ASSOCIATED
@@ -535,6 +554,10 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
         is FISH_IMMEDIATE_EXPENSING_LIMIT_PRORATED
     )
     assert registry.get("ca/fish_immediate_expensing_limit") is FISH_IMMEDIATE_EXPENSING_LIMIT
+    assert (
+        registry.get("ca/fish_immediate_expensing_limit_unprorated")
+        is FISH_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED
+    )
     assert registry.get("ca/fish_immediate_expensing_claim") is FISH_IMMEDIATE_EXPENSING_CLAIM
     assert registry.get("ca/fish_income_before_cca") is FISH_INCOME_BEFORE_CCA
     assert registry.get("ca/fishing_income") is FISHING_INCOME
@@ -753,6 +776,10 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
         is RENTAL_IMMEDIATE_EXPENSING_LIMIT_PRORATED
     )
     assert registry.get("ca/rental_immediate_expensing_limit") is RENTAL_IMMEDIATE_EXPENSING_LIMIT
+    assert (
+        registry.get("ca/rental_immediate_expensing_limit_unprorated")
+        is RENTAL_IMMEDIATE_EXPENSING_LIMIT_UNPRORATED
+    )
     assert registry.get("ca/rental_immediate_expensing_claim") is RENTAL_IMMEDIATE_EXPENSING_CLAIM
     assert registry.get("ca/rental_fiscal_period_days_entered") is RENTAL_FISCAL_PERIOD_DAYS_ENTERED
     assert registry.get("ca/rental_fiscal_period_days") is RENTAL_FISCAL_PERIOD_DAYS
@@ -1195,3 +1222,33 @@ def test_each_checked_kind_is_registered_and_is_the_output_of_its_check(
     assert kind.non_negative is True
     assert registry.kind(input_id) is not kind
     assert registry.kind(input_id).value_type is value_type
+
+
+# The immediate expensing limit is the person's, across the statements of Forms T776, T2125, T2042
+# and T2121. Area A endnote 5 of each form: "The total immediate expensing amount for the tax year
+# (total of column 9) is limited to the lesser of: the immediate expensing limit ..."; Guides T4002
+# and T4036: "The deduction is limited to $1.5 million per tax year".
+def test_the_immediate_expensing_total_kinds_are_the_registered_non_negative_money(
+    registry: ArtifactRegistry,
+) -> None:
+    kinds = (
+        RENTAL_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
+        BUSINESS_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
+        FARM_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
+        FISH_IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
+        IMMEDIATE_EXPENSING_CLAIMS_TOTAL,
+        IMMEDIATE_EXPENSING_AGREED_LIMIT,
+        IMMEDIATE_EXPENSING_TOTAL_CLAIM,
+    )
+
+    assert [kind.identifier for kind in kinds] == [
+        "ca/rental_immediate_expensing_claims_total",
+        "ca/business_immediate_expensing_claims_total",
+        "ca/farm_immediate_expensing_claims_total",
+        "ca/fish_immediate_expensing_claims_total",
+        "ca/immediate_expensing_claims_total",
+        "ca/immediate_expensing_agreed_limit",
+        "ca/immediate_expensing_total_claim",
+    ]
+    assert all(registry.get(kind.identifier) is kind for kind in kinds)
+    assert all(kind.value_type is Decimal and kind.non_negative for kind in kinds)
