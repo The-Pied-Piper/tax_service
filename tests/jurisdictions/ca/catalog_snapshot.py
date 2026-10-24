@@ -883,6 +883,7 @@ REGISTERED = frozenset(
         "ca/cpp_t4_base_and_first_additional_contributions",
         "ca/cpp_t4_second_additional_contributions",
         "ca/schedule_8_instances",
+        "ca/t929_instances",
         "ca/rc381_instances",
         "ca/cpp_actual_base_contributions",
         "ca/cpp_actual_first_additional_contributions",
@@ -1695,6 +1696,26 @@ REGISTERED = frozenset(
         "ca/rl_10_labour_sponsored_fund_amount",
         "ca/political_contributions",
         "ca/disability_supports_deduction",
+        "ca/t929_expenses_paid",
+        "ca/t929_expenses_reimbursed",
+        "ca/t929_weeks_attended",
+        "ca/t929_net_research_grants",
+        "ca/t929_earnings_supplements",
+        "ca/t929_employment_insurance_part_2_support",
+        "ca/t929_income_replacement_support",
+        "ca/t929_wage_earner_protection_amounts",
+        "ca/t929_covid_19_payments",
+        "ca/t929_net_business_income",
+        "ca/t929_net_farming_income",
+        "ca/t929_net_fishing_income",
+        "ca/t929_net_professional_income",
+        "ca/t929_net_commission_income",
+        "ca/t929_line_3",
+        "ca/t929_line_4",
+        "ca/t929_line_7",
+        "ca/t929_line_9",
+        "ca/t929_line_10",
+        "ca/t929_line_11",
         "ca/other_employment_expenses",
         "ca/clergy_residence_deduction",
         "ca/clergy_employer_residence_benefit",
@@ -2291,6 +2312,7 @@ REGISTERED = frozenset(
 
 SIGNED = frozenset(
     {
+        "ca/t929_line_3",
         "ca/cca_vehicle_government_assistance",
         "ca/principal_residence_line_27",
         "ca/principal_residence_line_30",
@@ -2674,6 +2696,7 @@ SIGNED = frozenset(
 
 COUNTS = frozenset(
     {
+        "ca/t929_weeks_attended",
         "ca/t657_chart_2016_uses_d_instead",
         "ca/t657_chart_2016_claims_additional_deduction",
         "ca/chart_2016_part_2_applies",
@@ -2826,6 +2849,7 @@ RATES = frozenset({"ca/rc381_part_3_line_6", "ca/rc381_part_4_line_22"})
 
 RECORD_LISTS = frozenset(
     {
+        "ca/t929_instances",
         "ca/home_renovations",
         "ca/infirm_dependants",
         "ca/disability_dependants",

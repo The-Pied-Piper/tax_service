@@ -1,7 +1,8 @@
 """The federal catalog: the remaining T1 inputs.
 
-The labour-sponsored fund amount, political contributions, disability supports and employment
-expense deductions, business income lines, residence and spouse figures.
+The labour-sponsored fund amount, political contributions, the figures of Form T929 (disability
+supports deduction), employment expense deductions, business income lines, residence and spouse
+figures.
 """
 
 from __future__ import annotations
@@ -29,13 +30,54 @@ The worksheet's eligibility text ("contributions that you or your spouse or comm
 in the year to a registered federal political party, a registered association, or a candidate in a
 federal election", less any advantage received) is the caller's to apply."""
 
-DISABILITY_SUPPORTS_DEDUCTION = CATALOG.declare(
-    "disability_supports_deduction", Decimal, non_negative=True
+T929_EXPENSES_PAID = CATALOG.declare("t929_expenses_paid", Decimal, non_negative=True)
+"""Amounts paid for disability supports, Form T929 Step 1 line 1 "Enter the total of all amounts in
+column 2": the total of the column 2 "Amount paid" entries, as entered."""
+
+T929_EXPENSES_REIMBURSED = CATALOG.declare("t929_expenses_reimbursed", Decimal, non_negative=True)
+"""Amounts reimbursed or assistance received, Form T929 Step 1 line 2 "Enter the total of all
+amounts in column 3": the total of the column 3 "Amount reimbursed or assistance received" entries,
+as entered; "Amounts you cannot claim" says to subtract them from the amounts paid."""
+
+T929_WEEKS_ATTENDED = CATALOG.declare("t929_weeks_attended", int, non_negative=True)
+"""Weeks attended, Form T929 Step 2 line 8 "Enter the number of weeks in the year that you attended
+the institution or secondary school": a count of weeks, 0 for a filer who did not attend."""
+
+T929_NET_RESEARCH_GRANTS = CATALOG.declare("t929_net_research_grants", Decimal, non_negative=True)
+"""Net research grants, Form T929 Step 2 line 4 "Enter your earned income" and its definition of
+earned income, "net research grants": the amount, as entered."""
+
+T929_EARNINGS_SUPPLEMENTS = CATALOG.declare("t929_earnings_supplements", Decimal, non_negative=True)
+"""Earnings supplements, Form T929 Step 2 line 4 "Enter your earned income" and its definition of
+earned income, "any earnings supplement received under a project sponsored by a government in
+Canada to encourage employment": the amount, as entered."""
+
+T929_EMPLOYMENT_INSURANCE_PART_2_SUPPORT = CATALOG.declare(
+    "t929_employment_insurance_part_2_support", Decimal, non_negative=True
 )
-"""Disability supports deduction, T1 line 42 and line 21500 "Disability supports deduction (complete
-Form T929)": a starting amount, taken as entered. The Federal Worksheet "Line 45200 - Refundable
-medical expense supplement" line 9 "Amount from line 21500 of your return" reads it. Only line 45200
-reads it until the deductions from total income compute it; it does not yet enter net income."""
+"""Financial support under Part II of the Employment Insurance Act, Form T929 Step 2 line 4 "Enter
+your earned income" and its definition of earned income, "any financial support received under a
+program sponsored under Part II of the Employment Insurance Act, or any similar program": the
+amount, as entered."""
+
+T929_INCOME_REPLACEMENT_SUPPORT = CATALOG.declare(
+    "t929_income_replacement_support", Decimal, non_negative=True
+)
+"""Income replacement support, Form T929 Step 2 line 4 "Enter your earned income" and its definition
+of earned income, "any financial support received under a program that provides income replacement
+benefits similar to those provided under the Employment Insurance Act": the amount, as entered."""
+
+T929_WAGE_EARNER_PROTECTION_AMOUNTS = CATALOG.declare(
+    "t929_wage_earner_protection_amounts", Decimal, non_negative=True
+)
+"""Wage Earner Protection Program amounts, Form T929 Step 2 line 4 "Enter your earned income" and
+its definition of earned income, "any amounts received under the Wage Earner Protection Program Act
+in respect of wages": the amount, as entered."""
+
+T929_COVID_19_PAYMENTS = CATALOG.declare("t929_covid_19_payments", Decimal, non_negative=True)
+"""COVID-19 payments, Form T929 Step 2 line 4 "Enter your earned income" and its definition of
+earned income, "any federal, provincial or territorial government COVID-19 payments received in the
+year for which you have received a T4A or T4E": the amount, as entered."""
 
 OTHER_EMPLOYMENT_EXPENSES = CATALOG.declare("other_employment_expenses", Decimal, non_negative=True)
 """Other employment expenses, T1 line 50 and line 22900 "Other employment expenses (see Guide

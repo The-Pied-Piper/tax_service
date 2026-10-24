@@ -8,7 +8,6 @@ INPUTS = frozenset(
     {
         "ca/rl_10_labour_sponsored_fund_amount",
         "ca/political_contributions",
-        "ca/disability_supports_deduction",
         "ca/other_employment_expenses",
         "ca/net_business_income",
         "ca/net_professional_income",

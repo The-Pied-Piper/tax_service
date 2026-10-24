@@ -86,7 +86,8 @@ def test_the_child_care_expenses_deduction_is_5000_for_one_child_and_lowers_net_
     assert (
         "deductions_from_total_income: rpp_deduction 0 + rrsp_deduction 0 + fhsa_deduction 0 "
         "+ elected_split_pension_deduction 0 + union_dues 0 + uccb_repayment 0 "
-        "+ child_care_expenses 5000 + allowable_business_investment_loss 0 "
+        "+ child_care_expenses 5000 + disability_supports_deduction 0 "
+        "+ allowable_business_investment_loss 0 "
         "+ support_payments_deduction 0 "
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
         "+ cpp_deduction_on_self_employment_and_other_earnings 0 "

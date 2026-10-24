@@ -71,6 +71,7 @@ CORE_HOMES: dict[str, tuple[str, ...]] = {
     "record_lists": (
         "RecordTotalLine",
         "RecordCountLine",
+        "RecordPositiveTotalLine",
         "ItemsTotalLine",
         "ItemSumLine",
         "ItemLesserOfLine",

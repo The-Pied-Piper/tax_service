@@ -63,6 +63,9 @@ inputs:
   # reads the starting amounts it needs from the inputs below, like the return. The return carries
   # Schedule 8 or Form RC381, not both (the exclusive group ca/cpp_calculation).
   - ca/rc381_instances
+  # Form T929: the copies of the form, none or one (a record has no fields); the form ca/t929 reads
+  # the figures it takes from the inputs below, entered as the form takes them.
+  - ca/t929_instances
   # Form T2125: the statements, one record for each business (any number); the form ca/t2125
   # reads their fields.
   - ca/t2125_statements
@@ -361,7 +364,26 @@ inputs:
   - ca/amt_minimum_tax_carryover_from_previous_years
   - ca/amt_minimum_tax_carryover_applied
   - ca/political_contributions
-  - ca/disability_supports_deduction
+  # Form T929 Step 1 line 1 "Enter the total of all amounts in column 2" and line 2 "Enter the total of
+  # all amounts in column 3" (the amounts paid, and the amounts reimbursed or assisted), the
+  # disability supports the filer paid, as the form takes them.
+  - ca/t929_expenses_paid
+  - ca/t929_expenses_reimbursed
+  # Form T929 Step 2 line 8 "Enter the number of weeks in the year that you attended the institution or
+  # secondary school", the weeks attended, a count.
+  - ca/t929_weeks_attended
+  # Form T929 Step 2 line 4 "Enter your earned income", the items of the definition "Your earned income
+  # is the total of the following amounts" that are not computed from the return: net research grants,
+  # any earnings supplement, any financial support under Part II of the Employment Insurance Act or a
+  # similar program, any income replacement support similar to Employment Insurance, any amounts under
+  # the Wage Earner Protection Program Act in respect of wages, and any federal, provincial or
+  # territorial government COVID-19 payments received in the year for which a T4A or T4E was received.
+  - ca/t929_net_research_grants
+  - ca/t929_earnings_supplements
+  - ca/t929_employment_insurance_part_2_support
+  - ca/t929_income_replacement_support
+  - ca/t929_wage_earner_protection_amounts
+  - ca/t929_covid_19_payments
   - ca/other_employment_expenses
   # Form T1223 Part C, the clergy residence deduction (line 23100): the figures the form takes from
   # the filer, entered as the form takes them. Part C (A), the employer's residence benefit (box 30

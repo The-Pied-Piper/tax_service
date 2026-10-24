@@ -2200,6 +2200,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (UNION_DUES, D("2000")),
                 (UCCB_REPAYMENT, D("0")),
                 (CHILD_CARE_EXPENSES, D("0")),
+                (DISABILITY_SUPPORTS_DEDUCTION, D("0")),
                 (ALLOWABLE_BUSINESS_INVESTMENT_LOSS, D("0")),
                 (SUPPORT_PAYMENTS_DEDUCTION, D("0")),
                 (CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES, D("0")),

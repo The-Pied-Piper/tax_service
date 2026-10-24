@@ -14,6 +14,7 @@ from app.domain.trace import (
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     CPP_OVERPAYMENT,
+    DISABILITY_SUPPORTS_DEDUCTION,
     EI_OVERPAYMENT,
     INCOME_TAX_DEDUCTED,
     MEDICAL_CLAIM,
@@ -39,6 +40,7 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_SUPPLEMENT_LINE_16,
     MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
     MEDICAL_SUPPLEMENT_WORKING_INCOME,
+    NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     TOTAL_CREDITS,
@@ -49,6 +51,10 @@ from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 def return_ah(employment: str = "4390", union_dues: str = "0", **overrides: Any) -> Worksheet:
     """Return AH's inputs, as in `returns/2025_return_ah.yaml`, over the keyword overrides given.
 
+    The helper supplies one copy of Form T929 (`t929_copies` 1), which the worked return file does
+    not carry; that file has no copy, so its line 21500 is 0, and the tests here measure line 21500
+    with the copy.
+
     Lina, 30, resident in Canada throughout 2025: employment income of 4390 (the working income,
     exactly the $4,390 the supplement asks), other income of 15618.90 so that the net income is
     20000.00 after the enhanced CPP contributions of 8.90, and medical expenses of 6600, of which
@@ -58,6 +64,7 @@ def return_ah(employment: str = "4390", union_dues: str = "0", **overrides: Any)
         "other_income": "15618.90",
         "medical_expenses": "6600",
         "income_tax_deducted": "500",
+        "t929_copies": 1,
     }
     inputs.update(overrides)
     return compute(employment, (), "0", "0", "0", "0", union_dues, **inputs)
@@ -234,7 +241,11 @@ def test_the_residence_and_age_conditions_are_counts_of_one(
 
 def test_line_21500_alone_gives_the_supplement_without_a_medical_claim() -> None:
     # "You entered an amount on line 21500 or line 33200": line 9 of 6000 with no line 33200.
-    worksheet = return_ah(medical_expenses="0", disability_supports_deduction="6000")
+    worksheet = return_ah(
+        medical_expenses="0",
+        t929_expenses_paid="6000",
+        t929_net_research_grants="1610",
+    )
 
     assert worksheet.get(MEDICAL_CLAIM).value == D("0")
     assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_11).value == D("6000")
@@ -242,12 +253,17 @@ def test_line_21500_alone_gives_the_supplement_without_a_medical_claim() -> None
 
 
 def test_lines_21500_and_33200_are_added_before_the_rate() -> None:
-    worksheet = return_ah(medical_expenses="1600", disability_supports_deduction="3000")
+    worksheet = return_ah(medical_expenses="1600", t929_expenses_paid="3000")
 
-    # Line 33200: 1600 less 3% of 20000.00 is 1000.00; line 11 is 4000.00, 25% is 1000.00.
-    assert worksheet.get(MEDICAL_CLAIM).value == D("1000.00")
-    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_11).value == D("4000.00")
-    assert worksheet.get(REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT).value == D("1000.00")
+    # Line 21500 is 3000.00 (the lesser of the 3000 paid and the 4390 earned income), which comes
+    # off the net income: 20008.90 - 8.90 (enhanced CPP) - 3000.00 = 17000.00. Line 33200 is 1600
+    # less 3% of 17000.00 (510.00), 1090.00. Line 11 is 3000.00 + 1090.00 = 4090.00, 25% of it is
+    # 1022.50, under the 1504 maximum, and the supplement is that 1022.50.
+    assert worksheet.get(DISABILITY_SUPPORTS_DEDUCTION).value == D("3000.00")
+    assert worksheet.get(NET_INCOME).value == D("17000.00")
+    assert worksheet.get(MEDICAL_CLAIM).value == D("1090.00")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_11).value == D("4090.00")
+    assert worksheet.get(REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT).value == D("1022.50")
 
 
 def test_no_amount_on_line_21500_or_line_33200_gives_no_supplement() -> None:

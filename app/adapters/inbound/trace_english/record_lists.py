@@ -11,6 +11,7 @@ from app.domain.trace.record_lists import (
     ItemsTotalLine,
     ItemSumLine,
     RecordCountLine,
+    RecordPositiveTotalLine,
     RecordTotalLine,
 )
 
@@ -32,6 +33,30 @@ class RecordTotalRenderer:
             for position, amount in enumerate(amounts, start=1)
         )
         return f"{output.label}: {items or 'no items'} = {EnglishFigures.money(total)}"
+
+
+POSITIVE_RULE = "Only positive amounts are added; a zero or negative amount counts 0."
+
+
+@english_renderer
+class RecordPositiveTotalRenderer:
+    """English text for RecordPositiveTotalLine."""
+
+    line_class = RecordPositiveTotalLine
+
+    def render(self, line: RecordPositiveTotalLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        field = line.field
+        amounts = line.amounts
+        total = line.total
+        items = " + ".join(
+            f"item {position} {field.label} {EnglishFigures.money(amount)}"
+            + ("" if amount > 0 else " counts 0")
+            for position, amount in enumerate(amounts, start=1)
+        )
+        sentence = f"{output.label}: {items or 'no items'} = {EnglishFigures.money(total)}."
+        return f"{sentence} {POSITIVE_RULE}"
 
 
 @english_renderer

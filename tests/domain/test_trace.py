@@ -70,6 +70,7 @@ from app.domain.trace import (
     RatioAppliedLine,
     RatioTruncatedLine,
     RecordCountLine,
+    RecordPositiveTotalLine,
     RecordTotalLine,
     RoundedTotalLine,
     SignChosenDifferenceLine,
@@ -401,6 +402,10 @@ def record_total_line() -> RecordTotalLine:
     return RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("6000"), D("4000.50")), D("10000.50"))
 
 
+def record_positive_total_line() -> RecordPositiveTotalLine:
+    return RecordPositiveTotalLine(TOTAL, ITEM_AMOUNT, (D("6000"), D("-4000.50")), D("6000"))
+
+
 def chosen_by_range_line() -> ChosenByRangeLine:
     return ChosenByRangeLine(CHOSEN, TESTED, D("1000.00"), IN_THE_SECOND_RANGE, D("625.01"))
 
@@ -730,6 +735,7 @@ ALL_LINES = [
     percentage_applied_line,
     amount_by_count_line,
     record_total_line,
+    record_positive_total_line,
     chosen_by_range_line,
     rate_by_income_band_line,
     chosen_rate_applied_line,
@@ -2220,6 +2226,82 @@ def test_a_record_total_line_is_not_a_sum_line() -> None:
     assert cast(Any, record_total_line()) != SumLine(
         TOTAL, ((ITEM_AMOUNT, D("6000")), (ITEM_AMOUNT, D("4000.50"))), D("10000.50")
     )
+
+
+def test_record_positive_total_line_fields_in_order() -> None:
+    line = record_positive_total_line()
+
+    assert line == RecordPositiveTotalLine(
+        output=TOTAL, field=ITEM_AMOUNT, amounts=(D("6000"), D("-4000.50")), total=D("6000")
+    )
+    assert [f.name for f in fields(line)] == ["output", "field", "amounts", "total"]
+    assert line.output is TOTAL
+    assert line.field is ITEM_AMOUNT
+    assert line.amounts == (D("6000"), D("-4000.50"))
+    assert isinstance(line.amounts, tuple)
+    assert line.total == D("6000")
+    assert line.amount == D("6000")
+    assert str(line.amount) == "6000"
+
+
+def test_record_positive_total_line_may_have_no_amounts() -> None:
+    line = RecordPositiveTotalLine(TOTAL, ITEM_AMOUNT, (), D(0))
+
+    assert line.amounts == ()
+    assert line.amount == D(0)
+
+
+def test_record_positive_total_lines_differ_by_the_order_of_their_amounts() -> None:
+    assert record_positive_total_line() != RecordPositiveTotalLine(
+        TOTAL, ITEM_AMOUNT, (D("-4000.50"), D("6000")), D("6000")
+    )
+
+
+def test_record_positive_total_lines_differ_by_the_amounts() -> None:
+    assert record_positive_total_line() != RecordPositiveTotalLine(
+        TOTAL, ITEM_AMOUNT, (D("6000"), D("-4000.51")), D("6000")
+    )
+
+
+def test_record_positive_total_lines_differ_by_the_total() -> None:
+    assert record_positive_total_line() != RecordPositiveTotalLine(
+        TOTAL, ITEM_AMOUNT, (D("6000"), D("-4000.50")), D("6000.01")
+    )
+
+
+def test_record_positive_total_lines_differ_by_the_field() -> None:
+    other = ArtifactKind("ex/other_item_amount", Decimal)
+
+    assert record_positive_total_line() != RecordPositiveTotalLine(
+        TOTAL, other, (D("6000"), D("-4000.50")), D("6000")
+    )
+
+
+def test_record_positive_total_lines_differ_by_the_output() -> None:
+    other = ArtifactKind("ex/other_total", Decimal)
+
+    assert record_positive_total_line() != RecordPositiveTotalLine(
+        other, ITEM_AMOUNT, (D("6000"), D("-4000.50")), D("6000")
+    )
+
+
+def test_record_positive_total_lines_are_hashable() -> None:
+    assert hash(record_positive_total_line()) == hash(record_positive_total_line())
+
+
+def test_a_record_positive_total_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(record_positive_total_line())]
+
+
+def test_a_record_positive_total_line_is_not_a_sum_line() -> None:
+    assert not isinstance(record_positive_total_line(), SumLine)
+    assert cast(Any, record_positive_total_line()) != SumLine(
+        TOTAL, ((ITEM_AMOUNT, D("6000")), (ITEM_AMOUNT, D("-4000.50"))), D("6000")
+    )
+
+
+def test_a_record_positive_total_line_is_not_a_record_total_line() -> None:
+    assert not isinstance(record_positive_total_line(), RecordTotalLine)
 
 
 def test_chosen_by_range_line_fields_in_order() -> None:

@@ -531,6 +531,7 @@ from app.jurisdictions.ca.catalog import (
     DISABILITY_SELF_CARE_THRESHOLD,
     DISABILITY_SELF_SUPPLEMENT,
     DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+    DISABILITY_SUPPORTS_DEDUCTION,
     DONATION_FIRST_TIER_MAXIMUM,
     DONATION_HIGH_INCOME_THRESHOLD,
     DONATION_LIMIT_WITH_CAPITAL_GIFTS,
@@ -4486,6 +4487,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CPP_PART_5_LINE_88, CPP_PART_5_LINE_88, (D("0.00"),), D("0.00")
         ),
         CPP_ZERO: RecordTotalLine(CPP_ZERO, CPP_ZERO, (D("0.00"),), D("0.00")),
+        # Form T929 line 12 (the record list of the return's T929 instances): Return A has none,
+        # so no items and a total of 0.
+        DISABILITY_SUPPORTS_DEDUCTION: RecordTotalLine(
+            DISABILITY_SUPPORTS_DEDUCTION, DISABILITY_SUPPORTS_DEDUCTION, (), D("0")
+        ),
         # The six results of Form RC381, which Return A does not carry (it carries Schedule 8):
         # no copy, so no amounts and a total of 0.
         RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN: RecordTotalLine(
