@@ -41,8 +41,7 @@ class ClassRatesParser:
     `half_year_rule_on_sale`, an `aiip_factor` and a `riip_factor`, each factor a quoted whole
     `numerator` and `denominator` read as a `fraction` dataset's are, and optionally `elections`,
     keyed by each code as a quoted whole number above 0, each a `rate` as a quoted decimal; and
-    `full_year_days`, a quoted
-    whole number above 0, the days of a full fiscal period."""
+    `full_year_days`, a quoted whole number above 0, the days of a full fiscal period."""
 
     kind = CLASS_RATES
     body_keys = frozenset({"classes", "full_year_days"})

@@ -2488,7 +2488,9 @@ def test_the_other_forms_class_lists_do_not_take_the_remaining_personal_part(
     [RENTAL_CCA_CLASSES, BUSINESS_CCA_CLASSES, FARM_CCA_CLASSES, FISH_CCA_CLASSES],
     ids=lambda k: k.identifier,
 )
-def test_each_class_list_ends_with_the_half_year_rule_flag(kind: RecordListKind) -> None:
+def test_each_class_list_ends_with_the_half_year_rule_flag_and_the_rate_election(
+    kind: RecordListKind,
+) -> None:
     # Column 18: a row's additions treated the opposite way from their class, a field of each
     # record, in each of the four lists, followed only by the rate election.
     assert kind.fields[-2] is CCA_HALF_YEAR_RULE_DIFFERS

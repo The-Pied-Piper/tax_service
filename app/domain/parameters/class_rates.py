@@ -5,12 +5,12 @@ number; it holds its `rate`, whether the half-year rule applies to it or it is e
 recapture and a terminal loss apply to it or it is excluded, and two factors, the `aiip_factor` and
 the `riip_factor`. A class also states whether it has the half-year rule on sale
 (`half_year_rule_on_sale`) or not. A class may list `elections`, each a whole `code` above 0 and the
-`rate` a row takes when the caller elects that code, such as the 10% of a purpose-built residential
-rental or of a building put in a separate class (Guide T4036 2025, "Class 1 (4%)"). The factors are
-`Fraction`s, the `fraction` kind's values, kept as given: a form can print a factor of 0 as well as
-one such as seven eighths. The table holds at least one class, no class number twice (by value), in
-the order given; a class it does not list is `None`. The table also holds the days in a full fiscal
-period, which a first fiscal period of fewer days is prorated against.
+`rate` a row takes when the caller elects that code, such as a reduced or increased rate a taxpayer
+elects for a property. The factors are `Fraction`s, the `fraction` kind's values, kept as given: a
+form can print a factor of 0 as well as one such as seven eighths. The table holds at least one
+class, no class number twice (by value), in the order given; a class it does not list is `None`. The
+table also holds the days in a full fiscal period, which a first fiscal period of fewer days is
+prorated against.
 The code holds no jurisdiction's tables.
 """
 

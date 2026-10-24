@@ -1290,7 +1290,6 @@ def business_vehicles(*vehicles: Mapping[str, str]) -> Artifact[RecordList]:
 BusinessCcaRow = (
     tuple[str, str, str, str, str, str, str, int, str, str, str]
     | tuple[str, str, str, str, str, str, str, int, str, str, str, int]
-    | tuple[str, str, str, str, str, str, str, int, str, str, str, int, int]
 )
 
 
@@ -1301,8 +1300,7 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
     class, else 0 (endnote 3), column 4 (the DIEP additions), column 6 (the proceeds of
     dispositions of DIEP) and column 9 (the immediate expensing amount), each "0" when the class
     has no DIEP; and, as a twelfth value when the row has one, 1 if the half-year rule treats the
-    row's additions the other way from their class, else 0, and, as a thirteenth value, the row's
-    CCA rate election code (0 none, 1 purpose-built rental, 2 or 3 separate class), else 0."""
+    row's additions the other way from their class, else 0."""
     kind = BUSINESS_CCA_CLASSES
     assert isinstance(kind, RecordListKind)
     records: list[dict[ArtifactKind[Any], object]] = [
@@ -1319,7 +1317,7 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
             CCA_HALF_YEAR_RULE_DIFFERS: half_year_rule_differs,
-            CCA_RATE_ELECTION: rate_election,
+            CCA_RATE_ELECTION: 0,
         }
         for (
             class_number,
@@ -1333,9 +1331,9 @@ def business_cca_classes(*rows: BusinessCcaRow) -> Artifact[RecordList]:
             diep_additions,
             diep_proceeds,
             immediate_expensing,
-            *extra,
+            *differs,
         ) in rows
-        for half_year_rule_differs, rate_election in ((*extra, 0, 0)[:2],)
+        for half_year_rule_differs in (differs[0] if differs else 0,)
     ]
     return Artifact(kind, RecordList(kind.fields, records))
 
