@@ -835,6 +835,19 @@ from app.jurisdictions.ca.catalog import (
     T2203_FEDERAL_SURTAX_OUTSIDE_CANADA,
     T2203_LINE_5,
     T2203_LINE_6,
+    T2204_EXEMPTION,
+    T2204_LINE_1,
+    T2204_LINE_3,
+    T2204_LINE_6,
+    T2204_LINE_7,
+    T2204_LINE_8,
+    T2204_LINE_9,
+    T2204_LINE_10,
+    T2204_LINE_12,
+    T2204_LINE_13,
+    T2204_LINE_14,
+    T2204_LINE_15,
+    T2204_LINE_16,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
@@ -1912,6 +1925,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             parts=((FISH_HOME_EXPENSES_AVAILABLE, D("0")), (FISH_HOME_INCOME_LIMIT, D("0"))),
             result=D("0"),
         ),
+        # Form T2204 line 15 "Enter whichever is less: amount from line 9 or line 14.": line 9 (0)
+        # and line 14 (0): 0.
+        T2204_LINE_15: LesserOfLine(
+            output=T2204_LINE_15,
+            parts=((T2204_LINE_9, D("0")), (T2204_LINE_14, D("0"))),
+            result=D("0"),
+        ),
+        # Form T2204 line 16 "Enter whichever amount is the least: line 7, line 9 or line 12.":
+        # line 7 (0), line 9 (0) and line 12 (0.00): 0.
+        T2204_LINE_16: LesserOfLine(
+            output=T2204_LINE_16,
+            parts=((T2204_LINE_7, D("0")), (T2204_LINE_9, D("0")), (T2204_LINE_12, D("0.00"))),
+            result=D("0"),
+        ),
     }
     assert at_most == {
         # Form T2038(IND) Part D amount 15, the claim (0, the caller's election) at most the claim
@@ -2145,6 +2172,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("0"),
             D("0"),
+        ),
+        # Form T2204 line 10 "Residents of other than Quebec Amount from line 1 × 1.64% = (maximum
+        # $1,077.48)": line 1 is 0, so no premium.
+        T2204_LINE_10: ContributionTierLine(
+            output=T2204_LINE_10,
+            earnings=T2204_LINE_1,
+            earnings_amount=D("0"),
+            tier=ContributionTier(Rate(D("0.0164")), D("0"), D("65700"), D("1077.48")),
+            rounding=CENT,
+            contributory=D("0"),
+            result=D("0.00"),
         ),
     }
     assert surcharged == [
@@ -3986,6 +4024,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("1597.44"),
             result=D("0"),
         ),
+        # Form T2204 line 7 "Amount from line 3 – $2,000 = (if negative, enter "0")": line 3, 0.00,
+        # less the $2,000 exemption, not below zero: 0.
+        T2204_LINE_7: SubtractedNotBelowZeroLine(
+            output=T2204_LINE_7,
+            minuend=T2204_LINE_3,
+            minuend_amount=D("0.00"),
+            subtrahend=T2204_EXEMPTION,
+            subtrahend_amount=D("2000.00"),
+            result=D("0"),
+        ),
+        # Form T2204 line 8 "Line 6 minus line 7 (if negative, enter "0")": line 6 (0) less line 7
+        # (0): 0.
+        T2204_LINE_8: SubtractedNotBelowZeroLine(
+            output=T2204_LINE_8,
+            minuend=T2204_LINE_6,
+            minuend_amount=D("0"),
+            subtrahend=T2204_LINE_7,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T2204 line 13 "Line 9 minus line 12 (if negative, enter "0")": line 9 (0) less
+        # line 12 (0.00), not below zero: 0.
+        T2204_LINE_13: SubtractedNotBelowZeroLine(
+            output=T2204_LINE_13,
+            minuend=T2204_LINE_9,
+            minuend_amount=D("0"),
+            subtrahend=T2204_LINE_12,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
     }
     # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")" and Schedule 13 line 1
     # "(if negative, enter "0")", on no self-employment income and no partnership income, and the
@@ -4493,6 +4561,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD, D("50000.00")),
             ),
             D("82500.00"),
+        ),
+        # Form T2204 line 14 "Enter whichever is more: amount from line 8 or line 13.": line 8 (0)
+        # and line 13 (0): 0.
+        T2204_LINE_14: GreaterOfLine(
+            output=T2204_LINE_14,
+            parts=((T2204_LINE_8, D("0")), (T2204_LINE_13, D("0"))),
+            result=D("0"),
         ),
     }
     # Form T657 Charts 2021 to 2023 Part 2 gate (Return A claims no additional deduction, so

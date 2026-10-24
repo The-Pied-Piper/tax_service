@@ -47,7 +47,8 @@ total of the credit amounts on the T1 and, as ON428 line 21 (line 58300) "Amount
 of your return", on ON428.
 
 Employment income is taken as the insurable earnings: boxes 18 and 55 of the slip are not
-modelled. Not triggered by the returns modelled: the EI overpayment (T1 line 45000).
+modelled. The EI overpayment, T1 line 45000, is worked out on Form T2204 from the premiums deducted
+(`ca/ei_overpayment`), not from this line.
 """
 
 EI_PREMIUMS_ON_SELF_EMPLOYMENT = CATALOG.declare(

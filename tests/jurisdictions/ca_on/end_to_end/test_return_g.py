@@ -74,6 +74,7 @@ def test_return_gs_ontario_credits_are_7730_and_lower_the_refund_by_that_much() 
     assert "provincial_credits: ontario_credits 7730 = 7730" in rendered
     assert (
         "total_credits: income_tax_deducted 8000 + cpp_overpayment 0 "
+        "+ ei_overpayment 0 "
         "+ refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 0 "
         "+ canada_training_credit 0 + part_xii_2_tax_credit 0 + "

@@ -408,6 +408,7 @@ from app.jurisdictions.ca.catalog import (
     EI_CONTROLLED_CORPORATION_EARNINGS,
     EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
     EI_NET_SELF_EMPLOYMENT_INCOME,
+    EI_OVERPAYMENT,
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PREMIUMS,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
@@ -915,6 +916,14 @@ from app.jurisdictions.ca.catalog import (
     T657_GAINS_2001,
     T657_GAINS_2002_TO_2024,
     T657_T2017_LINE_13,
+    T2204_LINE_1,
+    T2204_LINE_1_PLUS_2,
+    T2204_LINE_6,
+    T2204_LINE_9,
+    T2204_LINE_10,
+    T2204_LINE_12,
+    T2204_PREMIUMS_DEDUCTED,
+    T2204_SELF_EMPLOYMENT_EARNINGS,
     T5013_DIVIDEND_TAX_CREDIT,
     T5013_INVESTMENT_INCOME,
     T5013_TAXABLE_DIVIDENDS,
@@ -2820,12 +2829,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # T1 line 165 (line 47900) "Provincial or territorial credits": ON479 line 21.
         PROVINCIAL_CREDITS: SumLine(PROVINCIAL_CREDITS, ((ONTARIO_CREDITS, D("0")),), D("0")),
         # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line
-        # 155 (45300), the Canada workers benefit, and line 165 (47900), in line order.
+        # 153 (45000), the EI overpayment, line 155 (45300), the Canada workers benefit, and line
+        # 165 (47900), in line order.
         TOTAL_CREDITS: SumLine(
             TOTAL_CREDITS,
             (
                 (INCOME_TAX_DEDUCTED, D("25000")),
                 (CPP_OVERPAYMENT, D("0")),
+                (EI_OVERPAYMENT, D("0")),
                 (REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT, D("0.00")),
                 (CANADA_WORKERS_BENEFIT, D("0")),
                 (CANADA_TRAINING_CREDIT, D("0")),
@@ -3917,6 +3928,27 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("1597.44"),
         ),
+        # Form T2204 line 9 "Total premiums deducted from line 4 above": line 4, the premiums
+        # deducted (0), carried over: 0.
+        T2204_LINE_9: SumLine(T2204_LINE_9, ((T2204_PREMIUMS_DEDUCTED, D("0")),), D("0")),
+        # Form T2204 line 6 "Line 4 plus line 5": line 4, the premiums deducted (0), and line 5, the
+        # Schedule 13 line 9 premiums payable on self-employment earnings (0): 0.
+        T2204_LINE_6: SumLine(
+            T2204_LINE_6,
+            ((T2204_PREMIUMS_DEDUCTED, D("0")), (EI_PAYABLE_ON_SELF_EMPLOYMENT, D("0"))),
+            D("0"),
+        ),
+        # Form T2204 line 3 "Line 1 plus line 2", before its maximum: line 1, the total EI insurable
+        # earnings after note (1) (0), and line 2, the self-employment earnings eligible under the
+        # agreement (0): 0.
+        T2204_LINE_1_PLUS_2: SumLine(
+            T2204_LINE_1_PLUS_2,
+            ((T2204_LINE_1, D("0")), (T2204_SELF_EMPLOYMENT_EARNINGS, D("0"))),
+            D("0"),
+        ),
+        # Form T2204 line 12 "Enter the amount from line 10 or line 11, whichever applies.": line
+        # 10, 0.00 (1.64% of line 1, which is 0): 0.00.
+        T2204_LINE_12: SumLine(T2204_LINE_12, ((T2204_LINE_10, D("0.00")),), D("0.00")),
     }
     # Form T1206 Part 1 "(If the TOSI-adjusted net income at line 6 is negative, use the negative
     # value when it is part of an adjusted net income calculation, otherwise use zero.)": the
