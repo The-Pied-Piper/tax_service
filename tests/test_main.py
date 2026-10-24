@@ -1484,6 +1484,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rental_immediate_expensing_limit_before_minister",
         "ca/rental_immediate_expensing_limit",
         "ca/rental_immediate_expensing_claim",
+        "ca/rental_fiscal_period_days_entered",
+        "ca/rental_fiscal_period_days",
         "ca/rental_partner_share_with_rebate",
         "ca/rental_partnership_net_income",
         "ca/net_rental_income",

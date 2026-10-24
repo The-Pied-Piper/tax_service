@@ -1,6 +1,6 @@
 """The CA-ON manifest entries of Form T776 (see `test_manifest.py` and `test_manifest_t776.py`).
 
-T776 is a form of the manifest: its 40 selections belong to the form `ca/t776` (`FORM_STEPS`), run
+T776 is a form of the manifest: its 41 selections belong to the form `ca/t776` (`FORM_STEPS`), run
 once for each statement of `ca/t776_statements`, whose fields are the T776 inputs (`FORM_INPUTS`).
 The form exports seven artifacts, each readable by the other forms as `ca/t776.<export>`
 (`FORM_EXPORTS`); the return reads one and declares no output for the six nothing reads (`OUTPUTS`
@@ -21,9 +21,14 @@ from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
-from app.jurisdictions.ca.capabilities.cca_claim_after_column_22 import CcaClaimAfterColumn22
+from app.jurisdictions.ca.capabilities.cca_claim_after_column_22_prorated import (
+    CcaClaimAfterColumn22Prorated,
+)
 from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
-from app.jurisdictions.ca.capabilities.closing_ucc_after_column_22 import ClosingUccAfterColumn22
+from app.jurisdictions.ca.capabilities.closing_ucc_after_column_22_prorated import (
+    ClosingUccAfterColumn22Prorated,
+)
+from app.jurisdictions.ca.capabilities.fiscal_period_days import FiscalPeriodDays
 from app.jurisdictions.ca.capabilities.immediate_expensing_claim import ImmediateExpensingClaim
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
@@ -72,6 +77,8 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_EPOP_PERCENTAGE_ROOM,
     RENTAL_EPOP_PERCENTAGE_TOTAL,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
+    RENTAL_FISCAL_PERIOD_DAYS,
+    RENTAL_FISCAL_PERIOD_DAYS_ENTERED,
     RENTAL_GROSS_RENTS,
     RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
     RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
@@ -217,6 +224,7 @@ FORM_INPUTS = frozenset(
         "ca/rental_coowner_share",
         "ca/rental_coowner_other_expenses",
         "ca/rental_cca_classes",
+        "ca/rental_fiscal_period_days_entered",
         "ca/rental_coowner_recaptured_cca",
         "ca/rental_coowner_terminal_loss",
         "ca/rental_coowner_cca_claim",
@@ -491,15 +499,28 @@ FORM_STEPS = {
         },
         produces={"output": "ca/rental_net_income_after_terminal_loss"},
     ),
+    # T776 Part 1 "Fiscal period from Date (Year/Month/Day) to (Year/12/31)", the days of the
+    # rental's fiscal period (Guide T4036, Area A "Column 23 – CCA claim for the year": "In your
+    # first year of rental activities, you may have to prorate your CCA claim."; Guide T4002 "You
+    # were asking?": "base your CCA claim on the number of days in your fiscal period compared to
+    # 365 days."): the days the caller enters, or the 365 of a full year when none are.
+    CapabilitySelection(
+        name="ca/fiscal_period_days",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={"entered": "ca/rental_fiscal_period_days_entered"},
+        produces={"output": "ca/rental_fiscal_period_days"},
+    ),
     # T776 Area A "Line ii: Total CCA claim for the year *: Total of column 23": the CCA claimed
     # on each class of the Area A list, at most its maximum (column 19 multiplied by column 20)
-    # less its column 22 (the Chart B total of the class), totalled.
+    # less its column 22 (the Chart B total of the class), totalled, each maximum prorated by the
+    # days of the fiscal period.
     CapabilitySelection(
-        name="ca/cca_claim_after_column_22",
+        name="ca/cca_claim_after_column_22_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
             "classes": "ca/rental_cca_classes",
             "non_compliant": "ca/short_term_rental_non_compliant_cca_by_class",
+            "fiscal_period_days": "ca/rental_fiscal_period_days",
         },
         produces={"output": "ca/rental_cca_table_claim"},
     ),
@@ -565,11 +586,12 @@ FORM_STEPS = {
     # number and column 24 of each class of the Area A list, a product of the return for next
     # year's column 2.
     CapabilitySelection(
-        name="ca/closing_ucc_after_column_22",
+        name="ca/closing_ucc_after_column_22_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
             "classes": "ca/rental_cca_classes",
             "non_compliant": "ca/short_term_rental_non_compliant_cca_by_class",
+            "fiscal_period_days": "ca/rental_fiscal_period_days",
         },
         produces={"output": "ca/rental_closing_ucc"},
     ),
@@ -876,8 +898,19 @@ FORM_WIRING = {
         frozenset({RENTAL_TERMINAL_LOSS}),
     ),
     (
-        CcaClaimAfterColumn22,
-        frozenset({RENTAL_CCA_CLASSES, SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS}),
+        FiscalPeriodDays,
+        frozenset({RENTAL_FISCAL_PERIOD_DAYS_ENTERED}),
+        frozenset({RENTAL_FISCAL_PERIOD_DAYS}),
+    ),
+    (
+        CcaClaimAfterColumn22Prorated,
+        frozenset(
+            {
+                RENTAL_CCA_CLASSES,
+                SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
+                RENTAL_FISCAL_PERIOD_DAYS,
+            }
+        ),
         frozenset({RENTAL_CCA_TABLE_CLAIM}),
     ),
     (
@@ -906,8 +939,14 @@ FORM_WIRING = {
         frozenset({RENTAL_CCA_CLAIM}),
     ),
     (
-        ClosingUccAfterColumn22,
-        frozenset({RENTAL_CCA_CLASSES, SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS}),
+        ClosingUccAfterColumn22Prorated,
+        frozenset(
+            {
+                RENTAL_CCA_CLASSES,
+                SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
+                RENTAL_FISCAL_PERIOD_DAYS,
+            }
+        ),
         frozenset({RENTAL_CLOSING_UCC}),
     ),
     (

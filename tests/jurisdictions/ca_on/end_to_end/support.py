@@ -531,6 +531,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_EPOP_ASSOCIATED,
     RENTAL_EPOP_PERCENTAGE,
     RENTAL_EPOP_PERCENTAGE_TOTAL,
+    RENTAL_FISCAL_PERIOD_DAYS_ENTERED,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
     RENTAL_INSURANCE_SHORT_TERM_PORTION,
@@ -1137,6 +1138,7 @@ def t776_statement(
     rental_epop_percentage_total: str = "0",
     rental_minister_allocation_given: int = 0,
     rental_minister_allocation: str = "0",
+    rental_fiscal_period_days_entered: int = 0,
 ) -> dict[ArtifactKind[Any], object]:
     """One Form T776 statement, a record of `ca/t776_statements`: the T776 inputs, as given or 0."""
     artifacts: list[Artifact[Any]] = [
@@ -1164,6 +1166,7 @@ def t776_statement(
         Artifact(RENTAL_EPOP_PERCENTAGE_TOTAL, D(rental_epop_percentage_total)),
         Artifact(RENTAL_MINISTER_ALLOCATION_GIVEN, rental_minister_allocation_given),
         Artifact(RENTAL_MINISTER_ALLOCATION, D(rental_minister_allocation)),
+        Artifact(RENTAL_FISCAL_PERIOD_DAYS_ENTERED, rental_fiscal_period_days_entered),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
 
