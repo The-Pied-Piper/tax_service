@@ -252,6 +252,7 @@ expected:
       ca/fish_home_carry_forward: "0"
   ca-on/return:
     - ca/fishing_income: "15000"
+      ca/immediate_expensing_total_claim: "12540"
       ca/farming_income: "0"
       ca/net_self_employment_income: "15000"
       ca/taxable_capital_gains: "0"
